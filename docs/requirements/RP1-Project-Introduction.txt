@@ -1,0 +1,638 @@
+
+
+
+
+
+
+
+CAPSTONE PROJECT REPORT
+TK SPORT COMMUNITY
+Report 1 – Project Introduction
+
+
+
+
+
+– Hanoi, Dec 2026 –
+Table of Contents
+Change Log3
+Definition and Acronyms4
+I. Project Overview5
+1. Project Information5
+2. Project Purpose5
+3. Project Stakeholders5
+4. Operating Roles and Account Names5
+II. Product Background7
+III. Existing Solutions8
+1. Zalo-Based Manual Coordination at TK Sport8
+2. Alobo — Booking and Payment Reference8
+3. Section Summary9
+IV. Proposed Solution9
+V. Project Scope & Limitations10
+1. Major Features10
+2. Limitations & Exclusions11
+Appendix A. Proposed Badminton Skill Framework13
+A1. Five Clear Bands and a 0–100 Internal Score13
+A2. Referee Rubric and Contextual Match Evidence13
+A3. Immediate Onboarding and the First Two Sessions14
+A4. Progression, Review and Assessor Consistency15
+Appendix B. Proposed Weekly Social Timetable17
+B1. Monday-to-Sunday Court Allocation17
+B2. Why This Pattern Is Suitable for a Pilot17
+B3. Publication and Registration Rules17
+Appendix C. Pilot and Operational Readiness18
+C1. One-to-Two-Week On-Site Trial18
+C2. What to Measure18
+C3. Decisions and Checks Required Before Live Use19
+Sources and Evidence Notes21
+Change Log
+Date
+A*M, D
+In charge
+Change Description
+12/9/2026
+A
+DucTM,
+NhatLT
+All
+14/9/2026
+M
+NhatLT
+Name Project, Session II, Session III
+23/09/2026
+M
+
+Updated the approved roles and TK.<role> account names; added separate counter sales, stock and reconciliation scope; assigned rating disputes to Manager and initial technical support to Trần Minh Đức.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*A - Added M - Modified D - Deleted
+Definition and Acronyms
+Term
+Definition
+Social
+An organised recreational session in which individuals buy places and play with others; it is not a private whole-court rental.
+Slot
+One two-hour operating period: 16:00–18:00, 18:00–20:00 or 20:00–22:00, in local Vietnam time.
+Session
+A bookable social group on a specific date, time slot and court, with its own skill band, capacity and referee.
+Rating
+An internal assessment of a player's ability in one sport; not an official federation ranking.
+B1–B5
+Five proposed internal skill bands, from beginner to advanced recreational play, defined in Appendix A.
+Provisional
+An initial rating based on an onboarding questionnaire and awaiting sufficient on-court observation.
+Referee
+A court-approved on-court organiser who observes, assesses and coordinates players; no external certification is implied.
+Manager
+The venue-management role used by Lâm. It controls operations and disputed-rating decisions after referee review.
+Partner
+Another player with whom a member wishes to play doubles; a partner preference does not override court rotation.
+VND
+Vietnamese dong, the currency used for tickets and payments.
+GAP / FE / LI
+Identifiers for a project gap, a major feature and a limitation or exclusion, respectively.
+API
+Application Programming Interface; a connection through which an external payment service may exchange transaction information.
+BWF
+Badminton World Federation; cited only as a general coaching reference, not as an endorser of the proposed rating.
+Owner
+The court owner, responsible for business policies and appointments.
+System Admin
+The technical support role. Trần Minh Đức supports the venue initially; this role cannot decide rating complaints.
+Staff
+The combined role for counter sales, stock control, payment checks and reconciliation.
+Social Booking Order
+An order containing only participation charges for named players; it may include accepted friends.
+Sales Order
+A separate goods order created by Staff at the venue; payment and handover have separate states.
+I. Project Overview
+1. Project Information
+English name: TK Sport Community
+Vietnamese name: Cộng đồng TK Sport (cầu lông và pickleball)
+Project code: TKSC
+Group name: G138
+Software type: Web application
+
+2. Project Purpose
+TK Sport Community is a website for badminton and pickleball social sessions. It uses referee-assessed profiles to suggest suitable sessions and reduce skill mismatches. It brings registration and automatic bank-transfer confirmation into one process. The approved scope also covers counter sales, session supplies and reconciliation, with separate responsibilities for Owner, Manager, Staff and System Admin. The project aims to improve session quality and reduce manual work. Trial results will be based on actual use.
+
+3. Project Stakeholders
+Full Name
+Role
+Email
+Mobile
+Nghiem Thi Lan Phuong
+Mentor
+phuongntl@fe.edu.vn
+
+Tran Minh Duc
+Leader/BA
+ductmhe153485@fpt.edu.vn
+0862200601
+Nguyen Duc Quan
+Tester
+quanndhe171155@fpt.edu.vn
+0981216669
+Le Tuan Dung
+Developer
+dunglthe176519@fpt.edu.vn
+0825911088
+Le Trong Nhat
+BackEnd Dev
+nhatlthe180545@fpt.edu.vn
+0986728873
+Nguyen Van Lam
+Front-end&Dev
+lamnvhe181229@fpt.edu.vn
+0967591496
+
+4. Operating Roles and Account Names
+The project uses seven human actors: Guest, Player, Referee, Staff, Manager, Owner and System Admin. Guest is not signed in. The other six roles use separate accounts. Owner means the court owner, not the project team. [S5]
+Role
+Base account
+Person / purpose
+Owner
+TK.owner
+Court owner. Approves business policies, prices and Manager appointments; reviews business results.
+Manager
+TK.manager
+Lâm. Runs the venue and makes the final rating-review decision after referee review.
+System Admin
+TK.admin
+Trần Minh Đức during initial support. Manages technical access, configuration and incidents. Does not decide ratings or business refunds.
+Staff
+TK.staff
+Assigned employee. Handles sales, stock movements, payment checks, approved refunds and shift reconciliation.
+Referee
+TK.referee
+Approved referee. Coordinates assigned sessions, checks in players, assesses skills and requests session supplies.
+Player
+TK.player
+Individual player. Uses personal sport profiles, social tickets, payments and community functions.
+
+Each account has one role and one named user. The base names follow TK.<role>. When a role has several users, add a unique suffix, such as TK.staff.01, TK.referee.02 or TK.player.001. A username never grants a role by itself. Guest has no account.
+Trần Minh Đức uses TK.admin to support Lâm during initial operation. Lâm uses TK.manager for venue work. At a later handover, create a separate System Admin account for Lâm within the TK.admin naming family, such as TK.admin.lam; keep TK.manager separate. Revoke or restrict the former support account and preserve its history. Do not pass Đức's personal account to another user.
+Manager is the only role that decides disputed-rating corrections after referee review. System Admin cannot change scores, decide rating complaints, approve business adjustments or mark unverified money as paid. Separate accounts belonging to the same person do not allow self-assessment or self-approval.
+II. Product Background
+TK Sport is the client of this project. Its Zalo group has about 100 members and the venue regularly serves about 20–30 participants per day. Players include regular customers and occasional visitors. Social sessions run Monday to Sunday in three slots: 16:00–18:00, 18:00–20:00 and 20:00–22:00. Each slot uses two courts and two referees. Each court accepts up to eight people and may serve a different skill group. The website supports badminton and pickleball with the same social workflow. [S1, S5]
+Lâm, the venue manager, uses Zalo to organize the sessions in order to avoid Alobo's subscription fee, while also allowing him and the organizers to communicate directly with participants and keep track of them more closely. The group has a public invitation link, and the organizers create polls for players to register for different time slots. After registering, players contact the organizer through private Zalo messages to arrange payment. Before each session, the organizer has to compare the poll results with payment messages and also rely on personal knowledge of the players, such as knowing who the regular customers are. According to Lâm, this is a fragmented process because there is no central place to track player information, registration status, and payment status. [S1]
+At present, players of similar skill levels are arranged on different days and are commonly grouped using labels such as beginner, six months of experience, one year of experience, or more. Referees or coordinators observe each player's ability and remember the regular players, but these assessments are not stored in a centralized player profile. As a result, placing players into suitable groups depends heavily on the memory and availability of the person in charge. It is especially difficult to verify the skill level of a player who only self-declares their ability compared with someone who has already played at the venue before. [S1]
+The venue has experienced cases where players registered for groups above their actual skill level. Some players intentionally chose stronger groups because they wanted to gain more experience. Players with noticeably different skill levels have complained that these mismatches reduce the quality of the sessions they paid to join. Therefore, the problem is not that the referees do not understand the players' skill levels, but that there is no consistent mechanism for recording, reviewing, and applying these assessments before and during registration. [S1]
+TK Sport's first priority is to reduce skill mismatches. The second is to reduce manual player management, registration and payment checks. Lâm and the referee team will use the website in a one-to-two-week trial and report their experience. The team will record actual complaints, processing work and feedback. Customer retention remains a longer-term objective. [S1]
+
+III. Existing Solutions
+The comparison distinguishes TK Sport’s current Zalo-based workflow from Alobo as an external product reference. Venue observations come from the requirements discussions; the Alobo comparison is based on the project initiator’s firsthand use, supported by the vendor’s description of booking and payment functions. It is not a claim that every Alobo configuration has been audited. [S1–S3]
+1. Zalo-Based Manual Coordination at TK Sport
+TK Sport uses a Zalo group, polls and private messages to organise social sessions. This is the current operating arrangement, chosen by Lâm for cost control and direct personal contact with players; TK Sport does not use Alobo. [S1]
+Website / Link
+Zalo group and personal messages; the private community link is not reproduced in this report.
+Target Users
+Lâm, TK Sport’s referees, regular players and visiting participants.
+Core Features
+Group announcements, open-link membership, poll-based sign-up and private payment communication.
+Strengths
+Familiar to the existing community; avoids an Alobo subscription; supports direct conversation and close personal coordination.
+Weaknesses
+Skill information depends on memory; poll responses and payment conversations remain separate; payment confirmation and eligibility checking require manual work.
+GAP for this project
+GAP-01: no structured referee-assessed profile linked to registration. GAP-02: no unified automatic registration/payment workflow. GAP-03: no session-linked view combining skill, participant identity and partner preferences; chat itself is not missing.
+2. Alobo — Booking and Payment Reference
+Alobo is a sports-venue booking and management platform developed by Document Easy. Its public product description includes social ticketing, booking and automated payment functionality. The project initiator has used Alobo and regards its registration and payment experience as a positive reference for TK Sport. [S2, S3]
+Website / Link
+https://www.alobo.vn/
+Target Users
+Sports-venue operators and players booking courts or social-session places.
+Core Features
+Visual session discovery, booking, social tickets and payment handling relevant to the proposed player journey.
+Strengths
+A convenient booking/payment experience according to firsthand use; automated payment is a capability to learn from, not an identified Alobo weakness.
+Weaknesses
+In the social flow experienced by the project initiator, labels such as six to ten months or one to one and a half years leave players to identify their own level and sign up. TK Sport also wishes to avoid the subscription expense.
+GAP for this project
+GAP-01: the examined user journey does not provide TK Sport’s required closed loop of venue-approved referee assessment, a traceable skill profile and two-way session eligibility. This is a context-specific finding from the examined flow, not a universal claim about all vendor features.
+3. Section Summary
+Zalo supports communication, but TK Sport's skill checks and registration/payment coordination remain manual. Alobo is a useful booking and payment reference in the user journey examined. TKSC combines referee-led placement, booking and community records for one operator. The team has also approved separate business/technical responsibilities and linked counter-sales, stock and reconciliation workflows. GAP-04 and GAP-05 describe these approved extensions; they are not claims of observed stock loss or missing Alobo functions. [S1–S3, S5]
+Gap ID
+Gap
+Required improvement
+GAP-01
+Verified skill and eligibility
+Record, review and apply referee-assessed ability when recommending and admitting players to sessions.
+GAP-02
+Registration and payment coordination
+Unify capacity, individual/group registration, bank-transfer confirmation and affected-ticket refund handling.
+GAP-03
+Session-linked community information
+Connect member-visible profiles, eligible friend invitations and partner preferences to the actual participant list.
+GAP-04
+Clear decision and access responsibilities
+Separate Owner policies, Manager decisions, Staff execution and System Admin support. Use role-specific accounts and traceable approvals.
+GAP-05
+Linked on-site sales and supply records
+Keep goods sales separate from social orders while linking stock movements, verified transfers and shift reconciliation.
+IV. Proposed Solution
+TK Sport Community will manage badminton and pickleball social sessions at TK Sport. Referees record observed skills in a profile for each sport. The website uses the published result for suitable-session suggestions and both lower and upper skill checks. New players receive a provisional survey result, followed by on-court observation. Lâm decides disputed-rating corrections through the Manager account after the referee team reviews the evidence. System Admin has no authority to make this decision.
+The website links session availability, individual places, friend invitations and verified bank transfers. Friends must accept before payment for their places. A Social Booking Order contains only participation charges, including the assessment already covered by the ticket. A published rating change affects only future tickets that become ineligible; the original payer receives the relevant refund. Other valid tickets and separate goods orders remain unchanged.
+Members can view community profiles, add friends, send messages and request partners. Contact details, payment records and internal assessment notes are not public. Referees continue to assign games and rotate players. Staff handles counter sales, session supplies and reconciliation through separate records. Manager reviews business exceptions, while Owner approves policies and prices and views business summaries.
+The roles separate day-to-day venue work from technical support. Trần Minh Đức supports Lâm through TK.admin during initial operation; Lâm uses TK.manager. Each account has one role. A later technical handover keeps Lâm's Manager account separate and preserves the former operator's history. The trial covers the social workflow and the approved sales, stock and control tasks. The badminton rubric and timetable in the appendices remain proposed pilot settings. [S5]
+V. Project Scope & Limitations
+The first release is a website for TK Sport's badminton and pickleball social sessions, counter sales, session supplies and reconciliation. Two courts are available in each slot. The features below retain FE-01–FE-13 and add FE-14–FE-18 for the approved scope extension. Each feature maps to the gaps in Section III. [S5]
+1. Major Features
+ID
+Feature Name
+Description
+Addressed Gaps
+FE-01
+Accounts and role permissions
+Maintain separate Owner, Manager, System Admin, Staff, Referee and Player accounts. One role per account; usernames follow the TK.<role> format. Role and record checks protect private data.
+GAP-01, GAP-03, GAP-04
+FE-02
+Player profiles and skill history
+Maintain a separate current score, band, provisional status and history for each player's sport. Keep the assessor and Manager correction history.
+GAP-01
+FE-03
+Provisional onboarding
+Use a short experience and skill questionnaire to assign an initial band immediately. Mark it provisional and identify the player for on-court observation.
+GAP-01
+FE-04
+Referee assessment and progression
+Allow approved on-court referees to record structured observations and assessment evidence during attended sessions. Support review of progress without awarding skill points merely for attendance.
+GAP-01
+FE-05
+Assessment appeals and corrections
+Player submits a disputed rating. Referees review evidence; Lâm uses the Manager account to keep or correct the result with a reason. System Admin cannot decide the case.
+GAP-01
+FE-06
+Court-specific social scheduling
+Manager creates dated sessions with sport, court, slot, band, referee, capacity and approved price, and assigns operational staff. The two courts may use different bands.
+GAP-01, GAP-02
+FE-07
+Suitable-session discovery
+Present visual date/time choices and recommend eligible sessions with available places. Explain restrictions and offer suitable alternatives rather than silently widening the skill limits.
+GAP-01
+FE-08
+Eligibility and approved exceptions
+Apply both lower and upper skill limits to every participant. Record referee-approved exceptions for a named player and session without changing that player’s profile rating.
+GAP-01
+FE-09
+Individual and friend registration
+Register the account holder and invite eligible existing friends through a checklist. Require friend acceptance and maintain a separate place and registration state for each participant.
+GAP-02, GAP-03
+FE-10
+Automatic transfer confirmation
+Confirm bank transfers once against a unique order reference. Keep ticket allocations for friend payments. Sales orders use separate references and allocations; never apply the same money twice.
+GAP-02
+FE-11
+Rating-change refunds and alternatives
+When a published rating change invalidates a future paid ticket, initiate the affected-ticket refund process and suggest nearby suitable sessions. Return the affected amount to the original payer and preserve valid group tickets.
+GAP-01, GAP-02
+FE-12
+Friendships, messaging and partner preference
+Provide member profiles, friend invitations, direct messaging and a participant list for each session. Let players request to play together while leaving match allocation and rotation to the referee.
+GAP-03
+FE-13
+Operational status and pilot records
+Provide role-limited session, attendance, assessment and money records. Referees and Manager retain trial feedback; Staff sees operational data needed for assigned financial and supply tasks.
+GAP-01, GAP-02
+FE-14
+Owner policies and business approvals
+Owner approves business policies and prices, controls Manager appointments and reviews recorded business results. Manager applies approved policies.
+GAP-04
+FE-15
+Counter sales and handover
+Staff creates a separate sales order for goods sold at the venue. Track bank payment and physical handover separately; do not mix goods with social-ticket charges.
+GAP-05
+FE-16
+Stock and session supplies
+Record stock receipts, session allocation, actual use, unused returns, counts and replenishment requests. Keep one traceable movement for each event.
+GAP-05
+FE-17
+Reconciliation and controlled adjustments
+Staff prepares payment and stock discrepancies. Manager or Owner approves business exceptions within their authority. Preserve original transactions and prevent self-approval.
+GAP-04, GAP-05
+FE-18
+Technical support and access handover
+System Admin manages technical configuration, approved account access and processing incidents. Record the support operator and later handover without transferring business-review powers.
+GAP-04
+2. Limitations & Exclusions
+ID
+Excluded Item
+Reason
+LI-01
+Private whole-court rental
+Deferred until the social workflow is validated. Whole-court pricing, allocation and rental conditions are a separate future business process.
+LI-02
+Other sports and external rating equivalence
+The release supports badminton and pickleball. Tennis, table tennis, automatic cross-sport score conversion and official-rating equivalence are outside scope.
+LI-03
+Multi-venue commercial platform
+The pilot is for TK Sport only. Reuse at other venues is a future direction, not a delivered multi-tenant marketplace.
+LI-04
+Native mobile applications
+Only the website is included. Separate iOS and Android applications are outside the current capstone scope.
+LI-05
+Automated match allocation and professional competition
+Referees continue to split games and rotate partners. Tournament draws, official rankings and competition administration are not required for recreational social play.
+LI-06
+AI/video-based skill scoring
+Human observation is the agreed assessment mechanism. Automated video analysis is not required to validate the business workflow.
+LI-07
+Full accounting, payroll and unrelated commerce
+Counter sales, stock control and session supplies are included. Full accounting, payroll, delivery shopping, equipment-rental deposits and unrelated commercial services are excluded.
+LI-08
+Guaranteed instant settlement or measured retention gains
+Incoming payment confirmation and outgoing repayment are verified separately. A short trial reports actual operational feedback, not guaranteed instant settlement or long-term retention results.
+Implementation dependencies remain explicit: the bank-transfer integration and refund execution capability must be verified before live use; payment-hold durations and ordinary cancellation/no-show policies require Lâm’s operational approval. These settings will be finalised with Lâm before live deployment. A waiting list, additional notification channels and a broader social network are not included as commitments without a separate scope decision. The pilot plan and decision checklist are in Appendix C.
+Appendix A. Proposed Badminton Skill Framework
+Status: proposed pilot configuration for Lâm and the referee team to review. Direct referee assessment is confirmed; the bands, rubric and review triggers below are recommendations, not existing TK Sport rules. Broad technical, tactical and movement categories draw on BWF Coach Education Level 1; the project-designed score is not a BWF rating or a pickleball scale. [S4]
+A1. Five Clear Bands and a 0–100 Internal Score
+Use five visible bands, B1–B5, rather than years of playing. Score five dimensions from 0 to 4 and multiply their sum by five. Equal weights make the initial rubric easy to apply; the result is an internal assessment whose usefulness depends on consistent observation and calibration.
+Band / Score
+Observable playing profile
+Next development focus
+B1 — Beginner0–19
+Needs frequent guidance on basic contacts, service, court positioning and continuing a short rally.
+Develop a repeatable serve, controlled contact and a simple return-to-position habit.
+B2 — Foundation20–39
+Can join basic social games but is inconsistent across shot types, movement and rallies.
+Improve routine serve/return, basic clear and net/lift control, and partner communication.
+B3 — Developing40–59
+Sustains moderate-paced play and uses several shots with emerging tactical and doubles awareness.
+Reduce avoidable errors, recover after shots and coordinate attacking/defensive positions.
+B4 — Intermediate60–79
+Handles varied recreational rallies with more consistent technique, movement and partnership decisions.
+Improve decision quality under pressure, coverage of weaker areas and controlled changes of pace.
+B5 — Advanced recreational80–100
+Maintains broad skill coverage, reliable positioning and partner coordination at stronger social pace.
+Refine tactical variation and consistent performance across partners; no professional status is implied.
+Boundaries do not overlap: 20 belongs to B2, 40 to B3, 60 to B4 and 80 to B5. Eligibility uses the displayed, published score and band, with no hidden rounding rule. A referee may approve a session-specific exception. Publish band changes through the review process below, not after one rally or an unusually good game.
+A2. Referee Rubric and Contextual Match Evidence
+Dimension
+Weight
+What to observe during badminton social play
+D1. Shot execution and breadth
+20%
+Serve and return; clear, lift, drop, net shot, drive and smash when relevant. Assess control and usable variety, not only one powerful favourite shot.
+D2. Movement and recovery
+20%
+Ready position, movement to the shuttle, balance at contact and recovery to a suitable base or partnership position.
+D3. Consistency and control
+20%
+Repeatability and placement at a comparable pace; avoidable errors across repeated opportunities, not one isolated success or mistake.
+D4. Tactical awareness
+20%
+Choice between keeping a rally, attacking and defending; use of space and adaptation to the actual rally situation.
+D5. Doubles coordination
+20%
+Communication, responsibility for the middle, court coverage, attacking/defensive formation and adaptation to a changing partner.
+Shared scoring anchors
+Mark
+Shared behavioural anchor
+Evidence rule
+0
+Not yet demonstrated
+Needs repeated guidance or cannot yet perform the action in a simple observed situation.
+1
+Emerging
+Can perform a simple action intermittently but loses it as conditions vary.
+2
+Functional
+Uses the skill in routine recreational rallies, with visible limitations under pressure.
+3
+Consistent
+Repeats effective execution and decisions across varied, comparable social-play situations.
+4
+Adaptable
+Maintains control and makes effective adjustments under the stronger recreational conditions observed.
+N/O
+Not observed
+Leave the dimension unscored; do not treat lack of observation as zero. A full numerical assessment requires evidence for all five dimensions.
+Assessment score = 5 × (D1 + D2 + D3 + D4 + D5). Example: marks of 2, 2, 2, 3 and 2 produce 55 points, placing the player in B3. Referees should record at least one concise piece of evidence for any unusually high/low mark and for a proposed band change. The assessment record includes player, court session, referee, rubric version, observations and publication status.
+Record wins, losses, partner/opponent identities and the number of observed games as contextual evidence where available. Raw win rate must not automatically generate skill points: a player may win more often because of a stronger partner or weaker opponents. For the initial pilot, persistent results that seem inconsistent with a band trigger referee review rather than an automatic promotion. This retains match performance as assessment evidence while recognising that a small, unadjusted sample is insufficient for a fair individual ranking.
+A3. Immediate Onboarding and the First Two Sessions
+The questionnaire assigns a provisional band immediately; it does not certify ability. Self-reporting remains a possible source of initial mismatch, so the referee must see who is provisional and prioritise observation. The one-to-two-session target is an initial review window, not a guarantee that every player can be assessed accurately within two visits.
+Topic
+Suggested questions / response format
+Use in initial placement
+Playing background
+Have you played badminton matches before? For how long? Have you received coaching? Have you played another racket sport?
+Context only; do not convert months or experience in another sport directly into a high band.
+Recent activity
+How many sessions have you played in the last four weeks? What is your usual frequency? Have you recently returned after a long break?
+Flag recency and observation needs, not a points bonus for attendance.
+Serve, return and shot range
+Which routine shots can you control? Can you serve and return consistently, clear to the back and play a controlled net shot/lift? Allow “not sure”.
+Initial self-check for D1; use concrete actions instead of “I am intermediate”.
+Movement and recovery
+After a shot, can you recover to a useful position? How do you move to front/rear corners without becoming stranded?
+Initial self-check for D2.
+Rally consistency
+Can you sustain a routine rally with a comparable player? Which situations usually cause an avoidable error?
+Initial self-check for D3.
+Game decisions
+Use two short scenarios about lifting/keeping the shuttle in play versus attacking, and responding to an opponent’s weak return.
+Initial self-check for D4; publish the intended interpretation for assessors.
+Doubles coordination
+How do you decide responsibility for a shuttle between partners? How do your positions change when attacking or defending?
+Initial self-check for D5.
+Existing playing context
+What kind of group do you currently play with? Do you have an external assessment to show?
+Supporting context only; external ratings are not automatically converted or certified.
+Proposed mapping: score the five skill self-checks with the same 0–4 anchors and calculate a provisional 0–100 score; use the lower supported anchor for an uncertain answer. Background and frequency do not add points. Publish “Provisional — awaiting on-court assessment”, allow registration to a matching published session, and flag inconsistent answers for priority observation rather than an unexplained rejection.
+During the first attended session, the assigned referee observes several rallies with normal partner rotation and records the skills actually seen. During the second session, missing evidence is completed and another referee may contribute where practical. Replace the questionnaire result with the supported on-court assessment rather than keeping self-declared marks as a permanent component. If evidence remains insufficient, keep the provisional status and state that further observation is needed; unobserved dimensions must remain unscored.
+A4. Progression, Review and Assessor Consistency
+More frequent play creates more opportunities to demonstrate progress; it does not automatically increase skill points. Keep attendance or customer-loyalty information separate from ability. Each player’s development path combines the current band, the general next-band expectations and a dated review history; detailed referee notes are visible only to Referees and the Manager as required.
+Stage / Trigger
+Proposed action
+Publication safeguard
+Initial placement
+Survey creates a provisional band; complete on-court observations during the first one or two attended sessions where evidence permits.
+Do not label the survey result referee-confirmed.
+Routine review
+After approximately four attended sessions since the last full assessment, or earlier when a referee identifies meaningful change, complete a fresh review.
+The visit count triggers observation, not automatic promotion or mandatory score change.
+Move to another band
+Seek two separate observations supporting the destination band and confirmation by another approved referee where available.
+Require the player to satisfy the destination band’s essential movement and doubles-coordination expectations; a strong smash alone cannot compensate for major gaps.
+Clear initial error / appeal
+Escalate obvious misplacement or a complaint to Lâm and the referee team for prompt review.
+The Manager records the corrected score, reason and evidence; preserve the earlier record and apply the affected-ticket policy.
+Long absence
+Flag the profile for renewed observation when the player returns.
+Do not lower a score merely because the player has attended less frequently.
+For ordinary reviews after confirmation, use the mean of the latest two complete on-court assessments as a simple supporting score, rounded to the nearest whole point. A band-crossing result remains a proposed change until the checks above are satisfied; the last published score remains active meanwhile. Lâm may correct a demonstrably wrong result immediately after a documented review. These are pilot rules to calibrate, not promises of statistical accuracy.
+Before the pilot, both referees should independently score a small, consenting sample across the ability range, compare differences and refine ambiguous anchors. Keep the rubric version consistent and record changes. Report actual agreement and limitations rather than claiming a universally correct score.
+Appendix B. Proposed Weekly Social Timetable
+Status: recommended pilot schedule, not the current timetable or a demand forecast. Bands B1–B5 are defined in Appendix A. Times are local to TK Sport. Each published court session has an eight-person limit, its own referee and a VND 100,000 ticket including assessment.
+B1. Monday-to-Sunday Court Allocation
+Day
+16:00–18:00
+18:00–20:00
+20:00–22:00*
+Monday
+Court 1: B1Court 2: B2
+Court 1: B3Court 2: B4
+Court 1: B2Court 2: B3
+Tuesday
+Court 1: B2Court 2: B3
+Court 1: B1Court 2: B2
+Court 1: B4Court 2: B5
+Wednesday
+Court 1: B1Court 2: B2
+Court 1: B3Court 2: B4
+Court 1: B2Court 2: B3
+Thursday
+Court 1: B2Court 2: B3
+Court 1: B1Court 2: B2
+Court 1: B4Court 2: B5
+Friday
+Court 1: B1Court 2: B2
+Court 1: B3Court 2: B4
+Court 1: B2Court 2: B3
+Saturday
+Court 1: B1Court 2: B2
+Court 1: B3Court 2: B5
+Court 1: B3Court 2: B4
+Sunday
+Court 1: B1Court 2: B2
+Court 1: B3Court 2: B4
+Court 1: B2Court 2: B3
+* Late-slot and B5 allocations are demand-dependent candidates: keep them in draft until Lâm confirms compatible interest. Stronger demand is reported in the first two slots; publish these candidates according to observed registrations.
+B2. Why This Pattern Is Suitable for a Pilot
+B1/B2 players receive regular early opportunities, while most B3/B4 sessions use the popular time windows. Tuesday and Thursday rotate beginner sessions into 18:00; Saturday offers B5 at 18:00. Separate court allocations give members choices without deliberately mixing incompatible bands.
+The timetable represents 42 possible court sessions (7 × 3 × 2), or at most 336 participant places. This is capacity, not an attendance or revenue forecast. With about 20–30 participants per day, publish selectively and adjust the following week to observed interest and registrations.
+B3. Publication and Registration Rules
+Proposed activation rule: four to eight eligible participants per doubles social court. Before accepting payments, Lâm must approve the minimum-attendance deadline and cancellation/refund procedure. Where only one group has adequate demand, use the suitable court allocation rather than merging incompatible bands.
+Friends must each meet the selected session’s band conditions, accept the invitation and have a verified payment. An invitation is not a confirmed ticket. Expired unpaid places are released individually; paid friends’ places remain valid. Hold durations must be configured before launch.
+Recheck eligibility, capacity and time conflicts at confirmation. Exceptions identify the player and exact session. Never silently change the band of a sold session. After a rating change, recommend suitable available alternatives nearest the original date/time; do not automatically rebook or charge.
+Appendix C. Pilot and Operational Readiness
+C1. One-to-Two-Week On-Site Trial
+The complete trial lasts one to two weeks at TK Sport. Lâm operates as Manager with the referees and assigned Staff. Trần Minh Đức provides System Admin support. The planned trial window in Report 2 is 26 November–9 December 2026. Participants record actual session, payment, counter-sale and stock-control results. The trial does not by itself transfer technical administration to Lâm. [S1, S5]
+Period
+Activity
+Evidence to retain
+Before launch
+Approve the assessment rubric and candidate timetable; prepare accounts, access permissions and payment integration. Capture a comparable sample of the current Zalo workflow where available.
+Rubric version; readiness decisions; baseline definitions and actual sample sizes; transaction-test results.
+During week 1
+Use the website for selected live social sessions; observe onboarding, assessment, invitations, automatic payment confirmation and court admission.
+Session/participant counts, manual interventions, assessment records, transaction states and reported skill mismatches.
+Week 2, if included
+Continue the same measurement approach; correct defects and record any configuration changes without silently mixing different baselines.
+Issue resolutions, assessment disagreements, changes to the schedule/rubric and comparable feedback.
+Trial close
+Lâm and the referee team review operational results with the project team and document whether the workflow is suitable for continued use.
+A dated pilot report describing the observed changes, available baseline, limitations, unresolved issues and next actions.
+C2. What to Measure
+Measure
+Collection method
+Interpretation
+Reported skill mismatch
+Record complaints and referee-confirmed placement issues per completed court session, with a brief reason.
+Separate actual performance mismatch from simple dissatisfaction; state the number of sessions reviewed.
+Manual administration
+Time comparable registration/payment tasks and count cases requiring off-system intervention.
+Report actual observed times and sample sizes, not an assumed percentage saving.
+Payment correctness
+Compare confirmed tickets with confirmed bank transactions and their ticket allocations; record duplicate, late or unmatched transfers.
+Successful confirmation does not prove refund capability; test and report them separately.
+Assessment consistency
+Compare independent referee marks for the players both actually observed.
+A small pilot can reveal ambiguous criteria but cannot prove universal rating accuracy.
+New-player placement
+Record provisional-to-confirmed transitions and cases still needing evidence after two sessions.
+Do not treat two visits as an automatic guarantee of a reliable rating.
+Session experience
+Collect Lâm’s/referees’ reports and short feedback from participating players about suitability and ease of booking.
+Report differing views and limitations. Return intention is not the same as demonstrated long-term retention.
+Sales and supplies
+Compare separate sales orders, verified money, delivered items and session supply movements.
+Count actual differences; do not infer venue profit or stock-loss reductions.
+Role separation
+Run the same rating complaint through Manager and System Admin accounts. Check the person behind linked role accounts.
+Manager can decide the dispute; System Admin and self-approving users are denied.
+C3. Decisions and Checks Required Before Live Use
+Item
+Confirmed requirement
+Pre-live check
+Payment integration
+Bank transfer with automatic website confirmation.
+Verify the approved transfer connection, authentic transaction events, separate order references, repeated events and late-payment handling.
+Rating-change refund
+Refund only future paid tickets made ineligible by the new published rating, to the original payer; retain unaffected tickets.
+Verify execution capability and record initiated, processing, completed or failed states. Automatic incoming-transfer confirmation alone does not establish an ability to send refunds; never display “refunded” before completion is confirmed.
+Invitations and place holds
+Friends must accept; the inviter may pay or each invitee may pay separately.
+Set acceptance/payment expiry and handle partial or incorrect transfers. Never let one expired invitation cancel other valid group tickets.
+Member visibility
+Member profiles are visible within the signed-in website community. Detailed notes are for Referees and Manager only.
+Define precisely which profile fields are shown. Keep financial records and contact details out of the public profile; require a member account for community access as the proposed implementation.
+Messaging and conduct
+Friendship and chat support finding compatible partners.
+Define blocking/reporting and who handles conduct complaints. Peer messages or complaints must not directly change skill ratings.
+Assessment quality
+Approved referees observe and assess; Lâm controls corrections and dispute outcomes.
+Approve the pilot rubric, evidence requirements and boundary-change review. Do not reuse pickleball scores for badminton.
+Live readiness
+One venue, a website and a one-to-two-week trial.
+Demonstrate no overselling, no player self-editing of verified ratings, correct partial refunds and reliable payment reconciliation before normal live use. Record defects and any controlled manual exception.
+Role accounts
+TK.owner, TK.admin and TK.manager are separate role accounts.
+Verify the named operator, least required permissions and blocked self-approval across accounts.
+Counter orders and stock
+Staff handles sales, supply movements and reconciliation.
+Test distinct payment/delivery states, no overselling, correct use/return balances and Manager approval of adjustments.
+Technical handover
+Đức supports the venue first; administration is handed over later.
+Create the incoming operator’s own System Admin account, verify it, revoke former access and retain the audit history.
+This checklist distinguishes remaining implementation choices from the confirmed product requirements. Decisions reached during preparation should be added to the Change Log and reflected in later requirements documents. The feature scope in Section V remains the baseline for any proposed extension.
+Sources and Evidence Notes
+The main report follows the organisation and terminology of the supplied “Report 1 – Project Introduction” template. The original examples have been replaced with project-specific content; the table of contents has been aligned with the actual headings. Administrative fields intentionally remain blank for the author.
+[S1] TK Sport requirements and operational information
+Source: the project initiator’s statements in the requirements discussion, including information obtained through direct discussions with Lâm, TK Sport’s manager. This is the source for the venue address, community size, courts/referees, time slots, ticket price, current Zalo workflow, reported mismatches, approved product decisions and trial arrangements.
+[S2] Firsthand Alobo experience
+Source: the project initiator’s direct use of Alobo and comparison with the Zalo-based workflow. Experience-based labels and self-selection are described only for the social flow examined. The comparison is attributed to firsthand experience.
+[S3] Alobo official product description
+ALOBO — sports-venue booking and management platform, https://www.alobo.vn/. Accessed 13 September 2026. Used to support the description of booking, social ticketing and automated payment as product capabilities. It is not used to infer the absence of every possible skill-assessment feature.
+[S4] BWF coaching reference
+Badminton World Federation, Coach Education — Level 1, https://development.bwfbadminton.com/coaches/level-1. Referenced for its broad technical, tactical and physical coaching categories, as described in the official page summary available on 13 September 2026. It does not supply or validate TK Sport’s 0–100 score, five bands, weights, review triggers or weekly schedule; those are explicit project design proposals.
+[S5] Approved scope and role decisions — 23 September 2026
+Project discussion confirming badminton and pickleball, daily player volume, Owner/Manager/System Admin separation, combined Staff duties, separate social and goods orders, and TK.<role> account names. Trần Minh Đức represents initial System Admin support; Lâm makes rating-review decisions as Manager. These approved additions are not presented as measurements of existing retail or stock problems.

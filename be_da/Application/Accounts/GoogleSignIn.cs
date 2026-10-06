@@ -1,0 +1,28 @@
+using System.Net.Mail;
+using be_da.Application.Abstractions;
+using be_da.Domain.Entities;
+
+namespace be_da.Application.Accounts;
+
+public sealed class SignInRejectedException(string code) : Exception(code)
+{
+    public string Code { get; } = code;
+}
+
+public sealed class GoogleSignIn(IAccountStore accounts)
+{
+    // UC-01/02/49, FR-01.3, BR-47: only trusted provider data reaches this boundary.
+    public async Task<Account> ExecuteAsync(string? subject, string? email, string? name,
+        bool emailVerified, CancellationToken cancellationToken)
+    {
+        if (!emailVerified || string.IsNullOrWhiteSpace(subject) || subject.Length > 255
+            || string.IsNullOrWhiteSpace(email) || email.Length > 320
+            || !MailAddress.TryCreate(email, out var parsed) || parsed.Address != email
+            || string.IsNullOrWhiteSpace(name) || name.Trim().Length > 255)
+            throw new SignInRejectedException("invalid_google_identity");
+
+        var account = await accounts.FindOrRegisterGoogleAsync(subject, email.Trim(), name.Trim(), cancellationToken);
+        if (!account.CanSignIn) throw new SignInRejectedException("account_unavailable");
+        return account;
+    }
+}

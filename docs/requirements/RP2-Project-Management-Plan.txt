@@ -1,0 +1,1722 @@
+
+CAPSTONE PROJECT REPORT
+TK SPORT COMMUNITY
+Report 2Project Management Plan
+Project code: TKSC  |  Group: G138
+– Hanoi –
+Table of Contents
+Table of Contents2
+Change Log3
+I. Project Overview4
+1. Scope and Purpose4
+2. Assumptions and Constraints6
+3. Cost and Time Estimates7
+Week 1 — 21–27 September8
+Week 2 — 28 September–04 October9
+Final review — 05 October11
+Added work for the approved role, sales and stock scope15
+4. Capacity Planning17
+5. Project Objectives17
+6. Risks and Mitigations18
+II. Management Approach19
+1. Development Process19
+2. Quality Management21
+3. Training and Guidance Plan22
+4. Responsibility Assignments23
+Product role accounts and support arrangement24
+5. Project Communications27
+6. Configuration Management29
+6.1. Document Management29
+6.2. Source Code Management30
+6.3. Tools and Infrastructure30
+6.4. Role-account configuration and technical handover30
+
+Change Log
+Date
+TypeA / M / D
+Changed by
+Change Description
+17/09/26
+M
+
+Expanded the RACI matrix; updated Sections 6.1 and 6.2 and the tools table in Section 6.3.
+21/09/26
+M
+
+Detailed 13-week WBS and 8-hour person-day estimates; updated capacity totals, Iterative Model and Project Communications.
+23/09/2026
+M
+
+Approved roles and TK.<role> accounts; Manager rating-review authority; Staff counter sales, stock and reconciliation; initial System Admin support by Trần Minh Đức. Reconciled the 55-task document plan and added explicit scope-change effort estimates. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+A: Added.  M: Modified.  D: Deleted.
+I. Project Overview
+1. Scope and Purpose 
+TK Sport Community (TKSC) is a website developed by group G138 for TK Sport. It manages badminton and pickleball social sessions, separate counter sales, session supplies and reconciliation. Both sports share a workflow but retain separate assessment records.
+TK Sport has about 20–30 participants each day. The venue operates from Monday to Sunday in three time slots: 16:00–18:00, 18:00–20:00, and 20:00–22:00. Each slot uses two courts with two assigned referees. The courts may serve different skill groups.
+The project aims to reduce skill mismatches and manual management tasks. Players receive suggestions for sessions that match their skill level. Organizers track profiles, registrations, and payments in one system.
+This report plans FE-01–FE-18 in Report 1. It distinguishes project-team responsibilities from the venue roles. Trần Minh Đức is the team leader and provides initial System Admin support; Lâm operates as Manager. The court owner uses the Owner role.
+Feature Scope
+Feature Group
+Work Included
+Reference
+Accounts and profiles
+Separate Owner, Manager, System Admin, Staff, Referee and Player accounts. Retain personal sport profiles and role-change history.
+FE-01–FE-02
+Skill assessment
+Use an initial survey, on-court assessments, progress tracking, and reassessment requests. Assessments are linked to the sport played.
+FE-03–FE-05
+Social schedule and entry rules
+Create sessions by date, time, court, and sport. Suggest suitable sessions. Block players below or above the skill range unless a referee approves an exception.
+FE-06–FE-08
+Registration and payment
+Allow individual registration or invitations to eligible friends. Support payment for friends, separate payments, automatic bank-transfer confirmation, and tickets affected by a rating change.
+FE-09–FE-11
+Player connections
+View profiles within the website, add friends, send messages, see other participants, and choose preferred partners.
+FE-12
+Operations tracking
+Track participants, assessments, payments, refunds, and data for the trial report.
+FE-13
+Owner policies
+Approve business policies/prices and Manager appointments; view recorded business summaries.
+FE-14
+Counter sales
+Create goods-only sales orders and track payment separately from handover.
+FE-15
+Stock and supplies
+Record receipts, allocations, consumption, unused returns, counts and replenishment requests.
+FE-16
+Reconciliation and approvals
+Staff prepares discrepancies and shift records; Manager/Owner approves business exceptions.
+FE-17
+Technical support and handover
+Approved technical access, incident handling, safe retries and later transfer to a new named administrator.
+FE-18
+
+The release is a website for one operator. Whole-court rental, native mobile apps, a multi-operator marketplace, AI/video scoring, professional competitions, full accounting/payroll and delivery e-commerce are outside scope. Referees arrange games. Staff performs counter sales, stock and financial tasks; there is no separate Receptionist or Finance Staff role.
+2. Assumptions and Constraints
+The plan is based on the process provided by TK Sport and the participation of Lâm and the referee team in the trial.
+No.
+Description
+Area
+
+Planning Basis
+
+1
+Lâm provides business requirements, manages operations, and reviews trial results with the referee team.
+Business process
+2
+Players complete a survey to receive a provisional level. Referees observe them during sessions to adjust and confirm it.
+Assessment
+3
+Badminton and pickleball use the same social-session process. Booked sessions and assessment records are linked to the sport.
+Product
+
+Constraints
+
+1
+Run a 1–2-week trial at TK Sport. Trần Minh Đức supports Lâm and the referees during operations.
+Trial
+2
+Each time slot uses two courts with two referees. Each court allows up to eight participants.
+Capacity
+3
+Players pay by bank transfer, and the website confirms payment automatically. A ticket is confirmed only when registration and payment conditions are met.
+Payment
+4
+Players cannot edit confirmed scores. Detailed comments are only available to the referees and Manager.
+Access rights
+5
+After a rating change, refund only future tickets that no longer match the player’s level. Refund the original payer and keep other valid tickets.
+Refunds
+6
+One role per named account. Use TK.owner, TK.admin and TK.manager; additional same-role users use unique suffixes.
+Account model
+7
+Manager decides disputed ratings after referee review. System Admin cannot decide complaints or edit scores.
+Authority
+8
+Social Booking Orders contain only named players’ participation charges. Sales Orders contain goods and are paid separately.
+Order separation
+
+3. Cost and Time Estimates
+The project runs for 13 weeks, from 10 September to 9 December 2026. Week 1 is 10–16 September; each project week is a seven-day block from that start date. The work calendar uses Monday to Friday, with 8 hours per person-day (pd).
+The five-member team has 325 person-days (2,600 hours) of gross capacity. This revision replaces the old 54 person-days of requirements/design packages with the 55-task documentation plan at 42.5 person-days. The 6 person-days for the technical prototype and initial test plan remain separate. Added scope is estimated at 30 person-days. Revised planned effort is 278.5 person-days (2,228 hours), leaving 46.5 person-days (372 hours) for routine coordination and unplanned work.
+These are planning estimates, not actual hours or a completion claim. The arithmetic is 260 - 54 + 42.5 + 30 = 278.5 person-days. Work-package totals and their detailed tasks are never added twice. The original 13-week end date stays 9 December 2026; the reduced allowance and each member’s workload must be reviewed before committing development work.
+Schedule and effort summary
+Stage / work package
+Weeks
+Start
+Due
+Effort (pd)
+1. Project initiation
+W1
+10 Sep
+16 Sep
+20
+2–3. Report 2–4 documentation plan
+21 Sep–05 Oct
+21 Sep
+05 Oct
+42.5
+3.4–3.5 Technical prototype and initial test plan
+W4
+06 Oct
+07 Oct
+6
+4.1. Iteration 1 — existing scope
+W5–W6
+08 Oct
+21 Oct
+40
+4.2. Iteration 2 — existing scope
+W7–W8
+22 Oct
+04 Nov
+40
+4.3. Iteration 3 — existing scope
+W9–W10
+05 Nov
+18 Nov
+40
+5.1. System tests and preparation
+W11
+19 Nov
+25 Nov
+20
+5.2. TK Sport trial
+W12–W13
+26 Nov
+09 Dec
+28
+6. Closure (overlaps trial)
+W12–W13
+26 Nov
+09 Dec
+12
+EX. Approved role/sales/stock scope — added estimate
+Across stages
+23 Sep
+09 Dec
+30
+Total planned work
+13 weeks
+10 Sep
+09 Dec
+278.5
+
+The two-week trial is planned for 26 November–9 December. Report 7 and the presentation are prepared during the trial, then updated with final feedback. Closure overlaps the trial and does not add a fourteenth week.
+Detailed work packages
+Stage 1: Project Initiation (W1)
+10 Sep–16 Sep  |  20 pds
+ID
+Work Package
+Effort(pds)
+Start
+Due
+1.1
+Prepare interview questions, stakeholder roles and the project task list.
+2
+10 Sep
+11 Sep
+1.2
+Review the current Zalo workflow with Lâm and the referees.
+4
+10 Sep
+14 Sep
+1.3
+Record skill-mismatch and payment issues; compare the Alobo user flow.
+3
+11 Sep
+15 Sep
+1.4
+Define the two-sport scope, FE-01–FE-18 and exclusions.
+4
+14 Sep
+16 Sep
+1.5
+Write and review Report 1: background, proposed solution and scope.
+5
+14 Sep
+16 Sep
+1.6
+Set up shared document folders, the Git repository and work records.
+2
+15 Sep
+16 Sep
+Stages 2–3: Documentation plan — complete Reports 2–4 by 05 October
+21 Sep–05 Oct | 55 tasks | 42.5 person-days (340 hours). The two full weeks have 25 tasks each; 05 October has five final-review tasks. This replaces, rather than adds to, the old WBS 2.1–2.10, 3.1–3.3 and 3.6 estimates.
+Week 1 — 21–27 September
+Plan ID / Jira
+Document task
+Owner
+Due
+Hours
+S1-D01TSC-27
+Set the Report 2–4 scope and completion checklist
+DUC
+21 Sep
+6
+S1-D02TSC-20
+Review provisional levels and assessment decision rules
+DUC
+22 Sep
+6
+S1-D03TSC-22
+Confirm payer and affected-ticket refund requirements
+DUC
+23 Sep
+6
+S1-D04TSC-26
+Check the SRS outline, use-case scope and exclusions
+DUC
+24 Sep
+6
+S1-D05TSC-28
+Review week 1 documents and record venue decisions
+DUC
+25 Sep
+8
+S1-D06TSC-19
+Write actor responsibilities and use-case ownership
+DUNG
+21 Sep
+6
+S1-D07TSC-21
+Specify individual registration and place-hold states
+DUNG
+22 Sep
+6
+S1-D08TSC-86
+Specify friend invitations, consent and separate payment
+DUNG
+23 Sep
+6
+S1-D09TSC-23
+Refine the context diagram and business flows BF-01–BF-03
+DUNG
+24 Sep
+6
+S1-D10TSC-87
+Complete booking and payment use-case specifications
+DUNG
+25 Sep
+8
+S1-D11TSC-24
+Check business entities, identities and lifecycle states
+NHAT
+21 Sep
+6
+S1-D12TSC-88
+Specify assessment versioning and publication constraints
+NHAT
+22 Sep
+6
+S1-D13TSC-89
+Specify bank-event matching and duplicate handling
+NHAT
+23 Sep
+6
+S1-D14TSC-90
+Refine the conceptual ERD and data business rules
+NHAT
+24 Sep
+8
+S1-D15TSC-29
+Draft the software architecture and component responsibilities
+NHAT
+25 Sep
+6
+S1-D16TSC-91
+Map role permissions to menus and visible fields
+LAM
+21 Sep
+6
+S1-D17TSC-25
+Refine account, profile and sport-survey wireframes
+LAM
+22 Sep
+6
+S1-D18TSC-92
+Refine social-calendar and session-detail wireframes
+LAM
+23 Sep
+6
+S1-D19TSC-93
+Refine invitation, payment and ticket wireframes
+LAM
+24 Sep
+8
+S1-D20TSC-31
+Draft referee and admin navigation and screen states
+LAM
+25 Sep
+6
+S1-D21TSC-94
+Review role restrictions and private-data acceptance cases
+QUAN
+21 Sep
+6
+S1-D22TSC-95
+Review survey and assessment boundary cases
+QUAN
+22 Sep
+6
+S1-D23TSC-96
+Review registration, capacity and invitation edge cases
+QUAN
+23 Sep
+6
+S1-D24TSC-97
+Review payment and partial-refund acceptance examples
+QUAN
+24 Sep
+6
+S1-D25TSC-98
+Refine non-functional requirements and verification methods
+QUAN
+25 Sep
+8
+
+Week 2 — 28 September–04 October
+Plan ID / Jira
+Document task
+Owner
+Due
+Hours
+S1-D26TSC-99
+Update Report 2 estimates, dates, RACI and weekly assignments
+DUC
+28 Sep
+6
+S1-D27TSC-100
+Close venue-rule questions and update the decision log
+DUC
+29 Sep
+6
+S1-D28TSC-101
+Review the SRS baseline and requirement traceability
+DUC
+30 Sep
+6
+S1-D29TSC-34
+Check Report 3 to Report 4 design coverage
+DUC
+01 Oct
+6
+S1-D30TSC-102
+Review the assembled Report 4 and assign final corrections
+DUC
+02 Oct
+8
+S1-D31TSC-103
+Refine business flows BF-04–BF-06 and fix cross-flow gaps
+DUNG
+28 Sep
+6
+S1-D32TSC-104
+Draw detailed design set 1: booking class diagram
+DUNG
+29 Sep
+6
+S1-D33TSC-105
+Draw detailed design set 1: booking sequence diagrams
+DUNG
+30 Sep
+8
+S1-D34TSC-106
+Document transfer API and background-job design
+DUNG
+01 Oct
+6
+S1-D35TSC-107
+Assemble Report 3 and resolve wording and reference comments
+DUNG
+02 Oct
+6
+S1-D36TSC-30
+Design account, sport-profile and assessment tables
+NHAT
+28 Sep
+6
+S1-D37TSC-108
+Design court, session, invitation and ticket tables
+NHAT
+29 Sep
+6
+S1-D38TSC-109
+Design money, community and change-history tables
+NHAT
+30 Sep
+8
+S1-D39TSC-110
+Draw detailed design set 2: bank-confirmation class diagram
+NHAT
+01 Oct
+6
+S1-D40TSC-111
+Draw detailed design set 2: bank-confirmation sequences
+NHAT
+02 Oct
+6
+S1-D41TSC-112
+Complete the screen map and community/partner UI states
+LAM
+28 Sep
+6
+S1-D42TSC-113
+Complete package diagrams and naming conventions
+LAM
+29 Sep
+6
+S1-D43TSC-114
+Draw detailed design set 3: assessment/refund class diagram
+LAM
+30 Sep
+6
+S1-D44TSC-115
+Draw detailed design set 3: publication and refund sequences
+LAM
+01 Oct
+8
+S1-D45TSC-116
+Assemble Report 4 diagrams, screen links and document layout
+LAM
+02 Oct
+6
+S1-D46TSC-117
+Draft authentication and role/record authorization design
+QUAN
+28 Sep
+6
+S1-D47TSC-118
+Draft performance, query and consistency safeguards
+QUAN
+29 Sep
+6
+S1-D48TSC-119
+Review the three class/sequence design sets against the SRS
+QUAN
+02 Oct
+8
+S1-D49TSC-120
+Draft private-data, change-history and recovery design
+QUAN
+01 Oct
+6
+S1-D50TSC-121
+Complete the SRS quality check and SDS review checklist
+QUAN
+30 Sep
+6
+
+Final review — 05 October
+Plan ID / Jira
+Document task
+Owner
+Due
+Hours
+S1-D51TSC-122
+Approve the Report 2–4 package and hand off to development
+DUC
+05 Oct
+4
+S1-D52TSC-123
+Close final SRS wording and cross-report reference issues
+DUNG
+05 Oct
+4
+S1-D53TSC-124
+Close final database and server-design review issues
+NHAT
+05 Oct
+4
+S1-D54TSC-125
+Close final interface, diagram and SDS format issues
+LAM
+05 Oct
+4
+S1-D55TSC-126
+Run the final document checklist and report unresolved blockers
+QUAN
+05 Oct
+4
+
+DUC: Trần Minh Đức (leader); DUNG: Lê Tuấn Dũng; NHAT: Lê Trọng Nhật; LAM: Nguyễn Văn Lâm; QUAN: Nguyễn Đức Quân. Each member has 68 planned hours in this documentation breakdown. These are task estimates; the added role/sales/stock review effort below is separate. Jira issue links identify existing work and are not an instruction to re-import tasks.
+Technical preparation after the documentation milestone
+06–07 Oct | 6 person-days. Report 4 is reviewed by 05 October; a later prototype finding is recorded as a design change rather than an unrecorded extension of that milestone.
+ID
+Work package
+Effort (pd)
+Start
+Due
+3.4
+Validate the place-hold and verified-transfer technical prototype; record any required design change.
+4
+06 Oct
+07 Oct
+3.5
+Prepare Report 5 test strategy, data and core acceptance cases.
+2
+06 Oct
+07 Oct
+
+Stage 4: Iteration 1 — Profiles, Assessment and Schedule (W5–W6)
+08 Oct–21 Oct  |  40 pds
+ID
+Work Package
+Effort(pds)
+Start
+Due
+4.1.1
+Review detailed requirements and update the Iteration 1 design.
+3
+08 Oct
+12 Oct
+4.1.2
+Build account access and single-role account permissions (FE-01).
+3
+08 Oct
+13 Oct
+4.1.3
+Build separate sport profiles and skill history (FE-02).
+3
+09 Oct
+14 Oct
+4.1.4
+Build sport surveys and provisional-level calculation (FE-03).
+3
+12 Oct
+16 Oct
+4.1.5
+Build on-court assessment, staff notes and result publication (FE-04).
+4
+12 Oct
+16 Oct
+4.1.6
+Build rating-review requests, decisions and correction history (FE-05).
+3
+13 Oct
+19 Oct
+4.1.7
+Build social sessions, court allocation and referee conflict checks (FE-06).
+4
+13 Oct
+19 Oct
+4.1.8
+Connect the profile, assessment and calendar screens to their APIs.
+2
+14 Oct
+19 Oct
+4.1.9
+Write and run unit tests for roles, scores and session validation.
+4
+12 Oct
+20 Oct
+4.1.10
+Run integration tests and fix the Iteration 1 defects.
+6
+15 Oct
+21 Oct
+4.1.11
+Update Reports 3, 4 and 5 with completed functions and test results.
+3
+19 Oct
+21 Oct
+4.1.12
+Review the working flow and package software version 1.
+2
+20 Oct
+21 Oct
+Stage 4: Iteration 2 — Registration and Payment (W7–W8)
+22 Oct–04 Nov  |  40 pds
+ID
+Work Package
+Effort(pds)
+Start
+Due
+4.2.1
+Refine registration/payment requirements and update the design.
+3
+22 Oct
+26 Oct
+4.2.2
+Build date/sport search and suitable-session suggestions (FE-07).
+3
+22 Oct
+27 Oct
+4.2.3
+Build two-way skill, time-conflict and capacity checks (FE-08).
+3
+22 Oct
+28 Oct
+4.2.4
+Build skill-exception requests and referee decisions (FE-08).
+2
+23 Oct
+28 Oct
+4.2.5
+Build friend requests and the eligible-friend checklist (FE-12).
+3
+23 Oct
+29 Oct
+4.2.6
+Build invitations, consent, individual holds and expiry processing (FE-09).
+4
+26 Oct
+30 Oct
+4.2.7
+Build payment orders, payment for friends and ticket allocations (FE-10).
+4
+26 Oct
+02 Nov
+4.2.8
+Connect automatic transfer confirmation and repeat-safe event processing.
+5
+26 Oct
+02 Nov
+4.2.9
+Build ticket and payment-status views for payer and participants.
+2
+28 Oct
+02 Nov
+4.2.10
+Run unit tests for invitations, expiry and payment allocation.
+3
+27 Oct
+03 Nov
+4.2.11
+Test simultaneous bookings and transfer exceptions; fix defects.
+4
+29 Oct
+04 Nov
+4.2.12
+Update Reports 3–5, review the flow and package software version 2.
+4
+02 Nov
+04 Nov
+Stage 4: Iteration 3 — Refunds, Community and Operations (W9–W10)
+05 Nov–18 Nov  |  40 pds
+ID
+Work Package
+Effort(pds)
+Start
+Due
+4.3.1
+Refine refund/community requirements and update the design.
+3
+05 Nov
+09 Nov
+4.3.2
+Build future-ticket checks after published rating changes (FE-11).
+3
+05 Nov
+10 Nov
+4.3.3
+Build original-payer refunds, status tracking and repayment evidence.
+4
+05 Nov
+12 Nov
+4.3.4
+Suggest suitable sessions near an affected ticket’s original time.
+2
+06 Nov
+11 Nov
+4.3.5
+Build private friend messages and sent/failed states (FE-12).
+5
+06 Nov
+13 Nov
+4.3.6
+Build partner requests and the referee’s preference view (FE-12).
+3
+09 Nov
+13 Nov
+4.3.7
+Build assigned rosters and one-time attendance recording (FE-13).
+3
+09 Nov
+13 Nov
+4.3.8
+Build Manager and permitted Staff views for sessions and money states (FE-13).
+3
+10 Nov
+16 Nov
+4.3.9
+Build session-linked trial feedback and summary records (FE-13).
+2
+11 Nov
+16 Nov
+4.3.10
+Run unit tests for refunds, attendance and community permissions.
+3
+10 Nov
+17 Nov
+4.3.11
+Run end-to-end and regression tests; fix Iteration 3 defects.
+5
+12 Nov
+18 Nov
+4.3.12
+Update Reports 3–5 and package software version 3.
+4
+16 Nov
+18 Nov
+Stage 5: System Testing and Trial Preparation (W11)
+19 Nov–25 Nov  |  20 pds
+ID
+Work Package
+Effort(pds)
+Start
+Due
+5.1.1
+Prepare the full system-test dataset and acceptance script.
+3
+19 Nov
+20 Nov
+5.1.2
+Test both sports, access rights and private data boundaries.
+3
+19 Nov
+23 Nov
+5.1.3
+Test last-place conflicts, repeated transfers and partial refunds.
+3
+19 Nov
+24 Nov
+5.1.4
+Fix blocking defects and run regression tests; update Report 5.
+5
+20 Nov
+25 Nov
+5.1.5
+Prepare Report 6: installation, player and staff user guides.
+3
+19 Nov
+25 Nov
+5.1.6
+Deploy the trial version, guide staff and complete readiness checks.
+3
+24 Nov
+25 Nov
+Stage 5: On-Site Trial at TK Sport (W12–W13)
+26 Nov–09 Dec  |  28 pds
+ID
+Work Package
+Effort(pds)
+Start
+Due
+5.2.1
+Support Lâm, referees and players; record trial sessions and issues.
+12
+26 Nov
+09 Dec
+5.2.2
+Fix trial defects and retest the affected workflows.
+6
+26 Nov
+08 Dec
+5.2.3
+Review skill-mismatch and manual-work feedback with TK Sport.
+4
+26 Nov
+09 Dec
+5.2.4
+Update Report 5 results and Report 6 guides from actual trial use.
+4
+26 Nov
+08 Dec
+5.2.5
+Package the final software, source code and handover documents.
+2
+08 Dec
+09 Dec
+Stage 6: Project Closure (overlaps the trial) (W12–W13)
+26 Nov–09 Dec  |  12 pds
+ID
+Work Package
+Effort(pds)
+Start
+Due
+6.1
+Draft Report 7 during the trial; add final results and feedback.
+5
+26 Nov
+09 Dec
+6.2
+Check requirement links and consistency across Reports 1–7.
+2
+30 Nov
+09 Dec
+6.3
+Prepare the presentation and the main demo scenarios.
+3
+30 Nov
+08 Dec
+6.4
+Rehearse the demo, review the final package and hand it over.
+2
+08 Dec
+09 Dec
+Added work for the approved role, sales and stock scope
+EX-01–EX-12 are revised planning estimates for the added scope. They supplement the retained core work and the documentation replan. No new staff count, cash policy, product price or refund deadline is assumed. Preparing the technical handover does not mean it must occur during the trial.
+ID
+Added work package
+Effort (pd)
+Start
+Due
+EX-01
+Update role boundaries, account naming and the Manager rating-review rule.
+2
+23 Sep
+25 Sep
+EX-02
+Extend Reports 1–4 for separate orders, stock, reconciliation, approval and handover.
+2
+28 Sep
+30 Sep
+EX-03
+Build one-role account checks, person links and approved technical access.
+3
+08 Oct
+14 Oct
+EX-04
+Build Owner policy/price approvals and Manager/Staff access decisions.
+3
+15 Oct
+21 Oct
+EX-05
+Build counter sales and payment-reference separation from social orders.
+3
+22 Oct
+28 Oct
+EX-06
+Build stock receipt, availability and session-allocation records.
+3
+29 Oct
+04 Nov
+EX-07
+Build usage, returns, counts and approved stock adjustments.
+3
+05 Nov
+11 Nov
+EX-08
+Build goods handover, sales-return records and shift reconciliation.
+3
+12 Nov
+18 Nov
+EX-09
+Test separate role accounts, self-approval blocks and independent order refunds.
+2
+19 Nov
+23 Nov
+EX-10
+Test last-item stock conflicts, repeated events and reconciliation corrections.
+2
+23 Nov
+25 Nov
+EX-11
+Support the added counter-sale and supply scenarios during the trial.
+2
+26 Nov
+02 Dec
+EX-12
+Prepare role guides and the later System Admin handover checklist; verify the support setup.
+2
+03 Dec
+09 Dec
+
+Added estimate: 30 person-days = 240 hours. Distribution: documentation 4 pd; Iterations 1, 2 and 3 each 6 pd; system testing 4 pd; trial support/guides 4 pd. Revised iteration effort is 46 pd per two-week iteration. Core plus added system testing is 24 pd in one week, so very little local contingency remains.
+Revised total: 278.5 person-days × 8 hours = 2,228 hours. The 55 documentation tasks replace their former work packages. EX items are added once. Owner, Lâm and venue employees are external participants and are not counted as members of the five-person development team.
+4. Capacity Planning
+Group G138 has five members who cover project management, business analysis, development, and testing. Nghiem Thi Lan Phuong supervises the group. Lâm and the referee team represent TK Sport.
+Item
+Value
+Team members
+5 people
+Working hours per person per week
+40 hours (8 × 5)
+Total team working hours per week
+200 hours (5 × 40)
+Total project duration
+13 weeks: 10 Sep–09 Dec 2026
+Total team capacity
+2,600 hours = 325 pds
+Routine meetings, coordination and unplanned work
+372 hours = 46.5 person-days (about 14.3%)
+Planned work-package effort
+2,228 hours = 278.5 person-days
+Trial duration at TK Sport
+26 Nov–09 Dec 2026 (2 weeks)
+
+5. Project Objectives
+The project aims to reduce social skill mismatches and manual booking/payment work. The added scope provides traceable counter-sale and supply records with clear role decisions. During the trial, the team records actual results using the measures below; a business summary is not a full venue-profit statement.
+No.
+Metric
+Unit
+Plan
+Actual
+How to Record
+1
+Effort used
+Person-days
+278.5
+
+Section I.3 revision; record actual effort separately for each task and EX work package.
+2
+Document review defects
+Defects
+
+
+Record by document and version.
+3
+Unit test defects
+Defects
+
+
+Record by feature and test version.
+4
+Integration test defects
+Defects
+
+
+Record by workflow across features.
+5
+System test defects
+Defects
+
+
+Record in the system test report.
+6
+On-site trial defects
+Defects
+
+
+Record reports from Lâm, referees, and players.
+7
+On-time deliverables
+%
+
+
+On-time items / total items due.
+8
+Completed requirements
+%
+
+
+Requirements met / total requirements in scope.
+9
+Skill mismatch cases
+Cases
+
+
+Record by session and referee review result.
+10
+Manual registration and payment tasks
+Times
+
+
+Record cases handled outside the website.
+11
+Payment matching
+Transactions
+
+
+Match transactions to payers and their tickets.
+12
+Separate order reconciliation
+Cases
+
+
+Trace social and goods payments independently; record unmatched amounts.
+13
+Stock movement accuracy
+Cases
+
+
+Compare receipts, allocations, use, returns, sales and count decisions.
+14
+Role and person-boundary defects
+Defects
+
+
+Attempt forbidden System Admin rating actions and cross-account self-approval.
+6. Risks and Mitigations
+The group tracks five risks directly related to the project scope and TK Sport’s operating processes.
+ID
+Risk
+Chance
+Impact
+Mitigation
+R01
+Added role, sales and stock work uses the original capacity allowance.
+
+Reduced contingency can delay core flows or final verification.
+Track EX estimates separately, review member workload each week and keep the 05 October document milestone. Do not hide scope growth inside old effort totals.
+R02
+Referees give inconsistent scores, or new players overstate their skill level.
+
+Players are placed in unsuitable sessions.
+Agree on criteria for each sport. Mark provisional scores and compare different assessments. Lâm and the referees handle complaints.
+R03
+A place is confirmed twice, or entry rules are checked incorrectly in group registration.
+
+Sessions exceed capacity or accept players who do not meet the rules.
+Recheck each player’s level, available places, and status at confirmation. Test several registration requests at the same time.
+R04
+A payment, sales handover, refund or stock movement is duplicated or linked to the wrong record.
+
+Ticket status, amounts, or refund recipients are incorrect.
+Test source-event uniqueness, separate social/sales references, repeated delivery, last-item conflicts and independent physical returns/refunds. Keep unresolved amounts visible.
+R05
+Users view or edit data beyond their access rights.
+
+Internal comments are exposed, or scores, tickets, and payments are changed incorrectly.
+Test one role per account and the underlying person link. Block System Admin rating decisions and self-approval; keep technical, financial and assessment histories separately controlled.
+
+II. Management Approach
+1. Development Process
+The team uses the Iterative Model. Initial planning sets the scope, team roles and 13-week schedule. Development then repeats a short cycle: Planning → Requirements → Analysis & Design → Implementation → Testing → Evaluation.
+
+Figure 2.1. Iterative Model — redrawn from the supplied reference.
+In Planning and Requirements, the team selects the next tasks and checks the business rules. Analysis & Design updates data, screens and interfaces. Implementation builds the selected functions. Testing checks the new functions and related existing flows. Evaluation reviews the working version and records feedback for the next cycle.
+Each iteration produces a usable software version, updated Reports 3–5 and test results. The Development output in the figure represents the growing product. After Iteration 3, the team completes system testing and the TK Sport trial before final handover.
+Three planned iterations
+Iteration / Dates
+Focus
+Required Result
+1W5–W608–21 Oct
+Accounts, profiles, assessment, social schedule, separate roles and policy approvals.
+Manager controls rating disputes and social operations. System Admin supports technical access only. Owner policies and role accounts are separated.
+2W7–W822 Oct–04 Nov
+Session booking, invitations, bank transfer, separate counter orders and initial stock records.
+Each friend has their own state. Each payment belongs to the correct social or sales order. Stock receipt and allocations are traceable.
+3W9–W1005–18 Nov
+Refunds, community, sales handover, stock counts and reconciliation.
+Rating refunds do not change sales orders. Staff records stock/financial cases and Manager approves exceptions. Trial records identify source events.
+Each change request records the reason, affected requirements and effort. Trần Minh Đức coordinates the project decision. Lâm checks venue operations as Manager; the court owner checks business policies. Technical support authority does not replace either business role.
+2. Quality Management
+Testing follows the features and business rules in Report 1. Each defect record includes steps to reproduce it, the expected result, the actual result, and its status. After a fix, the group retests the defect and related workflows.
+Activity
+Checks
+Output
+Requirements review
+Check scope, access rights, skill rules, registration, and payment against TK Sport’s business process.
+Requirements and changes recorded by version.
+Design review
+Check links between players, sports, sessions, tickets, invitations, and transactions.
+Designs support the stated workflows.
+Unit testing
+Test score calculations, entry checks, status updates, and payment allocation separately.
+Test results by feature.
+Integration testing
+Test profiles to registration, transactions to tickets, and rating changes to refunds.
+Test results and integration defect list.
+System testing
+Check access rights, capacity, group registration, and simultaneous updates.
+System test report.
+On-site trial at TK Sport
+Lâm and referees use the website for 1–2 weeks. Trần Minh Đức helps log and fix defects and collect feedback.
+Operations report and user feedback.
+
+Workflows to Check Before the Trial
+Workflow
+Expected Result
+Skill levels and assessment rights
+Players cannot edit confirmed scores. Only authorized assessors can score players. Sessions and scores are checked for the sport played.
+Registration limits
+Block players below and above the skill range. Do not exceed capacity. Each exception has an approver and applies to the correct player and session.
+Registration with friends
+Friends must accept invitations. Expired unpaid places are handled separately without cancelling the group’s valid tickets.
+Automatic payment confirmation
+Match the transaction to the correct order, payer, and amount. A repeated transaction notice must not create another ticket.
+Refunds after rating changes
+Affect only future tickets that no longer match the player’s level. Refund the correct amount to the original payer and keep unaffected tickets.
+Profiles and comments
+Members can view community information within the website. Detailed referee comments and payment data have restricted access.
+Technical versus business authority
+TK.admin cannot decide rating reviews, adjust a published score or approve business money/stock exceptions. TK.manager retains these permitted business actions.
+Counter sales
+Separate goods orders, references and payment/delivery states. No social-ticket surcharge or cross-order refund.
+Stock and adjustments
+No negative availability or duplicate stock movement; returning unused supplies does not consume them twice. The request originator cannot approve a correction.
+Technical handover
+The new operator uses a separate System Admin account; prior history keeps the previous operator. No shared credentials.
+
+3. Training and Guidance Plan
+Training focuses on the business process and the tasks needed at each stage.
+Topic
+Participants
+When
+Duration
+Social process, roles, and registration cases.
+Group G138; Lam.
+Before completing the detailed requirements.
+
+Assessment form, provisional scores, reassessment, and score-change history.
+BA, developers, and tester; Lam and referees.
+Before building the assessment feature.
+
+Group registration, payment for friends, bank-transfer confirmation, and refunds.
+Developers and tester; Lam.
+Before payment integration testing.
+
+Website operations and feedback recording.
+Lam and referees, with support from Tran Minh Duc.
+Before and during the 1–2-week trial.
+
+Counter sales, supplies, shift reconciliation and approvals.
+Staff; Lâm as Manager; Owner for policy decisions.
+Before sales/stock trial tasks.
+
+Role-account sign-in, technical support and handover.
+Trần Minh Đức; Lâm; designated Owner account.
+Before initial operation and again before later handover.
+
+4. Responsibility Assignments
+The RACI matrix assigns project work to the five team members. Product roles below describe use of the delivered website and do not replace the development-team roles. Trần Minh Đức remains team leader; additional technical support duties are performed through a separate System Admin account.
+Nghiem Thi Lan PhuongSupervisor
+Tran Minh DucTeam Leader / Business Analyst
+Le Tuan DungDeveloper
+Le Trong NhatBack-end Developer
+Nguyen Van LamFront-end Developer
+Nguyen Duc QuanTester
+Lâm represents TK Sport as Manager and retains final rating-review decisions after referee consultation. Owner is the court owner. Staff combines counter sales, stock and financial operations. Trần Minh Đức represents the project team as the initial System Admin and supports Lâm during operation. The later technical handover uses a separate account.
+Member / Stakeholder
+Main Responsibilities
+Nghiem Thi Lan Phuong
+Guide the group and review documents and project results.
+Tran Minh Duc
+Lead the project, collect requirements and coordinate reviews. Support Lâm through TK.admin during initial operation. Prepare the later technical handover; do not decide venue rating disputes.
+Le Tuan Dung
+Support dev team to build and fix bug.
+Le Trong Nhat
+Build server-side functions. Test and fix defects in assigned work.
+Nguyen Van Lam
+Build the interface and connect it to the system. Test and fix defects in assigned work.
+Nguyen Duc Quan
+Write test cases, record defects, retest fixes, and summarize results.
+Lâm and the referee team
+Confirm business requirements, operate the process, assess players, and report trial results.
+Owner — court owner
+Approve business policies/prices and Manager appointments; review recorded business summaries.
+Lâm — Manager
+Run social sessions, manage staff assignments and decide disputed ratings after referee review.
+Venue Staff
+Handle goods orders, stock movements, reconciliation and approved repayments. Do not approve their own adjustments.
+
+Product role accounts and support arrangement
+Role
+Base account
+Use
+Owner
+TK.owner
+Court owner. Approves business policies, prices and Manager appointments; reviews business results.
+Manager
+TK.manager
+Lâm. Runs the venue and makes the final rating-review decision after referee review.
+System Admin
+TK.admin
+Trần Minh Đức during initial support. Manages technical access, configuration and incidents. Does not decide ratings or business refunds.
+Staff
+TK.staff
+Assigned employee. Handles sales, stock movements, payment checks, approved refunds and shift reconciliation.
+Referee
+TK.referee
+Approved referee. Coordinates assigned sessions, checks in players, assesses skills and requests session supplies.
+Player
+TK.player
+Individual player. Uses personal sport profiles, social tickets, payments and community functions.
+
+Each account has one role and one named user. The base names follow TK.<role>. When a role has several users, add a unique suffix, such as TK.staff.01, TK.referee.02 or TK.player.001. A username never grants a role by itself. Guest has no account.
+Trần Minh Đức uses TK.admin to support Lâm during initial operation. Lâm uses TK.manager for venue work. At a later handover, create a separate System Admin account for Lâm within the TK.admin naming family, such as TK.admin.lam; keep TK.manager separate. Revoke or restrict the former support account and preserve its history. Do not pass Đức's personal account to another user.
+Manager is the only role that decides disputed-rating corrections after referee review. System Admin cannot change scores, decide rating complaints, approve business adjustments or mark unverified money as paid. Separate accounts belonging to the same person do not allow self-assessment or self-approval.
+RACI Responsibility Matrix
+R: Responsible for doing the work. A: Accountable for the final result. C: Consulted. I: Informed. A/R: Both responsible and accountable. Each task has one A and at least one R; A/R counts as both roles.
+DUC: Tran Minh Duc; QUAN: Nguyen Duc Quan; DUNG: Le Tuan Dung; NHAT: Le Trong Nhat; LAM: Nguyen Van Lam (a development team member, not Lâm, the manager of TK Sport).
+Work Package
+DUC
+QUAN
+DUNG
+NHAT
+LAM
+A. Planning and Report 1 - Project Introduction
+01. Plan the project and track progress
+A/R
+C
+R
+C
+C
+02. Report 1: Project overview
+A/R
+I
+R
+C
+C
+03. Report 1: Product background
+A
+C
+R
+I
+I
+04. Report 1: Existing solutions
+A
+C
+R
+C
+C
+05. Report 1: Proposed solution
+A/R
+C
+R
+C
+C
+06. Report 1: Scope and limitations
+A/R
+C
+R
+C
+C
+B. Report 2 - Project Management Plan
+07. Overview, scope, assumptions, and constraints
+A/R
+C
+R
+C
+C
+08. Effort, time, and deliverable estimates
+A/R
+C
+C
+C
+C
+09. Capacity planning and project objectives
+A/R
+C
+C
+C
+C
+10. Risks and mitigations
+A/R
+R
+C
+C
+C
+11. Development process
+A/R
+C
+R
+C
+C
+12. Quality management
+A
+R
+C
+C
+C
+13. Training and guidance plan
+A/R
+C
+R
+C
+C
+14. Responsibility assignments and RACI matrix
+A/R
+C
+C
+C
+C
+15. Project communication plan
+A/R
+I
+R
+I
+I
+16. Document management on Google Drive
+A
+C
+R
+I
+I
+17. Source code management with Git/GitHub
+A
+C
+I
+R
+R
+C. Report 3 - Software Requirements Specification (SRS)
+18. Requirements document overview
+A/R
+C
+R
+C
+C
+19. User requirements and roles
+A
+C
+R
+C
+C
+20. System function overview
+A
+C
+R
+C
+C
+21. Detailed functional requirements and business rules
+A
+C
+R
+C
+C
+22. Non-functional requirements
+A
+C
+R
+C
+C
+D. Report 4 - Software Design Specification (SDS) and Prototypes
+23. Overall system design
+A
+C
+C
+R
+R
+24. Database design
+A
+C
+C
+R
+C
+25. Detailed component and workflow design
+A
+C
+C
+R
+R
+26. User interface and experience design (UI/UX)
+A
+C
+R
+C
+R
+27. Build prototypes and validate main workflows
+A
+C
+C
+R
+R
+E. Development, Unit Testing, and Code Review
+28. Build the interface and front-end connections
+A
+C
+C
+C
+R
+29. Build the back-end and business logic
+A
+C
+C
+R
+C
+30. Integrate the front-end, back-end, and payment
+A
+C
+C
+R
+R
+31. Write and run back-end unit tests
+C
+C
+I
+A/R
+C
+32. Write and run front-end unit tests
+C
+C
+I
+C
+A/R
+33. Review back-end pull requests before merging
+A
+C
+I
+C
+R
+34. Review front-end pull requests before merging
+A
+C
+I
+R
+C
+F. Testing and Report 5 - Test Documentation
+35. Define the test scope
+A
+R
+C
+C
+C
+36. Develop the test strategy
+A
+R
+C
+C
+C
+37. Prepare the test plan
+A
+R
+C
+C
+C
+38. Write test cases and prepare test data
+A
+R
+C
+C
+C
+39. Run integration tests
+A
+R
+C
+C
+C
+40. Run system tests
+A
+R
+C
+C
+C
+41. Fix back-end defects found during testing
+A
+C
+C
+R
+I
+42. Fix front-end defects found during testing
+A
+C
+C
+I
+R
+43. Retest fixes and run regression tests
+A
+R
+C
+C
+C
+44. Prepare the test report
+A
+R
+C
+C
+C
+G. Deployment, Trial, and Report 6 - User Guides
+45. Deploy the website and run pre-trial checks
+A
+C
+I
+R
+R
+46. Support Lâm and referees during the TK Sport trial
+A/R
+R
+C
+C
+C
+47. Collect feedback and summarize trial results
+A/R
+R
+R
+C
+C
+48. Write installation and deployment guides
+A
+C
+C
+R
+R
+49. Write user and operation guides
+A
+C
+R
+C
+C
+50. Package the software, source code, and handover documents
+A
+C
+R
+R
+R
+H. Report 7 - Project Summary and Presentation
+51. Prepare the final project report
+A/R
+R
+R
+R
+R
+52. Prepare the presentation and demo script
+A/R
+C
+R
+C
+C
+53. Document separate roles, account names and authority boundaries
+A/R
+R
+R
+C
+C
+54. Build Owner policy and access-approval workflows
+A
+C
+R
+R
+C
+55. Build and verify separate sales orders and payments
+A
+R
+R
+R
+R
+56. Build stock, session supplies and adjustment controls
+A
+R
+R
+R
+C
+57. Build and test shift reconciliation and sales-return records
+A
+R
+R
+R
+C
+58. Prepare System Admin support, access review and handover
+A/R
+C
+C
+R
+C
+5. Project Communications
+The team uses daily, weekly and ad-hoc meetings to track progress and resolve issues. Decisions that affect scope, business rules or deadlines are recorded in the shared documents or task list.
+CommunicationItem
+Who / Target
+Purpose
+When /Frequency
+Type, Tool,Method(s)
+Daily Meeting
+Team members
+Quick check of progress, blockers and each member’s planned tasks.
+Daily, at the end of the day.
+Brief discussion or messages through Zalo or an online meeting.
+Weekly Meeting
+Team members and mentor
+Review weekly progress, discuss major issues, plan the next week and get feedback on the project.
+Weekly, at a time agreed by the team and mentor.
+Online (Google Meet or Zoom) or in person.
+School Meeting
+Members directly involved
+Resolve urgent blockers and make decisions on scope, priorities or technical work without waiting for the weekly meeting.
+When an issue arises; arrange within 24 hours. Duration: 15–25 minutes.
+Online meeting.
+Table 2.6. Project Communications
+Trần Minh Đức records decisions, owners and follow-up dates. Venue workflow questions go to Lâm as Manager. Business policy decisions go to Owner. Staff and referees report source records during the trial. System Admin support is recorded separately from business approvals.
+6. Configuration Management
+6.1. Document Management
+All project documents, including requirement specifications, design diagrams, user guides, and reports, are stored in one shared folder on Google Drive.
+Folder link: https://drive.google.com/drive/u/1/folders/17_DA3tB_rUZt2ujxMjiF7HlaCTvlNHN5
+All group members have view and edit access. Only approved team member accounts can access the folder. People outside the group cannot access it.
+Each update is recorded with its changes and version. The group uses the edit history to compare and restore versions when needed. This shared storage helps members work together, reduces the risk of losing data, and tracks changes throughout the project.
+The team leader prepares the version for review or submission. When business rules change, the BA updates the related documents and informs the developers and tester.
+Document
+Content Managed
+Report 1
+Project name, background, scope, and feature IDs.
+Report 2
+Plan, assignments, risks, and work tracking.
+Report 3
+Requirements, roles, rules, and business workflows.
+Report 4
+Data, interface, and system processing designs.
+Report 5
+Test plan, cases, defects, and results.
+Report 6
+Installation, user, and operation guides.
+Report 7
+Project results and trial feedback.
+
+The current scope decision and report versions use the same FE, UC and role names. The approved documentation milestone is 05 October 2026. A document update does not silently create or reassign Jira issues; work tracking must refer to the existing issue keys.
+6.2. Source Code Management
+The project source code is managed with Git and stored on GitHub. The group uses two types of branches:
+master branch: Contains stable code that is ready to deploy.
+feature branches: Each feature or bug fix is developed on a separate branch before it is merged into master. The branch name briefly describes the task, for example: feature/player-assessment.
+Each commit has a short, clear message that accurately describes the change. Example: feat: add referee skill assessment.
+After finishing the work, the developer checks it and creates a pull request. At least one other team member must check, review, and approve it before it is merged into master. The author makes any requested changes on the same working branch.
+This process helps the group work together, reduces code conflicts, and checks quality before deployment.
+Each test version and each version used at the venue has its own version number. The group keeps the deployment documents and test results with it. When fixing a defect during the trial, the group records the previous version, the new version, and the changes to compare with feedback.
+6.3. Tools and Infrastructure
+Category
+Tools / Infrastructure
+Product type
+TK Sport Community website (desktop and mobile browsers).
+Report documents
+Word files.
+Shared document storage
+Google Drive.
+Front-end technology
+ReactJs
+Back-end technology
+C#
+Database
+Sql Sever
+Coding and design tools
+VMcode
+Source code management
+Git; repository on GitHub.
+Deployment server
+AWS
+Task and defect tracking tools
+Jira
+6.4. Role-account configuration and technical handover
+Role accounts use the names in the table above. Credentials are never written in project reports or source code. Technical provisioning follows an approved appointment, and the role is stored independently of its username. Account changes record the person, account, role, action and time.
+Trần Minh Đức uses TK.admin to support Lâm during initial operation. Lâm uses TK.manager for venue work. At a later handover, create a separate System Admin account for Lâm within the TK.admin naming family, such as TK.admin.lam; keep TK.manager separate. Revoke or restrict the former support account and preserve its history. Do not pass Đức's personal account to another user.
