@@ -23,3 +23,13 @@ be_da/*.suo
 # OS
 .DS_Store
 Thumbs.db
+
+# TKSC backend
+**/bin/
+**/obj/
+**/TestResults/
+*.user
+*.suo
+.env.*
+!.env.example
+**/appsettings.Local.json
