@@ -45,6 +45,12 @@ Giữ các khóa cũ nếu file đã có cấu hình khác. Lưu file và chạy
 
 ## 5. Chạy backend
 
+Đăng nhập thành công từ Swagger sẽ tự quay lại Swagger và hiển thị kết quả GET /api/auth/me trong Responses.
+
+Trên Swagger, mở POST /api/auth/google → Try it out → Execute để đăng nhập. POST /api/auth/logout → Try it out → Execute để đăng xuất. Không cần lấy/dán mã: Swagger tự gửi CSRF ở phía sau. Logout trả 204 là thành công; 401 nghĩa là chưa đăng nhập.
+
+Bảng nút nhanh đã được bỏ. Dùng Try it out / Execute ở từng API. Lỗi hiện trực tiếp trong Swagger; chỉ chuyển trang khi backend đã chấp nhận token và bắt đầu Google OAuth.
+
 Từ thư mục repository, chạy:
 
 ```powershell
@@ -54,6 +60,6 @@ dotnet run --project be_da --launch-profile https
 
 Mở `https://localhost:7207/swagger`. Nếu cổng 7207 đang được một phiên backend khác dùng, dừng phiên đó trong Visual Studio trước khi chạy bản mới. Không dùng profile IIS Express vì port/callback khác.
 
-Chưa có frontend nên chưa có nút Google trên trang web. Cách thử luồng bằng form từ trình duyệt, các endpoint và lệnh kiểm tra nằm trong [hướng dẫn backend](../be_da/README.md#run-and-endpoints). Khi cấu hình xong, báo lại để kiểm tra Google thật; không cần gửi Client Secret.
+Dùng Execute của POST /api/auth/google trên Swagger để thử backend khi chưa có frontend. Các endpoint và cách thử thủ công thay thế nằm trong [hướng dẫn backend](../be_da/README.md#run-and-endpoints). Khi cấu hình xong, báo lại để kiểm tra Google thật; không cần gửi Client Secret.
 
 Nếu thấy `redirect_uri_mismatch`, đối chiếu chính xác giao thức HTTPS, port 7207 và `/signin-google` với Google Console. Nếu thấy `google_login_not_configured`, kiểm tra User Secrets của đúng project be_da và chạy ở môi trường Development.

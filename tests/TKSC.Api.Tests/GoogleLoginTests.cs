@@ -19,6 +19,54 @@ namespace TKSC.Api.Tests;
 public class GoogleLoginTests
 {
     [Fact]
+    public async Task SwaggerLoginShowsErrorsAndReturnsNavigationOnlyAfterValidCsrf()
+    {
+        await using var app = new LoginApp { EnvironmentName = "Development" };
+        using var client = app.Client();
+        client.DefaultRequestHeaders.Add("X-TKSC-Swagger", "1");
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/api/auth/google", null)).StatusCode);
+        var challenge = await PostWithCsrf(client, "/api/auth/google");
+        Assert.Equal(HttpStatusCode.OK, challenge.StatusCode);
+        var body = await challenge.Content.ReadFromJsonAsync<JsonElement>();
+        var authorization = new Uri(body.GetProperty("authorizationUrl").GetString()!);
+        Assert.Equal("accounts.google.com", authorization.Host);
+        var query = QueryHelpers.ParseQuery(authorization.Query);
+        Assert.True(query.ContainsKey("code_challenge"));
+        var callback = await client.GetAsync("/signin-google?code=test-code&state=" + Uri.EscapeDataString(query["state"].ToString()));
+        Assert.Equal(HttpStatusCode.Redirect, callback.StatusCode);
+        Assert.Equal("/swagger/index.html?googleLogin=complete", callback.Headers.Location!.ToString());
+        Assert.Equal(HttpStatusCode.Conflict, (await PostWithCsrf(client, "/api/auth/google")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await PostWithCsrf(client, "/api/auth/logout")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsync("/api/auth/logout", null)).StatusCode);
+    }
+
+    [Fact]
+    public async Task SwaggerHeaderDoesNotChangeProductionRedirect()
+    {
+        await using var app = new LoginApp();
+        using var client = app.Client();
+        client.DefaultRequestHeaders.Add("X-TKSC-Swagger", "1");
+        Assert.Equal(HttpStatusCode.Redirect, (await PostWithCsrf(client, "/api/auth/google")).StatusCode);
+    }
+
+    [Fact]
+    public async Task ManualSwaggerFormRequiresTheTokenFromTheSameBrowser()
+    {
+        await using var app = new LoginApp();
+        using var client = app.Client();
+        var csrf = await client.GetFromJsonAsync<JsonElement>("/api/auth/csrf");
+        using var invalid = new FormUrlEncodedContent(new Dictionary<string, string>
+        { ["__RequestVerificationToken"] = "incorrect-token" });
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/api/auth/google", invalid)).StatusCode);
+        using var valid = new FormUrlEncodedContent(new Dictionary<string, string>
+        { ["__RequestVerificationToken"] = csrf.GetProperty("token").GetString()! });
+        var response = await client.PostAsync("/api/auth/google", valid);
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal("accounts.google.com", response.Headers.Location!.Host);
+        Assert.Equal(0, app.Store.Created);
+    }
+
+    [Fact]
     public async Task FirstGoogleLoginCreatesOnePlayerAndSubsequentLoginReusesIt()
     {
         await using var app = new LoginApp();
@@ -162,13 +210,14 @@ public class GoogleLoginTests
 
 internal sealed class LoginApp : WebApplicationFactory<Program>
 {
+    public string EnvironmentName { get; init; } = "Testing";
     public FakeAccounts Store { get; } = new();
     public bool Verified { get; init; } = true;
     public bool Configured { get; init; } = true;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Testing");
+        builder.UseEnvironment(EnvironmentName);
         builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Authentication:Google:ClientId"] = Configured ? "test-client" : null,

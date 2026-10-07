@@ -12,7 +12,7 @@ namespace be_da.Controllers;
 [ApiController]
 [Route("api/auth")]
 [EnableRateLimiting("auth")]
-public sealed class AuthController(IConfiguration configuration, IAntiforgery antiforgery) : ControllerBase
+public sealed class AuthController(IConfiguration configuration, IAntiforgery antiforgery, IWebHostEnvironment environment) : ControllerBase
 {
     [AllowAnonymous]
     [HttpGet("csrf")]
@@ -20,6 +20,12 @@ public sealed class AuthController(IConfiguration configuration, IAntiforgery an
 
     [AllowAnonymous]
     [HttpPost("google")]
+
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> Google()
     {
         if (!await HasValidCsrf()) return BadRequest(new { code = "invalid_csrf_token" });
@@ -29,7 +35,9 @@ public sealed class AuthController(IConfiguration configuration, IAntiforgery an
             || string.IsNullOrWhiteSpace(configuration["Authentication:Google:ClientSecret"]))
             return StatusCode(503, new { code = "google_login_not_configured" });
         // Fixed local destination: no open returnUrl redirect and no tokens in the URL.
-        return Challenge(new AuthenticationProperties { RedirectUri = "/api/auth/me" }, GoogleDefaults.AuthenticationScheme);
+        var destination = environment.IsDevelopment() && Request.Headers["X-TKSC-Swagger"] == "1"
+            ? "/swagger/index.html?googleLogin=complete" : "/api/auth/me";
+        return Challenge(new AuthenticationProperties { RedirectUri = destination }, GoogleDefaults.AuthenticationScheme);
     }
 
     [Authorize]
@@ -44,6 +52,9 @@ public sealed class AuthController(IConfiguration configuration, IAntiforgery an
 
     [Authorize]
     [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout()
     {
         if (!await HasValidCsrf()) return BadRequest(new { code = "invalid_csrf_token" });

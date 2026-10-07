@@ -75,6 +75,8 @@ dotnet run --project be_da --launch-profile https
 
 Swagger: `https://localhost:7207/swagger`.
 
+Swagger uses normal Try it out / Execute controls, without token input fields. Its Development-only helper fetches a fresh CSRF token and adds the header automatically for Google login and logout. On successful Google initiation it navigates to the authorization URL; errors finish normally in Swagger. The API still validates CSRF for all clients. Logout returns 204 on success or 401 when no authenticated session exists.
+
 | Endpoint | Use |
 | --- | --- |
 | GET `/api/auth/csrf` | Returns CSRF token and cookie; allowed before login |
@@ -85,9 +87,9 @@ Swagger: `https://localhost:7207/swagger`.
 
 Unsafe requests require `X-CSRF-TOKEN` or a form field `__RequestVerificationToken`. Fetch a new token after sign-in because it is bound to the current identity. All cookies require HTTPS. Session cookie is HttpOnly, Secure, SameSite=Lax, expires after eight hours without sliding renewal. Tokens are not returned in URLs or saved to localStorage. Authentication responses are not cacheable.
 
-For the future FE, use a same-origin reverse proxy for `/api` and `/signin-google`. Start login with browser form navigation so the browser follows the redirect to Google; calling it using fetch/Swagger Execute will not navigate the page. Cross-origin FE hosting/CORS is intentionally not guessed; configure it with the final FE origin before integration.
+For the future FE, use a same-origin reverse proxy for `/api` and `/signin-google`. Start login with browser form navigation so the browser follows the redirect to Google; plain fetch will not navigate the page. The Development Swagger helper handles navigation after a successful JSON response. Cross-origin FE hosting/CORS is intentionally not guessed; configure it with the final FE origin before integration.
 
-For a manual backend-only test, open the local Swagger page and run this snippet in its browser developer console after reviewing it. It only fetches the local CSRF token and submits a form to the local backend; it is not frontend application code:
+As an optional alternative to Swagger Execute, open the local Swagger page and run this snippet in its browser developer console after reviewing it. It only fetches the local CSRF token and submits a form to the local backend; it is not frontend application code:
 
 ```javascript
 const response = await fetch('/api/auth/csrf');
@@ -104,7 +106,7 @@ document.body.append(form);
 form.submit();
 ```
 
-After consent, `/api/auth/me` returns the local account. First-time sign-in writes the new Player/profile/audit row; subsequent sign-in reuses the Google subject. To log out from the same origin:
+After consent started from Development Swagger, the browser returns to Swagger and automatically executes GET /api/auth/me, showing the actual account response in that operation. Other clients retain the fixed /api/auth/me destination. First-time sign-in writes the new Player/profile/audit row; subsequent sign-in reuses the Google subject. To log out from the same origin:
 
 ```javascript
 const { token } = await (await fetch('/api/auth/csrf')).json();

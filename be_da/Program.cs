@@ -10,7 +10,7 @@ using be_da.Infrastructure.Persistence;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options => options.OperationFilter<be_da.Swagger.AuthDocumentationFilter>());
 builder.Services.AddProblemDetails();
 builder.Services.AddScoped<IAccountStore>(services => new SqlAccountStore(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
@@ -40,6 +40,14 @@ builder.Services.AddAuthentication(AccountPrincipal.Scheme)
         options.SignInScheme = AccountPrincipal.Scheme;
         options.UsePkce = true;
         options.SaveTokens = false;
+        options.Events.OnRedirectToAuthorizationEndpoint = async context =>
+        {
+            if (context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment()
+                && context.Request.Headers["X-TKSC-Swagger"] == "1")
+                await context.Response.WriteAsJsonAsync(new { authorizationUrl = context.RedirectUri });
+            else
+                context.Response.Redirect(context.RedirectUri);
+        };
         options.Events.OnCreatingTicket = async context =>
         {
             var verified = (context.User.TryGetProperty("verified_email", out var value)
@@ -80,7 +88,15 @@ app.UseExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.InjectJavascript("/swagger/tksc-auth.js");
+        options.UseRequestInterceptor("function(request) { return window.tkscSwaggerRequest(request); }");
+        options.UseResponseInterceptor("function(response) { return window.tkscSwaggerResponse(response); }");
+    });
+    app.MapGet("/swagger/tksc-auth.js", () => Results.Stream(
+        typeof(Program).Assembly.GetManifestResourceStream("be_da.Swagger.tksc-auth.js")!,
+        "text/javascript; charset=utf-8")).ExcludeFromDescription();
 }
 app.UseHttpsRedirection();
 app.Use(async (context, next) =>
