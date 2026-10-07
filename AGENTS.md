@@ -24,6 +24,8 @@
 
 ## Cách làm việc
 
+- Người dùng chạy backend bằng profile `https` trong Visual Studio. Sau kiểm thử, dừng tiến trình backend do Codex khởi động để tránh khóa `be_da.exe` hoặc chiếm cổng 7207 khi người dùng bấm F5. Chỉ dừng tiến trình đã xác minh thuộc đúng checkout; không tự khởi động lại nền khi bàn giao cho Visual Studio.
+- Theo yêu cầu ngày 07/10/2026, cập nhật trực tiếp checkout đang mở trong Visual Studio: `C:\Users\shogu\Documents\ChatGPT\TK-Sport-Community`, nhánh `NhatLT`, solution `be_da/be_da.slnx`. Đây là nơi làm việc chính trên máy này; không chuyển sang worktree cũ hoặc scaffold `Sep490/backend` nếu người dùng chưa yêu cầu. Kiểm tra thay đổi của người dùng trước mỗi lần sửa; không tự merge vào `main`.
 - Khi triển khai một tính năng, nêu ngắn gọn mã UC/FR/quy tắc nguồn và phần nào đã được thực hiện.
 - Không lưu mật khẩu, API key hoặc connection string có bí mật vào Git. Dùng cấu hình phát triển an toàn.
 - Không xóa dữ liệu hoặc sửa schema đã có dữ liệu mà chưa kiểm tra tác động; thêm migration và hướng nâng cấp khi bắt đầu dùng EF Core.
