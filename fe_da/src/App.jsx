@@ -10,7 +10,7 @@ import { api } from './api';
 export default function App() {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
-  const [currentView, setCurrentView] = useState('browse'); // 'browse' | 'detail' | 'tickets' | 'signin'
+  const [currentView, setCurrentView] = useState('signin'); // 'signin' | 'browse' | 'detail' | 'tickets'
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
@@ -23,8 +23,14 @@ export default function App() {
     try {
       const me = await api.getMe();
       setUser(me);
+      if (!me) {
+        setCurrentView('signin');
+      } else {
+        setCurrentView('browse');
+      }
     } catch {
       setUser(null);
+      setCurrentView('signin');
     } finally {
       setLoadingUser(false);
     }
@@ -48,11 +54,50 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  const playerName = user?.fullName || 'Khách';
+  // 1. Minimal Splash Loader while checking authentication
+  if (loadingUser) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F8FAFC',
+        fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif"
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            fontSize: '2rem',
+            fontWeight: '900',
+            color: '#143A2A',
+            letterSpacing: '-0.03em',
+            marginBottom: '8px'
+          }}>
+            ↗ TKSC
+          </div>
+          <div style={{ color: '#64748B', fontSize: '0.88rem' }}>Đang kết nối hệ thống...</div>
+        </div>
+      </div>
+    );
+  }
 
+  // 2. Standalone Login View (Fibery-style, separated from main app frame)
+  if (currentView === 'signin') {
+    return (
+      <SignInView
+        onLoginSuccess={(account) => {
+          setUser(account);
+          setCurrentView('browse');
+        }}
+        onContinueAsGuest={handleBackToBrowse}
+      />
+    );
+  }
+
+  // 3. Main Application Frame (Browse / Detail / Tickets)
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--color-bg)' }}>
-      {/* Top Navigation Bar (Figma Exact) */}
+      {/* Top Navigation Bar */}
       <Navbar
         user={user}
         currentView={currentView}
@@ -72,16 +117,6 @@ export default function App() {
 
       {/* Main Content Area */}
       <main style={{ flex: 1 }}>
-        {currentView === 'signin' && (
-          <SignInView
-            onLoginSuccess={(account) => {
-              setUser(account);
-              setCurrentView('browse');
-            }}
-            onContinueAsGuest={handleBackToBrowse}
-          />
-        )}
-
         {currentView === 'browse' && (
           <BrowseSessionsView
             user={user}
