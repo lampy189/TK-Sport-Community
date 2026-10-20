@@ -45,7 +45,7 @@ export function MyTicketsView({ user, onNavigate }) {
           fontSize: '2.4rem',
           fontWeight: '800',
           color: 'var(--color-primary)',
-          fontFamily: 'Outfit, sans-serif',
+          fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif",
           letterSpacing: '-0.02em',
           lineHeight: 1.2,
           marginBottom: '6px'

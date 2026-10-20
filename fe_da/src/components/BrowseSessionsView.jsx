@@ -102,7 +102,7 @@ export function BrowseSessionsView({ user, onSelectSession }) {
           fontSize: '2.4rem',
           fontWeight: '800',
           color: 'var(--color-primary)',
-          fontFamily: 'Outfit, sans-serif',
+          fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif",
           letterSpacing: '-0.02em',
           lineHeight: 1.2,
           marginBottom: '6px'
@@ -132,7 +132,7 @@ export function BrowseSessionsView({ user, onSelectSession }) {
         boxShadow: 'var(--shadow-sm)'
       }}>
         <div>
-          <h2 style={{ fontSize: '1.45rem', fontWeight: '800', fontFamily: 'Outfit, sans-serif', marginBottom: '6px' }}>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: '800', fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif", marginBottom: '6px' }}>
             Một buổi chơi hay đang chờ bạn.
           </h2>
           <p style={{ fontSize: '0.88rem', color: '#D1E0D7' }}>
@@ -407,7 +407,7 @@ export function BrowseSessionsView({ user, onSelectSession }) {
                       fontSize: '1.25rem',
                       fontWeight: '800',
                       color: 'var(--color-primary)',
-                      fontFamily: 'Outfit, sans-serif',
+                      fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif",
                       marginBottom: '8px'
                     }}>
                       {sessionTitle}

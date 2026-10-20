@@ -206,7 +206,7 @@ export function SessionDetailView({ sessionId, user, onBack, onOpenLogin }) {
           fontSize: '2.4rem',
           fontWeight: '800',
           color: 'var(--color-primary)',
-          fontFamily: 'Outfit, sans-serif',
+          fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif",
           letterSpacing: '-0.02em',
           lineHeight: 1.2,
           marginBottom: '6px'
@@ -409,7 +409,7 @@ export function SessionDetailView({ sessionId, user, onBack, onOpenLogin }) {
             fontSize: '1.85rem',
             fontWeight: '800',
             color: 'var(--color-primary)',
-            fontFamily: 'Outfit, sans-serif',
+            fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif",
             marginBottom: '12px'
           }}>
             {formatPrice(summary.priceVnd)} <span style={{ fontSize: '0.95rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>/ người</span>
