@@ -46,6 +46,35 @@ export function BrowseSessionsView({ user, onSelectSession }) {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
   }
 
+  function formatSessionDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const day = parseInt(parts[2], 10);
+        if (year === 2026 && month === 10 && day === 20) return 'Hôm nay, 20/10';
+        if (year === 2026 && month === 10 && day === 21) return 'Ngày mai, 21/10';
+        return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+      }
+    } catch (_) {}
+    return dateStr;
+  }
+
+  function getSessionTitle(s) {
+    if (s.sportName === 'Badminton') {
+      if (s.timeLabel?.includes('18:00') && s.band === 'B2') return 'Cầu lông sau giờ làm';
+      if (s.timeLabel?.includes('20:00')) return 'Cầu lông phong trào tối';
+      if (s.band === 'B3') return 'Cầu lông nâng cao';
+      return 'Giao lưu cầu lông';
+    } else {
+      if (s.timeLabel?.includes('08:00')) return 'Pickleball cuối tuần';
+      if (!s.band) return 'Pickleball giao lưu mở';
+      return 'Giao lưu Pickleball';
+    }
+  }
+
   const displayedSessions = filterEligibleOnly 
     ? sessions.filter(s => s.isEligibleSuggestion === true)
     : sessions;
@@ -221,10 +250,13 @@ export function BrowseSessionsView({ user, onSelectSession }) {
                 cursor: 'pointer'
               }}
             >
-              <option value="ALL">Khung giờ</option>
-              <option value="1">16:00 - 18:00</option>
-              <option value="2">18:00 - 20:00</option>
-              <option value="3">20:00 - 22:00</option>
+              <option value="ALL">Tất cả khung giờ</option>
+              <option value="1">08:00 - 10:00 (Sáng)</option>
+              <option value="2">10:00 - 12:00 (Trưa)</option>
+              <option value="3">14:00 - 16:00 (Chiều)</option>
+              <option value="4">16:00 - 18:00 (Chiều)</option>
+              <option value="5">18:00 - 20:00 (Tối)</option>
+              <option value="6">20:00 - 22:00 (Tối)</option>
             </select>
             <ChevronDown size={14} color="#6B7280" style={{ position: 'absolute', right: '10px', top: '11px', pointerEvents: 'none' }} />
           </div>
@@ -313,11 +345,7 @@ export function BrowseSessionsView({ user, onSelectSession }) {
             const availableSlots = s.availableSlots ?? (s.capacity - s.occupiedPlaces);
             const isFull = availableSlots <= 0;
 
-            // Generate title matching Figma style
-            const sessionTitle = s.sportName === 'Badminton' 
-              ? (s.timeLabel?.includes('18:') ? 'Cầu lông sau giờ làm' : 'Giao lưu cầu lông')
-              : 'Pickleball cuối tuần';
-
+            const sessionTitle = getSessionTitle(s);
             const bandLabel = s.band === 'B1' ? 'Mới chơi / B1' : (s.band === 'B2' ? 'Trung bình' : (s.band || 'Tự do'));
 
             return (
@@ -401,7 +429,7 @@ export function BrowseSessionsView({ user, onSelectSession }) {
                       {s.courtName} - {s.venueName}
                     </div>
                     <div>
-                      {s.sessionDate} • {s.timeLabel || `${s.startTime} - ${s.endTime}`}
+                      {formatSessionDate(s.sessionDate)} • {s.timeLabel || `${s.startTime} - ${s.endTime}`}
                     </div>
                     <div>
                       Trình độ: <strong style={{ color: 'var(--color-primary)' }}>{bandLabel}</strong>
