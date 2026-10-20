@@ -12,6 +12,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => options.OperationFilter<be_da.Swagger.AuthDocumentationFilter>());
 builder.Services.AddProblemDetails();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 builder.Services.AddScoped<IAccountStore>(services => new SqlAccountStore(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
@@ -109,6 +119,7 @@ app.Use(async (context, next) =>
     await next(context);
 });
 app.UseRouting();
+app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
