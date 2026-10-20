@@ -19,7 +19,7 @@ export function BrowseSessionsView({ user, onSelectSession, onNavigate }) {
     loadSessions();
   }, [user, selectedSport, selectedDate, selectedSlot]);
 
-  async function loadSessions(retryCount = 0) {
+  async function loadSessions() {
     setLoading(true);
     setError(null);
     try {
@@ -34,14 +34,10 @@ export function BrowseSessionsView({ user, onSelectSession, onNavigate }) {
         params.timeSlotId = selectedSlot;
       }
       const data = await api.getSessions(params);
-      setSessions(data);
+      setSessions(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('loadSessions error:', err);
-      if (retryCount < 2) {
-        setTimeout(() => loadSessions(retryCount + 1), 800);
-        return;
-      }
-      setError('Không thể tải danh sách buổi chơi. Vui lòng kiểm tra kết nối.');
+      setError('Không thể tải danh sách buổi chơi. Vui lòng kiểm tra kết nối backend.');
     } finally {
       setLoading(false);
     }
@@ -315,7 +311,7 @@ export function BrowseSessionsView({ user, onSelectSession, onNavigate }) {
         }}>
           <div>{error}</div>
           <button
-            onClick={() => loadSessions(0)}
+            onClick={() => loadSessions()}
             style={{
               padding: '8px 22px',
               borderRadius: 'var(--radius-full)',
