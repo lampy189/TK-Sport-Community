@@ -19,7 +19,7 @@ export function BrowseSessionsView({ user, onSelectSession }) {
     loadSessions();
   }, [user, selectedSport, selectedDate, selectedSlot]);
 
-  async function loadSessions() {
+  async function loadSessions(retryCount = 0) {
     setLoading(true);
     setError(null);
     try {
@@ -36,6 +36,11 @@ export function BrowseSessionsView({ user, onSelectSession }) {
       const data = await api.getSessions(params);
       setSessions(data);
     } catch (err) {
+      console.error('loadSessions error:', err);
+      if (retryCount < 2) {
+        setTimeout(() => loadSessions(retryCount + 1), 800);
+        return;
+      }
       setError('Không thể tải danh sách buổi chơi. Vui lòng kiểm tra kết nối.');
     } finally {
       setLoading(false);
@@ -302,9 +307,29 @@ export function BrowseSessionsView({ user, onSelectSession }) {
           backgroundColor: 'var(--color-danger-bg)',
           borderRadius: 'var(--radius-lg)',
           color: 'var(--color-danger)',
-          textAlign: 'center'
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '12px'
         }}>
-          {error}
+          <div>{error}</div>
+          <button
+            onClick={() => loadSessions(0)}
+            style={{
+              padding: '8px 22px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: 'var(--color-primary)',
+              color: '#FFFFFF',
+              fontWeight: '700',
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              border: 'none',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+            }}
+          >
+            Tải lại danh sách
+          </button>
         </div>
       ) : displayedSessions.length === 0 ? (
         <div style={{
