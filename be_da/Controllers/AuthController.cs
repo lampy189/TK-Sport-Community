@@ -36,8 +36,9 @@ public sealed class AuthController(IConfiguration configuration, IAntiforgery an
             || string.IsNullOrWhiteSpace(configuration["Authentication:Google:ClientSecret"]))
             return StatusCode(503, new { code = "google_login_not_configured" });
         // Fixed local destination: no open returnUrl redirect and no tokens in the URL.
-        var destination = environment.IsDevelopment() && Request.Headers["X-TKSC-Swagger"] == "1"
-            ? "/swagger/index.html?googleLogin=complete" : "/api/auth/me";
+        var destination = environment.IsDevelopment()
+            ? (Request.Headers["X-TKSC-Swagger"] == "1" ? "/swagger/index.html?googleLogin=complete" : "http://localhost:5173")
+            : "/api/auth/me";
         return Challenge(new AuthenticationProperties { RedirectUri = destination }, GoogleDefaults.AuthenticationScheme);
     }
 

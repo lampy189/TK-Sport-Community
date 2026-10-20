@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUpRight, Bell, User, LogOut, ChevronDown, UserCheck } from 'lucide-react';
+import { ArrowUpRight, User, LogOut, ChevronDown } from 'lucide-react';
 
 export function Navbar({ user, onOpenLogin, onLogout, onNavigate, currentView }) {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -64,7 +64,8 @@ export function Navbar({ user, onOpenLogin, onLogout, onNavigate, currentView })
           {[
             { id: 'browse', label: 'Khám phá' },
             { id: 'tickets', label: 'Vé & lịch chơi' },
-            { id: 'signin', label: 'Đăng nhập (Screen #1)' },
+            { id: 'friends', label: 'Bạn bè' },
+            { id: 'messages', label: 'Tin nhắn' },
           ].map((item) => {
             const isActive = currentView === item.id;
             return (
@@ -96,18 +97,16 @@ export function Navbar({ user, onOpenLogin, onLogout, onNavigate, currentView })
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '6px 14px',
+            padding: '7px 18px',
             borderRadius: 'var(--radius-full)',
-            backgroundColor: '#EDF7D2',
-            color: '#2D5B18',
-            fontSize: '0.82rem',
-            fontWeight: '700',
+            backgroundColor: '#E6F4D0',
+            color: '#143A2A',
+            fontSize: '0.86rem',
+            fontWeight: '600',
             cursor: 'pointer',
             border: '1px solid #D7EBA6'
           }}>
-            <Bell size={13} />
-            <span>Thông báo • 3</span>
+            Thông báo • 3
           </div>
 
           {/* Profile Name Pill or Login Button */}
@@ -189,7 +188,7 @@ export function Navbar({ user, onOpenLogin, onLogout, onNavigate, currentView })
                 <button
                   onClick={() => {
                     setProfileDropdownOpen(false);
-                    onOpenLogin();
+                    onNavigate?.('profile');
                   }}
                   style={{
                     width: '100%',
@@ -206,7 +205,7 @@ export function Navbar({ user, onOpenLogin, onLogout, onNavigate, currentView })
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  <UserCheck size={16} /> Đổi tài khoản test
+                  <User size={16} /> Hồ sơ
                 </button>
 
                 <button

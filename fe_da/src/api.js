@@ -1,16 +1,17 @@
 // API Client for TKSC Backend
 let cachedCsrfToken = null;
 
-export async function getCsrfToken() {
-  if (cachedCsrfToken) return cachedCsrfToken;
+export async function getCsrfToken(forceFresh = false) {
+  if (!forceFresh && cachedCsrfToken) return cachedCsrfToken;
   try {
     const res = await fetch('/api/auth/csrf', {
       credentials: 'same-origin',
       cache: 'no-store'
     });
     if (res.ok) {
-      const data = await res.json();
-      cachedCsrfToken = data.token;
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
+      cachedCsrfToken = data.token || null;
       return cachedCsrfToken;
     }
   } catch (err) {
@@ -37,7 +38,7 @@ export async function request(path, options = {}) {
     }
   }
 
-  const res = await fetch(path, {
+  let res = await fetch(path, {
     ...options,
     headers,
     credentials: 'same-origin',
@@ -47,12 +48,15 @@ export async function request(path, options = {}) {
   if (res.status === 400) {
     const clone = res.clone();
     try {
-      const errorJson = await clone.json();
+      const text = await clone.text();
+      const errorJson = text ? JSON.parse(text) : {};
       if (errorJson.code === 'invalid_csrf_token') {
         clearCsrfToken();
-        const freshToken = await getCsrfToken();
-        headers['X-CSRF-TOKEN'] = freshToken;
-        return fetch(path, {
+        const freshToken = await getCsrfToken(true);
+        if (freshToken) {
+          headers['X-CSRF-TOKEN'] = freshToken;
+        }
+        res = await fetch(path, {
           ...options,
           headers,
           credentials: 'same-origin',
@@ -71,7 +75,12 @@ export const api = {
   async getMe() {
     const res = await request('/api/auth/me');
     if (!res.ok) return null;
-    return res.json();
+    try {
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
+    } catch {
+      return null;
+    }
   },
 
   async devLogin(email) {
@@ -79,9 +88,27 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { message: text };
+    }
     if (!res.ok) {
-      throw data;
+      if (res.status === 429) {
+        throw new Error('Thao tác quá nhanh. Hệ thống giới hạn 30 request/phút. Vui lòng chờ 5-10 giây rồi thử lại.');
+      }
+      if (res.status === 403) {
+        throw new Error('Tài khoản này không có quyền đăng nhập hoặc đã bị vô hiệu hóa.');
+      }
+      if (data.code === 'user_not_found') {
+        throw new Error(data.message || `Không tìm thấy tài khoản với email: ${email}`);
+      }
+      if (data.code === 'invalid_csrf_token') {
+        throw new Error('Phiên bảo mật CSRF chưa đồng bộ. Vui lòng bấm thử lại một lần nữa.');
+      }
+      throw new Error(data.message || data.code || `Lỗi đăng nhập (HTTP ${res.status})`);
     }
     clearCsrfToken();
     return data;
@@ -90,11 +117,40 @@ export const api = {
   async logout() {
     const res = await request('/api/auth/logout', { method: 'POST' });
     clearCsrfToken();
+    try {
+      await getCsrfToken(true);
+    } catch {}
     return res.ok;
   },
 
-  googleLogin() {
-    window.location.href = '/api/auth/google';
+  async googleLogin() {
+    try {
+      const csrf = await getCsrfToken();
+      if (!csrf) {
+        throw new Error('Không thể lấy mã CSRF token. Hãy chắc chắn Backend đang chạy.');
+      }
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/api/auth/google';
+      
+      const inputCsrf = document.createElement('input');
+      inputCsrf.type = 'hidden';
+      inputCsrf.name = '__RequestVerificationToken';
+      inputCsrf.value = csrf;
+      form.appendChild(inputCsrf);
+
+      const inputSource = document.createElement('input');
+      inputSource.type = 'hidden';
+      inputSource.name = 'source';
+      inputSource.value = 'fe';
+      form.appendChild(inputSource);
+
+      document.body.appendChild(form);
+      form.submit();
+    } catch (err) {
+      console.error('Google login error:', err);
+      alert(err.message || 'Lỗi khi khởi động luồng đăng nhập Google.');
+    }
   },
 
   // Sessions API

@@ -576,9 +576,6 @@ export function SessionDetailView({ sessionId, user, onBack, onOpenLogin }) {
                     <XCircle size={20} />
                     <strong style={{ fontSize: '0.96rem' }}>Không đủ điều kiện trình độ</strong>
                   </div>
-                  <div style={{ fontSize: '0.76rem', color: '#991B1B', marginBottom: '8px' }}>
-                    Mã lỗi API: <strong style={{ fontFamily: 'monospace', backgroundColor: '#FEE2E2', padding: '1px 6px', borderRadius: '4px' }}>SKILL_INELIGIBLE</strong>
-                  </div>
                   <div style={{
                     fontSize: '0.86rem',
                     color: '#1F2937',
@@ -620,9 +617,6 @@ export function SessionDetailView({ sessionId, user, onBack, onOpenLogin }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#B45309', marginBottom: '8px' }}>
                     <AlertTriangle size={20} />
                     <strong style={{ fontSize: '0.96rem' }}>Buổi chơi đã đầy chỗ</strong>
-                  </div>
-                  <div style={{ fontSize: '0.76rem', color: '#92400E', marginBottom: '8px' }}>
-                    Mã lỗi API: <strong style={{ fontFamily: 'monospace', backgroundColor: '#FEF3C7', padding: '1px 6px', borderRadius: '4px' }}>SESSION_FULL</strong>
                   </div>
                   <p style={{
                     fontSize: '0.86rem',
