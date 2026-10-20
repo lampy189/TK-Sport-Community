@@ -48,7 +48,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  const playerName = user?.fullName || 'Lan Anh';
+  const playerName = user?.fullName || 'Khách';
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--color-bg)' }}>
@@ -124,7 +124,11 @@ export default function App() {
             <strong style={{ color: 'var(--color-primary)' }}>↗ TKSC — TK Sport Community</strong> © 2026. All rights reserved.
           </div>
           <div>
-            Không gian dành cho người chơi: <strong style={{ color: 'var(--color-primary)' }}>{playerName}</strong>
+            {user ? (
+              <>Không gian dành cho người chơi: <strong style={{ color: 'var(--color-primary)' }}>{user.fullName}</strong></>
+            ) : (
+              <span style={{ color: '#6B7280' }}>Đang xem lịch chơi với tư cách <strong>Khách</strong> (chưa đăng nhập)</span>
+            )}
           </div>
         </div>
       </footer>

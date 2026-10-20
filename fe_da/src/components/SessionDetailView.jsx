@@ -75,7 +75,10 @@ export function SessionDetailView({ sessionId, user, onBack, onOpenLogin }) {
 
   async function handleRegister() {
     if (!user) {
-      onOpenLogin();
+      setRegistrationFeedback({
+        type: 'NEED_LOGIN',
+        message: 'Bạn đang xem với tư cách Khách. Vui lòng đăng nhập tài khoản Player để hệ thống kiểm tra điều kiện trình độ và tạo đơn giữ chỗ tạm thời.'
+      });
       return;
     }
 
@@ -525,6 +528,41 @@ export function SessionDetailView({ sessionId, user, onBack, onOpenLogin }) {
 
           {registrationFeedback && (
             <div style={{ marginTop: '20px' }}>
+              {/* Branch Guest: Need Login */}
+              {registrationFeedback.type === 'NEED_LOGIN' && (
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#EFF6FF',
+                  border: '1.5px solid #93C5FD',
+                  borderRadius: 'var(--radius-md)',
+                  animation: 'fadeIn 0.2s ease-out'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1D4ED8', marginBottom: '8px' }}>
+                    <Users size={18} />
+                    <strong style={{ fontSize: '0.94rem' }}>Khách cần đăng nhập</strong>
+                  </div>
+                  <p style={{ fontSize: '0.84rem', color: '#1E40AF', marginBottom: '12px', lineHeight: 1.45 }}>
+                    {registrationFeedback.message}
+                  </p>
+                  <button
+                    onClick={onOpenLogin}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      backgroundColor: 'var(--color-primary)',
+                      color: '#FFFFFF',
+                      fontSize: '0.86rem',
+                      fontWeight: '700',
+                      borderRadius: 'var(--radius-md)',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Đăng nhập tài khoản Player
+                  </button>
+                </div>
+              )}
+
               {/* Branch A: Display Skill Ineligibility Reason (Trường hợp 1) */}
               {registrationFeedback.type === 'SKILL_INELIGIBLE' && (
                 <div style={{
