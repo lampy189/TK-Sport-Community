@@ -83,6 +83,7 @@ export const api = {
     if (!res.ok) {
       throw data;
     }
+    clearCsrfToken();
     return data;
   },
 

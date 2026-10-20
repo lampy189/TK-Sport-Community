@@ -30,19 +30,20 @@ builder.Services.AddScoped<ISessionStore>(services => new SqlSessionStore(
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
 builder.Services.AddScoped<GoogleSignIn>();
 builder.Services.AddScoped<AccountCookieEvents>();
+var isDevelopment = builder.Environment.IsDevelopment();
 builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-CSRF-TOKEN";
-    options.Cookie.Name = "__Host-TKSC.Csrf";
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.Name = isDevelopment ? "TKSC.Csrf" : "__Host-TKSC.Csrf";
+    options.Cookie.SecurePolicy = isDevelopment ? CookieSecurePolicy.None : CookieSecurePolicy.Always;
+    options.Cookie.SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.Strict;
 });
 builder.Services.AddAuthentication(AccountPrincipal.Scheme)
     .AddCookie(AccountPrincipal.Scheme, options =>
     {
-        options.Cookie.Name = "__Host-TKSC.Session";
+        options.Cookie.Name = isDevelopment ? "TKSC.Session" : "__Host-TKSC.Session";
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SecurePolicy = isDevelopment ? CookieSecurePolicy.None : CookieSecurePolicy.Always;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = false;
