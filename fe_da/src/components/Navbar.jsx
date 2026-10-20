@@ -49,7 +49,7 @@ export function Navbar({ user, onOpenLogin, onLogout, onNavigate, currentView })
             fontWeight: '800',
             letterSpacing: '-0.02em',
             color: 'var(--color-primary)',
-            fontFamily: 'Outfit, sans-serif'
+            fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif"
           }}>
             TKSC
           </span>
