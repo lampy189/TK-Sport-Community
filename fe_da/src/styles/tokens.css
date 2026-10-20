@@ -1,0 +1,13 @@
+:root {
+  color-scheme: light;
+  --color-bg: #f5f6f2;
+  --color-surface: #ffffff;
+  --color-text: #183c31;
+  --color-muted: #65756e;
+  --color-primary: #154c3b;
+  --color-accent: #d4f578;
+  --color-border: #e0e6de;
+  --color-focus: #278064;
+  --radius-card: 18px;
+  --page-width: 1200px;
+}
