@@ -93,6 +93,36 @@ export function SessionDetailView({ sessionId, user, onBack, onOpenLogin }) {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
   }
 
+  function formatSessionDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const day = parseInt(parts[2], 10);
+        if (year === 2026 && month === 10 && day === 20) return 'Hôm nay, 20/10';
+        if (year === 2026 && month === 10 && day === 21) return 'Ngày mai, 21/10';
+        return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+      }
+    } catch (_) {}
+    return dateStr;
+  }
+
+  function getSessionTitle(s) {
+    if (!s) return 'Buổi chơi';
+    if (s.sportName === 'Badminton') {
+      if (s.timeLabel?.includes('18:00') && s.band === 'B2') return 'Cầu lông sau giờ làm';
+      if (s.timeLabel?.includes('20:00')) return 'Cầu lông phong trào tối';
+      if (s.band === 'B3') return 'Cầu lông nâng cao';
+      return 'Giao lưu cầu lông';
+    } else {
+      if (s.timeLabel?.includes('08:00')) return 'Pickleball cuối tuần';
+      if (!s.band) return 'Pickleball giao lưu mở';
+      return 'Giao lưu Pickleball';
+    }
+  }
+
   function formatDateTime(isoString) {
     if (!isoString) return '';
     const date = new Date(isoString);
@@ -181,7 +211,7 @@ export function SessionDetailView({ sessionId, user, onBack, onOpenLogin }) {
           lineHeight: 1.2,
           marginBottom: '6px'
         }}>
-          {summary.sportName === 'Badminton' ? 'Cầu lông sau giờ làm' : 'Giao lưu Pickleball'} — {summary.courtName}
+          {getSessionTitle(summary)} — {summary.courtName}
         </h1>
         <p style={{
           fontSize: '0.95rem',
@@ -281,7 +311,7 @@ export function SessionDetailView({ sessionId, user, onBack, onOpenLogin }) {
             <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', fontSize: '0.9rem' }}>
               <span style={{ color: 'var(--color-text-muted)' }}>Thời gian</span>
               <strong style={{ color: 'var(--color-primary)' }}>
-                {summary.sessionDate} • {summary.timeLabel || `${summary.startTime} - ${summary.endTime}`}
+                {formatSessionDate(summary.sessionDate)} • {summary.timeLabel || `${summary.startTime} - ${summary.endTime}`}
               </strong>
             </div>
 
