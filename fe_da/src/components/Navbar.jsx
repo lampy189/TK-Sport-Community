@@ -64,8 +64,7 @@ export function Navbar({ user, onOpenLogin, onLogout, onNavigate, currentView })
           {[
             { id: 'browse', label: 'Khám phá' },
             { id: 'tickets', label: 'Vé & lịch chơi' },
-            { id: 'friends', label: 'Bạn bè' },
-            { id: 'messages', label: 'Tin nhắn' },
+            { id: 'signin', label: 'Đăng nhập (Screen #1)' },
           ].map((item) => {
             const isActive = currentView === item.id;
             return (
@@ -73,15 +72,16 @@ export function Navbar({ user, onOpenLogin, onLogout, onNavigate, currentView })
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
                 style={{
-                  padding: '7px 20px',
+                  padding: '7px 18px',
                   borderRadius: 'var(--radius-full)',
-                  fontSize: '0.88rem',
+                  fontSize: '0.86rem',
                   fontWeight: isActive ? '700' : '500',
                   color: isActive ? '#143A2A' : '#4B5563',
                   backgroundColor: isActive ? '#E6F4D0' : '#FFFFFF',
                   border: isActive ? '1.5px solid #CBEB72' : '1px solid #E5E7EB',
                   boxShadow: isActive ? '0 1px 3px rgba(203, 235, 114, 0.4)' : 'none',
-                  transition: 'all 0.15s ease'
+                  transition: 'all 0.15s ease',
+                  cursor: 'pointer'
                 }}
               >
                 {item.label}
@@ -110,47 +110,43 @@ export function Navbar({ user, onOpenLogin, onLogout, onNavigate, currentView })
             <span>Thông báo • 3</span>
           </div>
 
-          {/* Profile Name Pill */}
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => {
-                if (user) {
-                  setProfileDropdownOpen(!profileDropdownOpen);
-                } else {
-                  onOpenLogin();
-                }
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '6px 16px',
-                borderRadius: 'var(--radius-full)',
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #D1D5DB',
-                fontSize: '0.88rem',
-                fontWeight: '600',
-                color: 'var(--color-primary)',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
-              }}
-            >
-              <div style={{
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--color-primary)',
-                color: 'var(--color-accent)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.75rem',
-                fontWeight: '700'
-              }}>
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-              <span>{displayName}</span>
-              <ChevronDown size={14} color="#6B7280" />
-            </button>
+          {/* Profile Name Pill or Login Button */}
+          {user ? (
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 16px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #D1D5DB',
+                  fontSize: '0.88rem',
+                  fontWeight: '600',
+                  color: 'var(--color-primary)',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                  cursor: 'pointer'
+                }}
+              >
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--color-primary)',
+                  color: 'var(--color-accent)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.75rem',
+                  fontWeight: '700'
+                }}>
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+                <span>{displayName}</span>
+                <ChevronDown size={14} color="#6B7280" />
+              </button>
 
             {/* Profile Dropdown */}
             {profileDropdownOpen && user && (
@@ -239,6 +235,27 @@ export function Navbar({ user, onOpenLogin, onLogout, onNavigate, currentView })
               </div>
             )}
           </div>
+        ) : (
+          <button
+            onClick={() => onNavigate('signin')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 18px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: 'var(--color-primary)',
+              color: '#FFFFFF',
+              fontSize: '0.86rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              border: 'none',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+            }}
+          >
+            <User size={15} /> Đăng nhập
+          </button>
+        )}
         </div>
       </div>
     </header>

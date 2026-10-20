@@ -5,6 +5,46 @@ import {
 } from 'lucide-react';
 import { api } from '../api';
 
+function CountdownTimer({ expiresAt }) {
+  const [secondsLeft, setSecondsLeft] = useState(() => calcSeconds(expiresAt));
+
+  function calcSeconds(target) {
+    if (!target) return 0;
+    const diff = Math.floor((new Date(target).getTime() - Date.now()) / 1000);
+    return diff > 0 ? diff : 0;
+  }
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const remaining = calcSeconds(expiresAt);
+      setSecondsLeft(remaining);
+      if (remaining <= 0) clearInterval(timer);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [expiresAt]);
+
+  const mins = Math.floor(secondsLeft / 60);
+  const secs = secondsLeft % 60;
+  const timeFormatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+  return (
+    <div style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '5px',
+      backgroundColor: '#CBEB72',
+      color: '#143A2A',
+      padding: '3px 10px',
+      borderRadius: 'var(--radius-full)',
+      fontWeight: '800',
+      fontSize: '0.86rem',
+      fontFamily: 'monospace'
+    }}>
+      <span>⏱️ {timeFormatted}</span>
+    </div>
+  );
+}
+
 export function SessionDetailView({ sessionId, user, onBack, onOpenLogin }) {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -480,67 +520,94 @@ export function SessionDetailView({ sessionId, user, onBack, onOpenLogin }) {
           </p>
 
           {/* ======================================================== */}
-          {/* THREE CONDITIONAL FEEDBACK BRANCHES (Người 1 requirements) */}
+          {/* THREE CONDITIONAL FEEDBACK BRANCHES (UC-07)               */}
           {/* ======================================================== */}
 
           {registrationFeedback && (
             <div style={{ marginTop: '20px' }}>
-              {/* Branch A: Display Skill Ineligibility Reason */}
+              {/* Branch A: Display Skill Ineligibility Reason (Trường hợp 1) */}
               {registrationFeedback.type === 'SKILL_INELIGIBLE' && (
                 <div style={{
-                  padding: '16px',
-                  backgroundColor: 'var(--color-danger-bg)',
-                  border: '1.5px solid var(--color-danger-border)',
+                  padding: '18px',
+                  backgroundColor: '#FEF2F2',
+                  border: '1.5px solid #F87171',
                   borderRadius: 'var(--radius-md)',
                   animation: 'fadeIn 0.2s ease-out'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-danger)', marginBottom: '6px' }}>
-                    <XCircle size={18} />
-                    <strong style={{ fontSize: '0.9rem' }}>Không đủ điều kiện kỹ năng</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#B91C1C', marginBottom: '8px' }}>
+                    <XCircle size={20} />
+                    <strong style={{ fontSize: '0.96rem' }}>Không đủ điều kiện trình độ</strong>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: '#7F1D1D', marginBottom: '6px' }}>
-                    Mã lỗi: <strong style={{ fontFamily: 'monospace' }}>SKILL_INELIGIBLE</strong>
+                  <div style={{ fontSize: '0.76rem', color: '#991B1B', marginBottom: '8px' }}>
+                    Mã lỗi API: <strong style={{ fontFamily: 'monospace', backgroundColor: '#FEE2E2', padding: '1px 6px', borderRadius: '4px' }}>SKILL_INELIGIBLE</strong>
                   </div>
                   <div style={{
-                    fontSize: '0.84rem',
-                    color: 'var(--color-text-primary)',
+                    fontSize: '0.86rem',
+                    color: '#1F2937',
                     backgroundColor: '#FFFFFF',
-                    padding: '8px 10px',
+                    padding: '10px 12px',
                     borderRadius: 'var(--radius-sm)',
                     border: '1px solid #FECACA',
-                    fontWeight: '600'
+                    lineHeight: 1.45,
+                    marginBottom: '10px'
                   }}>
-                    Lý do: {registrationFeedback.reason === 'chưa làm survey' && 'Người chơi chưa làm khảo sát kỹ năng.'}
-                    {registrationFeedback.reason === 'chưa có hồ sơ môn này' && 'Chưa có hồ sơ kỹ năng cho môn thể thao này.'}
-                    {registrationFeedback.reason === 'lệch band kỹ năng' && `Trình độ không khớp với yêu cầu của buổi chơi (Yêu cầu Band ${summary.band}).`}
-                    {!['chưa làm survey', 'chưa có hồ sơ môn này', 'lệch band kỹ năng'].includes(registrationFeedback.reason) && registrationFeedback.message}
+                    {registrationFeedback.reason === 'chưa làm survey' && (
+                      <span><strong>Lý do:</strong> Bạn chưa làm bài khảo sát trình độ cho môn thể thao này. Vui lòng làm khảo sát trước khi đăng ký.</span>
+                    )}
+                    {registrationFeedback.reason === 'chưa có hồ sơ môn này' && (
+                      <span><strong>Lý do:</strong> Bạn chưa có hồ sơ trình độ cho môn {summary.sportName === 'Badminton' ? 'Cầu lông' : 'Pickleball'}.</span>
+                    )}
+                    {registrationFeedback.reason === 'lệch band kỹ năng' && (
+                      <span><strong>Lý do:</strong> Trình độ của bạn chưa khớp với yêu cầu của buổi chơi (Yêu cầu: <strong>Band {summary.band}</strong>).</span>
+                    )}
+                    {!['chưa làm survey', 'chưa có hồ sơ môn này', 'lệch band kỹ năng'].includes(registrationFeedback.reason) && (
+                      <span><strong>Lý do:</strong> {registrationFeedback.message}</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>
+                    💡 Bạn có thể bấm <strong>"Xin ngoại lệ trình độ"</strong> ở trên để gửi yêu cầu tới Trọng tài duyệt.
                   </div>
                 </div>
               )}
 
-              {/* Branch B: Display Session Full Notice */}
+              {/* Branch B: Display Session Full Notice (Trường hợp 2) */}
               {registrationFeedback.type === 'SESSION_FULL' && (
                 <div style={{
-                  padding: '16px',
-                  backgroundColor: 'var(--color-warning-bg)',
-                  border: '1.5px solid var(--color-warning-border)',
+                  padding: '18px',
+                  backgroundColor: '#FFFBEB',
+                  border: '1.5px solid #FBBF24',
                   borderRadius: 'var(--radius-md)',
                   animation: 'fadeIn 0.2s ease-out'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-warning)', marginBottom: '6px' }}>
-                    <AlertTriangle size={18} />
-                    <strong style={{ fontSize: '0.9rem' }}>Buổi chơi đã đủ người</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#B45309', marginBottom: '8px' }}>
+                    <AlertTriangle size={20} />
+                    <strong style={{ fontSize: '0.96rem' }}>Buổi chơi đã đầy chỗ</strong>
                   </div>
-                  <p style={{ fontSize: '0.82rem', color: '#92400E' }}>
-                    {registrationFeedback.message || 'Buổi chơi đã đủ người. Vui lòng chọn buổi chơi khác.'}
+                  <div style={{ fontSize: '0.76rem', color: '#92400E', marginBottom: '8px' }}>
+                    Mã lỗi API: <strong style={{ fontFamily: 'monospace', backgroundColor: '#FEF3C7', padding: '1px 6px', borderRadius: '4px' }}>SESSION_FULL</strong>
+                  </div>
+                  <p style={{
+                    fontSize: '0.86rem',
+                    color: '#78350F',
+                    backgroundColor: '#FFFFFF',
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid #FDE68A',
+                    lineHeight: 1.45,
+                    marginBottom: '8px'
+                  }}>
+                    {registrationFeedback.message || 'Buổi chơi đã đủ số lượng người đăng ký (hết chỗ trống). Nút đăng ký đã được khóa.'}
+                  </p>
+                  <p style={{ fontSize: '0.78rem', color: '#6B7280' }}>
+                    Vui lòng quay lại màn hình Khám phá để chọn các buổi chơi khác còn chỗ.
                   </p>
                 </div>
               )}
 
-              {/* Already registered warning */}
+              {/* Already registered notice */}
               {registrationFeedback.type === 'ALREADY_REGISTERED' && (
                 <div style={{
-                  padding: '14px',
+                  padding: '16px',
                   backgroundColor: '#EFF6FF',
                   border: '1px solid #BFDBFE',
                   borderRadius: 'var(--radius-md)',
@@ -548,74 +615,105 @@ export function SessionDetailView({ sessionId, user, onBack, onOpenLogin }) {
                   fontSize: '0.85rem'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700', marginBottom: '4px' }}>
-                    <Info size={16} /> Đã đăng ký
+                    <Info size={18} /> Đã có thông tin đăng ký
                   </div>
                   <p>{registrationFeedback.message}</p>
                 </div>
               )}
 
-              {/* Branch C: Record Pending Registration (Success!) */}
+              {/* Branch C: Record Pending Registration (Trường hợp 3: Thành công!) */}
               {registrationFeedback.type === 'SUCCESS_PENDING' && (
                 <div style={{
-                  padding: '18px',
-                  backgroundColor: 'var(--color-primary)',
-                  border: '2px solid var(--color-accent)',
+                  padding: '20px',
+                  backgroundColor: '#143A2A',
+                  border: '2px solid #CBEB72',
                   borderRadius: 'var(--radius-md)',
                   color: '#FFFFFF',
-                  boxShadow: 'var(--shadow-md)',
+                  boxShadow: '0 4px 14px rgba(20, 58, 42, 0.25)',
                   animation: 'fadeIn 0.25s ease-out'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-accent)', marginBottom: '8px' }}>
-                    <CheckCircle2 size={20} />
-                    <strong style={{ fontSize: '0.98rem' }}>
-                      Giữ chỗ tạm thời thành công!
-                    </strong>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#CBEB72' }}>
+                      <CheckCircle2 size={22} />
+                      <strong style={{ fontSize: '1.05rem' }}>
+                        Giữ chỗ tạm thời thành công!
+                      </strong>
+                    </div>
+                    <span style={{
+                      backgroundColor: '#CBEB72',
+                      color: '#143A2A',
+                      fontSize: '0.72rem',
+                      fontWeight: '800',
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-full)'
+                    }}>
+                      PENDING
+                    </span>
+                  </div>
+
+                  {/* Countdown Timer Box */}
+                  <div style={{
+                    backgroundColor: 'rgba(203, 235, 114, 0.12)',
+                    border: '1px dashed #CBEB72',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '10px 12px',
+                    marginBottom: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span style={{ fontSize: '0.82rem', color: '#D1E0D7' }}>Thời gian giữ chỗ còn lại:</span>
+                    <CountdownTimer expiresAt={registrationFeedback.data.expiresAt} />
                   </div>
 
                   <div style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.08)',
                     borderRadius: 'var(--radius-sm)',
-                    padding: '12px',
+                    padding: '12px 14px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '6px',
-                    fontSize: '0.82rem'
+                    gap: '8px',
+                    fontSize: '0.84rem'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#D1E0D7' }}>Mã đơn:</span>
-                      <strong style={{ fontFamily: 'monospace', color: 'var(--color-accent)' }}>
+                      <span style={{ color: '#D1E0D7' }}>Mã đơn giữ chỗ:</span>
+                      <strong style={{ fontFamily: 'monospace', color: '#CBEB72', fontSize: '0.92rem' }}>
                         {registrationFeedback.data.orderCode}
                       </strong>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#D1E0D7' }}>Mã vé:</span>
+                      <span style={{ color: '#D1E0D7' }}>Mã vé tạm:</span>
                       <strong style={{ fontFamily: 'monospace' }}>
                         {registrationFeedback.data.ticketCode}
                       </strong>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#D1E0D7' }}>Số tiền:</span>
-                      <strong>{formatPrice(registrationFeedback.data.amountVnd)}</strong>
+                      <span style={{ color: '#D1E0D7' }}>Số tiền giữ chỗ:</span>
+                      <strong style={{ fontSize: '0.95rem' }}>{formatPrice(registrationFeedback.data.amountVnd)}</strong>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ color: '#D1E0D7' }}>Hạn giữ chỗ:</span>
-                      <strong style={{ color: 'var(--color-accent)' }}>
+                      <strong style={{ color: '#CBEB72' }}>
                         {formatDateTime(registrationFeedback.data.expiresAt)}
                       </strong>
                     </div>
                   </div>
 
-                  <p style={{
-                    fontSize: '0.74rem',
+                  <div style={{
+                    marginTop: '12px',
+                    padding: '8px 10px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '4px',
+                    fontSize: '0.76rem',
                     color: '#D1E0D7',
-                    marginTop: '10px',
-                    lineHeight: 1.4
+                    lineHeight: 1.45,
+                    borderLeft: '3px solid #CBEB72'
                   }}>
-                    ⏱️ Suất chơi đang được giữ tạm thời trong 15 phút.
-                  </p>
+                    📌 <strong>Bàn giao Người 2:</strong> Đơn đã lưu với trạng thái <em>Pending</em>. Quá trình đăng ký của Người 1 hoàn tất, dừng tại đây để Người 2 tiếp nhận xử lý Thanh toán.
+                  </div>
                 </div>
               )}
             </div>

@@ -3,13 +3,14 @@ import { Navbar } from './components/Navbar';
 import { BrowseSessionsView } from './components/BrowseSessionsView';
 import { SessionDetailView } from './components/SessionDetailView';
 import { MyTicketsView } from './components/MyTicketsView';
+import { SignInView } from './components/SignInView';
 import { DevLoginModal } from './components/DevLoginModal';
 import { api } from './api';
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
-  const [currentView, setCurrentView] = useState('browse'); // 'browse' | 'detail' | 'tickets'
+  const [currentView, setCurrentView] = useState('browse'); // 'browse' | 'detail' | 'tickets' | 'signin'
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
@@ -32,6 +33,7 @@ export default function App() {
   async function handleLogout() {
     await api.logout();
     setUser(null);
+    setCurrentView('signin');
   }
 
   function handleSelectSession(id) {
@@ -56,8 +58,11 @@ export default function App() {
         currentView={currentView}
         onNavigate={(view) => {
           if (view === 'browse') handleBackToBrowse();
-          if (view === 'tickets') {
+          else if (view === 'tickets') {
             setCurrentView('tickets');
+            setSelectedSessionId(null);
+          } else if (view === 'signin') {
+            setCurrentView('signin');
             setSelectedSessionId(null);
           }
         }}
@@ -67,10 +72,23 @@ export default function App() {
 
       {/* Main Content Area */}
       <main style={{ flex: 1 }}>
+        {currentView === 'signin' && (
+          <SignInView
+            onLoginSuccess={(account) => {
+              setUser(account);
+              setCurrentView('browse');
+            }}
+            onContinueAsGuest={handleBackToBrowse}
+          />
+        )}
+
         {currentView === 'browse' && (
           <BrowseSessionsView
             user={user}
             onSelectSession={handleSelectSession}
+            onNavigate={(view) => {
+              if (view === 'tickets') setCurrentView('tickets');
+            }}
           />
         )}
 
