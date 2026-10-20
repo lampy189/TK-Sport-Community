@@ -23,6 +23,16 @@ public sealed class SqlAccountStore(string connectionString) : IAccountStore
         return await reader.ReadAsync(cancellationToken) ? Read(reader) : null;
     }
 
+    public async Task<Account?> FindByEmailAsync(string email, CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new SqlCommand(AccountSelect + " WHERE u.email=@email;", connection);
+        command.Parameters.Add("@email", SqlDbType.NVarChar, 320).Value = email;
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? Read(reader) : null;
+    }
+
     public async Task<Account> FindOrRegisterGoogleAsync(string subject, string email, string fullName,
         CancellationToken cancellationToken)
     {

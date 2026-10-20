@@ -242,6 +242,8 @@ internal sealed class FakeAccounts : IAccountStore
     public int Created { get; private set; }
     public Task<Account?> FindByIdAsync(long id, CancellationToken cancellationToken) =>
         Task.FromResult(Account?.Id == id ? Account : null);
+    public Task<Account?> FindByEmailAsync(string email, CancellationToken cancellationToken) =>
+        Task.FromResult(Account?.Email.Equals(email, StringComparison.OrdinalIgnoreCase) == true ? Account : null);
     public Task<Account> FindOrRegisterGoogleAsync(string subject, string email, string fullName, CancellationToken cancellationToken)
     {
         if (Account is not null && Account.GoogleSubject != subject)

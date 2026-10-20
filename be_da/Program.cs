@@ -15,6 +15,9 @@ builder.Services.AddProblemDetails();
 builder.Services.AddScoped<IAccountStore>(services => new SqlAccountStore(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
+builder.Services.AddScoped<ISessionStore>(services => new SqlSessionStore(
+    services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
+    ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
 builder.Services.AddScoped<GoogleSignIn>();
 builder.Services.AddScoped<AccountCookieEvents>();
 builder.Services.AddAntiforgery(options =>

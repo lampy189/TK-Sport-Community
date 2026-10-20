@@ -8,4 +8,5 @@ public interface IAccountStore
     Task<Account> FindOrRegisterGoogleAsync(string subject, string email, string fullName,
         CancellationToken cancellationToken);
     Task<Account?> FindByIdAsync(long id, CancellationToken cancellationToken);
+    Task<Account?> FindByEmailAsync(string email, CancellationToken cancellationToken);
 }
