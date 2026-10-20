@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, Users, Sparkles, Filter, ChevronRight, CheckCircle2, AlertTriangle, ArrowRight, ChevronDown } from 'lucide-react';
 import { api } from '../api';
 
-export function BrowseSessionsView({ user, onSelectSession }) {
+export function BrowseSessionsView({ user, onSelectSession, onNavigate }) {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -113,7 +113,7 @@ export function BrowseSessionsView({ user, onSelectSession }) {
           fontSize: '0.95rem',
           color: 'var(--color-text-muted)'
         }}>
-          Không gian của <strong style={{ color: 'var(--color-primary)' }}>{displayName}</strong> • Cầu lông & Pickleball
+          Tìm đúng hội. Chơi đúng trình. Cùng tiến bộ mỗi ngày.
         </p>
       </div>
 
@@ -136,7 +136,7 @@ export function BrowseSessionsView({ user, onSelectSession }) {
             Một buổi chơi hay đang chờ bạn.
           </h2>
           <p style={{ fontSize: '0.88rem', color: '#D1E0D7' }}>
-            Khám phá các buổi chơi phù hợp với trình độ hiện tại của bạn.
+            Khám phá các buổi chơi phù hợp với môn yêu thích và trình độ của bạn.
           </p>
         </div>
 
@@ -500,43 +500,52 @@ export function BrowseSessionsView({ user, onSelectSession }) {
         </div>
       )}
 
-      {/* Bottom Recommendation Bar (Figma Screen 01 Exact) */}
+      {/* Bottom Nearest Schedule Bar (Figma Screen 01 Exact) */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: '12px',
-        padding: '14px 20px',
-        backgroundColor: '#FFFFFF',
+        padding: '16px 24px',
+        backgroundColor: '#E6F4D0',
         borderRadius: 'var(--radius-md)',
-        border: '1px solid #E5E7EB',
-        fontSize: '0.85rem',
-        color: '#4B5563'
+        border: '1px solid #CBEB72',
+        fontSize: '0.9rem',
+        marginBottom: '16px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontWeight: '600' }}>Gợi ý cho bạn:</span>
-          <span style={{
-            backgroundColor: '#F3F4F6',
-            padding: '4px 12px',
-            borderRadius: 'var(--radius-full)',
-            fontWeight: '700',
-            color: 'var(--color-primary)'
-          }}>
-            TOP 3 • Cầu lông • Mọi khung giờ
+          <span style={{ fontWeight: '700', color: 'var(--color-primary)' }}>
+            Lịch gần nhất: 20/10 • 18:00 - Cầu lông sau giờ làm
           </span>
         </div>
 
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          fontWeight: '600',
-          cursor: 'pointer'
-        }}>
-          <span>Xem theo ngày</span>
-          <ChevronDown size={14} color="#6B7280" />
-        </div>
+        <button
+          onClick={() => onNavigate && onNavigate('tickets')}
+          style={{
+            padding: '7px 18px',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #D1D5DB',
+            borderRadius: 'var(--radius-full)',
+            color: 'var(--color-primary)',
+            fontSize: '0.84rem',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          Xem vé của tôi <ArrowRight size={14} />
+        </button>
+      </div>
+
+      <div style={{
+        fontSize: '0.78rem',
+        color: '#9CA3AF',
+        textAlign: 'left'
+      }}>
+        TKSC · Dữ liệu minh họa cho thiết kế giao diện
       </div>
     </div>
   );
