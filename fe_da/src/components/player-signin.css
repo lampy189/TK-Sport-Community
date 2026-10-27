@@ -1,0 +1,341 @@
+.player-signin {
+  min-height: 100svh;
+  padding: 36px 24px;
+  display: grid;
+  place-items: center;
+  background: var(--color-bg);
+}
+.player-signin-card {
+  width: min(1080px, 100%);
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+.player-signin-form {
+  padding: 44px 56px 30px;
+  min-width: 0;
+}
+.player-signin-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 38px;
+  text-align: left;
+}
+.player-signin-brand > span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  background: var(--color-primary);
+  color: var(--color-accent);
+  border-radius: 13px;
+}
+.player-signin-brand strong {
+  font-size: 17px;
+  letter-spacing: -0.4px;
+}
+.player-signin-brand small {
+  display: block;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  margin-top: 2px;
+}
+.player-login-kicker {
+  color: #76856c;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.player-signin-form h1 {
+  font-size: 31px;
+  letter-spacing: -1.2px;
+}
+.player-signin-form h1 > span {
+  color: #95ae68;
+}
+.player-login-intro {
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--color-muted);
+  margin: 14px 0 26px;
+}
+.login-social {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.login-social .button {
+  min-height: 46px;
+  font-size: 12px;
+}
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+  font-size: 10px;
+  color: var(--color-muted);
+}
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  height: 1px;
+  background: var(--color-border);
+  flex: 1;
+}
+.login-email-form label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.login-input {
+  position: relative;
+  margin-bottom: 16px;
+}
+.login-input > svg {
+  position: absolute;
+  top: 16px;
+  left: 14px;
+  color: #8b9883;
+}
+.login-input input {
+  width: 100%;
+  height: 48px;
+  padding-left: 42px;
+  font-size: 12px;
+  background: #fafbf8;
+}
+.login-email-form .button {
+  width: 100%;
+  justify-content: space-between;
+  font-size: 12px;
+  min-height: 46px;
+}
+.login-error {
+  padding: 14px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
+}
+.player-login-guest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 18px 0;
+  font-size: 11px;
+  color: var(--color-muted);
+}
+.player-login-guest:hover {
+  color: var(--color-primary);
+}
+.player-login-portals {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+  font-size: 10px;
+  color: #8c9887;
+}
+.player-login-portals a {
+  text-decoration: none;
+  color: var(--color-muted);
+}
+.player-login-portals a:hover {
+  text-decoration: underline;
+}
+.player-signin-story {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  justify-content: space-between;
+  padding: 44px;
+  min-width: 0;
+  overflow: hidden;
+  background: #173f30;
+  color: #fff;
+}
+.player-story-content {
+  z-index: 1;
+}
+.player-sport-tags {
+  display: flex;
+  gap: 8px;
+}
+.player-sport-tags span {
+  padding: 6px 13px;
+  border: 1px solid #ffffff30;
+  border-radius: 30px;
+  color: #d5e2cb;
+  font-size: 10px;
+}
+.player-story-heading {
+  margin-top: 48px;
+}
+.player-story-heading > span {
+  font-size: 9px;
+  letter-spacing: 1.4px;
+  color: #acc398;
+}
+.player-story-heading h2 {
+  font-size: clamp(38px, 4vw, 53px);
+  font-weight: 600;
+  line-height: 1.16;
+  letter-spacing: -2px;
+  margin: 18px 0 22px;
+}
+.player-story-heading em {
+  color: #d4ef91;
+  font-style: normal;
+}
+.player-story-heading p {
+  color: #b8ceba;
+  font-size: 12px;
+  line-height: 1.9;
+}
+.login-court {
+  position: absolute;
+  width: 230px;
+  height: 340px;
+  border: 1px solid #abc88230;
+  transform: rotate(-32deg);
+  right: -100px;
+  top: 160px;
+  background: linear-gradient(
+    90deg,
+    transparent 49.7%,
+    #abc88230 49.7%,
+    #abc88230 50.3%,
+    transparent 50.3%
+  );
+}
+.login-court::before {
+  content: "";
+  position: absolute;
+  inset: 0 24px;
+  border-inline: 1px solid #abc88230;
+}
+.login-court span {
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  border-top: 2px solid #abc88230;
+}
+.login-court i {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #d4ef9120;
+  top: -40px;
+  left: 60px;
+}
+.player-tip-card {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+  padding: 22px;
+  background: #ffffff09;
+  border: 1px solid #ffffff20;
+  border-radius: 16px;
+  color: #d6e4d0;
+}
+.player-tip-card:hover {
+  background: #ffffff12;
+}
+.player-tip-card.is-changing {
+  opacity: 0.6;
+  transform: translateY(2px);
+}
+.tip-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #d4ef91;
+}
+.tip-heading strong {
+  font-size: 11px;
+  font-weight: 600;
+  flex: 1;
+}
+.tip-copy {
+  font-size: 11px;
+  line-height: 1.9;
+  min-height: 64px;
+}
+.tip-next {
+  font-size: 9px;
+  color: #a6bda1;
+}
+@media (max-width: 960px) {
+  .player-signin-form {
+    padding: 36px;
+  }
+  .player-signin-story {
+    padding: 36px;
+  }
+  .player-signin-form h1 {
+    font-size: 28px;
+  }
+}
+@media (max-width: 740px) {
+  .player-signin {
+    padding: 20px 16px;
+  }
+  .player-signin-card {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 480px;
+    border-radius: 20px;
+  }
+  .player-signin-form {
+    padding: 32px 28px 26px;
+  }
+  .player-signin-brand {
+    margin-bottom: 30px;
+  }
+  .player-signin-story {
+    padding: 32px 28px;
+  }
+  .player-story-heading {
+    margin-top: 28px;
+  }
+  .player-story-heading h2 {
+    font-size: 42px;
+  }
+  .login-input input {
+    font-size: 16px;
+  }
+  .tip-copy {
+    min-height: 0;
+  }
+}
+@media (max-width: 380px) {
+  .player-signin-form {
+    padding: 28px 22px;
+  }
+  .player-signin-form h1 {
+    font-size: 26px;
+  }
+  .player-login-portals {
+    font-size: 9px;
+    gap: 8px;
+  }
+}

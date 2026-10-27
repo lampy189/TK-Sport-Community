@@ -1,5 +1,9 @@
 # TK-Sport-Community
 
+Backend Google sign-in on branch `NhatLT`: see [setup and API guide](be_da/README.md).
+Implementation is in `be_da` (.NET 8). Open `be_da/be_da.slnx` with a current Visual Studio, or build `be_da/be_da.csproj`.
+Google OAuth Client ID/Secret must be configured locally before real sign-in; no credentials are stored in Git.
+
 
 
 ## Getting started

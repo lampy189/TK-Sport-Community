@@ -2,42 +2,17 @@
 export const roleHomeConfig = {
   guest: {
     label: "Khách",
-    eyebrow: "WELCOME TO TK SPORT",
-    title: "Bắt đầu từ một trận đấu.",
-    description:
-      "Khám phá cầu lông và pickleball. Tìm buổi chơi phù hợp và kết nối với cộng đồng cùng đam mê.",
-    action: "Khám phá buổi chơi",
-    section: "Khám phá cộng đồng",
-    modules: ["Lịch social", "Bộ môn", "Hướng dẫn tham gia"],
-    stats: [
-      ["02", "Bộ môn"],
-      ["01", "Cộng đồng"],
-      ["∞", "Cơ hội kết nối"],
-    ],
-    tasks: [
-      "Tìm hiểu cách tham gia social",
-      "Khám phá trình độ phù hợp",
-      "Chuẩn bị cho buổi chơi đầu tiên",
-    ],
+    // Public home content lives in GuestHome; only the existing workspace is listed here.
+    modules: ["Lịch social"],
   },
   player: {
     label: "Người chơi",
-    eyebrow: "YOUR NEXT GAME STARTS HERE",
-    title: "Ra sân. Kết nối.\nChơi hết mình.",
-    description:
-      "Một buổi chơi phù hợp, những người bạn mới. Sẵn sàng cho trải nghiệm thể thao tiếp theo của bạn.",
-    action: "Tìm buổi chơi",
-    section: "Không gian của bạn",
-    modules: ["Lịch social", "Vé của tôi", "Hồ sơ kỹ năng", "Cộng đồng"],
-    stats: [
-      ["03", "Buổi chơi sắp tới"],
-      ["12", "Buổi đã tham gia"],
-      ["08", "Bạn cùng chơi"],
-    ],
-    tasks: [
-      "Xem vé và lịch ra sân",
-      "Cập nhật hồ sơ kỹ năng",
-      "Kết nối bạn cùng chơi",
+    modules: [
+      "Lịch social",
+      "Thanh toán",
+      "Vé của tôi",
+      "Hồ sơ kỹ năng",
+      "Cộng đồng",
     ],
   },
   referee: {
@@ -93,6 +68,7 @@ export const roleHomeConfig = {
       "Phân công nhân sự",
       "Khiếu nại đánh giá",
       "Ngoại lệ vận hành",
+      "Thanh toán",
     ],
     stats: [
       ["06", "Buổi chơi hôm nay"],
