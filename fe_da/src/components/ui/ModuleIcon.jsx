@@ -1,0 +1,51 @@
+import {
+  House,
+  CalendarDays,
+  CreditCard,
+  Ticket,
+  UserRound,
+  Users,
+  ClipboardCheck,
+  Package,
+  ShoppingBag,
+  ChartNoAxesCombined,
+  Settings2,
+  ShieldCheck,
+  CircleHelp,
+  ClipboardList,
+  Activity,
+} from "lucide-react";
+
+const icons = {
+  "Trang chủ": House,
+  "Lịch social": CalendarDays,
+  "Thanh toán": CreditCard,
+  "Vé của tôi": Ticket,
+  "Hồ sơ kỹ năng": UserRound,
+  "Cộng đồng": Users,
+  "Bộ môn": Activity,
+  "Hướng dẫn tham gia": CircleHelp,
+  "Phân công": CalendarDays,
+  "Điểm danh": ClipboardCheck,
+  "Đánh giá kỹ năng": ChartNoAxesCombined,
+  "Vật tư buổi chơi": Package,
+  "Bán hàng": ShoppingBag,
+  "Kho & vật tư": Package,
+  "Đối soát ca": ClipboardCheck,
+  "Quản lý buổi chơi": CalendarDays,
+  "Phân công nhân sự": Users,
+  "Khiếu nại đánh giá": ClipboardList,
+  "Ngoại lệ vận hành": ShieldCheck,
+  "Kinh doanh": ChartNoAxesCombined,
+  "Chính sách & giá": ClipboardList,
+  "Bổ nhiệm quản lý": Users,
+  "Phê duyệt": ClipboardCheck,
+  "Tài khoản & truy cập": ShieldCheck,
+  "Cấu hình kỹ thuật": Settings2,
+  "Sự cố": Activity,
+  "Bàn giao hỗ trợ": CircleHelp,
+};
+export default function ModuleIcon({ label, size = 20 }) {
+  const Icon = icons[label] || ClipboardList;
+  return <Icon size={size} strokeWidth={1.7} aria-hidden="true" />;
+}

@@ -9,6 +9,10 @@ import "../styles/home.css";
 export default function HomeLayout({
   roleLabel,
   accountName,
+  onLogout,
+  onLogin,
+  onHome,
+  role = "guest",
   navigation,
   activeId,
   onNavigate,
@@ -16,14 +20,14 @@ export default function HomeLayout({
   children,
 }) {
   return (
-    <div id="home" className="home-layout">
+    <div id="home" className="home-layout" data-role={role}>
       <a className="skip-link" href="#main-content">
         Bỏ qua điều hướng
       </a>
-      <Header roleLabel={roleLabel} accountName={accountName} />
+      <Header roleLabel={roleLabel} accountName={accountName} onLogout={onLogout} onLogin={onLogin} onHome={onHome} />
       <Navbar items={navigation} activeId={activeId} onNavigate={onNavigate} />
       <MainContainer>
-        <HeroLayout {...hero} />
+        {hero && <HeroLayout {...hero} />}
         {children}
       </MainContainer>
       <Footer />

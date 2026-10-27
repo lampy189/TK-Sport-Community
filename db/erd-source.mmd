@@ -1,0 +1,427 @@
+---
+title: Sample title
+---
+erDiagram
+	direction TB
+	roles {
+		BIGINT id PK ""  
+		VARCHAR code UK ""  
+		NVARCHAR name  ""  
+	}
+
+	users {
+		BIGINT id PK ""  
+		NVARCHAR username UK ""  
+		NVARCHAR email UK ""  
+		NVARCHAR full_name  ""  
+		VARCHAR google_id UK ""  
+		VARCHAR status  ""  
+		DATETIMEOFFSET deleted_at  ""  
+	}
+
+	user_roles {
+		BIGINT id PK ""  
+		BIGINT user_id FK ""  
+		BIGINT role_id FK ""  
+		BIGINT assigned_by FK ""  
+		DATETIMEOFFSET revoked_at  ""  
+	}
+
+	account_audit_logs {
+		BIGINT id PK ""  
+		BIGINT user_id FK ""  
+		BIGINT actor_id FK ""  
+		VARCHAR action  ""  
+		NVARCHAR old_value  ""  
+		NVARCHAR new_value  ""  
+	}
+
+	sports {
+		BIGINT id PK ""  
+		VARCHAR code UK ""  
+		NVARCHAR name  ""  
+	}
+
+	players {
+		BIGINT id PK ""  
+		BIGINT user_id FK ""  
+		DATE date_of_birth  ""  
+		VARCHAR gender  ""  
+		VARCHAR avatar_url  ""  
+	}
+
+	player_sport_profiles {
+		BIGINT id PK ""  
+		BIGINT player_id FK ""  
+		BIGINT sport_id FK ""  
+		SMALLINT current_score  ""  
+		VARCHAR current_band  ""  
+		VARCHAR rating_status  ""  
+	}
+
+	player_rating_history {
+		BIGINT id PK ""  
+		BIGINT player_sport_profile_id FK ""  
+		SMALLINT old_score  ""  
+		SMALLINT new_score  ""  
+		VARCHAR old_band  ""  
+		VARCHAR new_band  ""  
+		BIGINT changed_by FK ""  
+		BIGINT assessment_id FK ""  
+	}
+
+	rubrics {
+		BIGINT id PK ""  
+		BIGINT sport_id FK ""  
+		VARCHAR version  ""  
+		NVARCHAR name  ""  
+		BIT is_active  ""  
+	}
+
+	rubric_dimensions {
+		BIGINT id PK ""  
+		BIGINT rubric_id FK ""  
+		VARCHAR code  ""  
+		NVARCHAR name  ""  
+		SMALLINT weight_percent  ""  
+	}
+
+	sessions {
+		BIGINT id PK ""  
+		BIGINT sport_id FK ""  
+		BIGINT court_id FK ""  
+		BIGINT time_slot_id FK ""  
+		DATE session_date  ""  
+		VARCHAR band  ""  
+		SMALLINT capacity  ""  
+		INT price_vnd  ""  
+		VARCHAR status  ""  
+		BIGINT created_by FK ""  
+	}
+
+	assessments {
+		BIGINT id PK ""  
+		BIGINT player_sport_profile_id FK ""  
+		BIGINT session_id FK ""  
+		BIGINT rubric_id FK ""  
+		VARCHAR assessment_type  ""  
+		BIGINT assessor_id FK ""  
+		VARCHAR status  ""  
+		SMALLINT total_score  ""  
+		VARCHAR band_result  ""  
+	}
+
+	assessment_scores {
+		BIGINT id PK ""  
+		BIGINT assessment_id FK ""  
+		BIGINT dimension_id FK ""  
+		SMALLINT score  ""  
+	}
+
+	rating_appeals {
+		BIGINT id PK ""  
+		BIGINT player_sport_profile_id FK ""  
+		BIGINT submitted_by FK ""  
+		BIGINT assessment_id FK ""  
+		VARCHAR status  ""  
+		BIGINT reviewed_by FK ""  
+	}
+
+	venues {
+		BIGINT id PK ""  
+		NVARCHAR name  ""  
+		NVARCHAR address  ""  
+		BIT is_active  ""  
+	}
+
+	courts {
+		BIGINT id PK ""  
+		BIGINT venue_id FK ""  
+		NVARCHAR name  ""  
+		BIGINT sport_id FK ""  
+		BIT is_active  ""  
+	}
+
+	time_slots {
+		BIGINT id PK ""  
+		TIME start_time  ""  
+		TIME end_time  ""  
+		NVARCHAR label  ""  
+	}
+
+	session_referees {
+		BIGINT id PK ""  
+		BIGINT session_id FK ""  
+		BIGINT referee_id FK ""  
+		BIGINT assigned_by FK ""  
+	}
+
+	session_staff {
+		BIGINT id PK ""  
+		BIGINT session_id FK ""  
+		BIGINT staff_id FK ""  
+		NVARCHAR role_in_session  ""  
+	}
+
+	session_exceptions {
+		BIGINT id PK ""  
+		BIGINT session_id FK ""  
+		BIGINT player_id FK ""  
+		BIGINT approved_by FK ""  
+		NVARCHAR reason  ""  
+	}
+
+	social_booking_orders {
+		BIGINT id PK ""  
+		VARCHAR order_code UK ""  
+		BIGINT payer_id FK ""  
+		INT total_amount  ""  
+		VARCHAR status  ""  
+		DATETIMEOFFSET expires_at  ""  
+	}
+
+	tickets {
+		BIGINT id PK ""  
+		BIGINT order_id FK ""  
+		BIGINT session_id FK ""  
+		BIGINT player_id FK ""  
+		VARCHAR ticket_code UK ""  
+		VARCHAR status  ""  
+		INT amount_vnd  ""  
+		BIGINT checked_in_by FK ""  
+	}
+
+	invitations {
+		BIGINT id PK ""  
+		BIGINT order_id FK ""  
+		BIGINT inviter_id FK ""  
+		BIGINT invitee_id FK ""  
+		BIGINT session_id FK ""  
+		BIGINT ticket_id FK ""  
+		VARCHAR status  ""  
+	}
+
+	partner_requests {
+		BIGINT id PK ""  
+		BIGINT session_id FK ""  
+		BIGINT requester_id FK ""  
+		BIGINT partner_id FK ""  
+		VARCHAR status  ""  
+	}
+
+	sales_orders {
+		BIGINT id PK ""  
+		VARCHAR order_code UK ""  
+		BIGINT staff_id FK ""  
+		NVARCHAR customer_name  ""  
+		INT total_amount  ""  
+		VARCHAR status  ""  
+		VARCHAR payment_state  ""  
+		VARCHAR handover_state  ""  
+	}
+
+	payments {
+		BIGINT id PK ""  
+		BIGINT order_id FK ""  
+		BIGINT sales_order_id FK ""  
+		BIGINT payer_id FK ""  
+		INT amount_vnd  ""  
+		VARCHAR method  ""  
+		VARCHAR status  ""  
+		VARCHAR reference_code UK ""  
+		BIGINT confirmed_by FK ""  
+	}
+
+	bank_transactions {
+		BIGINT id PK ""  
+		VARCHAR external_id UK ""  
+		INT amount_vnd  ""  
+		VARCHAR reference_code  ""  
+		BIGINT matched_payment_id FK ""  
+		VARCHAR match_status  ""  
+	}
+
+	refunds {
+		BIGINT id PK ""  
+		BIGINT payment_id FK ""  
+		BIGINT ticket_id FK ""  
+		BIGINT recipient_id FK ""  
+		INT amount_vnd  ""  
+		VARCHAR status  ""  
+		BIGINT initiated_by FK ""  
+		BIGINT approved_by FK ""  
+	}
+
+	products {
+		BIGINT id PK ""  
+		VARCHAR sku UK ""  
+		NVARCHAR name  ""  
+		VARCHAR category  ""  
+		INT unit_price_vnd  ""  
+		BIT is_active  ""  
+	}
+
+	sales_order_items {
+		BIGINT id PK ""  
+		BIGINT sales_order_id FK ""  
+		BIGINT product_id FK ""  
+		SMALLINT quantity  ""  
+		INT unit_price_vnd  ""  
+		INT subtotal_vnd  ""  
+	}
+
+	stock_items {
+		BIGINT id PK ""  
+		BIGINT product_id FK ""  
+		INT quantity_on_hand  ""  
+		INT reorder_level  ""  
+	}
+
+	stock_movements {
+		BIGINT id PK ""  
+		BIGINT stock_item_id FK ""  
+		VARCHAR movement_type  ""  
+		INT quantity  ""  
+		VARCHAR reference_type  ""  
+		BIGINT reference_id  ""  
+		BIGINT created_by FK ""  
+	}
+
+	stock_counts {
+		BIGINT id PK ""  
+		BIGINT stock_item_id FK ""  
+		INT counted_quantity  ""  
+		INT system_quantity  ""  
+		INT difference  ""  
+		BIGINT counted_by FK ""  
+		BIGINT approved_by FK ""  
+	}
+
+	shift_reconciliations {
+		BIGINT id PK ""  
+		DATE shift_date  ""  
+		BIGINT staff_id FK ""  
+		INT expected_cash  ""  
+		INT actual_cash  ""  
+		INT expected_bank  ""  
+		INT actual_bank  ""  
+		INT difference  ""  
+		VARCHAR status  ""  
+		BIGINT approved_by FK ""  
+	}
+
+	reconciliation_items {
+		BIGINT id PK ""  
+		BIGINT reconciliation_id FK ""  
+		VARCHAR item_type  ""  
+		BIGINT reference_id  ""  
+		INT expected_amount  ""  
+		INT actual_amount  ""  
+		INT difference  ""  
+	}
+
+	policies {
+		BIGINT id PK ""  
+		VARCHAR code UK ""  
+		NVARCHAR name  ""  
+		NVARCHAR value  ""  
+		BIGINT approved_by FK ""  
+		DATETIMEOFFSET effective_from  ""  
+		DATETIMEOFFSET effective_to  ""  
+	}
+
+	approvals {
+		BIGINT id PK ""  
+		VARCHAR entity_type  ""  
+		BIGINT entity_id  ""  
+		BIGINT requested_by FK ""  
+		BIGINT approved_by FK ""  
+		VARCHAR status  ""  
+	}
+
+	audit_logs {
+		BIGINT id PK ""  
+		BIGINT actor_id FK ""  
+		VARCHAR action  ""  
+		VARCHAR entity_type  ""  
+		BIGINT entity_id  ""  
+		NVARCHAR old_value  ""  
+		NVARCHAR new_value  ""  
+	}
+
+	friendships {
+		BIGINT id PK ""  
+		BIGINT requester_id FK ""  
+		BIGINT addressee_id FK ""  
+		VARCHAR status  ""  
+	}
+
+	messages {
+		BIGINT id PK ""  
+		BIGINT sender_id FK ""  
+		BIGINT recipient_id FK ""  
+		NVARCHAR content  ""  
+		BIT is_read  ""  
+	}
+
+	notifications {
+		BIGINT id PK ""  
+		BIGINT user_id FK ""  
+		VARCHAR channel  ""  
+		NVARCHAR title  ""  
+		VARCHAR reference_type  ""  
+		BIGINT reference_id  ""  
+		VARCHAR status  ""  
+	}
+
+	
+
+	users||--o{user_roles:"has"
+	roles||--o{user_roles:"granted"
+	users||--o{account_audit_logs:"audited"
+	users||--o|players:"is"
+	players||--o{player_sport_profiles:"has"
+	sports||--o{player_sport_profiles:"for"
+	player_sport_profiles||--o{player_rating_history:"logs"
+	sports||--o{rubrics:"has"
+	rubrics||--o{rubric_dimensions:"contains"
+	rubrics||--o{assessments:"used_by"
+	player_sport_profiles||--o{assessments:"assessed"
+	sessions|o--o{assessments:"during"
+	assessments||--o{assessment_scores:"has"
+	rubric_dimensions||--o{assessment_scores:"scored_on"
+	player_sport_profiles||--o{rating_appeals:"appealed"
+	assessments|o--o{rating_appeals:"disputes"
+	assessments|o--o{player_rating_history:"caused"
+	venues||--o{courts:"has"
+	sports|o--o{courts:"type"
+	sports||--o{sessions:"of"
+	courts||--o{sessions:"hosts"
+	time_slots||--o{sessions:"at"
+	sessions||--o{session_referees:"has"
+	sessions||--o{session_staff:"has"
+	sessions||--o{session_exceptions:"has"
+	players||--o{session_exceptions:"granted"
+	social_booking_orders||--o{tickets:"contains"
+	sessions||--o{tickets:"for"
+	players||--o{tickets:"holder"
+	social_booking_orders||--o{invitations:"has"
+	sessions||--o{invitations:"for"
+	tickets|o--o{invitations:"issued"
+	sessions||--o{partner_requests:"has"
+	players||--o{partner_requests:"requester_or_partner"
+	social_booking_orders|o--o{payments:"paid_by"
+	sales_orders|o--o{payments:"paid_by"
+	payments|o--o{bank_transactions:"matched"
+	payments||--o{refunds:"refunded"
+	tickets|o--o{refunds:"for"
+	sales_orders||--o{sales_order_items:"has"
+	products||--o{sales_order_items:"sold_as"
+	products||--o|stock_items:"stocked"
+	stock_items||--o{stock_movements:"moves"
+	stock_items||--o{stock_counts:"counted"
+	shift_reconciliations||--o{reconciliation_items:"has"
+	users||--o{friendships:"requester_or_addressee"
+	users||--o{messages:"sender_or_recipient"
+	users||--o{notifications:"receives"
+	rubrics}|--|{Untitled-Entity-10:"  "
