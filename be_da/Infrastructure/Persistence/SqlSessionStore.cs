@@ -8,6 +8,32 @@ namespace be_da.Infrastructure.Persistence;
 
 public sealed class SqlSessionStore(string connectionString) : ISessionStore
 {
+    public async Task<IReadOnlyList<TimeSlotSummary>> GetTimeSlotsAsync(CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = """
+            SELECT id, start_time, end_time, label
+            FROM dbo.time_slots
+            ORDER BY start_time ASC, id ASC;
+            """;
+
+        await using var command = new SqlCommand(sql, connection);
+        var slots = new List<TimeSlotSummary>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var id = reader.GetInt64(0);
+            var startTime = reader.GetTimeSpan(1);
+            var endTime = reader.GetTimeSpan(2);
+            var label = reader.IsDBNull(3) ? $"{startTime:hh\\:mm} - {endTime:hh\\:mm}" : reader.GetString(3);
+            slots.Add(new TimeSlotSummary(id, startTime, endTime, label));
+        }
+
+        return slots;
+    }
+
     public async Task<IReadOnlyList<SessionSummary>> GetSessionsAsync(SessionFilter filter, long? currentUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
@@ -39,6 +65,8 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
               AND (@sportId IS NULL OR s.sport_id = @sportId)
               AND (@sport IS NULL OR sp.code = @sport OR sp.name = @sport)
               AND (@sessionDate IS NULL OR s.session_date = @sessionDate)
+              AND (@fromDate IS NULL OR s.session_date >= @fromDate)
+              AND (@toDate IS NULL OR s.session_date <= @toDate)
               AND (@timeSlotId IS NULL OR s.time_slot_id = @timeSlotId)
             ORDER BY s.session_date ASC, ts.start_time ASC;
             """;
@@ -49,6 +77,10 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
         command.Parameters.Add("@sport", SqlDbType.NVarChar, 100).Value = (object?)filter.Sport ?? DBNull.Value;
         command.Parameters.Add("@sessionDate", SqlDbType.Date).Value = filter.Date.HasValue
             ? filter.Date.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value;
+        command.Parameters.Add("@fromDate", SqlDbType.Date).Value = filter.FromDate.HasValue
+            ? filter.FromDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value;
+        command.Parameters.Add("@toDate", SqlDbType.Date).Value = filter.ToDate.HasValue
+            ? filter.ToDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value;
         command.Parameters.Add("@timeSlotId", SqlDbType.BigInt).Value = (object?)filter.TimeSlotId ?? DBNull.Value;
 
         var rawSessions = new List<SessionSummary>();
