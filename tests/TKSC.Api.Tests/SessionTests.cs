@@ -20,6 +20,46 @@ namespace TKSC.Api.Tests;
 public sealed class SessionTests
 {
     [Fact]
+    public async Task GetTimeSlots_Anonymous_ReturnsConfiguredVenueTimeSlotsOrderedByStartTime()
+    {
+        await using var app = new SessionApp();
+        using var client = app.Client();
+
+        var response = await client.GetAsync("/api/sessions/time-slots");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var slots = await response.Content.ReadFromJsonAsync<List<JsonElement>>();
+        Assert.NotNull(slots);
+        Assert.Equal(6, slots.Count);
+        Assert.Equal(1, slots[0].GetProperty("id").GetInt64());
+        Assert.Equal("08:00 - 10:00", slots[0].GetProperty("label").GetString());
+        Assert.Equal(6, slots[5].GetProperty("id").GetInt64());
+        Assert.Equal("20:00 - 22:00", slots[5].GetProperty("label").GetString());
+    }
+
+    [Fact]
+    public async Task BrowseSessions_FilterByDateRange_ReturnsSessionsWithinWeek()
+    {
+        await using var app = new SessionApp();
+        var monday = new DateOnly(2026, 10, 19);
+        var tuesday = new DateOnly(2026, 10, 20);
+        var sunday = new DateOnly(2026, 10, 25);
+        var nextWeek = new DateOnly(2026, 10, 26);
+
+        app.SessionStore.Sessions.Add(CreateTestSession(1, "Badminton", "B2", 8, 2, date: tuesday));
+        app.SessionStore.Sessions.Add(CreateTestSession(2, "Pickleball", "B1", 4, 1, date: sunday, sportId: 2));
+        app.SessionStore.Sessions.Add(CreateTestSession(3, "Badminton", "B1", 8, 0, date: nextWeek));
+
+        using var client = app.Client();
+        var sessions = await client.GetFromJsonAsync<List<JsonElement>>(
+            $"/api/sessions?fromDate={monday:yyyy-MM-dd}&toDate={sunday:yyyy-MM-dd}");
+        Assert.NotNull(sessions);
+        Assert.Equal(2, sessions.Count);
+        Assert.Contains(sessions, x => x.GetProperty("id").GetInt64() == 1);
+        Assert.Contains(sessions, x => x.GetProperty("id").GetInt64() == 2);
+    }
+
+    [Fact]
     public async Task BrowseSessions_Anonymous_ReturnsOpenSessions_WithNullEligibility()
     {
         await using var app = new SessionApp();
@@ -413,11 +453,24 @@ internal sealed class FakeSessionAccounts : IAccountStore
 
 internal sealed class FakeSessionStore : ISessionStore
 {
+    public List<TimeSlotSummary> TimeSlots { get; } = new()
+    {
+        new(1, new TimeSpan(8, 0, 0), new TimeSpan(10, 0, 0), "08:00 - 10:00"),
+        new(2, new TimeSpan(10, 0, 0), new TimeSpan(12, 0, 0), "10:00 - 12:00"),
+        new(3, new TimeSpan(14, 0, 0), new TimeSpan(16, 0, 0), "14:00 - 16:00"),
+        new(4, new TimeSpan(16, 0, 0), new TimeSpan(18, 0, 0), "16:00 - 18:00"),
+        new(5, new TimeSpan(18, 0, 0), new TimeSpan(20, 0, 0), "18:00 - 20:00"),
+        new(6, new TimeSpan(20, 0, 0), new TimeSpan(22, 0, 0), "20:00 - 22:00")
+    };
+
     public List<SessionSummary> Sessions { get; } = new();
     public Dictionary<long, List<SessionParticipant>> Participants { get; } = new();
     public Dictionary<(long PlayerId, long SportId), PlayerSportProfileInfo> Profiles { get; } = new();
     public HashSet<(long SessionId, long PlayerId)> ApprovedExceptions { get; } = new();
     public HashSet<(long SessionId, long PlayerId)> RegisteredTickets { get; } = new();
+
+    public Task<IReadOnlyList<TimeSlotSummary>> GetTimeSlotsAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<TimeSlotSummary>>(TimeSlots.OrderBy(t => t.StartTime).ThenBy(t => t.Id).ToList());
 
     public Task<IReadOnlyList<SessionSummary>> GetSessionsAsync(SessionFilter filter, long? currentUserId, CancellationToken cancellationToken)
     {
@@ -427,6 +480,8 @@ internal sealed class FakeSessionStore : ISessionStore
             list = list.Where(s => s.SportName.Equals(filter.Sport, StringComparison.OrdinalIgnoreCase) ||
                                    s.SportCode.Equals(filter.Sport, StringComparison.OrdinalIgnoreCase));
         if (filter.Date.HasValue) list = list.Where(s => s.SessionDate == filter.Date.Value);
+        if (filter.FromDate.HasValue) list = list.Where(s => s.SessionDate >= filter.FromDate.Value);
+        if (filter.ToDate.HasValue) list = list.Where(s => s.SessionDate <= filter.ToDate.Value);
         if (filter.TimeSlotId.HasValue) list = list.Where(s => s.TimeSlotId == filter.TimeSlotId.Value);
 
         var raw = list.ToList();

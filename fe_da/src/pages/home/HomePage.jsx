@@ -29,7 +29,12 @@ export default function HomePage({
     ...config.modules.map((label) => ({ id: label, label })),
   ];
   function open(label) {
-    if (label !== "overview" && !config.modules.includes(label)) return;
+    if (
+      label !== "overview" &&
+      label !== "Chi tiết buổi chơi" &&
+      !config.modules.includes(label)
+    )
+      return;
     setActive(label);
     if (!preview && label !== "Thanh toán") {
       const url = new URL(window.location.href);
@@ -86,12 +91,17 @@ export default function HomePage({
             onPayment={payment}
             onSelectSession={selectSession}
             initialSport={browseSport}
+            onBrowseSport={browse}
           />
         )}
       </GuestLayout>
     );
   }
   if (role === "player") {
+    const browse = (sport = "ALL") => {
+      setBrowseSport(sport);
+      open("Lịch social");
+    };
     return (
       <PlayerLayout
         navigation={navigation}
@@ -103,7 +113,7 @@ export default function HomePage({
         {active === "overview" ? (
           <PlayerHome
             preview={preview}
-            onBrowse={() => open("Lịch social")}
+            onBrowse={() => browse("ALL")}
             onTickets={() => open("Vé của tôi")}
             onSelectSession={selectSession}
           />
@@ -124,6 +134,8 @@ export default function HomePage({
               onLogin={onLogin}
               onPayment={payment}
               onSelectSession={selectSession}
+              initialSport={browseSport}
+              onBrowseSport={browse}
             />
           </div>
         )}

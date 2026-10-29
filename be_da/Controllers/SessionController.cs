@@ -12,6 +12,16 @@ namespace be_da.Controllers;
 [Route("api/sessions")]
 public sealed class SessionController(ISessionStore sessionStore, IAntiforgery antiforgery) : ControllerBase
 {
+    // UC-06 / SCR-04: Get configured venue time slots for schedule/timetable view
+    [AllowAnonymous]
+    [HttpGet("time-slots")]
+    [ProducesResponseType(typeof(IReadOnlyList<TimeSlotSummary>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTimeSlots(CancellationToken cancellationToken)
+    {
+        var timeSlots = await sessionStore.GetTimeSlotsAsync(cancellationToken);
+        return Ok(timeSlots);
+    }
+
     // UC-06: Browse court sessions
     [AllowAnonymous]
     [HttpGet]
@@ -22,10 +32,12 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
         [FromQuery] DateOnly? date,
         [FromQuery] long? timeSlotId,
         [FromQuery] string? status,
+        [FromQuery] DateOnly? fromDate,
+        [FromQuery] DateOnly? toDate,
         CancellationToken cancellationToken)
     {
         var currentUserId = TryGetUserId(out var uid) ? uid : (long?)null;
-        var filter = new SessionFilter(sportId, sport, date, timeSlotId, status);
+        var filter = new SessionFilter(sportId, sport, date, timeSlotId, status, fromDate, toDate);
         var sessions = await sessionStore.GetSessionsAsync(filter, currentUserId, cancellationToken);
         return Ok(sessions);
     }

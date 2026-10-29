@@ -633,3 +633,415 @@
     margin-left: 0;
   }
 }
+
+/* View Mode Switcher & Weekly Timetable (UC-06 / SCR-04) */
+.results-heading {
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.results-heading-left {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.view-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  background: #edf2e8;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  gap: 4px;
+}
+.view-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition:
+    background-color 150ms,
+    color 150ms,
+    box-shadow 150ms;
+}
+.view-mode-btn:hover {
+  color: var(--color-text);
+}
+.view-mode-btn.is-active {
+  background: #fff;
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.timetable-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.timetable-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px 24px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+}
+.timetable-week-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.timetable-week-picker > label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+.timetable-week-input-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.timetable-week-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 14px;
+  background: #f7f9f5;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.timetable-week-input-row input[type="date"] {
+  height: 40px;
+  padding: 0 12px;
+  font-size: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--color-text);
+}
+.timetable-nav-buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.timetable-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  color: var(--color-text);
+  cursor: pointer;
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    color 150ms;
+}
+.timetable-nav-btn:hover {
+  background: #f4f7f1;
+  border-color: #bfd0b3;
+}
+.timetable-nav-btn.is-current {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+.timetable-nav-btn.is-current:hover {
+  background: var(--color-primary-light);
+}
+
+.timetable-quick-jump {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 18px;
+  background: #f3f8ec;
+  border: 1px solid #d5e4c3;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #3f5c2a;
+}
+
+.timetable-card {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 22px 24px;
+  overflow: hidden;
+}
+.timetable-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #edf0e9;
+}
+.timetable-card-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.timetable-card-header p {
+  font-size: 12px;
+  color: var(--color-muted);
+  margin-top: 4px;
+}
+.timetable-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--color-muted);
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.legend-dot.is-badminton {
+  background: #2f6f4e;
+}
+.legend-dot.is-pickleball {
+  background: #3b82f6;
+}
+.legend-dot.is-full {
+  background: #c24136;
+}
+
+.timetable-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+.timetable-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border: 1px solid #e2e8dd;
+}
+.timetable-table th,
+.timetable-table td {
+  border: 1px solid #e2e8dd;
+  vertical-align: top;
+}
+.timetable-slot-col {
+  width: 132px;
+  background: #f7f9f5;
+  padding: 12px 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.timetable-day-col {
+  background: #f7f9f5;
+  padding: 11px 8px;
+  text-align: center;
+}
+.timetable-day-col .day-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.timetable-day-col .day-subtitle {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+.timetable-day-col.is-today {
+  background: #d8edd8;
+}
+.timetable-day-col.is-today .day-title,
+.timetable-day-col.is-today .day-subtitle {
+  color: #164e2e;
+}
+
+.timetable-slot-cell {
+  background: #fafbf8;
+  padding: 14px 10px;
+  text-align: center;
+  vertical-align: middle !important;
+}
+.timetable-slot-cell .slot-number {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.timetable-slot-cell .slot-range {
+  display: inline-block;
+  margin-top: 5px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: #ebf2e4;
+  color: #365926;
+  font-size: 10px;
+  font-weight: 600;
+}
+.timetable-slot-cell .slot-period {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+.timetable-cell {
+  padding: 10px 8px;
+  min-height: 92px;
+  background: #fff;
+}
+.timetable-cell.is-today-col {
+  background: #fafdf9;
+}
+.timetable-empty {
+  display: block;
+  color: #98a498;
+  font-size: 13px;
+  padding: 20px 4px;
+  text-align: center;
+  user-select: none;
+}
+.timetable-cell-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.timetable-event {
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: #f5faf6;
+  border: 1px solid #cce2d2;
+  border-left: 3px solid #2f6f4e;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition:
+    transform 140ms,
+    box-shadow 140ms,
+    border-color 140ms;
+}
+.timetable-event.is-pickleball {
+  background: #f2f7ff;
+  border-color: #c8ddf8;
+  border-left-color: #3b82f6;
+}
+.timetable-event.is-full {
+  background: #fff6f5;
+  border-color: #f0cdc8;
+  border-left-color: #c24136;
+}
+.timetable-event:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.timetable-event-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+.timetable-event.is-badminton .timetable-event-title {
+  color: #17543a;
+}
+.timetable-event.is-pickleball .timetable-event-title {
+  color: #1d4f91;
+}
+.timetable-eligible-icon {
+  color: #4f772d;
+  flex-shrink: 0;
+}
+.timetable-event.is-pickleball .timetable-eligible-icon {
+  color: #2563eb;
+}
+.timetable-event-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #3d6652;
+}
+.timetable-event.is-pickleball .timetable-event-time {
+  color: #3b699e;
+}
+.timetable-event-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--color-muted);
+}
+.timetable-event-meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.timetable-event-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-top: 4px;
+  margin-top: 2px;
+  border-top: 1px dashed #dce5d8;
+  font-size: 10px;
+}
+.timetable-event.is-pickleball .timetable-event-footer {
+  border-top-color: #d3e3f8;
+}
+.timetable-places {
+  font-weight: 600;
+  color: #2f6f4e;
+}
+.timetable-event.is-pickleball .timetable-places:not(.is-full) {
+  color: #2563eb;
+}
+.timetable-places.is-full {
+  color: #b53434;
+}
+.timetable-price {
+  font-weight: 700;
+  color: var(--color-text);
+}

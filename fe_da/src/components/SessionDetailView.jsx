@@ -47,6 +47,7 @@ export function SessionDetailView({
   onBack,
   onOpenLogin,
   onPayment,
+  onOpenSkills,
 }) {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -395,9 +396,18 @@ export function SessionDetailView({
                           ? `Trình độ của bạn chưa khớp với yêu cầu Band ${summary.band} của buổi chơi.`
                           : registrationFeedback.message}
                   </p>
+                  {onOpenSkills && (
+                    <button
+                      type="button"
+                      className="button button-primary booking-action"
+                      onClick={onOpenSkills}
+                    >
+                      Mở Hồ sơ kỹ năng &amp; Khảo sát (UC-06)
+                    </button>
+                  )}
                   <p>
-                    Bạn có thể chọn “Xin ngoại lệ trình độ” để tìm hiểu bước
-                    tiếp theo.
+                    Bạn cũng có thể chọn “Xin ngoại lệ trình độ” để tìm hiểu
+                    bước tiếp theo.
                   </p>
                 </div>
               )}
