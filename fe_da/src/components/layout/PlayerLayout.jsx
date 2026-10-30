@@ -1,3 +1,4 @@
+import NotificationBell from "../NotificationBell";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, LogOut, Menu, X } from "lucide-react";
 import "../../styles/player-home.css";
@@ -52,6 +53,7 @@ export default function PlayerLayout({
             </span>
           </a>
           <div className="player-account">
+            {onLogout && <NotificationBell onTickets={() => navigate("Vé của tôi")} />}
             {accountName && (
               <span className="player-account-name" title={accountName}>
                 {accountName}

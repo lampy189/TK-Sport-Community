@@ -52,6 +52,13 @@ public class PaymentsController(IPaymentService service, IAntiforgery antiforger
     [Authorize]
     [HttpGet("tickets")]
     public async Task<IActionResult> Tickets() => Ok(await service.TicketsAsync(UserId));
+    [Authorize]
+    [HttpPost("tickets/{id:long}/cancel")]
+    public async Task<IActionResult> CancelTicket(long id)
+    {
+        if (!await HasValidAppRequest()) return BadRequest(new { code = "invalid_csrf_token", message = "Phiên bảo mật đã thay đổi. Vui lòng thử lại." });
+        return Ok(await service.CancelTicketAsync(id, UserId));
+    }
     [Authorize(Roles = "staff,manager,Staff,Manager")]
     [HttpGet("reviews")]
     public async Task<IActionResult> Reviews() => Ok(await service.ReviewsAsync());

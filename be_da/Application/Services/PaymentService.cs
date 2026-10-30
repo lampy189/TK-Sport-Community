@@ -8,6 +8,71 @@ namespace TKSC.Application.Services;
 
 public sealed class PaymentService(IPaymentRepository repository, IPaymentGateway gateway, TimeProvider clock) : IPaymentService
 {
+    // Business rule chosen by the product owner (28/10/2026): paid tickets can be cancelled
+    // up to 12 hours before the session start for a 100% refund handled by staff.
+    public static readonly TimeSpan PaidCancelWindow = TimeSpan.FromHours(12);
+    // Session dates/slots are stored as Vietnam local time (UTC+7, no DST).
+    private static readonly TimeSpan VenueOffset = TimeSpan.FromHours(7);
+
+    public async Task<TicketCancelResult> CancelTicketAsync(long ticketId, long userId)
+    {
+        var context = await repository.GetTicketCancelContextAsync(ticketId)
+            ?? throw new PaymentException(404, "Không tìm thấy vé.");
+        var start = new DateTimeOffset(context.SessionDate.ToDateTime(context.StartTime), VenueOffset);
+        return await repository.InTransactionAsync(context.OrderId, null, async order =>
+        {
+            OwnOrder(order, userId);
+            var now = clock.GetUtcNow();
+            var ticket = order!.Tickets.SingleOrDefault(t => t.Id == ticketId)
+                ?? throw new PaymentException(404, "Không tìm thấy vé.");
+            var status = ticket.Status.ToLowerInvariant();
+            if (status == "cancelled") throw new PaymentException(409, "Vé đã được hủy trước đó.");
+            if (status == "checkedin" || ticket.CheckedInBy is not null)
+                throw new PaymentException(409, "Vé đã check-in, không thể hủy.");
+            if (start <= now) throw new PaymentException(409, "Buổi chơi đã bắt đầu, không thể hủy vé.");
+            var orderStatus = order.Status.ToLowerInvariant();
+            if (orderStatus == "review_required")
+                throw new PaymentException(409, "Đơn đang được kiểm tra thanh toán, chưa thể hủy vé.");
+
+            if (orderStatus is not ("paid" or "pending") || status is not ("confirmed" or "reserved" or "pending"))
+                throw new PaymentException(409, "Vé không còn đủ điều kiện hủy.");
+            if (orderStatus == "pending" && (order.ExpiresAt is null || order.ExpiresAt <= now))
+                throw new PaymentException(409, "Vé đã hết thời gian giữ chỗ.");
+            var refundAmount = 0;
+            if (orderStatus == "paid")
+            {
+                if (start - now < PaidCancelWindow)
+                    throw new PaymentException(409, "Chỉ hủy được vé đã thanh toán trước giờ chơi ít nhất 12 giờ.");
+                var payment = order.Payments.Where(p => p.Status == "paid").OrderByDescending(p => p.Id).FirstOrDefault()
+                    ?? throw new PaymentException(409, "Không tìm thấy giao dịch đã thanh toán của vé.");
+                refundAmount = ticket.AmountVnd;
+                // Refund goes to the original payer, never automatically to the invited player.
+                repository.AddRefund(new Refund { PaymentId = payment.Id, TicketId = ticket.Id, RecipientId = order.PayerId,
+                    AmountVnd = refundAmount, Status = "requested", InitiatedBy = userId });
+            }
+            else
+            {
+                // Unpaid hold: release the place and keep the remaining tickets payable.
+                var remaining = order.Tickets.Where(t => t.Id != ticket.Id
+                    && !string.Equals(t.Status, "cancelled", StringComparison.OrdinalIgnoreCase)).ToList();
+                order.TotalAmount = remaining.Sum(t => t.AmountVnd);
+                if (remaining.Count == 0) order.Status = "cancelled";
+                // An open payOS link carries the old amount; retire it so checkout creates a new one.
+                // A late transfer on the old link is then routed to staff review by the webhook rules.
+                foreach (var pending in order.Payments.Where(p => p.Status == "pending"))
+                {
+                    Audit(pending, "ticket_cancelled_retire_link", $"Vé {ticket.Id} bị hủy, tổng đơn đổi.", userId);
+                    pending.Status = "failed";
+                }
+            }
+            repository.AddAudit(new AuditLog { ActorId = userId, Action = "ticket_cancelled", EntityType = "Ticket",
+                EntityId = ticket.Id, OldValue = ticket.Status,
+                NewValue = refundAmount > 0 ? $"Yêu cầu hoàn {refundAmount} VND" : "Hủy giữ chỗ" });
+            ticket.Status = "cancelled";
+            await repository.SaveAsync();
+            return new TicketCancelResult(ticket.Id, refundAmount > 0 ? "refund_requested" : "cancelled", refundAmount);
+        });
+    }
     public async Task<OrderSummary> DisplayAsync(long id, long userId) =>
         await repository.GetOrderAsync(id, userId) ?? throw new PaymentException(404, "Không tìm thấy đơn của bạn.");
     public Task<IReadOnlyList<TicketSummary>> TicketsAsync(long userId) => repository.GetTicketsAsync(userId);
@@ -153,7 +218,7 @@ public sealed class PaymentService(IPaymentRepository repository, IPaymentGatewa
                 {
                     Audit(payment, "payos_payment_confirmed", data.Reference);
                     payment.Status = "paid"; order.Status = "paid"; bankEvent.MatchStatus = "matched";
-                    foreach (var ticket in order.Tickets)
+                    foreach (var ticket in order.Tickets.Where(t => !string.Equals(t.Status, "cancelled", StringComparison.OrdinalIgnoreCase)))
                     {
                         ticket.Status = "confirmed";
                         ticket.TicketCode ??= $"TK-{Guid.NewGuid():N}";
@@ -171,9 +236,11 @@ public sealed class PaymentService(IPaymentRepository repository, IPaymentGatewa
         });
     }
 
-    private static bool Eligible(SocialBookingOrder order) => order.Tickets.Count > 0
-        && order.Tickets.All(t => (t.Status == "reserved" || t.Status == "Pending"))
-        && order.Tickets.Sum(t => (long)t.AmountVnd) == order.TotalAmount;
+    private static IEnumerable<Ticket> Active(SocialBookingOrder order) =>
+        order.Tickets.Where(t => !string.Equals(t.Status, "cancelled", StringComparison.OrdinalIgnoreCase));
+    private static bool Eligible(SocialBookingOrder order) => Active(order).Any()
+        && Active(order).All(t => (t.Status == "reserved" || t.Status == "Pending"))
+        && Active(order).Sum(t => (long)t.AmountVnd) == order.TotalAmount;
     private void Flag(SocialBookingOrder order, Payment payment, string action, string detail, long? actor = null)
     {
         Audit(payment, action, detail, actor);

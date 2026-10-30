@@ -25,6 +25,105 @@ public class PaymentServiceTests
         Assert.Equal("paid", after.Status);
         Assert.All(after.Tickets, t => Assert.True(t.Valid));
     }
+    [Fact]
+    public async Task CancelUnpaidTicketReleasesPlaceAndKeepsRestPayable()
+    {
+        var (service, repo, _) = Setup();
+        var result = await service.CancelTicketAsync(1, 7);
+        Assert.Equal("cancelled", result.Status);
+        Assert.Equal("cancelled", repo.Order.Tickets.First(t => t.Id == 1).Status);
+        Assert.Equal(60000, repo.Order.TotalAmount);
+        Assert.Empty(repo.Refunds);
+        await service.ProcessAsync(1, 7);
+        await service.HandleWebhookAsync("signed-60000");
+        Assert.Equal("cancelled", repo.Order.Tickets.First(t => t.Id == 1).Status);
+    }
+    [Fact]
+    public async Task CancelPaidTicketCreatesRefundForPayer()
+    {
+        var (service, repo, _) = Setup();
+        await service.ProcessAsync(1, 7);
+        await service.HandleWebhookAsync("signed");
+        var result = await service.CancelTicketAsync(2, 7);
+        Assert.Equal("refund_requested", result.Status);
+        var refund = Assert.Single(repo.Refunds);
+        Assert.Equal(60000, refund.AmountVnd);
+        Assert.Equal(7, refund.RecipientId);
+        Assert.Equal("paid", repo.Order.Status);
+        Assert.Equal("confirmed", repo.Order.Tickets.First(t => t.Id == 1).Status);
+    }
+    [Fact]
+    public async Task CancelPaidTicketInsideTwelveHoursIsRejected()
+    {
+        var (service, repo, _) = Setup();
+        await service.ProcessAsync(1, 7);
+        await service.HandleWebhookAsync("signed");
+        repo.SessionDate = DateOnly.FromDateTime(Now.UtcDateTime); // 18:00 VN = 11:00Z, Now = 10:00Z
+        var error = await Assert.ThrowsAsync<PaymentException>(() => service.CancelTicketAsync(1, 7));
+        Assert.Equal(409, error.StatusCode);
+        Assert.Empty(repo.Refunds);
+    }
+    [Fact]
+    public async Task CancellationCannotCreateDuplicateRefundOrCancelOthersTicket()
+    {
+        var (service, repo, _) = Setup();
+        await Assert.ThrowsAsync<PaymentException>(() => service.CancelTicketAsync(1, 99));
+        await service.ProcessAsync(1, 7);
+        await service.HandleWebhookAsync("signed");
+        await service.CancelTicketAsync(1, 7);
+        await Assert.ThrowsAsync<PaymentException>(() => service.CancelTicketAsync(1, 7));
+        Assert.Single(repo.Refunds);
+    }
+    [Fact]
+    public async Task ExpiredHoldCannotBeCancelled()
+    {
+        var (service, repo, _) = Setup();
+        repo.Order.ExpiresAt = Now.AddMinutes(-1);
+        await Assert.ThrowsAsync<PaymentException>(() => service.CancelTicketAsync(1, 7));
+        Assert.Equal(120000, repo.Order.TotalAmount);
+        Assert.Empty(repo.Refunds);
+    }
+    [Fact]
+    public async Task QrInspectionDoesNotAdmitAndRepeatCheckInIsIdempotent()
+    {
+        var (_, repo, _) = Setup();
+        repo.Order.Status = "paid";
+        var ticket = repo.Order.Tickets.First(); ticket.Status = "confirmed"; ticket.TicketCode = "TK-test";
+        repo.SessionDate = DateOnly.FromDateTime(Now.UtcDateTime);
+        var service = new TicketCheckInService(repo, new Clock());
+        var preview = await service.ExecuteAsync("TK-test", 10, false, false);
+        Assert.False(preview.CheckedIn); Assert.Null(ticket.CheckedInBy); Assert.Empty(repo.Audits);
+        var result = await service.ExecuteAsync("TK-test", 10, false, true);
+        Assert.True(result.CheckedIn); Assert.Equal(10, ticket.CheckedInBy);
+        await service.ExecuteAsync("TK-test", 11, true, true);
+        Assert.Equal(10, ticket.CheckedInBy); Assert.Single(repo.Audits);
+    }
+    [Theory]
+    [InlineData("pending", "Pending")]
+    [InlineData("paid", "cancelled")]
+    [InlineData("paid", "invalidated")]
+    [InlineData("review_required", "confirmed")]
+    public async Task InvalidTicketsCannotEnter(string orderStatus, string ticketStatus)
+    {
+        var (_, repo, _) = Setup();
+        repo.Order.Status = orderStatus;
+        var ticket = repo.Order.Tickets.First(); ticket.Status = ticketStatus; ticket.TicketCode = "TK-test";
+        repo.SessionDate = DateOnly.FromDateTime(Now.UtcDateTime);
+        var service = new TicketCheckInService(repo, new Clock());
+        await Assert.ThrowsAsync<PaymentException>(() => service.ExecuteAsync("TK-test", 10, true, true));
+        Assert.Null(ticket.CheckedInBy); Assert.Empty(repo.Audits);
+    }
+    [Fact]
+    public async Task UnassignedRefereeAndWrongDayCannotCheckIn()
+    {
+        var (_, repo, _) = Setup(); repo.Order.Status = "paid";
+        var ticket = repo.Order.Tickets.First(); ticket.Status = "confirmed"; ticket.TicketCode = "TK-test";
+        repo.Assigned = false;
+        var service = new TicketCheckInService(repo, new Clock());
+        Assert.Equal(403, (await Assert.ThrowsAsync<PaymentException>(() => service.ExecuteAsync("TK-test", 10, false, true))).StatusCode);
+        Assert.Equal(409, (await Assert.ThrowsAsync<PaymentException>(() => service.ExecuteAsync("TK-test", 10, true, true))).StatusCode);
+        Assert.Null(ticket.CheckedInBy); Assert.Empty(repo.Audits);
+    }
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-20T10:00:00Z");
     private sealed class Clock : TimeProvider { public override DateTimeOffset GetUtcNow() => Now; }
     private static (PaymentService Service, Repository Repo, Gateway Gateway) Setup()
@@ -231,6 +330,15 @@ public class PaymentServiceTests
         public void AddPayment(Payment p) { p.Id = 12 + Order.Payments.Count; Order.Payments.Add(p); }
         public void AddEvent(BankTransaction e) => Events.Add(e);
         public void AddAudit(AuditLog a) => Audits.Add(a);
+        public DateOnly SessionDate = DateOnly.FromDateTime(Now.UtcDateTime.AddDays(3));
+        public List<Refund> Refunds = [];
+        public Task<TicketCancelContext?> GetTicketCancelContextAsync(long ticketId) => Task.FromResult(
+            Order.Tickets.Any(t => t.Id == ticketId) ? new TicketCancelContext(Order.Id, SessionDate, new TimeOnly(18, 0)) : null);
+        public void AddRefund(Refund r) => Refunds.Add(r);
+        public bool Assigned = true;
+        public Task<long?> FindOrderForTicketCodeAsync(string code) => Task.FromResult<long?>(Order.Tickets.Any(t => t.TicketCode == code) ? Order.Id : null);
+        public Task<CheckInContext?> GetCheckInContextAsync(string code, long actorId) => Task.FromResult<CheckInContext?>(
+            new CheckInContext(1, Order.Id, SessionDate, new TimeOnly(20, 0), "Open", Assigned, "Người chơi", "Cầu lông", "Sân 1", new TimeOnly(18, 0)));
         public Task SaveAsync() => Task.CompletedTask;
     }
 }

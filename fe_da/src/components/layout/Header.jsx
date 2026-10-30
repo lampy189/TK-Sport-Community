@@ -1,3 +1,4 @@
+import NotificationBell from "../NotificationBell";
 import { ArrowUpRight, LogIn, LogOut } from "lucide-react";
 
 export default function Header({
@@ -25,6 +26,7 @@ export default function Header({
         </a>
         <span className="header-tagline">Cùng đam mê. Cùng ra sân.</span>
         <div className="account">
+          {onLogout && <NotificationBell />}
           <span className="avatar" aria-hidden="true">
             {accountName
               ? accountName

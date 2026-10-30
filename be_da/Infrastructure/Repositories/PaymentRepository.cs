@@ -1,4 +1,5 @@
 using System.Data;
+using TKSC.Application.Notifications;
 using Microsoft.EntityFrameworkCore;
 using TKSC.Application.DTOs;
 using TKSC.Application.Interfaces;
@@ -14,11 +15,18 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
     {
         var order = await db.SocialBookingOrders.AsNoTracking().Include(o => o.Payments).Include(o => o.Tickets)
             .SingleOrDefaultAsync(o => o.Id == orderId && o.PayerId == payerId);
-        return order is null ? null : PaymentMappings.ToSummary(order);
-    }
-    public async Task<IReadOnlyList<TicketSummary>> GetTicketsAsync(long userId) =>
-        await db.Tickets.AsNoTracking().Where(t => t.Player.UserId == userId || t.Order.PayerId == userId)
+        if (order is null) return null;
+        var tickets = await db.Tickets.AsNoTracking().Where(t => t.OrderId == orderId)
             .Select(PaymentMappings.TicketProjection).ToListAsync();
+        return PaymentMappings.ToSummary(order) with { Tickets = tickets };
+    }
+    public async Task<IReadOnlyList<TicketSummary>> GetTicketsAsync(long userId)
+    {
+        var tickets = await db.Tickets.AsNoTracking().Where(t => t.Player.UserId == userId || t.Order.PayerId == userId)
+            .Select(PaymentMappings.TicketProjection).ToListAsync();
+        var owned = await db.SocialBookingOrders.Where(o => o.PayerId == userId).Select(o => o.Id).ToListAsync();
+        return tickets.Select(t => t with { CanManage = owned.Contains(t.OrderId) }).ToList();
+    }
 
     public async Task<IReadOnlyList<ReviewSummary>> GetReviewsAsync()
     {
@@ -64,7 +72,20 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
                 await db.Entry(order).Collection(o => o.Tickets).LoadAsync();
             }
         }
+        var previousOrder = order?.Status ?? "";
+        var previousTickets = order?.Tickets.ToDictionary(t => t.Id, t => t.Status) ?? new Dictionary<long, string>();
         var result = await action(order);
+        if (order is not null)
+        {
+            foreach (var ticket in order.Tickets)
+            {
+                var kind = TicketNotifications.Event(previousTickets.GetValueOrDefault(ticket.Id, ""), ticket.Status, previousOrder, order.Status);
+                if (kind is null) continue;
+                var holderId = await db.Players.Where(p => p.Id == ticket.PlayerId).Select(p => p.UserId).SingleAsync();
+                db.Notifications.AddRange(TicketNotifications.Create(kind, ticket.Id, order.PayerId, holderId));
+            }
+            await db.SaveChangesAsync();
+        }
         await transaction.CommitAsync();
         return result;
     }
@@ -72,5 +93,17 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
     public void AddPayment(Payment payment) => db.Payments.Add(payment);
     public void AddEvent(BankTransaction bankEvent) => db.BankTransactions.Add(bankEvent);
     public void AddAudit(AuditLog audit) => db.AuditLogs.Add(audit);
+    public Task<TicketCancelContext?> GetTicketCancelContextAsync(long ticketId) => db.Tickets.AsNoTracking()
+        .Where(t => t.Id == ticketId)
+        .Select(t => new TicketCancelContext(t.OrderId, t.Session.SessionDate, t.Session.TimeSlot.StartTime))
+        .SingleOrDefaultAsync();
+    public void AddRefund(Refund refund) => db.Refunds.Add(refund);
+    public Task<long?> FindOrderForTicketCodeAsync(string code) => db.Tickets.AsNoTracking()
+        .Where(t => t.TicketCode == code).Select(t => (long?)t.OrderId).SingleOrDefaultAsync();
+    public Task<CheckInContext?> GetCheckInContextAsync(string code, long actorId) => db.Tickets.AsNoTracking()
+        .Where(t => t.TicketCode == code).Select(t => new CheckInContext(t.Id, t.OrderId,
+            t.Session.SessionDate, t.Session.TimeSlot.EndTime, t.Session.Status,
+            t.Session.SessionReferees.Any(r => r.RefereeId == actorId), t.Player.User.FullName,
+            t.Session.Sport.Name, t.Session.Court.Name ?? "Sân chưa đặt tên", t.Session.TimeSlot.StartTime)).SingleOrDefaultAsync();
     public Task SaveAsync() => db.SaveChangesAsync();
 }
