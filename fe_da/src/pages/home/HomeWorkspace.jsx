@@ -1,6 +1,7 @@
 import SectionLayout from "../../components/layout/SectionLayout";
 import { BrowseSessionsView } from "../../components/BrowseSessionsView";
 import { SessionDetailView } from "../../components/SessionDetailView";
+import CheckInPage from "../payment/CheckInPage";
 import PaymentPage from "../payment/PaymentPage";
 import { Construction, ArrowLeft } from "lucide-react";
 
@@ -16,6 +17,7 @@ export default function HomeWorkspace({
   onLogin,
   initialSport = "ALL",
 }) {
+  if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage />;
   if (!preview && ["player", "guest"].includes(role)) {
     if (active === "Lịch social")
       return (
@@ -43,6 +45,7 @@ export default function HomeWorkspace({
     if (role === "player" && ["Thanh toán", "Vé của tôi"].includes(active))
       return (
         <PaymentPage
+          onBrowse={() => onOpen("Lịch social")}
           key={active}
           initialView={active === "Vé của tôi" ? "tickets" : "payment"}
         />

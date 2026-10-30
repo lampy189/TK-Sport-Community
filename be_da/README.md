@@ -9,7 +9,7 @@ The frontend and the old local four-project scaffold are not changed by this imp
 - UC-01, UC-02, UC-49 / API-02: Google sign-in and first-time registration.
 - FR-01.3, BR-30, BR-47: new users receive Player; an existing account retains its one role.
 - The user chose Google-only login on 6 October 2026. The earlier username/password SRS flow is not implemented here.
-- No SMTP, Gmail password, email OTP, password-reset flow or Google mail permission is needed.
+- Google sign-in needs no SMTP, Gmail password, email OTP, password-reset flow or Google mail permission. Ticket notification emails use a separate SMTP configuration; see [ticket notifications](../docs/ticket-notifications.md).
 - Google OAuth credentials are still required to test with a real Google account. Tests use a fake Google backchannel and an in-memory account store; the opt-in SQL test only reads the real database.
 
 ## Code placement

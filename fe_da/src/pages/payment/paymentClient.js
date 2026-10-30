@@ -22,6 +22,7 @@ function saveDemo(order) {
 }
 async function request(path, body) {
   const response = await authenticatedRequest(`/api/v1/commerce/payment/${path}`, {
+    cache: "no-store",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json", "X-TKSC-Request": "1" },
     ...(body === undefined ? {} : { method: "POST", body: JSON.stringify(body) }),
@@ -36,10 +37,30 @@ async function request(path, body) {
   return response.json();
 }
 export const paymentClient = {
+  inspectTicket: code => request('check-in/inspect', { ticketCode: code }),
+  checkIn: code => request('check-in/confirm', { ticketCode: code }),
+  cancel: async (id) => {
+    if (!demoMode) return request('tickets/' + id + '/cancel', {});
+    const order = readDemo();
+    const ticket = order.tickets.find(t => t.id === id);
+    if (!ticket || ticket.status === 'cancelled') throw new Error('Vé không còn có thể hủy.');
+    if (order.status === 'review_required') throw new Error('Đơn đang kiểm tra thanh toán.');
+    const refundAmountVnd = order.status === 'paid' ? ticket.amountVnd : 0;
+    ticket.status = 'cancelled';
+    if (refundAmountVnd) { ticket.refundStatus = 'requested'; ticket.refundAmountVnd = refundAmountVnd; }
+    else {
+      order.totalAmount = order.tickets.filter(t => t.status !== 'cancelled').reduce((sum,t) => sum+t.amountVnd,0);
+      if (!order.totalAmount) order.status = 'cancelled';
+      order.payments.filter(p => p.status === 'pending').forEach(p => { p.status = 'failed'; });
+    }
+    saveDemo(order);
+    return { status: 'cancelled', refundAmountVnd };
+  },
   display: (id) => demoMode ? Promise.resolve(saveDemo(readDemo())) : request(`orders/${id}`),
   refresh: (id) => demoMode ? Promise.resolve(saveDemo(readDemo())) : request(`orders/${id}/refresh`, {}),
   tickets: () => demoMode ? Promise.resolve(readDemo().tickets.map(t => ({
     ...t, valid: t.status === "confirmed" && readDemo().status === "paid",
+    orderStatus: readDemo().status, expiresAt: readDemo().expiresAt, paymentStatus: readDemo().payments[0]?.status ?? null,
   }))) : request("tickets"),
   reviews: () => demoMode ? Promise.resolve(readDemo().payments.filter(p => p.status === "review_required")
     .map(p => ({ ...p, orderId: 1, reasons: [{ newValue: readDemo().reviewReason }] }))) : request("reviews"),
