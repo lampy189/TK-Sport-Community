@@ -836,8 +836,9 @@
 .legend-dot.is-pickleball {
   background: #3b82f6;
 }
-.legend-dot.is-full {
-  background: #c24136;
+.legend-dot.is-full,
+.legend-dot.is-locked {
+  background: #94a3b8;
 }
 
 .timetable-scroll {
@@ -964,14 +965,22 @@
   border-color: #c8ddf8;
   border-left-color: #3b82f6;
 }
-.timetable-event.is-full {
-  background: #fff6f5;
-  border-color: #f0cdc8;
-  border-left-color: #c24136;
+.timetable-event.is-full,
+.timetable-event.is-locked {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  border-left-color: #94a3b8;
+  color: #64748b;
+  cursor: not-allowed;
+  opacity: 0.76;
 }
-.timetable-event:hover {
+.timetable-event:not(.is-locked):hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
+}
+.timetable-event.is-locked:hover {
+  transform: none;
+  box-shadow: none;
 }
 .timetable-event-title {
   display: flex;
@@ -987,6 +996,9 @@
 }
 .timetable-event.is-pickleball .timetable-event-title {
   color: #1d4f91;
+}
+.timetable-event.is-locked .timetable-event-title {
+  color: #64748b;
 }
 .timetable-eligible-icon {
   color: #4f772d;
@@ -1005,6 +1017,11 @@
 }
 .timetable-event.is-pickleball .timetable-event-time {
   color: #3b699e;
+}
+.timetable-event.is-locked .timetable-event-time,
+.timetable-event.is-locked .timetable-event-meta,
+.timetable-event.is-locked .timetable-price {
+  color: #64748b;
 }
 .timetable-event-meta {
   display: flex;
@@ -1031,15 +1048,19 @@
 .timetable-event.is-pickleball .timetable-event-footer {
   border-top-color: #d3e3f8;
 }
+.timetable-event.is-locked .timetable-event-footer {
+  border-top-color: #cbd5e1;
+}
 .timetable-places {
   font-weight: 600;
   color: #2f6f4e;
 }
-.timetable-event.is-pickleball .timetable-places:not(.is-full) {
+.timetable-event.is-pickleball .timetable-places:not(.is-full):not(.is-locked) {
   color: #2563eb;
 }
-.timetable-places.is-full {
-  color: #b53434;
+.timetable-places.is-full,
+.timetable-places.is-locked {
+  color: #64748b;
 }
 .timetable-price {
   font-weight: 700;

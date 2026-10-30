@@ -114,6 +114,27 @@ function formatSlotTimeRange(slot) {
   return start && end ? `${start} - ${end}` : "";
 }
 
+function getSessionStartMs(s) {
+  if (!s?.sessionDate) return 0;
+  const parts = s.sessionDate.split("-").map((n) => parseInt(n, 10));
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return 0;
+  const rawStart = (s.startTime || s.timeLabel?.split("-")[0] || "00:00")
+    .trim()
+    .slice(0, 5);
+  const [hh, mm] = rawStart.split(":").map((n) => parseInt(n, 10) || 0);
+  return new Date(parts[0], parts[1] - 1, parts[2], hh, mm, 0, 0).getTime();
+}
+
+function isSessionPastStart(s, nowMs = Date.now()) {
+  const startMs = getSessionStartMs(s);
+  return startMs > 0 && startMs <= nowMs;
+}
+
+function isSessionFull(s) {
+  const availableSlots = s.availableSlots ?? s.capacity - s.occupiedPlaces;
+  return availableSlots <= 0;
+}
+
 export function BrowseSessionsView({
   user,
   onSelectSession,
@@ -256,6 +277,14 @@ export function BrowseSessionsView({
         : sessions,
     [sessions, filterEligibleOnly],
   );
+
+  // Open sessions for List View: exclude sessions that are already full or past their start time
+  const openListSessions = useMemo(() => {
+    const nowMs = Date.now();
+    return displayedSessions
+      .filter((s) => !isSessionFull(s) && !isSessionPastStart(s, nowMs))
+      .sort((a, b) => getSessionStartMs(a) - getSessionStartMs(b));
+  }, [displayedSessions]);
 
   // Build 7 days of the currently selected week (Monday -> Sunday)
   const todayIso = toIsoDateString(new Date());
@@ -430,7 +459,7 @@ export function BrowseSessionsView({
                 ? "Chưa tải được dữ liệu"
                 : viewMode === "timetable"
                   ? `${sessionsInSelectedWeek.length} buổi trong tuần (${displayedSessions.length} tổng)`
-                  : `${displayedSessions.length} buổi chơi`}
+                  : `${openListSessions.length} buổi chơi đang mở`}
           </span>
         </div>
         <div
@@ -583,7 +612,7 @@ export function BrowseSessionsView({
                   <i className="legend-dot is-pickleball" /> Pickleball
                 </span>
                 <span className="legend-item">
-                  <i className="legend-dot is-full" /> Hết chỗ
+                  <i className="legend-dot is-locked" /> Đã khóa (Qua giờ / Đủ chỗ)
                 </span>
               </div>
             </div>
@@ -659,6 +688,8 @@ export function BrowseSessionsView({
                                       s.availableSlots ??
                                       s.capacity - s.occupiedPlaces;
                                     const isFull = availableSlots <= 0;
+                                    const isPast = isSessionPastStart(s);
+                                    const isLocked = isFull || isPast;
                                     const isBadminton =
                                       s.sportName === "Badminton";
                                     const bandLabel =
@@ -668,17 +699,28 @@ export function BrowseSessionsView({
                                       <button
                                         type="button"
                                         key={s.id}
+                                        disabled={isLocked}
+                                        aria-disabled={isLocked}
                                         className={[
                                           "timetable-event",
-                                          isBadminton
-                                            ? "is-badminton"
-                                            : "is-pickleball",
-                                          isFull ? "is-full" : "",
+                                          isLocked
+                                            ? "is-locked"
+                                            : isBadminton
+                                              ? "is-badminton"
+                                              : "is-pickleball",
                                         ]
                                           .filter(Boolean)
                                           .join(" ")}
-                                        onClick={() => onSelectSession(s.id)}
-                                        title={`Xem chi tiết: ${getSessionTitle(s)} (${s.courtName})`}
+                                        onClick={() => {
+                                          if (!isLocked) onSelectSession(s.id);
+                                        }}
+                                        title={
+                                          isPast
+                                            ? "Buổi chơi đã qua thời điểm bắt đầu (Đã khóa)"
+                                            : isFull
+                                              ? "Buổi chơi đã đủ người (Đã khóa)"
+                                              : `Xem chi tiết: ${getSessionTitle(s)} (${s.courtName})`
+                                        }
                                       >
                                         <div className="timetable-event-title">
                                           <span>
@@ -687,13 +729,14 @@ export function BrowseSessionsView({
                                               : "Pickleball"}{" "}
                                             - {bandLabel}
                                           </span>
-                                          {s.isEligibleSuggestion === true && (
-                                            <Sparkles
-                                              size={12}
-                                              className="timetable-eligible-icon"
-                                              aria-label="Phù hợp trình độ"
-                                            />
-                                          )}
+                                          {!isLocked &&
+                                            s.isEligibleSuggestion === true && (
+                                              <Sparkles
+                                                size={12}
+                                                className="timetable-eligible-icon"
+                                                aria-label="Phù hợp trình độ"
+                                              />
+                                            )}
                                         </div>
                                         <div className="timetable-event-time">
                                           <Clock size={12} />
@@ -708,14 +751,16 @@ export function BrowseSessionsView({
                                         <div className="timetable-event-footer">
                                           <span
                                             className={
-                                              isFull
-                                                ? "timetable-places is-full"
+                                              isLocked
+                                                ? "timetable-places is-locked"
                                                 : "timetable-places"
                                             }
                                           >
-                                            {isFull
-                                              ? "Hết chỗ"
-                                              : `Còn ${availableSlots}/${s.capacity} chỗ`}
+                                            {isPast
+                                              ? "Đã qua giờ"
+                                              : isFull
+                                                ? "Đã đủ chỗ"
+                                                : `Còn ${availableSlots}/${s.capacity} chỗ`}
                                           </span>
                                           <span className="timetable-price">
                                             {formatPrice(s.priceVnd)}
@@ -737,10 +782,10 @@ export function BrowseSessionsView({
             </div>
           </div>
         </section>
-      ) : displayedSessions.length === 0 ? (
+      ) : openListSessions.length === 0 ? (
         <StatePanel
-          title="Chưa tìm thấy buổi chơi"
-          description="Thử chọn ngày khác hoặc mở rộng bộ lọc để tìm buổi chơi phù hợp."
+          title="Chưa tìm thấy buổi chơi đang mở"
+          description="Các buổi chơi đã đủ chỗ hoặc đã qua thời điểm bắt đầu đã được ẩn khỏi danh sách. Hãy chọn ngày khác hoặc chuyển sang Thời gian biểu để xem toàn bộ lịch tuần."
           action={
             <button
               className="button button-primary"
@@ -757,7 +802,7 @@ export function BrowseSessionsView({
         />
       ) : (
         <div className="session-grid">
-          {displayedSessions.map((s) => {
+          {openListSessions.map((s) => {
             const isEligible = s.isEligibleSuggestion;
             const availableSlots =
               s.availableSlots ?? s.capacity - s.occupiedPlaces;
