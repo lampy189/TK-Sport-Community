@@ -214,6 +214,18 @@ export function SessionDetailView({
   const availableSlots =
     summary.availableSlots ?? summary.capacity - summary.occupiedPlaces;
   const isFull = availableSlots <= 0;
+  const isPastStart = (() => {
+    const dateStr = summary.sessionDate;
+    const timeStr = (summary.startTime || summary.timeLabel?.split("-")[0] || "")
+      .trim()
+      .slice(0, 5);
+    if (!dateStr || !timeStr) return false;
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const [hh, mm] = timeStr.split(":").map(Number);
+    if (!y || !m || !d || Number.isNaN(hh) || Number.isNaN(mm)) return false;
+    return new Date(y, m - 1, d, hh, mm, 0, 0).getTime() <= Date.now();
+  })();
+  const isSessionLocked = isFull || isPastStart;
   const isEligible = summary.isEligibleSuggestion;
   return (
     <div className="session-detail">
@@ -327,23 +339,39 @@ export function SessionDetailView({
             <span>/ người</span>
           </div>
           <span
-            className={isFull ? "session-status is-full" : "session-status"}
+            className={
+              isSessionLocked ? "session-status is-full" : "session-status"
+            }
           >
-            {isFull ? "Đã hết chỗ" : `Còn ${availableSlots} chỗ`}
+            {isPastStart
+              ? "Đã qua giờ bắt đầu"
+              : isFull
+                ? "Đã hết chỗ"
+                : `Còn ${availableSlots} chỗ`}
           </span>
           <p className="booking-note">
-            Hệ thống kiểm tra trình độ và chỗ trống trước khi giữ chỗ.
+            {isPastStart
+              ? "Buổi chơi đã qua thời điểm bắt đầu và đã khóa đăng ký."
+              : isFull
+                ? "Buổi chơi đã đủ số lượng người tham gia và đã khóa đăng ký."
+                : "Hệ thống kiểm tra trình độ và chỗ trống trước khi giữ chỗ."}
           </p>
           <button
             className="button button-primary booking-action"
             disabled={
               registering ||
-              isFull ||
+              isSessionLocked ||
               registrationFeedback?.type === "SUCCESS_PENDING"
             }
             onClick={handleRegister}
           >
-            {registering ? "Đang xử lý…" : "Đăng ký buổi chơi"}
+            {registering
+              ? "Đang xử lý…"
+              : isPastStart
+                ? "Đã khóa (Qua giờ bắt đầu)"
+                : isFull
+                  ? "Đã khóa (Đủ chỗ)"
+                  : "Đăng ký buổi chơi"}
           </button>
           {registrationFeedback?.type === "SUCCESS_PENDING" && (
             <button
