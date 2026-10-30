@@ -1,0 +1,3269 @@
+
+CAPSTONE PROJECT REPORT
+TK SPORT COMMUNITY
+Report 3
+Software Requirement Specification
+Project code: TKSC  |  Group: G138
+English working draft — approved scope update, 23 September 2026
+– Hanoi –
+Table of Contents
+Change Log6
+Definitions and Acronyms6
+I. Overall Requirements7
+1. Context Diagram7
+2. Main Business Flow8
+2.1 Publish a court session (BF-01)8
+2.2 Join a suitable session (BF-02)10
+2.3 Register with friends (BF-03)11
+2.4 Attend and receive a skill assessment (BF-04)12
+2.5 Review a rating and handle affected tickets (BF-05)13
+2.6 Connect with a playing partner (BF-06)13
+2.7 Counter sale and goods handover (BF-07)15
+2.8 Session supply issue, use and return (BF-08)15
+2.9 Discrepancy approval and shift handover (BF-09)16
+2.10 Role appointment and technical handover (BF-10)17
+3. Conceptual Data Model17
+3.1. Entity Relationship Diagram17
+3.2. Entity Descriptions20
+Entity: Account20
+Entity: Sport20
+Entity: Court20
+Entity: Social session21
+Entity: Sport skill scheme21
+Entity: Player sport profile21
+Entity: Assessment21
+Entity: Rating review21
+Entity: Session invitation21
+Entity: Registration / ticket22
+Entity: Skill exception22
+Entity: Social Booking Order (existing Payment order)22
+Entity: Payment order item22
+Entity: Bank transaction22
+Entity: Payment allocation23
+Entity: Refund23
+Entity: Friendship23
+Entity: Direct message23
+Entity: Partner preference23
+Entity: Change record24
+Entity: Person24
+Entity: Role appointment24
+Entity: Business policy24
+Entity: Sales Order24
+Entity: Sales Order Item25
+Entity: Sales Allocation25
+Entity: Goods Handover25
+Entity: Stock Item26
+Entity: Session Supply Allocation26
+Entity: Stock Movement26
+Entity: Count / Adjustment Request26
+Entity: Shift Reconciliation27
+Entity: Replenishment Request27
+Entity: Sales Return / Refund Case27
+Entity: Support Handover27
+3.3. Data Business Rules28
+4. User Requirements28
+4.1. Actors28
+4.1.1. Role-account naming and initial operators29
+4.2. Use Cases29
+4.3. Use Case Diagrams34
+4.4. Permission Matrix37
+5. System Functionalities39
+5.1. Screen Inventory39
+a. Screen Flow39
+b. Screen List40
+5.2. External API Inventory41
+5.3. Background Job Inventory41
+II. Use Case Specifications42
+1. Player onboarding42
+1.1. UC-04 — Complete a sport survey42
+2. Individual and friend registration43
+2.1. UC-08 — Register for a session43
+2.2. UC-09 — Invite eligible friends44
+2.3. UC-10 — Respond to a session invitation45
+3. Payments and transaction review46
+3.1. UC-11 — Pay for accepted registrations46
+3.2. UC-12 — Confirm a bank transfer46
+3.3. UC-22 — Review an unmatched transfer48
+4. Court admission and assessment49
+4.1. UC-15 — Decide a skill exception49
+4.2. UC-16 — Record player attendance50
+4.3. UC-17 — Record an on-court assessment51
+4.4. UC-18 — Publish a supported skill result52
+5. Rating review and refunds53
+5.1. UC-20 — Resolve a rating review53
+5.2. UC-21 — Refund an ineligible future ticket54
+6. Partner preference55
+6.1. UC-25 — Request a playing partner55
+7. Session management and trial operations56
+7.1. UC-27 — Publish and close session registration56
+7.2. UC-31 — View operations and record trial feedback57
+Shared supporting case — UC-3257
+8. Counter sales, stock and controlled operations58
+8.1. UC-36 — Create a counter sales order58
+8.2. UC-37 — Confirm a sales payment58
+8.3. UC-38 — Hand over sold items59
+8.4. UC-39 — Receive stock60
+8.5. UC-41 — Issue supplies to a session60
+8.6. UC-42 — Record use and unused returns61
+8.7. UC-43 — Count stock and request an adjustment61
+8.8. UC-44 — Approve a financial or stock adjustment62
+8.9. UC-45 — Reconcile and hand over a work shift63
+8.10. UC-48 — Hand over System Admin access63
+8.11. UC-50 — Handle a sales return or refund case64
+III. Functional Requirements65
+1. Accounts and player profiles65
+1.1. Register / sign in (SCR-01)65
+1.2. My profile and skill history (SCR-02)65
+2. Skill assessment and review66
+2.1. Sport survey (SCR-03)66
+2.2. Skill exception requests (SCR-09)66
+2.3. Assessment form and publication (SCR-11)66
+2.4. Rating review and decision (SCR-12)67
+3. Session booking and payment68
+3.1. Social calendar and session list (SCR-04)68
+3.2. Session details and participants (SCR-05)68
+3.3. Friend checklist and invitations (SCR-06)69
+3.4. Payment instructions and status (SCR-07)69
+3.5. My tickets and refund status (SCR-08)70
+4. Community and venue operations71
+4.1. Assigned roster and attendance (SCR-10)71
+4.2. Members and friend requests (SCR-13)71
+4.3. Messages and partner preference (SCR-14)71
+4.4. Session management (SCR-15)72
+4.5. Sport assessment settings (SCR-16)72
+4.6. Payments, refunds and exceptions (SCR-17)73
+4.7. Operations and trial feedback (SCR-18)73
+4.8. Owner, Staff and System Admin workspaces73
+SCR-19 — Business policies and approvals73
+SCR-20 — Counter sales order74
+SCR-21 — Sales payment, handover and return74
+SCR-22 — Stock and session supplies75
+SCR-23 — Counts and adjustment decisions75
+SCR-24 — Shift reconciliation and handover75
+SCR-25 — Technical settings and incidents76
+SCR-26 — Role accounts and support handover76
+5. Background Job Inventory77
+5.1. JOB-01 — Expire unpaid place holds and invitations77
+5.2. JOB-02 — Check future tickets after a published rating change77
+5.3. JOB-03 — Retry verified payment processing77
+5.4. JOB-04 — Release expired unpaid sales reservations78
+6. External API Inventory78
+6.1. Receive bank-transfer events (API-01)78
+6.2. Verify an external sign-in identity (API-02)79
+IV. Non-Functional Requirements79
+1. External Interfaces79
+2. Quality Attributes79
+2.1. Usability79
+2.2. Performance and responsiveness80
+2.3. Security80
+2.4. Reliability and traceability80
+V. Requirement Appendix82
+1. Business Rules82
+2. System Messages86
+3. Other Requirements and Proposed Use Cases87
+3.1. Practical additions for a later scope decision87
+P-UC-01 — Join a skill-matched waiting list87
+P-UC-02 — Request a voluntary session change87
+P-UC-03 — Block messages or report misuse87
+3.2. Feature-to-use-case traceability88
+3.3. Acceptance scenarios for TK Sport88
+3.4. Source and scope notes89
+
+Change Log
+Date
+Type
+Changed by
+Change description
+20/09/2026
+A
+
+Draft TKSC requirements, use cases, data model, diagrams and matching review edition.
+23/09/2026
+M
+
+Applied approved roles, TK.<role> accounts, Manager rating authority and initial support by Trần Minh Đức. Added counter sales, stock, reconciliation and handover requirements; aligned related diagrams, permissions, data, tests and traceability. Used team examples as table-format references.
+A: Added. M: Modified. D: Deleted.
+Definitions and Acronyms
+Term
+Meaning
+TKSC
+TK Sport Community; project code.
+Social
+A recreational session where players buy individual places and rotate through games.
+Slot
+A two-hour operating period.
+Session
+One bookable group for a sport, court, date and slot.
+Skill profile
+One player's published level for one sport.
+Provisional
+An initial survey-based level awaiting on-court assessment.
+Referee
+A venue-approved person who coordinates a court and assesses players.
+Manager
+Lâm's venue role. It manages operations and decides disputed ratings after referee review.
+Registration / ticket
+A registration holds a player's place; it becomes a valid ticket when payment and entry checks pass.
+Payer
+The person paying for their own place or accepted friend registrations.
+FE / BF / UC / FR / BR
+Feature, business flow, use case, functional requirement and business rule IDs.
+SCR / API / JOB / MSG
+Screen, external interface, background job and message IDs.
+P-UC
+An optional use case proposed for a separate scope decision.
+Owner
+Court owner; responsible for business policy, prices and Manager appointments.
+System Admin
+Technical support role; initially Trần Minh Đức. It has no rating-dispute or business-adjustment authority.
+Staff
+One combined role for counter sales, stock, payment checks, approved repayment and shift reconciliation.
+Role account
+A named login assigned to one person and one role, using the TK.<role> naming family.
+Social Booking Order
+The existing Payment order entity for participation charges only; may contain several accepted player tickets.
+Sales Order
+An independent order for goods, with separate payment and delivery states.
+Document basis: [R1] user-edited Report 1; [R2] approved English Report 2; [D] later scope decisions; [T3] supplied Report 3 template. Source notes and optional use cases are in Section V.3.
+I. Overall Requirements
+1. Context Diagram
+TK Sport Community (TKSC) is a web application that supports badminton and pickleball social sessions at TK Sport. It manages player profiles, sport-specific skill assessments, session registration, payments, community interactions, counter sales, stock and session supplies. Both sports share the same operational workflow while maintaining separate skill profiles and assessment records.
+The context diagram represents TKSC as a single system and shows its information exchanges with seven human actors. Guest submits registration and sign-in information. Player exchanges profile and survey data, booking and payment requests, invitation responses, messages, and rating-review or skill-exception requests. The system returns published skill results, suitable sessions, tickets, request outcomes and notifications. Referee records attendance and assessments, decides session-specific skill exceptions, provides rating-review evidence, and requests or reports the use of session supplies.
+Staff records counter sales, goods handover, stock movements, payment reviews, repayment evidence and shift reconciliation. Manager manages sessions, sport assessment schemes and operational assignments, approves Staff and Referee appointments, makes final disputed-rating decisions after Referee review, and reviews stock or financial exceptions within approved authority. Owner approves business policies, prices and Manager appointments, and receives business summaries and escalated cases. System Admin implements approved account access, maintains technical settings, handles processing incidents and records technical handover. This role does not make rating or business-approval decisions.
+TKSC also exchanges data with five external services. Google OAuth provides verified sign-in identities. Bank / Payment Service supplies authenticated incoming transaction events and receives event acknowledgements. Cloudinary handles image storage and media operations. Firebase Service supports real-time messaging and push notifications. Email Service sends account verification, password reset, booking and refund-related emails and returns delivery status.
+Each arrow indicates the direction of an information flow across the system boundary. Detailed permissions are specified in Section I.4.4. Social booking orders and goods sales orders remain separate, and incoming payment confirmation does not establish that an outgoing refund has been completed.
+
+
+
+
+Figure 1: Context Diagram
+
+2. Main Business Flow
+Each diagram shows the normal successful path. Declines, failed checks, late payments and other exceptions are specified in Section II. The shared workflow applies to both sports; sport-specific records are always retained.
+2.1 Publish a court session (BF-01)
+Trigger: Manager prepares a social schedule under Owner-approved policies.
+End condition: A valid session is open for registration.
+
+Figure 2. BF-01 — normal workflow.
+Do not publish overlapping use of a court or referee. Do not silently change the sport, time, price or skill conditions of a sold session. UC-26–UC-28.
+2.2 Join a suitable session (BF-02)
+Trigger: A player selects a sport and date.
+End condition: The player holds a confirmed ticket or receives a clear reason for failure.
+
+Figure 3. BF-02 — normal workflow.
+A full session, overlapping booking or out-of-band level blocks normal registration. Duplicate or late payment notices do not create extra tickets. UC-04, UC-06, UC-08, UC-11–UC-13, UC-32.
+2.3 Register with friends (BF-03)
+Trigger: A player chooses eligible friends for a session.
+End condition: Each accepted, paid participant has their own ticket.
+
+Figure 4. BF-03 — normal workflow.
+An invitation is not a ticket. Unpaid expired places are released separately. An inviter's payment does not replace a friend's consent, skill check or time-conflict check. UC-09–UC-12.
+2.4 Attend and receive a skill assessment (BF-04)
+Trigger: A player arrives for a booked session.
+End condition: Attendance and supported assessment results are stored.
+
+Figure 5. BF-04 — normal workflow.
+Unobserved skills are not scored as zero. Referees continue to allocate games and rotate players. A published rating change starts the future-ticket check in BF-05. UC-16–UC-18.
+2.5 Review a rating and handle affected tickets (BF-05)
+Trigger: Player requests a rating review, or a supported result is published. Manager decides disputed corrections; Referees provide evidence.
+End condition: Only ineligible future paid tickets enter refunds; suitable alternatives are shown.
+
+Figure 6. BF-05 — normal workflow.
+Manager records the review decision, then the system checks affected future tickets. Staff handles eligible repayment and verified evidence. System Admin does not decide ratings or repayments. Preserve eligible friends’ tickets and separate Sales Orders; no automatic rebooking.
+2.6 Connect with a playing partner (BF-06)
+Trigger: A member views another member's profile or the participant list.
+End condition: Members can communicate and record a partner preference.
+
+Figure 7. BF-06 — normal workflow.
+Friends can chat without a shared booking. A partner preference needs valid tickets and does not promise an exclusive pairing. Neither messages nor peer feedback directly change a skill rating. UC-23–UC-25.
+2.7 Counter sale and goods handover (BF-07)
+Staff creates a goods-only order. TKSC reserves available stock and issues a sales reference. The bank event confirms payment; Staff separately records physical handover. UC-36–UC-38.
+
+Figure 8. Counter sale and goods handover (BF-07)
+2.8 Session supply issue, use and return (BF-08)
+A Referee or Manager requests supplies. Staff issues the available quantity. Actual use and unused returns reconcile to that allocation without a second deduction. UC-39–UC-42.
+
+Figure 9. Session supply issue, use and return (BF-08)
+2.9 Discrepancy approval and shift handover (BF-09)
+Staff records a stock or payment difference. Manager, or Owner for an escalation, reviews independently. TKSC applies an approved adjustment once. UC-43–UC-46.
+
+Figure 10. Discrepancy approval and shift handover (BF-09)
+2.10 Role appointment and technical handover (BF-10)
+Business authority approves the appointment. System Admin implements the approved account. A later operator change uses a separate account and preserves history. UC-29, UC-34, UC-48.
+
+Figure 11.  Role appointment and technical handover (BF-10)
+3. Conceptual Data Model
+3.1. Entity Relationship Diagram
+The conceptual ERD is split by business area. Repeated entity names refer to the same records. The four original views describe social play; the added views cover role accounts, separate sales and stock. Cardinality labels define required and optional links. These are business entities, not physical tables.
+
+Figure 12. Profiles, sport schemes and assessments.
+
+Figure 13. Court sessions, registrations and invitations.
+
+Figure 14. Payer, ticket allocation and refund trace.
+
+Figure 15. Community links and change records.
+
+Figure 16. Role accounts, named people and technical handover.
+
+Figure 17. Separate Sales Orders, money allocations and goods handover.
+
+Figure 18. Stock movements, session allocations and approved differences.
+Each account belongs to one person and has one role. A handover names separate incoming and outgoing accounts. Sales Allocations use Bank Transactions already defined in the social-payment view, but their targets are Sales Order Items, not ticket items. Stock movements from sales handover and accepted returns point to their sales source records; no second stock item is created for the same product.
+3.2. Entity Descriptions
+These are business entities, not database table definitions. IDs, states and links are proposed for detailed design. A registration and its issued ticket form one lifecycle, not two unrelated records.
+Entity: Account
+Field
+Value
+Purpose
+Identify one role account used by one named person.
+Key business attributes
+Person link; unique role-based username; one approved role; private contact; active status; appointment; external sign-in mapping where used.
+Business identity
+One immutable account ID and unique login. Separate accounts may link to the same person; self-action checks use that person.
+Status / lifecycle
+Active / Inactive. Deactivation preserves history. No second role is added to an existing account.
+Entity: Sport
+Field
+Value
+Purpose
+Separate badminton and pickleball records.
+Key business attributes
+Sport code; name; usable skill schemes.
+Business identity
+One unique code per sport.
+Status / lifecycle
+Active / Inactive for new sessions.
+Entity: Court
+Field
+Value
+Purpose
+Identify a physical court at TK Sport.
+Key business attributes
+Court code; supported sports; operating status.
+Business identity
+Court code is unique within TK Sport.
+Status / lifecycle
+Available / Unavailable. Existing records remain.
+Entity: Social session
+Field
+Value
+Purpose
+Offer places for one sport and skill group.
+Key business attributes
+Court; sport; date; start/end; band; capacity; price; referee; entry cutoff.
+Business identity
+Session ID; no overlapping sessions on the same court.
+Status / lifecycle
+Draft → Open → Closed → In progress → Completed.
+Entity: Sport skill scheme
+Field
+Value
+Purpose
+Define the version used for a survey and assessment.
+Key business attributes
+Sport; version; criteria; scoring rules; bands; observation anchors.
+Business identity
+Sport plus version. Old assessments retain their version.
+Status / lifecycle
+Draft / Active / Retired.
+Entity: Player sport profile
+Field
+Value
+Purpose
+Store the player's current published level in one sport.
+Key business attributes
+Player; sport; published score/band; provisional flag; scheme; latest update.
+Business identity
+At most one current profile per player and sport.
+Status / lifecycle
+Provisional → Confirmed; corrections append history.
+Entity: Assessment
+Field
+Value
+Purpose
+Keep survey answers or observed skill evidence.
+Key business attributes
+Profile; source; session for on-court records; assessor; scheme version; marks; internal assessment notes; time.
+Business identity
+Assessment ID. Published entries are not overwritten.
+Status / lifecycle
+Draft → Submitted → Published; replaced results remain available to authorized staff.
+Entity: Rating review
+Field
+Value
+Purpose
+Handle a player's disputed rating.
+Key business attributes
+Player; sport; disputed result; reason; Referee findings; Manager decision and history. System Admin cannot decide the review.
+Business identity
+Review ID linked to the result under review.
+Status / lifecycle
+Open → Under review → Closed: unchanged or corrected.
+Entity: Session invitation
+Field
+Value
+Purpose
+Ask an accepted friend to join a specific session.
+Key business attributes
+Inviter; invitee; session; payment option; response; expiry.
+Business identity
+One active invitation per inviter, invitee and session.
+Status / lifecycle
+Pending → Accepted / Declined / Expired.
+Entity: Registration / ticket
+Field
+Value
+Purpose
+Track one player's place independently of the group.
+Key business attributes
+Player; session; saved entry conditions; hold expiry; status; attendance.
+Business identity
+One active registration per player/session; one ticket code on confirmation.
+Status / lifecycle
+Held → Confirmed → Attended / Absent; Held → Expired; a future Confirmed ticket → Invalidated after an ineligible rating change.
+Entity: Skill exception
+Field
+Value
+Purpose
+Record a referee's permission for one out-of-band player.
+Key business attributes
+Player; session; current level; reason; deciding referee; decision time.
+Business identity
+Exception ID; applies only to its player and session.
+Status / lifecycle
+Requested → Approved / Rejected; no effect after the session ends.
+Entity: Social Booking Order (existing Payment order)
+Field
+Value
+Purpose
+Show the payer participation charges only for their own and accepted friend registrations; goods are in a different Sales Order.
+Key business attributes
+Payer; order reference; currency; total; expiry; status.
+Business identity
+Order reference is unique across social and goods orders. One incoming payment targets one order.
+Status / lifecycle
+Awaiting payment → Paid / Needs review / Expired.
+Entity: Payment order item
+Field
+Value
+Purpose
+Link one registration to its fixed ticket price.
+Key business attributes
+Order; registration; amount due; amount applied.
+Business identity
+One registration per order item; at most one active payable item for the same registration.
+Status / lifecycle
+Awaiting payment / Paid / Closed; keep paid price records.
+Entity: Bank transaction
+Field
+Value
+Purpose
+Store authenticated incoming payment information.
+Key business attributes
+Source; external transaction ID; reference; amount; currency; payee; received time; match result.
+Business identity
+Source plus external transaction ID is unique.
+Status / lifecycle
+Received → Matched / Needs review / Rejected.
+Entity: Payment allocation
+Field
+Value
+Purpose
+Trace a confirmed amount to each paid ticket.
+Key business attributes
+Transaction; order item; original payer; allocated amount.
+Business identity
+Allocation ID. The same bank amount cannot be used again by a social or sales allocation.
+Status / lifecycle
+Confirmed allocation; refunds are recorded separately.
+Entity: Refund
+Field
+Value
+Purpose
+Return the paid amount for an affected future ticket.
+Key business attributes
+Registration; allocation; original payer; reason; amount; Staff payout evidence; verified result. Business exceptions require Manager/Owner review.
+Business identity
+Refund ID; no duplicate active refund for the same ticket and payment allocation.
+Status / lifecycle
+Requested → Processing → Completed / Failed; retries keep the same refund record.
+Entity: Friendship
+Field
+Value
+Purpose
+Manage accepted friend links.
+Key business attributes
+Sender; recipient; request time; response.
+Business identity
+One relationship for an unordered account pair; no self-request.
+Status / lifecycle
+Pending → Accepted / Declined; an accepted link may be removed.
+Entity: Direct message
+Field
+Value
+Purpose
+Let connected members exchange text.
+Key business attributes
+Sender; recipient; body; sent time; delivery state.
+Business identity
+Message ID; retries must not create duplicate messages.
+Status / lifecycle
+Pending send → Sent / Failed.
+Entity: Partner preference
+Field
+Value
+Purpose
+Record who wants to play together in a shared session.
+Key business attributes
+Session; requester; requested partner; response.
+Business identity
+One active pair preference per session.
+Status / lifecycle
+Requested → Accepted / Declined; becomes inactive if either ticket becomes invalid.
+Entity: Change record
+Field
+Value
+Purpose
+Explain important changes to ratings, rights, tickets and payments.
+Key business attributes
+Actor; action; record; before/after values; reason; time.
+Business identity
+Unique record ID linked to the affected item.
+Status / lifecycle
+Normal application actions append history rather than overwrite it.
+Entity: Person
+Field
+Value
+Purpose
+Identify the individual behind separate role accounts.
+Key business attributes
+Person ID; name; linked accounts; active assignment history.
+Business identity
+One internal person identity may link several accounts. The link is not member-public.
+Status / lifecycle
+Retained across role-account creation, deactivation and handover.
+
+Entity: Role appointment
+Field
+Value
+Purpose
+Record who approved a non-player account and its business scope.
+Key business attributes
+Target person/account; one role; approving person/account; reason; decision; effective dates.
+Business identity
+Appointment ID. The approver is not the subject acting through another account.
+Status / lifecycle
+Requested → Approved / Rejected; approved access can later be revoked.
+
+Entity: Business policy
+Field
+Value
+Purpose
+Keep Owner-approved prices and business decision rules.
+Key business attributes
+Policy type; version; effective date; ticket or product prices; approval and change reason.
+Business identity
+Policy ID and version. Sold prices retain the version used at sale.
+Status / lifecycle
+Draft → Approved → Retired. Do not recalculate old orders.
+
+Entity: Sales Order
+Field
+Value
+Purpose
+Charge for goods sold at the venue, separate from social participation.
+Key business attributes
+Order reference; Staff operator; recorded payer reference; item total; payment state; delivery state; expiry.
+Business identity
+Sales reference is unique across both order types. No social registration is a sales item.
+Status / lifecycle
+Draft → Awaiting payment → Paid / Needs review / Expired. Delivery remains Pending until actual handover.
+
+Entity: Sales Order Item
+Field
+Value
+Purpose
+Keep the fixed product, quantity and price sold.
+Key business attributes
+Sales order; stock item; quantity; unit; unit price; amount; approved price version.
+Business identity
+Line ID belongs to exactly one Sales Order. Preserve sold values.
+Status / lifecycle
+Reserved while payable; released on unpaid expiry; deducted at goods handover.
+
+Entity: Sales Allocation
+Field
+Value
+Purpose
+Trace received money to goods without changing ticket allocations.
+Key business attributes
+Bank transaction; sales order item; verified amount; payer record.
+Business identity
+One transaction amount cannot be consumed again by a social or sales allocation.
+Status / lifecycle
+Confirmed after verified matching; returns/refunds are separate records.
+
+Entity: Goods Handover
+Field
+Value
+Purpose
+Record physical delivery of paid goods.
+Key business attributes
+Sales order; handed-over items/quantities; Staff operator; receiving record; time.
+Business identity
+One completed handover per whole sales order in this release; retries reuse the same record.
+Status / lifecycle
+Pending → Completed. A later return has its own record.
+
+Entity: Stock Item
+Field
+Value
+Purpose
+Identify a product or material used at the venue.
+Key business attributes
+Item code; name; unit; active flag; permitted sale/session-use purposes; on-hand quantity.
+Business identity
+One item code identifies one stock item even when it is both sold and used by sessions.
+Status / lifecycle
+Active / Inactive. Stock history is retained.
+
+Entity: Session Supply Allocation
+Field
+Value
+Purpose
+Track stock assigned to a specific social session.
+Key business attributes
+Session; stock item; quantity issued; recipient; used quantity; returned quantity; state.
+Business identity
+Allocation ID links session and item; use plus returns cannot exceed issued quantity.
+Status / lifecycle
+Requested → Issued → Reconciled. Any difference requires an adjustment decision.
+
+Entity: Stock Movement
+Field
+Value
+Purpose
+Explain every stock receipt, sale, use, return or adjustment.
+Key business attributes
+Item; source type/record; movement purpose; quantity; operator; timestamp; approval link where needed.
+Business identity
+Unique source-event identity. A repeated request cannot post the same movement twice.
+Status / lifecycle
+Posted records remain; corrections use linked approved movements.
+
+Entity: Count / Adjustment Request
+Field
+Value
+Purpose
+Submit a stock or money discrepancy for a separate decision.
+Key business attributes
+Source record; expected/observed amount or quantity; evidence; originator person/account; requested action; approver.
+Business identity
+Request ID; a changed amount, recipient or stock quantity requires renewed review.
+Status / lifecycle
+Draft → Submitted → Approved / Rejected → Applied once.
+
+Entity: Shift Reconciliation
+Field
+Value
+Purpose
+Compare verified transactions, orders and unresolved items for a work shift.
+Key business attributes
+Shift date/time; Staff operator; separate social/sales totals; refunds; differences; Manager decision; handover.
+Business identity
+Reconciliation ID. Version and source records identify the values reviewed.
+Status / lifecycle
+Draft → Submitted → Reviewed; new differences create a new version.
+
+Entity: Replenishment Request
+Field
+Value
+Purpose
+Record needed items and route the purchasing decision.
+Key business attributes
+Item; quantity; unit; requested purpose; requester; Manager review; Owner decision when required.
+Business identity
+Request ID. Approval is not proof that goods have been received.
+Status / lifecycle
+Requested → Reviewed → Approved / Rejected → Received against a receipt.
+
+Entity: Sales Return / Refund Case
+Field
+Value
+Purpose
+Keep the physical return and money repayment independent.
+Key business attributes
+Sales order item; sold quantity/price; requested action; Manager decision; actual received condition; refundable amount; verified payout.
+Business identity
+Case ID; total quantities and amounts cannot exceed the original delivered/paid values.
+Status / lifecycle
+Open → Approved / Rejected; physical return and payout each retain their own states.
+
+Entity: Support Handover
+Field
+Value
+Purpose
+Record a change of the person providing technical administration.
+Key business attributes
+Outgoing and incoming person/accounts; Owner designation; access checklist; verification result; revoke time.
+Business identity
+Handover ID. Do not reassign old action history to the new operator.
+Status / lifecycle
+Planned → Verified → Closed after the former support access is revoked or restricted.
+
+3.3. Data Business Rules
+Rule
+Enforcement point
+One profile per player/sport; scheme version retained.
+BR-01, BR-02, BR-29
+No duplicate active player/session or overlapping active player bookings.
+BR-05, BR-06
+Capacity includes unexpired holds, not invitations alone.
+BR-04, BR-08
+Unique incoming transaction identity and fixed money-to-ticket allocation.
+BR-09, BR-12–BR-14
+Refund evidence and total cannot exceed the paid allocation.
+BR-20, BR-22
+Published result history and sensitive-field access remain protected.
+BR-17, BR-18
+One role per account; same-person checks across linked accounts.
+BR-30–BR-32, BR-45–BR-47
+Social and goods orders have independent line types and references.
+BR-33–BR-35, BR-41, BR-42
+Stock availability and source-event identity are protected.
+BR-36–BR-39, BR-49
+Business adjustments require an independent authorized decision.
+BR-40, BR-43, BR-44, BR-50
+4. User Requirements
+4.1. Actors
+Actors: Guest, User, Owner, Manager, Notification System, Payment System, Staff
+STT
+Actor
+Description
+1
+Guest
+An unauthenticated visitor who registers for a Player account, signs in, or requests account recovery. Guest cannot access community profiles, bookings or private operational records.
+2
+Player
+A registered participant who manages personal and sport profiles, finds and joins suitable sessions, responds to invitations, makes payments, views tickets and refunds, requests rating reviews or skill exceptions, and uses friendship, messaging and partner-preference functions.
+3
+Referee
+An approved official who works in assigned sessions, records attendance and observed assessments, publishes supported results, decides session-specific skill exceptions, provides rating-review evidence, and requests supplies or reports their use. Referee does not make the final disputed-rating decision.
+4
+Staff
+An operational employee who creates counter sales orders, records goods handover and stock movements, issues and receives session supplies, investigates payment exceptions, records eligible repayments, and prepares stock adjustments and shift reconciliation. Staff cannot approve their own requests or decide ratings.
+5
+Manager
+The venue operator who manages sessions, sport assessment settings and personnel assignments, approves Staff and Referee appointments, decides disputed ratings after Referee review, and reviews operational, stock and financial exceptions within Owner-approved policy. Manager may support attendance recording.
+6
+Owner
+The court owner who approves business policies, ticket and product prices, and Manager appointments. Owner reviews business summaries and escalated decisions and designates the incoming technical operator. This role does not grant rating-correction or unrestricted system access.
+7
+System Admin
+The technical operator who provisions approved role accounts, maintains technical integrations, investigates incidents through necessary masked logs, retries stored verified events, and performs technical access handover. System Admin cannot decide ratings, approve business adjustments or mark unverified money as paid.
+8
+Google OAuth
+An external supporting service that authenticates a Google identity and returns a verified sign-in result. TKSC maps that identity to a local account and applies its approved role; Google OAuth does not assign TKSC business permissions.
+9
+Bank / Payment Service
+An external service that sends authenticated incoming transaction events for social booking or goods sales payments and receives event acknowledgements. TKSC validates and applies each transaction once. Incoming payment confirmation does not prove that an outgoing refund has been completed.
+10
+Cloudinary
+An external supporting service that stores and manages images, receives authorized media requests, and returns media URLs, asset identifiers and operation results. It has no TKSC business role.
+11
+Firebase Service
+An external supporting service for real-time messaging and push notifications. It exchanges authorized conversation data, message updates, notification payloads and available delivery status; TKSC retains responsibility for participant and role access checks.
+12
+Email Service
+An external supporting service that receives recipients and message content for account verification, password recovery, booking and refund-related emails, and returns available delivery status. Email delivery does not confirm a booking, payment or repayment by itself.
+
+4.2. Use Cases
+STT
+Use Case
+Feature
+Use Case Description
+1
+Register Player Account
+Common
+Guest creates a Player account without obtaining privileged access.
+2
+Verify Email Address
+Common
+Account holder verifies ownership of the registered email through a verification link.
+3
+Sign In
+Common
+Guest authenticates and accesses the workspace of the account's approved role.
+4
+Sign In with Google
+Common
+Guest signs in with a verified Google identity mapped to one local account and its approved role.
+5
+Sign Out
+Common
+Account holder ends the current authenticated session.
+6
+Change Password
+Common
+Account holder changes their local account password after verification.
+7
+Request Password Reset
+Common
+Account holder requests a password-reset link through the registered email.
+8
+Reset Password
+Common
+Account holder sets a new local password using a valid reset link.
+9
+View Own Profile
+Profile Management
+Account holder views their permitted personal information.
+10
+Update Own Profile
+Profile Management
+Account holder updates permitted personal fields without changing their role or verified skill results.
+11
+Update Profile Image
+Profile Management
+Account holder replaces their profile image through the supported media service.
+12
+View Skill Results and History
+Profile Management
+Player views published results, provisional status and skill history separately for each sport.
+13
+Complete Sport Survey
+Skill Assessment and Review
+Player submits a sport-specific survey and receives a labelled provisional result.
+14
+Record On-Court Assessment
+Skill Assessment and Review
+Assigned Referee records observed skills and supporting evidence for an attending player.
+15
+Publish Skill Assessment
+Skill Assessment and Review
+Authorized Referee publishes a supported assessment and updates the player's sport profile.
+16
+Request Rating Review
+Skill Assessment and Review
+Player submits a disputed-rating review request with a reason.
+17
+Submit Rating-Review Evidence
+Skill Assessment and Review
+Authorized Referee reviews the disputed assessment and provides evidence to Manager.
+18
+Decide Rating Review
+Skill Assessment and Review
+Manager records the final decision after Referee review, preserving previous results and correction history.
+19
+Maintain Sport Survey Settings
+Skill Assessment and Review
+Manager maintains versioned survey questions and provisional scoring rules for each sport.
+20
+Maintain Assessment Criteria
+Skill Assessment and Review
+Manager maintains versioned assessment criteria and skill bands with Referee input.
+21
+Create Draft Session
+Session Management
+Manager creates a court session with sport, time, skill conditions, capacity and an approved price.
+22
+Update Draft Session
+Session Management
+Manager updates an unpublished session within scheduling and policy rules.
+23
+Publish Session
+Session Management
+Manager opens a complete session for registration after court and Referee conflict checks.
+24
+Close Session Registration
+Session Management
+Manager stops new registrations without cancelling confirmed tickets.
+25
+Assign Referee
+Session Management
+Manager assigns an approved Referee to a session without overlapping assignments.
+26
+Assign Staff
+Session Management
+Manager assigns approved Staff to operational work.
+27
+Find Suitable Sessions
+Session Discovery and Registration
+Player searches available sessions by sport and date and receives eligibility-based suggestions.
+28
+View Session Details
+Session Discovery and Registration
+Player views the session's court, time, skill conditions, price and availability.
+29
+View Session Participants
+Session Discovery and Registration
+Player views the member-visible participant list without private contact or financial information.
+30
+Register for Session
+Session Discovery and Registration
+Player requests a timed place hold after eligibility and capacity checks.
+31
+Invite Friends to Session
+Session Discovery and Registration
+Player invites eligible accepted friends; an invitation alone does not reserve a place.
+32
+Respond to Session Invitation
+Session Discovery and Registration
+Invited Player accepts or declines; acceptance rechecks eligibility and capacity before creating a hold.
+33
+Request Skill Exception
+Session Discovery and Registration
+Player requests permission to join a specific session outside their normal skill band.
+34
+Decide Skill Exception
+Session Discovery and Registration
+Assigned Referee approves or rejects a session-specific exception without bypassing payment, capacity or time-conflict rules.
+35
+Pay for Accepted Registrations
+Social Payments and Refunds
+Player obtains payment instructions for their own or accepted friends' registrations and transfers money using the social order reference.
+36
+Confirm Social Booking Payment
+Social Payments and Refunds
+Bank / Payment Service supplies a verified transaction; TKSC applies it once and confirms eligible paid tickets.
+37
+View Own Tickets
+Social Payments and Refunds
+Player views tickets issued for their named registrations and their current validity.
+38
+View Own Payments
+Social Payments and Refunds
+Player views authorized payment records and allocations, including payments made for friends.
+39
+View Refund Status
+Social Payments and Refunds
+Player views permitted refund information, with repayment directed to the original payer.
+40
+Process Eligible Ticket Repayment
+Social Payments and Refunds
+Staff processes an eligible affected-ticket refund and records verified repayment evidence.
+41
+Find Members
+Community Management
+Player searches member-visible profiles within the signed-in community.
+42
+View Member Profile
+Community Management
+Player views another member's permitted profile information and published sport levels.
+43
+Send Friend Request
+Community Management
+Player sends a friend request to another member.
+44
+Respond to Friend Request
+Community Management
+Player accepts or declines a received friend request.
+45
+Remove Friend
+Community Management
+Player ends an existing friendship.
+46
+View Conversation
+Community Management
+Player reads a private conversation they are authorized to participate in.
+47
+Send Direct Message
+Community Management
+Player sends a direct text message to an accepted friend.
+48
+Request Playing Partner
+Community Management
+Player proposes a partner preference with another valid ticket holder in the same court session.
+49
+Respond to Partner Request
+Community Management
+Requested Player accepts or declines; agreement does not override Referee rotation.
+50
+View Assigned Session Roster
+Session Operations
+Referee views assigned sessions, confirmed participants and admission information; Manager has operational access.
+51
+Record Player Attendance
+Session Operations
+Assigned Referee records attendance after verifying the named ticket holder; Manager may support the process.
+52
+View Operational Records
+Session Operations
+Manager, assigned Referees and Staff view operational records permitted for their respective roles.
+53
+Record Trial Feedback
+Session Operations
+Manager and Referees record observed issues and trial feedback with the relevant session and date.
+54
+Approve Business Policy
+Business Policy and Appointments
+Owner approves business policies and their effective versions.
+55
+Approve Ticket and Product Prices
+Business Policy and Appointments
+Owner approves ticket and goods prices without rewriting prices fixed in paid orders.
+56
+Approve Manager Appointment
+Business Policy and Appointments
+Owner approves a named person's Manager appointment.
+57
+Approve Staff Appointment
+Business Policy and Appointments
+Manager approves a named person's Staff appointment.
+58
+Approve Referee Appointment
+Business Policy and Appointments
+Manager approves a named person's Referee appointment.
+59
+Create Counter Sales Order
+Counter Sales
+Staff creates a goods-only order with fixed prices, stock checks and a payment reference separate from social bookings.
+60
+Confirm Sales Payment
+Counter Sales
+Bank / Payment Service supplies a verified transaction; TKSC applies it once without marking goods as delivered.
+61
+Record Goods Handover
+Counter Sales
+Staff records physical handover of paid goods and the corresponding stock movement once.
+62
+Record Sales Return or Refund Case
+Counter Sales
+Staff records the requested return or repayment, affected items and supporting evidence for review.
+63
+Record Returned Goods
+Counter Sales
+Staff records physically received goods and their condition under an approved return decision.
+64
+Record Sales Repayment
+Counter Sales
+Staff records verified repayment under an approved decision, separately from physical return and social bookings.
+65
+Receive Stock
+Stock and Session Supplies
+Staff records actual stock receipts with item, quantity and source evidence.
+66
+Request Session Supplies
+Stock and Session Supplies
+Assigned Referee or Manager requests items and quantities for a specific session.
+67
+Issue Session Supplies
+Stock and Session Supplies
+Staff allocates available stock to a session without treating allocation as consumption.
+68
+Record Supply Consumption
+Stock and Session Supplies
+Referee reports actual use and Staff records or reconciles consumption against the session allocation.
+69
+Record Unused Supply Return
+Stock and Session Supplies
+Staff records unused supplies returned against the original allocation without creating a duplicate receipt.
+70
+Record Stock Count
+Stock and Session Supplies
+Staff records a physical count and identifies differences from expected stock.
+71
+Request Stock Replenishment
+Stock and Session Supplies
+Staff records required items, quantities and reasons for replenishment.
+72
+Review Replenishment Request
+Stock and Session Supplies
+Manager reviews replenishment needs and escalates decisions requiring Owner authority.
+73
+Review Payment Exception
+Business Reporting
+Staff investigates unmatched, partial, late or surplus transfers and records a supported resolution proposal.
+74
+Submit Stock Adjustment Request
+Business Reporting
+Staff submits an evidenced stock discrepancy for independent review without directly changing the balance.
+75
+Decide Financial Adjustment
+Business Reporting
+Manager approves or rejects an independent money adjustment within policy; Owner handles escalated decisions.
+76
+Decide Stock Adjustment
+Business Reporting
+Manager approves or rejects an independent stock adjustment within policy; Owner handles escalated decisions.
+77
+Prepare Shift Reconciliation
+Business Reporting
+Staff reconciles social orders, goods sales, verified repayments and unresolved differences separately.
+78
+Review Shift Reconciliation
+Business Reporting
+Manager reviews reconciliation results and outstanding differences without deleting source transactions.
+79
+Record Shift Handover
+Business Reporting
+Staff records shift handover with outstanding operational and reconciliation items.
+80
+View Business Summary
+Business Reporting
+Owner views recorded social sales, goods sales, refunds and supply summaries.
+81
+Provision Approved Role Account
+Technical Administration
+System Admin creates a named account with exactly one role following an approved appointment.
+82
+Change Approved Account Access
+Technical Administration
+System Admin implements authorized access activation, restriction or revocation and preserves its history.
+83
+Configure Technical Integration
+Technical Administration
+System Admin maintains approved technical connection settings without changing business authority.
+84
+Inspect Technical Incident
+Technical Administration
+System Admin examines necessary masked logs and processing status to investigate an incident.
+85
+Retry Stored Verified Event
+Technical Administration
+System Admin retries a stored verified event without duplicating effects or bypassing business checks.
+86
+Hand Over Technical Access
+Technical Administration
+System Admin provisions the incoming operator's separate account, verifies access and closes former support access while preserving audit identities.
+87
+View Notifications
+Notifications
+Account holder views notifications relevant to their own records or assigned role.
+88
+Deliver Event Notification
+Notifications
+A supporting use case sends event notifications through Firebase or Email Service and records available delivery status.
+
+4.3. Use Case Diagrams
+The following diagrams present the system use cases by external actor. Each diagram shows the functions directly available to that actor. UC-32 is a shared supporting use case for registration eligibility checks and is included only where applicable.
+
+ 
+Figure 19. Guest use cases.
+Guest can register for Player access or sign in. Google sign-in returns an identity mapped to a specific local account. It does not grant a privileged role or public access to community profiles.
+
+ 
+Figure 20. Player use cases.
+The Player manages their profile and sport results, finds and joins suitable sessions, invites friends, completes payment-related actions, requests skill or rating reviews, and uses community functions such as friendships, messaging and partner preferences. Registration-related workflows use UC-32 to check eligibility where required.
+
+ 
+Figure 21. Referee use cases.
+Referee provides observations for rating reviews; only Manager makes the final dispute decision. Assigned Referees also request session supplies and report actual use. System Admin is not part of the assessment decision path.
+
+
+ 
+Figure 22. Manager use cases.
+Manager manages social sessions and personnel, controls sport schemes, resolves rating complaints and reviews business exceptions. Staff executes sales, stock and eligible repayment work. Owner approves business policy; System Admin handles technical access only.
+
+ 
+Figure 23. Bank-transfer integration use cases.
+The bank integration supplies verified events for either social-ticket payments (UC-12) or separate goods payments (UC-37). It has no human role. An incoming-money result does not prove that an outgoing refund was sent.
+
+Figure 24. Staff use cases — execution without self-approval.
+
+Figure 25. Owner use cases — business policy and appointed authority.
+
+Figure 26. System Admin use cases — technical support only.
+The Google identity service supports UC-49 within sign-in. It does not access venue, player or transaction functions. Its result is mapped to one local account before the Permission Matrix is applied.
+4.4. Permission Matrix
+Own: own record. Assigned: assigned sessions or work. Review: provide evidence only. Approved: act only under a recorded independent decision. A dash means denied. No role implicitly inherits another role’s rights; using another role requires a separate account.
+A. Social play, assessment and venue operations
+Action / data
+Guest
+Player
+Referee
+Manager
+Register / sign in
+Register / sign in
+Own
+Own
+Own
+Edit personal account/contact fields
+—
+Own
+Own
+Own
+Read community profiles / rosters
+—
+Member-visible
+Assigned / member-visible
+Operational
+Survey / register / pay / invite friends
+—
+Own
+—
+—
+Private messages / partner choice
+—
+Own
+—
+—
+Read own ticket / payment records
+—
+Own
+—
+Operational only
+Record session attendance
+—
+—
+Assigned
+Support
+Create an observed assessment
+—
+—
+Assigned
+—
+Publish a supported new assessment
+—
+—
+Assigned
+Correction only
+Read detailed assessment evidence
+—
+—
+Authorized
+Authorized
+Decide a disputed-rating correction
+—
+Request only
+Review only
+Final decision
+Request / decide skill exception
+—
+Request own
+Decide assigned
+—
+Set sessions, sport schemes and personnel
+—
+—
+Input only
+Allowed
+Request supplies / report use
+—
+—
+Assigned
+Operational
+
+Staff, Owner and System Admin do not receive Player booking/chat rights or internal assessment evidence through their role. Staff sees only needed operational data. They need their own separate Player account to participate as players.
+B. Counter operations, approvals and technical access
+Action / data
+Staff
+Manager
+Owner
+System Admin
+Create counter sales; hand over paid goods
+Allowed
+Review only
+Summary
+—
+Receive / issue / return session supplies
+Allowed
+Review
+Summary
+—
+Count stock / propose corrections
+Prepare
+Review
+Summary
+—
+Approve own or same-person adjustment
+—
+—
+—
+—
+Approve independent stock/money change
+—
+Within policy
+Escalated
+—
+Process eligible ticket repayment
+Approved
+Oversight
+Summary
+—
+Prepare unmatched-transfer review
+Prepare
+Decision
+Escalated
+Masked technical status only
+Reconcile shift / retain differences
+Prepare
+Review
+Summary
+—
+Approve price and business policy
+—
+Apply / propose
+Approve
+—
+Approve Manager appointment
+—
+—
+Approve
+Provision approved only
+Approve Staff / Referee appointment
+—
+Approve
+Oversight
+Provision approved only
+Change technical configuration / retry saved event
+—
+—
+—
+Allowed within access
+Read general private chats / internal ratings
+—
+Rating evidence only
+—
+—
+Technical handover
+—
+Incoming operator only if appointed
+Designate
+Execute / record
+
+Guest, Player and Referee cannot execute the counter/approval/technical actions in table B, apart from Referee supply requests and use records shown in table A. All roles may sign in/out and update permitted personal account fields. A Manager decision and a System Admin provisioning step are distinct actions.
+The payment integration may submit only its authenticated transaction events; it has no website role. Private chats are accessible to their participants. A system role does not grant general access to every private conversation.
+5. System Functionalities
+5.1. Screen Inventory
+a. Screen Flow
+
+
+Figure 27. Player navigation between the main screens.
+
+Figure 28. Separate role workspaces after sign-in.
+b. Screen List
+ID
+Screen
+Feature
+Mapped use cases
+SCR-01
+Register / sign in
+FE-01
+UC-01, UC-02
+SCR-02
+My profile and skill history
+FE-02, FE-03
+UC-03–UC-05
+SCR-03
+Sport survey
+FE-03
+UC-04
+SCR-04
+Social calendar and session list
+FE-07
+UC-06
+SCR-05
+Session details and participants
+FE-06–FE-09, FE-12
+UC-07, UC-08, UC-14
+SCR-06
+Friend checklist and invitations
+FE-09, FE-12
+UC-09, UC-10
+SCR-07
+Payment instructions and status
+FE-10
+UC-11–UC-13
+SCR-08
+My tickets and refund status
+FE-10, FE-11
+UC-13, UC-21
+SCR-09
+Skill exception requests
+FE-08
+UC-14, UC-15
+SCR-10
+Assigned roster and attendance
+FE-13
+UC-16
+SCR-11
+Assessment form and publication
+FE-04
+UC-17, UC-18
+SCR-12
+Rating review and decision
+FE-05
+UC-19, UC-20
+SCR-13
+Members and friend requests
+FE-12
+UC-23
+SCR-14
+Messages and partner preference
+FE-12
+UC-24, UC-25
+SCR-15
+Session management
+FE-06
+UC-26–UC-28
+SCR-16
+Sport assessment settings
+FE-03, FE-04
+UC-30
+SCR-17
+Payments, refunds and exceptions
+FE-10, FE-11, FE-13
+UC-21, UC-22
+SCR-18
+Operations and trial feedback
+FE-13
+UC-31
+SCR-19
+Business policies and approvals
+FE-14
+UC-33–UC-35, UC-46
+SCR-20
+Counter sales order
+FE-15
+UC-36
+SCR-21
+Sales payment, handover and return
+FE-15–FE-17
+UC-37, UC-38, UC-50
+SCR-22
+Stock and session supplies
+FE-16
+UC-39–UC-42, UC-46
+SCR-23
+Counts and adjustment decisions
+FE-14, FE-16, FE-17
+UC-43, UC-44
+SCR-24
+Shift reconciliation and handover
+FE-17
+UC-22, UC-45
+SCR-25
+Technical settings and incidents
+FE-18
+UC-47
+SCR-26
+Role accounts and support handover
+FE-01, FE-14, FE-18
+UC-29, UC-34, UC-48
+5.2. External API Inventory
+
+ID
+Interface
+Calling path
+Purpose
+API-01
+Verified incoming bank transaction
+Bank-transfer integration → TKSC
+Provide transaction results for UC-12. The contract does not tie the SRS to a vendor.
+API-02
+External sign-in identity
+TKSC ↔ Google identity service
+Return verified identity for UC-49; local role authority stays with TKSC.
+5.3. Background Job Inventory
+ID
+Job
+Trigger
+JOB-01
+Expire unpaid place holds and invitations
+Scheduled processing of configured expiry times.
+JOB-02
+Check future tickets after a published rating change
+A saved publication or correction creates a job for that player, sport and result version.
+JOB-03
+Retry verified payment processing
+A trusted event was stored but could not finish processing.
+JOB-04
+Release expired unpaid sales reservations
+Configured Sales Order expiry; recheck payment before release.
+II. Use Case Specifications
+Normal flows state actor actions and website responses. Alternatives cover business failures and safe recovery. These checks are proposed detailed rules within FE-01–FE-18, linked to Section V.1.
+1. Player onboarding
+1.1. UC-04 — Complete a sport survey
+Field
+Specification
+Actor
+Primary: Player.
+Description
+Receive a provisional level for the selected sport.
+Preconditions
+The player is signed in. The selected sport has an active survey and scoring scheme.
+Trigger
+The player adds a sport or tries to join without a sport profile.
+Normal flow
+1. The website shows the selected sport and survey questions.
+2. The player answers questions about experience, recent play and observable skills.
+3. The website checks required answers and applies the sport's active mapping.
+4. It saves the answers, scheme version and provisional score.
+5. It displays the provisional label and suitable sessions for that sport.
+Alternative flows
+A1. Missing answers: highlight the fields; do not create a confirmed rating from incomplete data.
+A2. A confirmed profile already exists: show the current result; a new survey cannot replace it.
+A3. Another sport is selected: create or use its separate profile; do not convert scores.
+Postconditions
+A provisional sport profile is available for registration. Referees can identify it for priority observation.
+References
+FE-03 | BR-01, BR-02, BR-10
+Acceptance example
+A confirmed badminton result stays unchanged when the player completes a pickleball survey.
+2. Individual and friend registration
+2.1. UC-08 — Register for a session
+Field
+Specification
+Actor
+Primary: Player. Supporting: UC-32.
+Description
+Hold one eligible place for the account holder.
+Preconditions
+The player has a sport profile. The session is open and has a configured booking deadline.
+Trigger
+The player selects Register on the session page.
+Normal flow
+1. The website displays sport, time, court, level, price and remaining places.
+2. The player confirms their own registration.
+3. UC-32 checks the account, sport level or exception, time conflicts and capacity.
+4. The website creates one timed place hold and stores the entry conditions and price.
+5. It shows the hold expiry and opens payment instructions.
+Alternative flows
+A1. Outside the band: explain the restriction and offer the exception-request path.
+A2. Full or time conflict: create no hold; keep existing valid bookings.
+A3. Repeated click: return the current registration instead of adding a second one.
+A4. Another user takes the last place first: show full status and do not accept payment for a nonexistent hold.
+Postconditions
+One unpaid held place exists. It is not a valid ticket until UC-12 succeeds.
+References
+FE-09 | BR-03–BR-06, BR-08
+Acceptance example
+Two requests for the last place create at most one new held registration.
+2.2. UC-09 — Invite eligible friends
+Field
+Specification
+Actor
+Primary: Inviting player. Secondary: Invited friends.
+Description
+Send separate session invitations to accepted friends.
+Preconditions
+The inviter is signed in and selects an open session. Invitees are accepted friends.
+Trigger
+The inviter selects Register with friends.
+Normal flow
+1. The website lists friends who meet the selected sport and session conditions.
+2. The inviter selects friends and chooses Pay for friends or Friends pay separately.
+3. The website checks selected accounts and existing invitations or registrations.
+4. It creates one invitation per friend, linked to the session and payment choice.
+5. The inviter sees each friend's response and payment state separately.
+Alternative flows
+A1. Not friends or wrong level: do not send that invitation; explain why.
+A2. Already invited or registered: show the existing state, not a duplicate.
+A3. A friend's level changes after sending: check the current level again when the friend accepts.
+Postconditions
+Invitations are pending. Sending an invitation alone neither holds a place nor creates a payable ticket.
+References
+FE-09, FE-12 | BR-05, BR-07, BR-08
+Acceptance example
+A friend outside the selected session's band is not selectable, even when their score resembles another sport's score.
+2.3. UC-10 — Respond to a session invitation
+Field
+Specification
+Actor
+Primary: Invited player. Supporting: UC-32.
+Description
+Accept and request a place, or decline without a charge.
+Preconditions
+The invitation belongs to the signed-in player and is still pending.
+Trigger
+The player opens the invitation.
+Normal flow
+1. The website shows inviter, session, price, payment choice and invitation expiry.
+2. The player accepts the invitation.
+3. The website rechecks the player's current sport level, time conflicts and capacity.
+4. It creates that player's held registration and records consent.
+5. It informs the chosen payer and shows the payment deadline.
+Alternative flows
+A1. Decline: mark the invitation declined; do not reserve or charge.
+A2. Expired, full or no longer eligible: create no new hold. Other friends' tickets remain valid.
+A3. Accepted already: return the existing registration.
+Postconditions
+Only this friend's place enters payment. Acceptance alone is not proof of payment.
+References
+FE-09 | BR-03–BR-08
+Acceptance example
+Two friends accepting at the same time for one remaining place do not exceed capacity.
+3. Payments and transaction review
+3.1. UC-11 — Pay for accepted registrations
+Field
+Specification
+Actor
+Primary: Player acting as payer.
+Description
+Pay for own or accepted friend places using the displayed bank-transfer reference.
+Preconditions
+Selected places are accepted, still held and payable by the current user.
+Trigger
+The payer proceeds to payment.
+Normal flow
+1. The website shows each included player, session and fixed ticket amount.
+2. The payer checks the list and confirms payment for those places.
+3. The website creates one unique order reference and a fixed list of order items.
+4. It shows the receiving account, amount, reference and payment expiry.
+5. The payer makes the bank transfer and follows the payment status on the website.
+Alternative flows
+A1. A friend has not accepted: exclude that place from payment and keep its invitation separate.
+A2. A hold expires before the order is created: remove the unpaid place and recalculate before confirmation.
+A3. The payer wants to change an issued order: close the unpaid order and create a new reference; do not silently change the old amount.
+Postconditions
+The order awaits a bank result. A screenshot or the player's Paid button does not confirm a ticket.
+References
+FE-10 | BR-08, BR-09, BR-12, BR-13
+Acceptance example
+Payment for three accepted friends keeps a separate money-to-ticket link for each friend.
+
+3.2. UC-12 — Confirm a bank transfer
+Field
+Specification
+Actor
+Primary: Bank-transfer integration. Supporting: UC-32.
+Description
+Apply a verified transaction once and confirm eligible paid tickets.
+Preconditions
+The website receives an authenticated transaction event. The source and transaction ID can be checked.
+Trigger
+A payment result arrives at API-01.
+Normal flow
+1. The website validates the sender and required transaction fields.
+2. It checks the source/transaction ID to prevent repeated application.
+3. It matches receiving account, reference, currency and amount to the order.
+4. It rechecks each held registration and its current entry conditions.
+5. For a valid exact payment, it records allocations and confirms each eligible ticket once.
+6. It updates the payer and participants with the payment/ticket details they are allowed to see.
+Alternative flows
+A1. Repeated event for the same transaction: return the stored result; create no new ticket or allocation.
+A2. Wrong amount, missing reference, expired hold or ineligible item: record Needs review and route to UC-22; do not restore expired places automatically.
+A3. Untrusted sender: reject the event and change no payment state.
+A4. Write failure: allow processing to retry; do not announce a confirmed ticket before records are saved.
+Postconditions
+Ticket, transaction and allocation states agree. Unresolved money remains visible to Manager.
+References
+FE-10 | BR-03–BR-06, BR-09, BR-12–BR-14
+Acceptance example
+The same bank transaction delivered three times still creates only its original allocations and tickets.
+3.3. UC-22 — Review an unmatched transfer
+Field
+Specification
+Actor
+Primary: Staff. Secondary: Manager for approval of business adjustments.
+Description
+Resolve late, partial, second-payment or unmatched-transfer cases without inventing a valid ticket.
+Preconditions
+A verified incoming transfer is marked Needs review.
+Trigger
+Staff opens the unmatched-payment list for a social or sales reference.
+Normal flow
+1. TKSC shows the verified transaction, intended order type and reason for review.2. Staff compares the source event with the payer and saved order items.3. Staff records evidence and a proposed match or resolution.4. Manager reviews exceptional changes; the originator cannot approve their own request.5. Before a social ticket is confirmed, the system repeats eligibility and capacity checks; a sales resolution checks stock and order state.6. It records the approved allocation once or retains the unresolved amount.
+Alternative flows
+A1. Partial payment: do not mark the whole order paid. Keep the outstanding amount visible.
+A2. Overpayment or a second real transfer: record the surplus separately; do not create extra seats.
+A3. Late transfer after the place was taken: no overselling or automatic restoration of the old ticket.
+A4. No reliable match: retain Needs review; do not assign money to a guessed account.
+Postconditions
+No guessed payment match or cross-order allocation is created. Technical administrators can retry an authenticated event but cannot decide a business exception.
+References
+FE-10, FE-13 | BR-03–BR-06, BR-12–BR-14
+Acceptance example
+Two distinct bank transactions for one paid ticket are not treated as one duplicate event; the second amount stays visible for handling.
+4. Court admission and assessment
+4.1. UC-15 — Decide a skill exception
+Field
+Specification
+Actor
+Primary: Assigned approved referee.
+Description
+Approve or reject a player/session exception with a reason.
+Preconditions
+An active player has requested an exception for a named future session.
+Trigger
+The referee opens the exception request.
+Normal flow
+1. The website shows the player's sport level, session band and stated reason.
+2. The referee checks the available assessment history they may access.
+3. The referee approves or rejects the request and enters a reason.
+4. The website saves the referee, time, player and exact session.
+5. An approved player can retry normal registration; all other checks still apply.
+Alternative flows
+A1. Full session or overlapping booking: approval does not create a place or bypass the time conflict.
+A2. Wrong referee or session already started: deny this approval action.
+A3. An earlier decision exists: display it; any change must keep its history.
+Postconditions
+Only the session-specific skill check is overridden. The player's published rating does not change.
+References
+FE-08 | BR-03, BR-04, BR-06, BR-11
+Acceptance example
+Approval for Court 1 on one date cannot be reused for another session.
+4.2. UC-16 — Record player attendance
+Field
+Specification
+Actor
+Primary: assigned Referee. Secondary: Manager for operational support.
+Description
+Admit the right ticket holder and prevent duplicate check-in.
+Preconditions
+The signed-in Referee or Manager account has authorized access to this session and roster.
+Trigger
+A player arrives and presents their ticket.
+Normal flow
+1. The referee opens the correct date, slot, sport and court.
+2. The website lists confirmed players and flags provisional profiles.
+3. The referee checks the player against the ticket holder.
+4. The website rechecks ticket validity and marks attendance once.
+5. The player becomes available for observation in the assessment form.
+Alternative flows
+A1. Unpaid, expired or invalidated ticket: deny normal check-in; route payment questions to Staff/Manager.A2. Already checked in: show the original record without a second visit.A3. Wrong person or court: do not move the ticket to another account.
+Postconditions
+One attendance record is linked to the player, sport and session. No skill points are added merely for attending.
+References
+FE-13 | BR-05, BR-10, BR-15
+Acceptance example
+Repeated check-in does not increase player counts or assessment-frequency counters twice.
+4.3. UC-17 — Record an on-court assessment
+Field
+Specification
+Actor
+Primary: Approved on-court referee.
+Description
+Save observed skills and internal evidence for the session's sport.
+Preconditions
+The referee is assigned to the session. The player attended it and has a profile for its sport.
+Trigger
+The referee starts or continues an assessment after observing play.
+Normal flow
+1. The website loads the player, session sport and rubric version.
+2. The referee marks each observed criterion and adds brief internal assessment evidence.
+3. Unseen skills are marked Not observed instead of zero.
+4. The website validates marks and calculates a full result only when required evidence is complete.
+5. The referee saves a draft or submits the completed assessment for publication.
+Alternative flows
+A1. Incomplete observation: save a draft; preserve the published profile.A2. Wrong sport, unassigned assessor or own Player identity under any linked account: reject.A3. A published result needs correction: create linked evidence for Manager review; do not overwrite it. System Admin and Staff have no scoring permission.
+Postconditions
+Evidence is stored under the correct sport and rubric. A draft does not change registration eligibility.
+References
+FE-04 | BR-01, BR-10, BR-16–BR-18
+Acceptance example
+An unobserved movement criterion keeps the assessment incomplete; it must not lower the score as a zero mark.
+4.4. UC-18 — Publish a supported skill result
+Field
+Specification
+Actor
+Primary: Approved referee; Manager for corrections.
+Description
+Update the sport profile and preserve previous published results.
+Preconditions
+A complete assessment exists. The actor may publish or correct the result.
+Trigger
+The actor selects Publish result.
+Normal flow
+1. The website shows current and proposed sport scores, bands and evidence.
+2. It applies sport-specific review checks before publishing a band change.
+3. The actor confirms publication; a correction also records a reason.
+4. The website appends the new result and updates only that sport's current profile.
+5. It starts a repeat-safe check of the player's future paid tickets.
+6. It shows the published result to the player, without internal notes.
+Alternative flows
+A1. Incomplete evidence or review condition: keep the result as draft; the old published level stays active.
+A2. The profile changed during review: reload the latest version before publishing.
+A3. A future ticket becomes ineligible: invoke UC-21. Consider a valid session exception before invalidation.
+Postconditions
+The history identifies who changed the level and why. Tickets that remain eligible are unchanged.
+References
+FE-02, FE-04 | BR-10, BR-16–BR-20
+Acceptance example
+A score change inside the same accepted band does not create a refund.
+5. Rating review and refunds
+5.1. UC-20 — Resolve a rating review
+Field
+Specification
+Actor
+Primary: Manager — Lâm, using TK.manager. Secondary: Referee team and Player.
+Description
+Record the referee discussion and Lâm's final decision.
+Preconditions
+A Player review request refers to an existing sport result. The decision-maker is signed in with Manager role; Referees have recorded review evidence.
+Trigger
+Lâm opens the request for review.
+Normal flow
+1. The website shows the disputed result, previous records and the player's reason.
+2. Referees compare their observations and record a review summary.
+3. If needed, the team observes the player again in an attended session.
+4. Lâm decides to keep or correct the published result and records the reason.
+5. The website closes the request; a correction follows UC-18 and the affected-ticket check.
+6. The player sees the outcome and a brief decision summary, not the internal discussion.
+Alternative flows
+A1. More evidence needed: keep Under review and retain the current published level.A2. Duplicate open request: link to the current case.A3. Unchanged result: close with reason and no ticket/payment change.A4. System Admin, Staff, Owner or a same-person self-approval attempt: deny the decision.
+Postconditions
+The final outcome and review participants are recorded. Prior assessment evidence remains available only to authorized Referees and Manager.
+References
+FE-05 | BR-17–BR-20
+Acceptance example
+A player cannot approve their own review or directly publish a replacement score.
+5.2. UC-21 — Refund an ineligible future ticket
+Field
+Specification
+Actor
+Primary: Staff for repayment. System triggers the eligible refund. Manager oversees business exceptions.
+Description
+Refund the affected paid ticket to its original payer and suggest alternatives.
+Preconditions
+A new rating is published and a future paid ticket fails its sport-band check without a valid exception.
+Trigger
+The affected-ticket check identifies an ineligible paid registration.
+Normal flow
+1. TKSC rechecks the published rating and future session conditions.2. It invalidates only the ineligible ticket and releases its place.3. It creates one refund for that ticket’s verified paid amount and original payer.4. Staff processes the eligible repayment through the authorized channel and records evidence. No new discretionary approval is added to every policy-eligible rating refund.5. TKSC marks Completed only after repayment is verified.6. It offers suitable alternatives for the Player to choose. Separate Sales Orders and valid friend tickets remain unchanged.
+Alternative flows
+A1. Still eligible or covered by a valid exception: keep the ticket; do not create a refund.
+A2. Already attended or session started: do not apply this future-ticket refund rule.
+A3. A refund already exists: continue it; do not issue a second repayment.
+A4. Repayment is pending or fails: show Processing or Failed; do not say money has returned.
+Postconditions
+Only the affected amount is returned to its original payer. Other valid group tickets stay confirmed.
+References
+FE-11 | BR-12, BR-19–BR-22
+Acceptance example
+One ineligible friend in a three-ticket paid order produces one ticket-level refund, not a refund of the whole order.
+6. Partner preference
+6.1. UC-25 — Request a playing partner
+Field
+Specification
+Actor
+Primary: Requesting player. Secondary: Requested partner and referee.
+Description
+Record an agreed partner preference for a shared booked session.
+Preconditions
+Both players have valid tickets for the same court session.
+Trigger
+A player selects a preferred partner from the participant list.
+Normal flow
+1. The website shows only participants with valid tickets in this session.
+2. The player sends a partner request.
+3. The recipient accepts or declines.
+4. The website records the pair's preference and shows it to the assigned referee.
+5. The referee uses the preference when arranging normal rotation.
+Alternative flows
+A1. Different court/session or invalid ticket: do not create an active pair preference.
+A2. One ticket is later invalidated: mark the preference inactive without changing the other player's ticket.
+A3. Declined: keep both tickets valid and allow normal participation.
+Postconditions
+The preference guides the referee. It does not reserve the court, guarantee every game together or change the skill band.
+References
+FE-12 | BR-05, BR-23, BR-24
+Acceptance example
+A partner request cannot move a paid player to another court or bypass skill restrictions.
+7. Session management and trial operations
+7.1. UC-27 — Publish and close session registration
+Field
+Specification
+Actor
+Primary: Manager — Lâm.
+Description
+Control when a valid session accepts new registrations.
+Preconditions
+A draft session has a sport, court, slot, active skill conditions, capacity, price and approved referee.
+Trigger
+Manager selects Publish or Close registration.
+Normal flow
+1. The website validates the required session data and entry cutoffs.
+2. It checks the court and referee against overlapping sessions across both sports.
+3. Manager confirms publication, and the website changes Draft to Open.
+4. Players can find the session and request places under its published conditions.
+5. When registration closes, the website stops new place holds and keeps existing paid tickets.
+Alternative flows
+A1. Missing data or a resource conflict: keep Draft and identify the field or conflicting session.
+A2. Paid tickets exist: ordinary editing cannot silently change their sport, time, band or price.
+A3. A payment-hold deadline must not extend beyond the configured payment cutoff for the session.
+Postconditions
+Only valid sessions accept registrations. Closing registration is not cancellation of existing paid tickets.
+References
+FE-06 | BR-04, BR-06, BR-08, BR-25, BR-26
+Acceptance example
+A referee assigned to badminton at 18:00 cannot also be assigned to a simultaneous pickleball session.
+7.2. UC-31 — View operations and record trial feedback
+Field
+Specification
+Actor
+Primary: Manager. Secondary: assigned Referees and Staff within their operational access.
+Description
+Review session records and record observed issues for the pilot report.
+Preconditions
+The user has operational access. Sessions and transaction states are recorded.
+Trigger
+Staff open the operations view or record trial feedback.
+Normal flow
+1. The website filters sessions by date, sport, court and state.
+2. It shows paid tickets, actual attendance, assessment status and unresolved money items.
+3. The referee records a brief session issue or observed skill mismatch.
+4. Manager reviews the records and adds an operational conclusion.
+5. The website provides the counts and linked records used in the trial report.
+Alternative flows
+A1. No sessions match the filter: show an empty result, not invented attendance.
+A2. Payment or refund still pending: show it separately from completed money movements.
+A3. A referee views an unassigned session: allow only data permitted by the access matrix.
+Postconditions
+The pilot report can be traced to actual sessions and staff feedback. No automatic claim of long-term retention is generated.
+References
+FE-13 | BR-15, BR-27
+Acceptance example
+A held, unpaid place is not counted as a paid ticket or an attended player.
+UC-32 — Shared supporting case 
+The calling workflow supplies player, sport, session and purpose: hold, invitation acceptance, payment confirmation or admission. The website checks active account, correct sport profile, published level or exact exception, session state, duplicate registration, cross-sport time conflicts and capacity. It returns pass/fail with a reason. Checks and seat updates must use current data in the same protected operation. A read-only suitability result is not a guaranteed place.
+When confirming an existing hold, do not count that same hold as an additional place. When checking in a confirmed ticket, do not reserve a new place.
+8. Counter sales, stock and controlled operations
+8.1. UC-36 — Create a counter sales order
+Field
+Specification
+Actor
+Primary: Staff. Payer purchases at the counter; no new Customer website role is required.
+Description
+Create an independent goods order and payment reference.
+Preconditions
+Staff is signed in; items and approved prices exist.
+Trigger
+Staff starts a sale.
+Normal flow
+1. Staff selects products and positive quantities in the correct units.2. TKSC loads the approved unit prices and shows a goods-only total.3. Staff checks the items and records the payer reference needed for this sale.4. TKSC checks available stock and reserves the items in one operation.5. It saves fixed order lines and a sales-only payment reference with expiry.6. Staff presents the bank-transfer instructions to the payer.
+Alternative flows
+A1. Stock or price changed: reload and obtain confirmation before creating a payable order.A2. Social ticket selected: reject the mixed line; use the separate booking workflow.A3. Repeat click: return the same order, not another reservation.A4. Unpaid order expires: JOB-04 releases only its reservation.
+Postconditions
+One payable Sales Order exists. It has no social-ticket side effect and is not marked paid or delivered.
+References
+FE-15 | BR-33–BR-36, BR-43, BR-49
+Acceptance example
+A player buys two goods while holding a social ticket. The goods have a different order reference and do not change the ticket price.
+
+8.2. UC-37 — Confirm a sales payment
+Field
+Specification
+Actor
+Primary: Bank-transfer integration.
+Description
+Apply verified incoming money to the correct goods order.
+Preconditions
+An authenticated event reaches API-01 and identifies a Sales Order reference.
+Trigger
+A bank event is received.
+Normal flow
+1. TKSC verifies the event and stores its unique transaction identity.2. It routes the reference to the Sales Order, not the social-order handler.3. It matches payee, amount, currency and the current payable state.4. It saves the sales allocations once and marks the exact order paid.5. The reserved items remain pending physical handover.6. Staff can view the confirmed payment and continue UC-38.
+Alternative flows
+A1. Replayed event: return the stored result without reapplying money.A2. Wrong amount, old order or expired reservation: keep Needs review and the unallocated amount.A3. Stock is no longer reserved after late payment: require an evidenced resolution; do not oversell.A4. A reference belongs to a social order: route to UC-12, not this use case.
+Postconditions
+Verified payment and sales allocations agree. No ticket is created and goods are not marked delivered.
+References
+FE-10, FE-15 | BR-13, BR-14, BR-34–BR-36, BR-49
+Acceptance example
+The same bank event cannot pay both a Sales Order and a Social Booking Order.
+
+8.3. UC-38 — Hand over sold items
+Field
+Specification
+Actor
+Primary: Staff.
+Description
+Record actual delivery and the stock change once.
+Preconditions
+The Sales Order is paid, has not been handed over, and its quantities remain reserved.
+Trigger
+Staff is ready to give the goods to the payer.
+Normal flow
+1. Staff opens the paid order and verifies the goods and quantities.2. Staff records that the goods have been handed over.3. TKSC rechecks payment, reservation and prior handover state.4. In one saved operation, it posts the sale stock movement, releases the reservation and records the operator and time.5. It marks delivery Completed while preserving the payment record.
+Alternative flows
+A1. Unpaid or unresolved payment: reject normal handover.A2. Duplicate request: show the original delivery record with no second stock change.A3. Goods cannot be delivered: keep Pending and refer the case for review; do not fabricate delivery.A4. Later return: open UC-50 rather than deleting this handover.
+Postconditions
+One goods handover and its stock movement are traceable to the paid order.
+References
+FE-15, FE-16 | BR-35–BR-37
+Acceptance example
+Clicking Hand over twice reduces stock only once.
+
+8.4. UC-39 — Receive stock
+Field
+Specification
+Actor
+Primary: Staff.
+Description
+Record stock actually received at the venue.
+Preconditions
+The item and its unit are defined; Staff has stock-recording access.
+Trigger
+A delivery of goods or supplies is received.
+Normal flow
+1. Staff identifies the item, unit, received quantity and source document.2. TKSC shows the current item balance and checks the source receipt identity.3. Staff confirms the quantity physically received.4. TKSC saves one receipt movement and increases on-hand stock.5. It links the receipt to a replenishment request when applicable.
+Alternative flows
+A1. Wrong unit, zero or negative quantity: reject and highlight the field.A2. Repeated receipt event: return its saved result.A3. Source quantity and actual receipt differ: record the received quantity and retain the difference for review.A4. A posted receipt needs correction: use an approved adjustment, not deletion.
+Postconditions
+Actual receipt quantity, source record and operator are stored. Approval to buy alone does not create stock.
+References
+FE-16 | BR-37, BR-39
+Acceptance example
+Repeating the same receipt reference does not double the received balance.
+
+8.5. UC-41 — Issue supplies to a session
+Field
+Specification
+Actor
+Primary: Staff. Secondary: assigned Referee or Manager.
+Description
+Allocate supplies to one social session.
+Preconditions
+A valid request names the session, recipient, item and quantity.
+Trigger
+Staff opens the session supply request.
+Normal flow
+1. TKSC shows the session and available quantity after existing reservations.2. Staff confirms the quantity given to the assigned recipient.3. TKSC checks availability and stores the issue event once.4. It moves the quantity into an outstanding session allocation.5. The Referee sees what was issued and later records use/returns through UC-42.
+Alternative flows
+A1. Insufficient available stock: reject excess issuance and show the balance.A2. Wrong session or recipient: deny the issue.A3. Repeated issue request: show the original allocation.A4. A material is included in the social service: do not add it as a ticket surcharge.
+Postconditions
+The quantity is assigned to the session, not yet counted as consumed.
+References
+FE-16 | BR-33, BR-36–BR-38
+Acceptance example
+Issuing 12 units creates a 12-unit allocation. It does not charge 12 units to the players’ ticket order.
+
+8.6. UC-42 — Record use and unused returns
+Field
+Specification
+Actor
+Primary: assigned Referee; Staff confirms unused stock received.
+Description
+Close a supply allocation using observed use and actual returns.
+Preconditions
+A session has an outstanding supply allocation.
+Trigger
+The session’s supplies are reconciled.
+Normal flow
+1. Referee records actual quantity used and quantity offered for unused return.2. Staff verifies the returned quantity physically received.3. TKSC checks that used plus returned does not exceed the issued amount.4. For use, it reduces both on-hand stock and the outstanding allocation.5. For unused return, it releases only the allocation back to available stock.6. It records any unexplained difference for UC-43/UC-44.
+Alternative flows
+A1. Quantities exceed the allocation: reject the update.A2. Return is not yet received: retain it as pending, not available stock.A3. Repeated event: do not post the movement twice.A4. Lost or damaged items: submit a difference rather than hiding it as an unused return.
+Postconditions
+Use, return and any difference reconcile to the original issuance.
+References
+FE-16 | BR-37–BR-39
+Acceptance example
+From 12 issued units, nine used and three returned reduce total on hand by nine, not by 21.
+
+8.7. UC-43 — Count stock and request an adjustment
+Field
+Specification
+Actor
+Primary: Staff.
+Description
+Record a physical count and explain the difference.
+Preconditions
+Staff has access to the named stock item and count period.
+Trigger
+Staff performs a stock count.
+Normal flow
+1. TKSC shows the recorded quantity with its data version.2. Staff enters the physically counted quantity and evidence.3. TKSC calculates the difference and records the affected movement history.4. Staff submits a proposed correction and reason.5. The request goes to Manager under UC-44; the stock balance remains unchanged meanwhile.
+Alternative flows
+A1. No difference: retain the count without creating an adjustment.A2. Stock changed during counting: reload and reconcile the newer movements.A3. Staff attempts to approve the request through another linked account: deny self-approval.
+Postconditions
+A count and discrepancy record exist. Only a separate approved action can change stock.
+References
+FE-16, FE-17 | BR-32, BR-39, BR-40
+Acceptance example
+A counted value does not overwrite system stock when the count form is saved.
+
+8.8. UC-44 — Approve a financial or stock adjustment
+Field
+Specification
+Actor
+Primary: Manager; Owner for an escalated business decision. Secondary: Staff originator.
+Description
+Make an independent decision on an evidenced business exception.
+Preconditions
+A submitted request has source records, a reason and a fixed proposed change.
+Trigger
+The authorized approver opens the request.
+Normal flow
+1. TKSC shows the original transaction or stock movement, evidence and proposed change.2. It checks the approver’s role, authority and person identity against the originator.3. The approver approves or rejects and records the reason.4. TKSC checks that the approved values have not changed.5. An approved action is applied once and linked to the decision; a rejection changes no money or stock.
+Alternative flows
+A1. Same person or System Admin role: deny the approval.A2. Outside Manager authority: route to Owner instead of granting unrestricted access.A3. Amount, recipient, quantity or target changes: require a new review.A4. A retry follows an already applied decision: return the existing result.
+Postconditions
+The decision and resulting movement are traceable without erasing source records.
+References
+FE-14, FE-17 | BR-32, BR-39, BR-40, BR-45, BR-50
+Acceptance example
+A user with separate Staff and Manager accounts cannot approve the adjustment they originated.
+
+8.9. UC-45 — Reconcile and hand over a work shift
+Field
+Specification
+Actor
+Primary: Staff. Secondary: Manager.
+Description
+Compare recorded money and orders and retain unresolved work.
+Preconditions
+Shift/session dates and source transactions are available.
+Trigger
+Staff closes a work shift.
+Normal flow
+1. Staff selects the shift period and reviews source records.2. TKSC shows separate ticket receipts, goods receipts, verified repayments and unresolved amounts.3. Staff records explanations and prepares the handover list.4. Manager checks the evidence and accepts the reconciliation or returns comments.5. TKSC stores the reviewed version and identifies the recipient of unresolved work.
+Alternative flows
+A1. Pending payment/refund: show it separately from completed money movements.A2. A transaction arrives after review: create an updated version and retain the old one.A3. A discrepancy needs a money change: use UC-44; closing the shift cannot conceal it.
+Postconditions
+The shift summary is tied to actual records and a review history.
+References
+FE-17 | BR-14, BR-40, BR-44
+Acceptance example
+A paid goods order awaiting handover remains visible and is not counted as delivered.
+
+8.10. UC-48 — Hand over System Admin access
+Field
+Specification
+Actor
+Primary: current System Admin. Secondary: Owner and designated incoming operator.
+Description
+Transfer technical support responsibility through separate named accounts.
+Preconditions
+Owner has designated the incoming operator and approved the access scope.
+Trigger
+A later technical handover is scheduled.
+Normal flow
+1. The current administrator records the outgoing and incoming people and accounts.2. TKSC provisions the incoming operator’s own System Admin account in the TK.admin naming family.3. The incoming operator verifies permitted configuration and incident tasks.4. Both parties record the handover check result.5. The former support access is revoked or restricted as approved.6. TKSC closes the handover record while retaining historical actors unchanged.
+Alternative flows
+A1. Verification fails: keep the handover open and retain the authorized support arrangement.A2. A request tries to reuse another person’s login identity: reject it.A3. Lâm already has TK.manager: keep it separate; do not add System Admin rights to it.A4. The new account tries a rating-review decision: deny it because that action belongs to Manager.
+Postconditions
+Only the designated technical operator has the approved ongoing access. No personal account or past audit identity is transferred.
+References
+FE-01, FE-18 | BR-30–BR-32, BR-45, BR-46, BR-50
+Acceptance example
+After handover, Lâm uses a separate System Admin account, while rating complaints still require TK.manager.
+
+8.11. UC-50 — Handle a sales return or refund case
+Field
+Specification
+Actor
+Primary: Staff. Secondary: Manager, or Owner for the escalated decision.
+Description
+Resolve a goods case without changing social tickets or inventing a return policy.
+Preconditions
+A recorded sales item and verified payment exist; the case refers to an applicable approved decision.
+Trigger
+Staff receives a goods-return or repayment request.
+Normal flow
+1. Staff opens a case linked to the original sales items, payer and delivery record.2. Staff records the request, evidence and any goods physically received.3. Manager reviews the request under the applicable business policy.4. If return is accepted, Staff records quantity and condition; only usable accepted goods are added to sellable stock.5. Any approved repayment is processed separately and completed only after its result is verified.6. TKSC retains independent return and refund states and the approving person.
+Alternative flows
+A1. No approved basis for the requested refund: keep the case for a decision; do not assume a free-return deadline.A2. Money is refunded but goods are not received: do not restock.A3. Total refund/return exceeds paid/delivered quantity: reject the excess.A4. A social ticket is linked to the payer: leave it unchanged.
+Postconditions
+Physical return and financial repayment remain separately traceable to the sale.
+References
+FE-15, FE-17 | BR-32–BR-35, BR-40–BR-42, BR-48, BR-50
+Acceptance example
+Refunding a goods purchase does not refund the buyer’s social ticket or automatically add goods to stock.
+
+III. Functional Requirements
+Screen specifications retain stable SCR/FR IDs. Each field rule is FR-<screen number>.<row>. The same one-role account model applies to local and Google sign-in. Existing layouts remain wireframes; role-specific data and action checks in the tables take priority over a generic illustration.
+1. Accounts and player profiles
+1.1. Register / sign in (SCR-01)
+References: UC-01, UC-02 | FE-01 | FR-01
+FR
+Field / action
+Required behaviour
+01.1
+Display name
+Required at registration; reject blank input. It is shown in the member community.
+01.2
+Username / sign-in identity and password
+Accept the unique local login, including TK.owner, TK.admin and TK.manager. Hide password input. Google sign-in maps to the corresponding authorized local account; do not grant a role from a typed name.
+01.3
+Register / sign in / sign out
+Self-registration grants player rights only. Reject inactive accounts. Sign out ends the current access session.
+01.4
+Errors
+Show required-field errors near the field and one generic message for failed credentials. Preserve non-secret input on failure.
+01.5
+Role account creation
+Self-registration creates a unique TK.player.<identifier> account only. Other roles require approved appointments and System Admin provisioning; reject combined roles.
+01.6
+Account switch
+End the current role session before signing in with another account. Person-linked conflicts and self-approval restrictions still apply.
+1.2. My profile and skill history (SCR-02)
+References: UC-03–UC-05 | FE-02, FE-03 | FR-02
+FR
+Field / action
+Required behaviour
+02.1
+Member fields
+Display name, chosen avatar and short introduction are editable. Keep private contact separate.
+02.2
+Sport selector
+Show a separate current profile for badminton and pickleball; never combine scores.
+02.3
+Published score and history
+Read-only for players. Show band, provisional/confirmed status and publication date. Do not display internal assessor notes.
+02.4
+Request review
+Open SCR-12 with the selected sport and published-result ID.
+2. Skill assessment and review
+2.1. Sport survey (SCR-03)
+References: UC-04 | FE-03 | FR-03
+FR
+Field / action
+Required behaviour
+03.1
+Sport and scheme
+Require a selected sport; use its active questionnaire and retain the scheme version.
+03.2
+Experience and recent play
+Record playing experience and frequency as context, not automatic skill bonuses.
+03.3
+Skill answers
+Use concrete sport-specific actions. Include a Not sure option where defined in the active survey.
+03.4
+Submit
+Validate answers, save them once and display the provisional result. Do not overwrite a confirmed result.
+2.2. Skill exception requests (SCR-09)
+References: UC-14, UC-15 | FE-08 | FR-09
+FR
+Field / action
+Required behaviour
+09.1
+Request
+Player, sport, current level, target session and reason. The player cannot select another person's identity.
+09.2
+Decision
+The assigned approved referee chooses Approve or Reject and records a reason.
+09.3
+Audit and outcome
+Show decision time and scope. Approval does not change the score, reserve a place or mark payment.
+2.3. Assessment form and publication (SCR-11)
+References: UC-17, UC-18 | FE-04 | FR-11
+
+Figure 29. SCR-11 — proposed field layout.
+FR
+Field / action
+Required behaviour
+11.1
+Player/session/sport
+Select from actual attendees in the referee's assigned session; fixed for this form.
+11.2
+Criteria and marks
+Load the active scheme. Each criterion accepts allowed marks or Not observed. Reject values outside its scale.
+11.3
+Internal evidence
+Brief notes about actual play; visible only to Referees and Manager.
+11.4
+Draft / submit / publish
+Incomplete evidence remains draft. Publication requires permission and review checks; record old/new values and trigger the future-ticket check.
+2.4. Rating review and decision (SCR-12)
+References: UC-19, UC-20 | FE-05 | FR-12
+FR
+Field / action
+Required behaviour
+12.1
+Player request
+Sport, published result and reason are required. Reuse an open request for the same disputed result.
+12.2
+Referee review
+Store review participants and observations as internal content.
+12.3
+Manager decision
+Only Lâm’s Manager role decides keep/correct after referee review. Record the reason and person/account identity. System Admin, Owner and Staff are denied this action.
+12.4
+History
+Link any corrected result and related refunds. Do not delete the disputed record.
+3. Session booking and payment
+3.1. Social calendar and session list (SCR-04)
+References: UC-06 | FE-07 | FR-04
+
+Figure 30. SCR-04 — proposed field layout.
+FR
+Field / action
+Required behaviour
+04.1
+Filters
+Sport and date; optional slot and level filters. Eligibility uses the signed-in player's sport profile.
+04.2
+Session card
+Show court, time, band, ticket price, remaining places and open/closed state.
+04.3
+Suitability
+Suggest eligible open sessions first. An out-of-band session may show the restriction and an exception-request action; do not widen the band automatically.
+04.4
+No suitable result
+Offer another date or slot. Show no result instead of recommending an incompatible group.
+3.2. Session details and participants (SCR-05)
+References: UC-07, UC-08, UC-14 | FE-06–FE-09, FE-12 | FR-05
+FR
+Field / action
+Required behaviour
+05.1
+Session summary
+Show the published sport, court, date, time, band, referee, capacity and price.
+05.2
+Participant list
+Show member-visible fields for confirmed participants. Do not expose contact details, payment amounts or unaccepted invitees.
+05.3
+Register / with friends
+Invoke UC-32 before holding a place. Repeated actions return the existing registration.
+05.4
+Exception / partner
+Open the relevant request. A partner preference requires valid tickets in this same court session.
+3.3. Friend checklist and invitations (SCR-06)
+References: UC-09, UC-10 | FE-09, FE-12 | FR-06
+
+Figure 31. SCR-06 — proposed field layout.
+FR
+Field / action
+Required behaviour
+06.1
+Friend checklist
+List accepted friends with the selected sport level and eligibility status. Disable those who fail current conditions.
+06.2
+Payment mode
+Choose inviter pays or friends pay separately. Show the choice to every invitee before consent.
+06.3
+Response and hold states
+Display each invitation, response, hold deadline and payment state separately.
+06.4
+Accept / decline
+Only the addressed invitee can respond. Accepting rechecks current eligibility, time and capacity.
+3.4. Payment instructions and status (SCR-07)
+References: UC-11–UC-13 | FE-10 | FR-07
+
+Figure 32. SCR-07 — proposed field layout.
+FR
+Field / action
+Required behaviour
+07.1
+Order and items
+Read-only payer, accepted players, fixed item prices, total amount and unique reference.
+07.2
+Bank-transfer instructions
+Show the configured receiving bank/account, exact amount and reference; let the payer copy the reference.
+07.3
+Expiry
+Show the actual order/hold deadline. Refreshing the page does not create a new deadline.
+07.4
+Status
+Awaiting payment, Paid or Needs review comes from server records. No user control may mark a bank transfer verified.
+3.5. My tickets and refund status (SCR-08)
+References: UC-13, UC-21 | FE-10, FE-11 | FR-08
+FR
+Field / action
+Required behaviour
+08.1
+Ticket list
+Separate upcoming, attended, expired and invalidated registrations. Show each player's ticket, not just a group order total.
+08.2
+Ticket detail
+Show ticket code, holder, sport, court, slot, entry state and paid/held status.
+08.3
+Refund status
+Show Requested, Processing, Completed or Failed with the affected ticket amount. Keep the payer's bank details private.
+08.4
+Alternative sessions
+Open eligible available results near the original slot. Booking an alternative requires a new explicit choice.
+4. Community and venue operations
+4.1. Assigned roster and attendance (SCR-10)
+References: UC-16 | FE-13 | FR-10
+FR
+Field / action
+Required behaviour
+10.1
+Assigned sessions
+Filter by date, slot, sport and court within the staff user's role.
+10.2
+Roster
+List confirmed ticket holders with provisional-level flags and check-in state.
+10.3
+Check in
+Verify the named player and ticket before marking attendance once.
+10.4
+Session close
+Record attendance outcomes and session notes; open assessment forms for observed attendees.
+4.2. Members and friend requests (SCR-13)
+References: UC-23 | FE-12 | FR-13
+FR
+Field / action
+Required behaviour
+13.1
+Member search
+Search display names within the website; show sport-specific public levels and member fields only.
+13.2
+Friend action
+Send, accept, decline or remove a link. Block self-requests and duplicate pending pairs.
+13.3
+Privacy
+No other member's contact, payment records or detailed referee notes appear here.
+4.3. Messages and partner preference (SCR-14)
+References: UC-24, UC-25 | FE-12 | FR-14
+FR
+Field / action
+Required behaviour
+14.1
+Conversation
+Proposed rule: direct text between accepted friends. Access belongs to participants, not all venue members.
+14.2
+Send state
+Reject empty content and show sent/failed state. Retry with the same request identity to avoid duplicate messages.
+14.3
+Partner request
+Select a shared session and an eligible confirmed participant. Store both players' responses.
+14.4
+Referee view
+Show accepted partner preferences on the roster, not private chat contents.
+4.4. Session management (SCR-15)
+References: UC-26–UC-28 | FE-06 | FR-15
+
+Figure 33. SCR-15 — proposed field layout.
+FR
+Field / action
+Required behaviour
+15.1
+Session fields
+Sport, date, court, start/end, band, capacity, price, referee and deadlines are required for publication.
+15.2
+Validation
+Positive capacity up to eight; non-negative price; end after start; no court/referee overlap; consistent sport and scheme.
+15.3
+Draft and publication
+Drafts may be edited before sale. Publication opens registration under fixed entry conditions.
+15.4
+Close registration
+Stop new holds without cancelling paid tickets; preserve the conditions under which tickets were sold.
+4.5. Sport assessment settings (SCR-16)
+References: UC-30 | FE-03, FE-04 | FR-16. Account provisioning is defined in SCR-26, not in this screen.
+FR
+Field / action
+Required behaviour
+16.1
+Manager access
+Only Manager maintains sport criteria with Referee input. System Admin may support a technical issue but cannot edit score policy through this role or alter published results.
+16.2
+Sport scheme
+Each version defines criteria, allowed marks, band boundaries and publication checks for one sport.
+16.3
+Scheme validation
+Prevent overlapping band boundaries or invalid score ranges. Store the version with each survey, assessment and saved booking rule.
+16.4
+Activation
+Use the new scheme for new assessments; do not silently recalculate published profiles or sold sessions.
+4.6. Payments, refunds and exceptions (SCR-17)
+References: UC-21, UC-22 | FE-10, FE-11, FE-13 | FR-17
+
+Figure 34. SCR-17 — proposed field layout.
+FR
+Field / action
+Required behaviour
+17.1
+Transaction list
+Filter by state, reference, date and payer. Distinguish event duplicates from separate real transfers.
+17.2
+Match review
+Show the incoming amount, intended items and unallocated amount. Require a reason for manual resolution.
+17.3
+Refund detail
+Show the ticket, original allocation, original payer and remaining refundable amount. Keep one active refund for each affected payment portion.
+17.4
+Complete refund
+Require verified repayment evidence. Failed or unknown bank results remain unresolved and visible.
+17.5
+Work separation
+Staff investigates and executes eligible repayment; Manager/Owner decides business exceptions. System Admin sees only required technical processing status.
+17.6
+Order type
+Filter and identify Social Booking Order versus Sales Order. Never apply the same incoming amount to both; sales cases also link to SCR-21.
+4.7. Operations and trial feedback (SCR-18)
+References: UC-31 | FE-13 | FR-18
+FR
+Field / action
+Required behaviour
+18.1
+Filters and totals
+Date, sport, court and session status. Count paid tickets, attendance and unresolved transactions separately.
+18.2
+Trial feedback
+Session, author, observed issue and action taken. Record only what staff observed or users reported.
+18.3
+Detailed records
+Open the source roster, assessment or money record subject to role permission.
+18.4
+Summary
+Provide actual counts and dated comments for the 1–2-week pilot. Do not generate assumed improvement percentages.
+18.5
+Session progress
+Authorized staff record the actual start and completion of a session. Closing registration is separate from completing play.
+4.8. Owner, Staff and System Admin workspaces
+SCR-19 — Business policies and approvals
+References: UC-33–UC-35, UC-46 | FE-14 | FR-19
+FR
+Field / action
+Required behaviour
+19.1
+Policy and price version
+Owner maintains policy type, effective date, ticket/product price and approval reason. Preserve the policy and unit price already used by sold orders.
+19.2
+Appointments and escalations
+Show Manager appointment requests and cases outside Manager authority. Owner is a business approver, not the System Admin or default rating reviewer.
+19.3
+Business summary
+Show recorded social receipts, goods receipts, refunds and supplies separately. Do not label this as full venue profit.
+19.4
+Replenishment
+View item, quantity and purpose; record a decision. Purchasing approval does not add stock until receipt.
+
+SCR-20 — Counter sales order
+References: UC-36 | FE-15 | FR-20
+FR
+Field / action
+Required behaviour
+20.1
+Sales lines
+Require item, positive quantity, unit and approved fixed unit price. Reject social tickets in this order.
+20.2
+Payer and operator
+Record the Staff operator separately from the payer. Do not assume the Staff account paid for the goods.
+20.3
+Stock and payable state
+Reserve available items in one operation and display order expiry. Reload changed stock or prices before confirming.
+20.4
+Transfer instructions
+Use a unique goods-order reference with the exact amount. No mixed social-and-sales payment is created.
+20.5
+Repeat actions
+The same create request returns its existing order and reservations.
+
+SCR-21 — Sales payment, handover and return
+References: UC-37, UC-38, UC-50 | FE-15–FE-17 | FR-21
+FR
+Field / action
+Required behaviour
+21.1
+Independent states
+Show Awaiting payment / Paid / Needs review independently from Pending / Completed delivery.
+21.2
+Handover
+Only Staff can confirm actual handover after verified payment and stock checks. Post the goods movement once.
+21.3
+Return case
+Link the original sold item, received quantity/condition and Manager decision. Do not apply an invented return deadline or fee.
+21.4
+Refund evidence
+Track actual repayment separately from return. Totals cannot exceed the verified paid amount, and social tickets remain unchanged.
+21.5
+Stock return
+Add only accepted goods physically received in usable condition; refund status alone never increases stock.
+
+SCR-22 — Stock and session supplies
+References: UC-39–UC-42, UC-46 | FE-16 | FR-22
+FR
+Field / action
+Required behaviour
+22.1
+Item identity
+One item code and unit covers sale and session use. Show on-hand, active sales reservations, session allocations and available stock.
+22.2
+Receipts
+Record positive actual quantity, unit, source and Staff operator. Repeated source events do not add stock twice.
+22.3
+Session issue
+Require session, recipient, item and quantity. Assigned Referee/Manager requests supplies; Staff records issue.
+22.4
+Use and returns
+Referee records use; Staff confirms unused goods received. Use plus return cannot exceed issuance.
+22.5
+Replenishment
+Show needed items and quantities for review. Do not automatically purchase or create received stock.
+22.6
+History
+Show movement purpose and source reference. Posted changes cannot be deleted to hide a difference.
+
+SCR-23 — Counts and adjustment decisions
+References: UC-43, UC-44 | FE-14, FE-16, FE-17 | FR-23
+FR
+Field / action
+Required behaviour
+23.1
+Count record
+Store expected quantity/version, actual count, reason and evidence. Saving a count does not replace the stock balance.
+23.2
+Request details
+Separate original values, requested change, originator and proposed approver. Financial requests retain payer, source amount and target.
+23.3
+Approval
+Manager or Owner decides within their approved authority. Deny the originator through every linked role account.
+23.4
+Apply once
+Verify approved values again and post one linked adjustment. Changed values require a new review.
+
+SCR-24 — Shift reconciliation and handover
+References: UC-22, UC-45 | FE-17 | FR-24
+FR
+Field / action
+Required behaviour
+24.1
+Shift selection
+Choose the actual date/shift and source records. This is a work shift, not a new social-booking type.
+24.2
+Separated totals
+Show social-order receipts, goods-order receipts, refunds and unallocated amounts independently.
+24.3
+Discrepancies
+Staff proposes explanations; Manager reviews. Use UC-44 for changes affecting money or stock.
+24.4
+Handover and versions
+Store unresolved cases, receiving employee and review version. Later transactions create an update rather than changing approved history silently.
+
+SCR-25 — Technical settings and incidents
+References: UC-47 | FE-18 | FR-25
+FR
+Field / action
+Required behaviour
+25.1
+Technical configuration
+System Admin maintains authorized integration configuration and access settings. Hide secret values from general views and reports.
+25.2
+Technical records
+Show masked processing IDs, errors and retry status; do not expose internal skill evidence, private chats or unnecessary financial details.
+25.3
+Safe retry
+Retry only saved verified events under the same identity and normal business checks. A retry cannot mark invented money paid or grant a ticket beyond capacity.
+25.4
+No business decision controls
+Do not show or accept rating correction, policy approval, stock adjustment approval or business refund approval from a System Admin session.
+
+SCR-26 — Role accounts and support handover
+References: UC-29, UC-34, UC-48 | FE-01, FE-14, FE-18 | FR-26
+FR
+Field / action
+Required behaviour
+26.1
+Naming and identity
+Use TK.owner, TK.admin, TK.manager and the TK.staff/TK.referee/TK.player families. Add a unique suffix for each further user. Store one role and the person link separately from the login name.
+26.2
+Approval versus provisioning
+Owner approves Manager appointments; Manager approves Staff/Referee appointments. System Admin provisions only the approved scope. Self-registration creates a separate Player account only.
+26.3
+No combined account
+Reject attempts to attach a second role to one account. The same person signs in through a different role account where authorized.
+26.4
+External identity
+Google sign-in maps to an existing specific account or a new Player account. It does not let the user choose a privileged role.
+26.5
+Support handover
+Đức operates TK.admin initially. An incoming administrator gets a separate TK.admin.<identifier> login. Revoke former support access after verification and keep historic operator identity.
+26.6
+Person checks
+Use the underlying person for self-assessment and self-approval checks. An account switch is not independent approval.
+5. Background Job Inventory
+5.1. JOB-01 — Expire unpaid place holds and invitations
+Field
+Requirement
+Trigger
+Scheduled processing of configured expiry times.
+Processing
+1. Find pending invitations and held registrations whose expiry has passed.
+2. Recheck payment state in the same protected update before expiring a hold.
+3. Expire only unpaid items, release their places and close unpaid payment items.
+4. Keep confirmed tickets and other friends' paid places unchanged.
+Failure behaviour
+On error, keep a record for retry. Registration checks also reject expired holds, so a delayed job cannot extend their rights.
+5.2. JOB-02 — Check future tickets after a published rating change
+Field
+Requirement
+Trigger
+A saved publication or correction creates a job for that player, sport and result version.
+Processing
+1. Reload the latest published sport profile before evaluating a ticket.
+2. Find future paid tickets in the affected sport and check current bands/exceptions.
+3. For an ineligible ticket, perform UC-21 once and store the outcome.
+4. Retain eligible tickets and save completion progress for retries.
+Failure behaviour
+Retry from recorded progress. Do not duplicate an invalidation or refund. Do not use an older queued rating after a newer correction is published.
+5.3. JOB-03 — Retry verified payment processing
+Field
+Requirement
+Trigger
+A trusted event was stored but could not finish processing.
+Processing
+1. Load the trusted event and its saved processing identity.2. Resolve its unique original order reference and route social payments to UC-12 or sales payments to UC-37.3. Recheck the relevant ticket or stock reservation using current records.4. Reuse existing allocations and save one final result or a visible review case. Never switch order type, bypass conditions or apply the bank amount twice.
+Failure behaviour
+Keep business exceptions visible to Staff and Manager; System Admin sees masked processing errors. A technical retry does not bypass an expired hold, skill rule or full session.
+5.4. JOB-04 — Release expired unpaid sales reservations
+Field
+Requirement
+Trigger
+A configured unpaid Sales Order expires.
+Processing
+1. Find expired unpaid orders.2. Recheck the recorded payment and current reservation in the protected update.3. Release only that order’s reserved stock; keep paid reservations and unrelated orders.4. Mark the unpaid order expired and retain its reference for later transaction review.
+Failure behaviour
+Retry from the saved state without releasing the same reservation twice. A late bank event stays visible for Staff/Manager review; expiry never hides incoming money.
+6. External API Inventory
+6.1. Receive bank-transfer events (API-01)
+Field
+Specification
+Purpose
+Provide authenticated transaction results to UC-12 for social orders or UC-37 for goods orders, based on a unique reference.
+Caller
+The approved bank-transfer integration; not the player's browser.
+Proposed endpoint
+POST /api/integrations/bank-transfers/events
+Authentication
+Verify origin and message integrity using the selected integration's supported authentication. Reject unauthenticated requests before changing transaction data.
+Normalized input
+Source ID; external transaction ID; receiving account identity; transfer reference; incoming amount; currency; bank transaction time. Retain available evidence for reconciliation.
+Success response
+Acknowledge the saved event and return a stable processing status. A receipt acknowledgement is not a ticket confirmation.
+Duplicate event
+Return the recorded result for the same source/transaction ID without applying money again.
+Invalid or unmatched input
+Reject untrusted or invalid events. Retain authenticated unmatched amounts for Staff investigation and Manager review. No order type or payer is guessed.
+Retry and consistency
+Acknowledge only a saved event. JOB-03 resumes it with the same identity and original order type. A retry cannot duplicate a social/sales allocation, oversell seats/stock or bypass approval.
+Refund processing is specified as a business workflow and verified repayment record in UC-21. An incoming-transfer connection is not permission or proof that outgoing money has been sent.
+6.2. Verify an external sign-in identity (API-02)
+Field
+Specification
+Purpose
+Support the Google identity service shown in the team’s context diagram.
+Calling path
+TKSC sends a sign-in request and receives the identity result from Google.
+Local mapping
+Validate the result and bind it to the specific local role account. A new public registration receives Player rights only.
+Authorization
+The external identity is not a role decision. Owner/Manager appointments still govern privileged accounts; the local session has one role.
+Failure behaviour
+Reject an invalid, unmapped privileged or inactive account. Do not fall back to a higher role or expose another person’s account.
+
+IV. Non-Functional Requirements
+1. External Interfaces
+Interface
+Requirement
+User browser
+Provide separate role workspaces with consistent states and fields. Use Vietnam local time for session/shift records and VND for recorded order amounts.
+Bank-transfer integration
+Use the API-01 contract to confirm incoming money. Separate external authentication and data mapping from booking rules.
+Venue staff
+Referees use the website for attendance and assessment. Staff uses counter-sale, supply and reconciliation functions. No extra court device or automatic match-scoring system is required.
+2. Quality Attributes
+2.1. Usability
+ID
+Requirement
+How to verify
+NFR-U01
+Clear task status
+Show distinct labels for a provisional level, invitation, place hold, confirmed ticket and completed refund.
+Each screen and trial task test uses the same labels as its data state.
+NFR-U02
+Useful errors
+A blocked booking states whether the issue is skill, capacity, time, consent or payment, with the allowed next action.
+Run the corresponding failure paths; no success message appears on failure.
+NFR-U03
+Browser access
+The proposed layout supports desktop and mobile-sized browsers without a native app. Main actions and status labels remain readable.
+Complete survey, booking, payment viewing and referee entry on both layout sizes.
+2.2. Performance and responsiveness
+ID
+Requirement
+How to verify
+NFR-P01
+Bounded result loading
+Lists of sessions, members and transaction history use filters and pages. Opening a list does not load all private history or chat bodies.
+Check responses and paging on a growing test dataset.
+NFR-P02
+Non-blocking bank status
+Payment status remains viewable while a bank event or refund is pending. Refreshing the browser does not resend money or create a second order.
+Delay the response and refresh/reopen the order. The same reference and state remain.
+2.3. Security
+ID
+Requirement
+How to verify
+NFR-S01
+Access by role and record
+Check authorization on every protected action and record read, not only menu visibility.
+Attempt direct access to another user's private ticket, payment and note; deny unauthorized access.
+NFR-S02
+Protect credentials and contacts
+Do not expose passwords, private contact data or bank details in member profiles, logs or general lists. Protect sign-in and payment data in transit.
+Review returned data, logs and unauthorized requests; no private field is exposed.
+NFR-S03
+Trusted payment events
+Only authenticated integration events can change received-money status. A browser redirect or uploaded image is not payment proof.
+Send a forged event and modified amount; no ticket is confirmed.
+NFR-S04
+Separate role and person authorizationOne role per login; no self-assessment or self-approval through another account. System Admin has no rating or business-approval capability.
+Try direct forbidden requests under TK.admin and linked role accounts; verify denial and audit identity.
+NFR-S05
+Safe support handoverGive the incoming operator a separate account and revoke former access after checks. Logs retain the named actor, role and time.
+Perform a handover test and verify old sessions/access and unchanged historical attribution.
+2.4. Reliability and traceability
+ID
+Requirement
+How to verify
+NFR-R01
+Safe concurrent updates
+Capacity checks, payment allocations and ticket confirmations cannot leave a partial contradictory state.
+Test simultaneous last-seat requests, repeated clicks and a failure before confirmation; capacity and money remain consistent.
+NFR-R02
+Repeat-safe processing
+Replayed callbacks, publication jobs and refund retries do not duplicate money or tickets.
+Repeat the same request identity and compare state and totals before/after.
+NFR-A01
+Traceable changes
+Rating corrections, role changes, ticket invalidations and money resolutions record actor, time, reason and affected records.
+Trace a rating-change refund from publication to original payer and verified repayment.
+NFR-R03
+Stock and money consistencyRepeated receipts, delivery, expiry, return and approval actions do not create duplicate movements or negative availability.
+Test last-item sales, repeated handover and a late bank event after expiry.
+NFR-A02
+Separated business traceLink each ticket or sales line to its verified allocation and each stock movement to its source/decision.
+Trace a rating refund and a goods refund separately; neither changes the other order type.
+Concurrency tests focus on the two-court limit, the last available place and simultaneous changes to one order. The reported 20–30 daily participants are a business-use figure, not a concurrent-user guarantee.
+V. Requirement Appendix
+1. Business Rules
+ID
+Rule
+Rule description
+Applies to
+BR-01
+Separate sports
+Each skill profile, assessment, survey, band and session belongs to one sport. Badminton and pickleball scores are not copied or converted.
+UC-04, UC-06, UC-17, UC-18, UC-32
+BR-02
+Provisional entry
+The sport survey gives a labelled provisional level. On-court evidence replaces it. One or two sessions are the initial observation window, not a promise of complete evidence.
+UC-04, UC-17, UC-18
+BR-03
+Two-way skill limits
+Each player must meet both skill bounds for the session's sport, or hold a valid exception for that exact session. Explain why normal entry is blocked.
+UC-08, UC-10, UC-12, UC-15, UC-32
+BR-04
+Capacity
+Active holds and confirmed places together must not exceed published capacity, up to eight per court session. Check and reserve in one protected operation.
+UC-08, UC-10, UC-12, UC-27, UC-32
+BR-05
+One player, one place
+Do not create two active registrations for one player in a session. A ticket stays with its named player, including when a friend pays.
+UC-08–UC-13, UC-16, UC-25
+BR-06
+Time conflicts
+Prevent overlapping active bookings for one player across sports. Also prevent overlapping assignment of a physical court or referee. Adjacent non-overlapping slots are allowed.
+UC-08, UC-10, UC-26–UC-28, UC-32
+BR-07
+Friend consent
+Only accepted friends may receive group-registration invitations. Each friend must accept; neither the inviter nor payment replaces consent.
+UC-09–UC-11
+BR-08
+Separate expiry
+An invitation alone creates no place hold. Acceptance rechecks capacity and creates a timed hold. Expiry releases only the unpaid player's place, not paid friends' tickets.
+UC-08–UC-12, JOB-01
+BR-09
+Fixed order details
+Show the price and included players before transfer. Store fixed order items and a unique payment reference. A new order uses a new reference.
+UC-11, UC-12
+BR-10
+Evidence, not attendance points
+Marks come from the sport's criteria. Not observed differs from zero. Visits, payment amounts, win rate alone or chat opinions do not automatically increase a skill score.
+UC-04, UC-16–UC-18
+BR-11
+Limited exception
+Record the deciding referee, reason, player and session. A skill exception changes neither the profile score nor capacity, payment or time-conflict rules.
+UC-14, UC-15, UC-32
+BR-12
+Original payer
+Keep each payment allocation linked to a ticket and payer. Refund the amount paid for an affected ticket to that payer, not automatically to the invited player.
+UC-11, UC-12, UC-21, UC-22
+BR-13
+Verified transaction once
+Validate bank-event origin and data before applying money. Process the same source/transaction ID once. Two different real transfers remain two money records.
+UC-12, UC-22, API-01
+BR-14
+Do not guess payment matches
+Wrong, partial, late, surplus or unmatched transfers go to payment review. Never guess a payer, hide received money or force a ticket beyond capacity.
+UC-12, UC-22
+BR-15
+Attendance is separate
+A confirmed ticket is not proof of arrival. Record actual attendance once. Unpaid holds do not count as paid tickets or attendance.
+UC-16, UC-31
+BR-16
+Authorized observed assessment
+Only approved referees assess players they observe in assigned sessions. Proposed safeguard: a referee cannot assess their own player profile.
+UC-17, UC-18
+BR-17
+Traceable corrections
+Record publisher/corrector, person, time and reason. Lâm controls disputed corrections through Manager after referee review. System Admin cannot make this decision.
+UC-18–UC-20
+BR-18
+Community and internal data
+Community profiles are visible inside the signed-in website. Contacts, money and detailed Referee evidence are private. Evidence is for authorized Referees and Manager, not Staff, Owner or System Admin.
+UC-03, UC-05, UC-07, UC-17–UC-20
+BR-19
+Check published changes
+Only a published rating change triggers the future-ticket check. Draft scores and open appeals do not immediately change entry rights.
+UC-18, UC-20, UC-21, JOB-02
+BR-20
+Refund only affected future tickets
+Invalidate and refund only future paid tickets that no longer meet the session rule, considering any valid exception. Keep unaffected tickets and past attendance.
+UC-18, UC-21
+BR-21
+No automatic rebooking
+Suggest eligible available sessions near the original date/time. The player decides whether to book; do not move, charge or book on their behalf without consent.
+UC-06, UC-21
+BR-22
+Refund evidence and limits
+Refund requests and failed attempts are not completed repayments. Keep verified payout references. Total completed and reserved pending refunds must not exceed the paid amount allocated to the ticket.
+UC-21, UC-22
+BR-23
+Partner choice
+Both players need valid tickets for the same court session and must agree. The preference does not override referee rotation or guarantee an exclusive pairing.
+UC-25
+BR-24
+Private communication
+Proposed messaging rule: direct text is between accepted friends and visible to its participants. A message or friend request cannot alter another user's rating or ticket.
+UC-23–UC-25
+BR-25
+Publish complete sessions
+An open session has a sport, court, slot, skill conditions, price, capacity and approved referee. Booking/payment deadlines are explicit settings, not hidden values.
+UC-26–UC-28
+BR-26
+Protect sold conditions
+Ordinary edits do not change paid tickets' sport, time, band or price. Closing registration stops new holds; it does not cancel confirmed tickets.
+UC-26, UC-27
+BR-27
+Traceable trial measures
+Count completed sessions, paid places, actual attendance and verified money states separately. Record staff feedback with its session and date.
+UC-31
+BR-28
+Account rights
+Self-registration creates Player access only. Privileged appointments are approved by the proper business authority and implemented by System Admin. Each account has one role; inactive accounts cannot act.
+UC-01, UC-02, UC-29
+BR-29
+Versioned skill schemes
+A scheme belongs to one sport. Store the version with each result and saved entry conditions. A setting edit does not silently recalculate old scores or invalidate tickets.
+UC-04, UC-17, UC-18, UC-30
+BR-30
+One role per account
+Each login has exactly one approved role and one named person. Names follow TK.<role>; additional accounts use a unique suffix. Guest has no account. Names do not grant permissions.
+UC-01, UC-02, UC-29, UC-34, UC-48, UC-49
+BR-31
+Manager rating authority
+Lâm uses TK.manager to decide disputed-rating corrections after referee review. System Admin, Owner and Staff cannot make this decision through their own roles.
+UC-18–UC-20
+BR-32
+Person-level separation
+Resolve the person behind role accounts. Block a Referee from assessing their own Player profile and block a person from approving their own adjustment or appointment.
+UC-17, UC-20, UC-34, UC-44
+BR-33
+Separate order purposes
+Social Booking Orders contain named players’ participation charges only, including assessment. Sales Orders contain goods only. Never mix the line types or charge extra for included assessment.
+UC-11, UC-36, UC-37
+BR-34
+Separate payment references
+Create independent references for social and sales orders. A payment targets one order in this release. Shared bank events and allocations must not apply the same money twice.
+UC-12, UC-22, UC-37, API-01
+BR-35
+Payment is not delivery
+A paid Sales Order is not delivered until Staff records physical handover. A repeated handover creates no second goods deduction.
+UC-37, UC-38
+BR-36
+Protected stock availability
+Reserve goods for a payable sales order using current available stock. Available = on hand - active sales reservations - outstanding session allocations. Do not allow a negative result.
+UC-36, UC-38, UC-41
+BR-37
+One stock event once
+A receipt, sale, use, return or approved adjustment has a unique source-event identity. Repeating it returns its stored result; it does not change stock twice.
+UC-38, UC-39, UC-41–UC-44
+BR-38
+Allocation is not consumption
+Issuing session supplies moves quantity to the session allocation. Use reduces both that allocation and on hand; an unused return only releases the allocation. Use plus returns cannot exceed issued quantity.
+UC-41, UC-42
+BR-39
+Review stock differences
+Staff records count differences with evidence. Only an approved adjustment changes the balance. Do not silently replace expected stock with the entered count.
+UC-43, UC-44
+BR-40
+Separate reviewer
+Staff prepares exceptional money or stock changes. Manager decides within approved authority; Owner handles the escalated business decision. The originator cannot approve their own request.
+UC-22, UC-43–UC-46, UC-50
+BR-41
+No refund cross-effects
+A rating-change refund affects only its social ticket allocation. It does not cancel goods purchases. A goods refund does not cancel a social booking.
+UC-21, UC-50
+BR-42
+Return is not refund
+Do not add returned goods to sellable stock until physical receipt and condition are recorded under an approved decision. A payout does not itself restock an item.
+UC-50
+BR-43
+Approved prices
+Owner approves ticket/product prices and their effective version. Staff cannot change the price of a paid order or apply an unapproved discount. Manager publishes social sessions within those rules.
+UC-26, UC-33, UC-36
+BR-44
+Traceable shift results
+Show social sales, goods sales, verified refunds and unresolved money separately. A reconciliation approval does not erase the original transactions or pending items.
+UC-35, UC-45
+BR-45
+Technical access is not business authority
+System Admin implements approved access and technical settings, views only required masked logs and retries saved events. This role cannot approve business adjustments or turn unverified money into a payment.
+UC-29, UC-47, UC-48
+BR-46
+Separate operator at handover
+Đức supports the venue through TK.admin initially. A later incoming administrator receives their own TK.admin.<identifier> account. Keep TK.manager separate; revoke former support access without reassigning its history.
+UC-48
+BR-47
+Role-safe external sign-in
+A verified Google identity maps to a specific local account and its one role. External sign-in never creates Owner, Manager, Staff, Referee or System Admin rights through self-registration.
+UC-01, UC-02, UC-49
+BR-48
+No assumed cash or return policy
+This release records bank transfers. A goods return, cancellation or exceptional refund requires the relevant approved business decision; no default cash policy, fee, deposit or deadline is invented.
+UC-36, UC-44, UC-50
+BR-49
+Unpaid stock expiry
+Expired unpaid Sales Orders release only their own reservations after payment state is rechecked. Late transfers enter review rather than forcing a goods handover without stock.
+UC-36, UC-37, JOB-04
+BR-50
+History cannot hide an approval change
+Changing the approved amount, recipient, quantity or target account invalidates the earlier decision for that action. Record and review the changed request before applying it.
+UC-34, UC-44, UC-48, UC-50
+2. System Messages
+Message text is supplied in English for the working SRS. Keep the same MSG IDs in any later translation. Variables in braces are filled only from data the current account may read.
+ID
+Context
+Message text
+MSG-01
+Required input
+Please complete the required fields.
+MSG-02
+Sign-in failed
+Sign-in failed. Check your login details.
+MSG-03
+No permission
+You do not have permission to perform this action.
+MSG-04
+Survey needed
+Complete the {sport} survey before registering.
+MSG-05
+Outside skill band
+Your {sport} level is outside this session's range. Choose another session or request an exception.
+MSG-06
+Full session
+This session has no available places.
+MSG-07
+Time conflicts
+You already hold a place in an overlapping session.
+MSG-08
+Friend consent
+Your friend must accept before you can pay for their place.
+MSG-09
+Expired hold
+The unpaid place has expired. Check available sessions before paying again.
+MSG-10
+Awaiting bank result
+We are waiting for bank confirmation for order {order}.
+MSG-11
+Ticket confirmed
+Payment is confirmed. Ticket {ticket} is valid for {session}.
+MSG-12
+Payment review
+Your transfer needs a check. Please do not pay again while this case is being reviewed.
+MSG-13
+Incomplete observation
+Save as draft. Required skills have not all been observed.
+MSG-14
+Provisional level
+Provisional level — awaiting on-court assessment.
+MSG-15
+Review recorded
+Your rating review request has been recorded.
+MSG-16
+Future ticket affected
+Your updated level no longer matches ticket {ticket}. A refund request has been created for the original payer.
+MSG-17
+Refund processing
+Refund {refund} is being processed. Completion has not been confirmed.
+MSG-18
+Refund completed
+Refund {refund} is complete for {amount}.
+MSG-19
+Partner preference
+Your partner preference is recorded. The referee will arrange game rotation.
+MSG-20
+Record changed
+This record has changed. Reload it before saving.
+MSG-21
+Wrong role
+Use the account authorized for this action.
+MSG-22
+Rating decision blocked
+Only Manager can decide a disputed rating after referee review.
+MSG-23
+Self-approval blocked
+You cannot approve a request made by the same person.
+MSG-24
+Mixed order blocked
+Create a separate goods order. Social orders contain player participation charges only.
+MSG-25
+Stock unavailable
+There is not enough available stock for this quantity.
+MSG-26
+Goods awaiting handover
+Payment is confirmed. Goods are awaiting handover.
+MSG-27
+Adjustment submitted
+Your adjustment request has been sent for review.
+MSG-28
+Unverified payout
+Repayment is not confirmed. The case remains open.
+MSG-29
+Account naming
+Use the TK.<role> account family and a unique suffix for an additional user.
+MSG-30
+Handover pending
+The incoming operator must verify their separate account before handover closes.
+3. Other Requirements and Proposed Use Cases
+3.1. Practical additions for a later scope decision
+These three use cases are suggestions, not commitments in FE-01–FE-18. They are separate from the baseline diagrams, permission matrix and acceptance checks.
+P-UC-01 — Join a skill-matched waiting list
+Field
+Proposal
+Actor
+Player; Manager.
+Value and flow
+Useful when a suitable session is full. Store interest without charging or promising a place; recheck level, time and capacity when offering a vacancy.
+Boundary
+Separate from core invitations and payment holds. Requires a decision on queue order and offer expiry.
+P-UC-02 — Request a voluntary session change
+Field
+Proposal
+Actor
+Player; Manager.
+Value and flow
+Let a paid player request a change without losing the original ticket before approval. Check the new session's sport, level, capacity and price.
+Boundary
+Not the approved rating-change refund flow. No free cancellation, fee or refund deadline is assumed.
+P-UC-03 — Block messages or report misuse
+Field
+Proposal
+Actor
+Player; Manager.
+Value and flow
+Help protect community chat. A member may block future messages or report selected content for review.
+Boundary
+A report does not lower a skill rating. Staff review only submitted case content, not all private conversations.
+3.2. Feature-to-use-case traceability
+Feature
+Use cases
+Screen
+Detailed references
+FE-01
+UC-01, UC-02, UC-29, UC-34, UC-48, UC-49
+SCR-01, SCR-26
+FR-01, FR-26; API-02
+FE-02
+UC-03, UC-05, UC-18
+SCR-02, SCR-11
+FR-02, FR-11
+FE-03
+UC-04, UC-30
+SCR-03, SCR-16
+FR-03, FR-16
+FE-04
+UC-17, UC-18, UC-30
+SCR-11, SCR-16
+FR-11, FR-16
+FE-05
+UC-19, UC-20
+SCR-12
+FR-12
+FE-06
+UC-26, UC-27, UC-28
+SCR-15
+FR-15
+FE-07
+UC-06, UC-07
+SCR-04, SCR-05
+FR-04, FR-05
+FE-08
+UC-14, UC-15, UC-32
+SCR-05, SCR-09
+FR-05, FR-09
+FE-09
+UC-08, UC-09, UC-10
+SCR-05, SCR-06
+FR-05, FR-06
+FE-10
+UC-11–UC-13, UC-22, UC-37
+SCR-07, SCR-08, SCR-17, SCR-21, SCR-24
+FR-07, FR-08, FR-17, FR-21, FR-24; API-01
+FE-11
+UC-13, UC-21
+SCR-08, SCR-17
+FR-08, FR-17; JOB-02
+FE-12
+UC-07, UC-09, UC-23–UC-25
+SCR-05, SCR-06, SCR-13, SCR-14
+FR-05, FR-06, FR-13, FR-14
+FE-13
+UC-16, UC-22, UC-31
+SCR-10, SCR-17, SCR-18
+FR-10, FR-17, FR-18
+FE-14
+UC-33–UC-35, UC-44, UC-46
+SCR-19, SCR-23, SCR-26
+FR-19, FR-23, FR-26
+FE-15
+UC-36–UC-38, UC-50
+SCR-20, SCR-21
+FR-20, FR-21; API-01; JOB-04
+FE-16
+UC-38–UC-43, UC-46
+SCR-21–SCR-23
+FR-21–FR-23
+FE-17
+UC-22, UC-43–UC-45, UC-50
+SCR-17, SCR-21, SCR-23, SCR-24
+FR-17, FR-21, FR-23, FR-24
+FE-18
+UC-29, UC-47, UC-48
+SCR-25, SCR-26
+FR-25, FR-26; NFR-S04–NFR-S05
+3.3. Acceptance scenarios for TK Sport
+ID
+Expected result
+AC-01
+A new player receives a provisional result and books the matching sport without reusing another sport's score.
+AC-02
+Only one registration wins the final place; active holds plus confirmed tickets remain within capacity.
+AC-03
+An invited friend must accept. One expired unpaid friend does not cancel paid group members' tickets.
+AC-04
+A paid order is confirmed once even when its bank event is repeated. A second real transfer remains visible.
+AC-05
+A skill exception applies only to the named player/session and does not bypass time or payment checks.
+AC-06
+Only authorized, observed assessments can be published. Internal notes stay hidden from players.
+AC-07
+A future ticket outside a new published band is refunded to its original payer; an unaffected friend's ticket stays valid.
+AC-08
+A draft score, open appeal or same-band change that preserves eligibility does not create a refund.
+AC-09
+A partner preference requires two valid tickets in one court session and cannot reserve an exclusive court.
+AC-10
+Lâm and referees can trace trial counts and comments to the underlying sessions and payment states.
+AC-11
+TK.admin cannot decide a rating complaint or edit published skill data. TK.manager can decide it after Referee review.
+AC-12
+Each account has one role. A Referee cannot assess their own linked Player identity; account switching cannot approve one’s own request.
+AC-13
+A three-ticket social order and a separate goods order have different references. One affected ticket refund leaves the goods order and two valid tickets unchanged.
+AC-14
+One repeated bank event, goods handover or stock receipt applies its amount/quantity once only.
+AC-15
+Two orders competing for the last product cannot both reserve it. Unpaid expiry releases only the relevant reservation.
+AC-16
+From 12 issued units, nine used and three returned reduce total on hand by nine; the return is not counted as a second receipt.
+AC-17
+A Staff stock count creates a difference request; only independent authorized approval changes the balance.
+AC-18
+A refunded sales item does not return to sellable stock until actual receipt and acceptable condition are recorded.
+AC-19
+The incoming technical operator gets a separate account; Lâm’s Manager account and historical audit authors stay unchanged.
+3.4. Source and scope notes
+[R1] Report_1_TK_Sport_Racket_Community_138-1609.docx: project background, FE-01–FE-18 and the proposed badminton scoring framework.
+[R2] Report_2_TK_Sport_Community_1809.docx: project plan, team assignments, revised documentation milestone, added scope estimates and trial arrangements.
+[D] Approved discussions through 23 September 2026: seven human actors, separate one-role accounts named TK.<role>, Owner as court owner, Lâm as Manager and final rating-review decision-maker, Trần Minh Đức as initial System Admin support, combined Staff responsibilities, separate social and goods orders, stock and reconciliation controls. These decisions supersede the former all-purpose Admin role.
+[T3] Supplied Report 3 template and team format examples: document structure and tables. Sample recruitment/customer examples are format references only; their unrelated functions are not TKSC requirements.
+The badminton 0–100/B1–B5 framework in Report 1 remains a proposed sport-specific scheme. This SRS does not apply it to pickleball or claim an official sports ranking. New workflow details, fields, states and wireframes in this draft should be reviewed as SRS design proposals.

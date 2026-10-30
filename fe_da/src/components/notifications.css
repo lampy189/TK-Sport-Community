@@ -1,0 +1,17 @@
+.notification-root { position:relative; }
+.notification-bell { position:relative; display:grid; place-items:center; width:42px; height:42px; border:1px solid #dce6dc; border-radius:50%; background:white; color:#164d3c; cursor:pointer; }
+.notification-count { position:absolute; top:-4px; right:-5px; min-width:19px; padding:2px 4px; border-radius:20px; color:white; background:#b4332b; font-size:11px; }
+.notification-panel { position:absolute; right:0; top:52px; width:min(380px,calc(100vw - 32px)); padding:18px; background:white; border:1px solid #dce6dc; border-radius:16px; box-shadow:0 12px 40px #142c2426; z-index:150; color:#183d31; text-align:left; }
+.notification-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
+.notification-panel button,.notification-toast button { cursor:pointer; }
+.notification-heading button,.notification-toast button { color:#18593f; background:transparent; font-size:12px; padding:5px; }
+.notification-panel small { font-size:11px; color:#69776d; }
+.notification-items { margin-top:12px; max-height:360px; overflow-y:auto; }
+.notification-item { display:block; width:100%; padding:14px 12px; text-align:left; border-bottom:1px solid #edf0ec; background:white; color:#253b2f; font-size:13px; line-height:1.6; }
+.notification-item small { display:block; margin-top:5px; }
+.notification-item.is-unread { background:#eff7e9; border-left:3px solid #639443; }
+.notification-toast { position:fixed; bottom:24px; right:24px; width:min(390px,calc(100vw - 32px)); display:flex; align-items:flex-start; gap:12px; padding:20px; background:white; color:#183d31; border:1px solid #bcd7a8; border-radius:16px; box-shadow:0 8px 35px #142c2426; z-index:200; text-align:left; }
+.notification-toast p { font-size:13px; margin:8px 0; line-height:1.6; }
+.notification-toast > svg { flex-shrink:0; }
+.notification-panel button:disabled { opacity:.65; cursor:default; }
+@media(max-width:600px){ .notification-panel { position:fixed; top:88px; right:16px; } .notification-toast { right:16px; bottom:16px; } }
