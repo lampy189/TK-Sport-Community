@@ -23,7 +23,9 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<PaymentExceptionHandler>();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<TicketCheckInService>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddHostedService<TKSC.Infrastructure.Notifications.TicketEmailWorker>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>

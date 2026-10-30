@@ -42,6 +42,13 @@ public class GoogleLoginTests
             var error = await rejected.Content.ReadFromJsonAsync<JsonElement>();
             Assert.Equal("invalid_csrf_token", error.GetProperty("code").GetString());
         }
+        foreach (var action in new[] { "inspect", "confirm" })
+        {
+            var denied = await client.PostAsJsonAsync($"/api/v1/commerce/payment/check-in/{action}", new { ticketCode = "TK-test" });
+            Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+        }
+        foreach (var path in new[] { "/api/notifications/1/read", "/api/notifications/read-all" })
+            Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync(path, new { })).StatusCode);
         var paymentCsrf = await client.GetFromJsonAsync<JsonElement>("/api/auth/csrf");
         using var paymentRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/commerce/payment/orders/3/process")
         {
@@ -57,6 +64,14 @@ public class GoogleLoginTests
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/auth/me")).StatusCode);
     }
 
+    [Fact]
+    public async Task NotificationEndpointsRequireAuthentication()
+    {
+        await using var app = new LoginApp();
+        using var client = app.Client();
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/notifications")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/notifications/stream")).StatusCode);
+    }
     [Fact]
     public async Task DevelopmentLoginIsUnavailableInProduction()
     {

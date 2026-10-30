@@ -371,6 +371,18 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 ticketId = (long)(await insertTicketCmd.ExecuteScalarAsync(cancellationToken))!;
             }
 
+            // Durable web/email events commit atomically with the held ticket.
+            await using (var notify = new SqlCommand("""
+                INSERT INTO dbo.notifications (user_id, channel, title, reference_type, reference_id, status)
+                VALUES (@userId, 'web', @title, 'ticket_reserved', @ticketId, 'unread'),
+                       (@userId, 'email', @title, 'ticket_reserved', @ticketId, 'pending');
+                """, connection, transaction))
+            {
+                notify.Parameters.Add("@userId", SqlDbType.BigInt).Value = userId;
+                notify.Parameters.Add("@ticketId", SqlDbType.BigInt).Value = ticketId;
+                notify.Parameters.Add("@title", SqlDbType.NVarChar, 255).Value = TKSC.Application.Notifications.TicketNotifications.Title("ticket_reserved", ticketId);
+                await notify.ExecuteNonQueryAsync(cancellationToken);
+            }
             await transaction.CommitAsync(cancellationToken);
 
             return new RegisterSessionResult(

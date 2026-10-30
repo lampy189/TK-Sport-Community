@@ -11,4 +11,5 @@ public interface IPaymentService
     Task<OrderSummary> RefreshAsync(long id, long userId);
     Task<bool> FlagAsync(long id, long userId, string? reason);
     Task HandleWebhookAsync(string payload);
+    Task<TicketCancelResult> CancelTicketAsync(long ticketId, long userId);
 }
