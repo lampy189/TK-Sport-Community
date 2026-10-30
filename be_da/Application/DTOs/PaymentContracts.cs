@@ -2,7 +2,12 @@ namespace TKSC.Application.DTOs;
 
 public record PaymentSummary(long Id, string ReferenceCode, string Status, int AmountVnd);
 public record TicketSummary(long Id, long OrderId, long PlayerId, long SessionId, int AmountVnd,
-    string Status, string? TicketCode, bool Valid, DateOnly? SessionDate, TimeOnly? StartTime, TimeOnly? EndTime);
+    string Status, string? TicketCode, bool Valid, DateOnly? SessionDate, TimeOnly? StartTime, TimeOnly? EndTime,
+    string OrderStatus, DateTimeOffset? ExpiresAt, string? PaymentStatus,
+    string? SportName, string? CourtName, string? VenueName, string? HolderName, bool CheckedIn,
+    string? RefundStatus, int? RefundAmountVnd) { public bool CanManage { get; init; } = true; }
+public record TicketCancelContext(long OrderId, DateOnly SessionDate, TimeOnly StartTime);
+public record TicketCancelResult(long TicketId, string Status, int RefundAmountVnd);
 public record OrderSummary(long Id, string OrderCode, int TotalAmount, string Status,
     DateTimeOffset? ExpiresAt, IReadOnlyList<PaymentSummary> Payments, IReadOnlyList<TicketSummary> Tickets);
 public record ReviewSummary(long Id, long? OrderId, string ReferenceCode, int AmountVnd,
@@ -21,3 +26,8 @@ public sealed class GatewayException(string message, bool invalidSignature = fal
 {
     public bool InvalidSignature { get; } = invalidSignature;
 }
+
+public record CheckInContext(long TicketId, long OrderId, DateOnly SessionDate, TimeOnly EndTime,
+    string SessionStatus, bool Assigned, string HolderName, string SportName, string CourtName, TimeOnly StartTime);
+public record CheckInResult(long TicketId, string TicketCode, string HolderName, string SportName, string CourtName,
+    DateOnly SessionDate, TimeOnly StartTime, TimeOnly EndTime, bool CheckedIn, long? CheckedInBy);

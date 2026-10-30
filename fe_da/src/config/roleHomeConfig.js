@@ -66,6 +66,7 @@ export const roleHomeConfig = {
     modules: [
       "Quản lý buổi chơi",
       "Phân công nhân sự",
+      "Điểm danh",
       "Khiếu nại đánh giá",
       "Ngoại lệ vận hành",
       "Thanh toán",

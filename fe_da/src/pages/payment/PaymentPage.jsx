@@ -1,7 +1,14 @@
+import { paymentState as deriveState } from './ticketState';
+import TicketList from "./TicketList";
 import { useEffect, useState } from "react";
 import { demoMode, paymentClient } from "./paymentClient";
 import "./payment.css";
-import { ShieldCheck, Ticket, CreditCard } from "lucide-react";
+import {
+  ShieldCheck,
+  Ticket,
+  CreditCard,
+  Timer,
+} from "lucide-react";
 import StatePanel from "../../components/ui/StatePanel";
 
 const money = (value) =>
@@ -12,14 +19,27 @@ const labels = {
   pending: "Chờ thanh toán",
   paid: "Đã thanh toán",
   failed: "Thanh toán không thành công",
-  review_required: "Chờ nhân viên kiểm tra",
-  reserved: "Chưa có hiệu lực",
-  confirmed: "Vé đã xác nhận",
+  review_required: "Đang kiểm tra",
+  reserved: "Chưa thanh toán",
+  confirmed: "Đã xác nhận",
   cancelled: "Đã hủy",
+  expired: "Hết hạn thanh toán",
+  processing: "Đang chờ xác nhận",
 };
+const norm = (s) => String(s || "").toLowerCase();
+const formatDate = (d) =>
+  d
+    ? new Date(d).toLocaleDateString("vi-VN", {
+        weekday: "short",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : "";
 export default function PaymentPage({
   initialView = "payment",
   staff = false,
+  onBrowse,
 }) {
   const [view, setView] = useState(initialView);
   const [orderId, setOrderId] = useState(
@@ -53,6 +73,8 @@ export default function PaymentPage({
           const data = await paymentClient.tickets();
           if (active) setTickets(data);
         } else {
+          const list = await paymentClient.tickets();
+          if (active) setTickets(list);
           const id =
             new URLSearchParams(window.location.search).get("orderId") ||
             (demoMode ? "1" : "");
@@ -73,6 +95,29 @@ export default function PaymentPage({
     };
   }, [initialView, staff]);
 
+  useEffect(() => {
+    if (staff) return;
+    let active = true;
+    let loading = false;
+    async function sync() {
+      if (loading || document.hidden || busy) return;
+      loading = true;
+      try {
+        const list = await paymentClient.tickets();
+        if (active) setTickets(list);
+        if (order?.id) {
+          const current = await paymentClient.display(order.id);
+          if (active) setOrder(current);
+        }
+      } catch (e) { if (active) setError(e.message); }
+      finally { loading = false; }
+    }
+    const timer = setInterval(sync, 15000);
+    window.addEventListener('focus', sync);
+    window.addEventListener('tksc:ticket-changed', sync);
+    return () => { active = false; clearInterval(timer); window.removeEventListener('focus', sync); window.removeEventListener('tksc:ticket-changed', sync); };
+  }, [staff, order?.id, busy]);
+
   async function run(action) {
     if (busy) return;
     setBusy(true);
@@ -89,9 +134,10 @@ export default function PaymentPage({
   async function refresh() {
     const data = await paymentClient.refresh(order?.id || orderId);
     setOrder(data);
-    setNotice("Đã cập nhật trạng thái từ hệ thống.");
+    setNotice("Đã cập nhật trạng thái.");
   }
   async function showTickets() {
+    if (order?.id) setOrder(await paymentClient.refresh(order.id));
     setTickets(await paymentClient.tickets());
     setView("tickets");
   }
@@ -100,7 +146,7 @@ export default function PaymentPage({
     if (data.status === "refresh_required") {
       setOrder(await paymentClient.refresh(order.id));
       setNotice(
-        "Đã cập nhật kết quả payOS. Nếu đã trả tiền, vui lòng chờ hệ thống xác minh giao dịch.",
+        "Đã cập nhật kết quả payOS. Nếu đã trả tiền, vui lòng chờ hệ thống xác minh.",
       );
       return;
     }
@@ -119,43 +165,46 @@ export default function PaymentPage({
     setOrder(await paymentClient.simulate(outcome));
     setGateway(false);
   }
-  const latest = order?.payments[0];
-  const state =
-    order?.status === "pending" ? latest?.status || "pending" : order?.status;
+  const latest = order?.payments?.[0];
+  const orderStatus = norm(order?.status);
+  const payStatus = norm(latest?.status);
   const seconds = order?.expiresAt
     ? Math.max(0, Math.ceil((Date.parse(order.expiresAt) - now) / 1000))
     : 0;
-  const canPay = order?.status === "pending" && seconds > 0;
+  const state = order
+    ? deriveState(order.status, latest?.status, order.expiresAt, now)
+    : "";
+  const canPay = ["pending", "processing", "failed"].includes(state) && orderStatus === "pending" && seconds > 0 && payStatus !== "paid";
+  const timeLeft = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+
+  const statusMessage = {
+    paid: "Thanh toán thành công. Vé của bạn đã sẵn sàng.",
+    review_required:
+      "Giao dịch đang được kiểm tra. Vui lòng không thanh toán lại.",
+    failed: "Giao dịch chưa thành công. Bạn có thể thử lại khi đơn còn hạn.",
+    processing:
+      "Đã tạo giao dịch. Nếu bạn đã chuyển khoản, bấm “Kiểm tra lại” để cập nhật.",
+    expired: "Đơn đã hết thời gian giữ chỗ. Vui lòng đặt lại buổi chơi.",
+    cancelled: "Đơn đã bị hủy.",
+  }[state];
 
   return (
     <div className="payment-workspace" aria-busy={busy}>
       <div className="payment-heading">
-        <div>
-          <span className="eyebrow">THANH TOÁN & VÉ RA SÂN</span>
-          <h1>
-            {staff
-              ? "Thanh toán cần kiểm tra"
-              : view === "tickets"
-                ? "Vé của tôi"
-                : "Sẵn sàng cho buổi chơi."}
-          </h1>
-          <p className="payment-hint">
-            {staff
-              ? "Theo dõi các giao dịch cần đối soát trong một không gian."
-              : "Quản lý thanh toán và theo dõi vé đăng ký của bạn."}
-          </p>
-        </div>
-        <span className={`payment-badge ${demoMode ? "" : "confirmed"}`}>
-          <ShieldCheck size={15} />
-          {demoMode ? "MINH HỌA · KHÔNG THU TIỀN" : "payOS"}
-        </span>
+        <h1>
+          {staff
+            ? "Thanh toán cần kiểm tra"
+            : view === "tickets"
+              ? "Vé của tôi"
+              : "Thanh toán"}
+        </h1>
+        {demoMode && (
+          <span className="payment-badge">
+            <ShieldCheck size={15} />
+            Chế độ minh họa
+          </span>
+        )}
       </div>
-      {demoMode && (
-        <p className="payment-hint">
-          Dữ liệu thử lưu trên trình duyệt này. Vé minh họa không dùng để vào
-          sân.
-        </p>
-      )}
       {error && (
         <p className="payment-error" role="alert">
           {error}
@@ -230,221 +279,94 @@ export default function PaymentPage({
               Vé của tôi
             </button>
           </nav>
+
           {view === "tickets" ? (
-            <div>
-              {tickets.length === 0 && (
-                <StatePanel
-                  title="Buổi chơi đầu tiên đang chờ bạn"
-                  description="Bạn chưa có vé. Vé sẽ xuất hiện tại đây sau khi đăng ký buổi chơi."
-                />
-              )}
-              {tickets.map((ticket) => (
-                <article className="payment-card ticket-card" key={ticket.id}>
-                  <span className={`payment-badge ${ticket.status}`}>
-                    {labels[ticket.status] || ticket.status}
-                  </span>
-                  <h4>Buổi chơi #{ticket.sessionId}</h4>
-                  {ticket.status === "pending" && (
-                    <button
-                      className="button button-primary"
-                      onClick={() =>
-                        run(async () => {
-                          setOrderId(String(ticket.orderId));
-                          setOrder(await paymentClient.display(ticket.orderId));
-                          setView("payment");
-                        })
-                      }
-                    >
-                      Thanh toán đơn #{ticket.orderId}
-                    </button>
-                  )}
-                  <p>
-                    Người chơi #{ticket.playerId} · Đơn #{ticket.orderId}
-                  </p>
-                  {ticket.sessionDate && (
-                    <p>
-                      {ticket.sessionDate} · {ticket.startTime} –{" "}
-                      {ticket.endTime}
-                    </p>
-                  )}
-                  <strong>{money(ticket.amountVnd)}</strong>
-                  {ticket.valid ? (
-                    <>
-                      <p>Mã vé</p>
-                      <code className="ticket-code">{ticket.ticketCode}</code>
-                      <p>Xuất trình mã vé và thông tin người chơi tại sân.</p>
-                    </>
-                  ) : (
-                    <p>
-                      Vé chưa có hiệu lực để vào sân. Kiểm tra trạng thái thanh
-                      toán của đơn.
-                    </p>
-                  )}
-                </article>
-              ))}
-            </div>
-          ) : (
+            <TicketList tickets={tickets} now={now} busy={busy} onBrowse={onBrowse}
+              onRefresh={() => run(showTickets)}
+              onCancel={(id) => run(async () => {
+                const result = await paymentClient.cancel(id);
+                setTickets(await paymentClient.tickets());
+                setOrder(null);
+                setNotice(result.refundAmountVnd > 0
+                  ? 'Đã hủy vé. Yêu cầu hoàn tiền đang chờ nhân viên xử lý.' : 'Đã hủy vé và trả lại chỗ.');
+              })}
+              onPay={(ticket) => run(async () => {
+                setOrderId(String(ticket.orderId));
+                setOrder(await paymentClient.refresh(ticket.orderId));
+                setView('payment');
+              })} />
+          ) : !order ? (
             <>
-              <form
-                className="payment-order-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  setOrder(null);
-                  setGateway(false);
-                  run(async () =>
-                    setOrder(await paymentClient.display(orderId)),
-                  );
-                }}
-              >
-                <label htmlFor="payment-order">Mã số đơn đăng ký</label>
-                <input
-                  id="payment-order"
-                  inputMode="numeric"
-                  pattern="[1-9][0-9]*"
-                  required
-                  value={orderId}
-                  disabled={demoMode || busy}
-                  onChange={(event) => setOrderId(event.target.value)}
-                />
-                <button className="button button-secondary" disabled={busy}>
-                  Xem thanh toán
-                </button>
-              </form>
-              {!order && (
-                <StatePanel
-                  title="Tra cứu đơn đăng ký"
-                  description="Nhập mã số đơn ở trên để xem số tiền và thời hạn thanh toán."
-                />
-              )}
-              {order && (
-                <>
-                  <ol className="payment-steps" aria-label="Tiến trình">
-                    <li>Thông tin đơn</li>
-                    <li>Cổng thanh toán</li>
-                    <li>Xác nhận</li>
-                    <li>Vé</li>
-                  </ol>
-                  <article className="payment-card">
-                    <span className={`payment-badge ${state}`}>
-                      {labels[state] || state}
-                    </span>
-                    <h4>{order.orderCode}</h4>
-                    <dl className="payment-details">
-                      <dt>Số vé</dt>
-                      <dd>{order.tickets.length}</dd>
-                      <dt>Tổng thanh toán</dt>
-                      <dd className="payment-total">
-                        {money(order.totalAmount)}
-                      </dd>
-                      <dt>Phương thức</dt>
-                      <dd>payOS</dd>
-                      <dt>Hạn thanh toán</dt>
-                      <dd>
-                        {order.expiresAt
-                          ? new Date(order.expiresAt).toLocaleString("vi-VN")
-                          : "Chưa xác định"}
-                      </dd>
-                      {latest && (
-                        <>
-                          <dt>Mã giao dịch</dt>
-                          <dd className="payment-reference">
-                            {latest.referenceCode}
-                          </dd>
-                        </>
-                      )}
-                    </dl>
-                    {order.status === "pending" && (
-                      <p role="timer">
-                        {seconds
-                          ? `Còn ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
-                          : "Đã hết hạn thanh toán. Vui lòng đăng ký lại hoặc gửi yêu cầu kiểm tra nếu đã trả tiền."}
-                      </p>
-                    )}
-                    {state === "paid" && (
-                      <p>Hệ thống đã xác nhận thanh toán. Bạn có thể xem vé.</p>
-                    )}
-                    {state === "review_required" && (
-                      <p>
-                        Giao dịch cần đối soát. Vui lòng không thanh toán lại.
-                        Vé chưa được kích hoạt trong thời gian chờ xử lý.
-                      </p>
-                    )}
-                    {state === "failed" && (
-                      <p>
-                        Giao dịch chưa thành công. Bạn có thể thử lại khi đơn
-                        còn hạn; nếu đã bị trừ tiền, hãy gửi yêu cầu kiểm tra.
-                      </p>
-                    )}
+              <StatePanel
+                title="Chọn vé để thanh toán"
+                description="Chọn vé chờ thanh toán hoặc tìm buổi chơi phù hợp."
+              />
+              <TicketList key="pending-checkouts" tickets={tickets} initialFilter="pending" now={now} busy={busy} onBrowse={onBrowse}
+                onRefresh={() => run(async () => setTickets(await paymentClient.tickets()))}
+                onCancel={(id) => run(async () => { await paymentClient.cancel(id); setTickets(await paymentClient.tickets()); })}
+                onPay={(ticket) => run(async () => { setOrderId(String(ticket.orderId)); setOrder(await paymentClient.refresh(ticket.orderId)); })} />
+            </>
+          ) : (
+            <div className="checkout">
+              <section className="payment-card checkout-detail">
+                <div className="ticket-top">
+                  <h4>Chi tiết đơn đặt chỗ</h4>
+                  <span className={`payment-badge ${state}`}>
+                    {labels[state] || state}
+                  </span>
+                </div>
+                <p className="checkout-code">Mã đơn: {order.orderCode}</p>
+                <ul className="checkout-items">
+                  {order.tickets.filter(t => norm(t.status) !== "cancelled").map((t, i) => (
+                    <li key={t.id ?? i}>
+                      <span>
+                        <strong>{t.sportName || 'Vé'} · {t.courtName || 'Buổi chơi'}</strong>
+                        <small className="checkout-item-meta">{t.venueName}</small>
+                        <small className="checkout-item-meta">{formatDate(t.sessionDate)} · {t.startTime?.slice(0,5)} – {t.endTime?.slice(0,5)}</small>
+                        <small className="checkout-item-meta">{t.holderName}</small>
+                      </span>
+                      {t.amountVnd != null && <span>{money(t.amountVnd)}</span>}
+                    </li>
+                  ))}
+                </ul>
+                {statusMessage && (
+                  <p className={`checkout-message ${state}`}>{statusMessage}</p>
+                )}
+
+                {gateway && (
+                  <div className="demo-gateway">
+                    <strong>Cổng thanh toán minh họa</strong>
                     <div className="payment-actions">
-                      {canPay && (
-                        <button
-                          className="button button-primary"
-                          disabled={busy}
-                          onClick={() => run(process)}
-                        >
-                          {latest?.status === "pending"
-                            ? "Tiếp tục tại payOS"
-                            : "Thanh toán qua payOS"}
-                        </button>
-                      )}
+                      <button
+                        className="button button-primary"
+                        disabled={busy}
+                        onClick={() => run(() => simulate("success"))}
+                      >
+                        Thành công
+                      </button>
                       <button
                         className="button button-secondary"
                         disabled={busy}
-                        onClick={() => run(refresh)}
+                        onClick={() => run(() => simulate("failed"))}
                       >
-                        Kiểm tra trạng thái
+                        Thất bại / Hủy
                       </button>
-                      {state === "paid" && (
-                        <button
-                          className="button button-primary"
-                          disabled={busy}
-                          onClick={() => run(showTickets)}
-                        >
-                          Xem vé
-                        </button>
-                      )}
+                      <button
+                        className="button button-secondary"
+                        disabled={busy}
+                        onClick={() => run(() => simulate("mismatch"))}
+                      >
+                        Sai số tiền
+                      </button>
                     </div>
-                  </article>
-                  {gateway && (
-                    <section
-                      className="payment-card demo-gateway"
-                      aria-label="Cổng thanh toán minh họa"
-                    >
-                      <h4>Cổng thanh toán minh họa</h4>
-                      <p>
-                        Chọn kết quả để thử các nhánh xử lý. Không có giao dịch
-                        ngân hàng được tạo.
-                      </p>
-                      <div className="payment-actions">
-                        <button
-                          className="button button-primary"
-                          disabled={busy}
-                          onClick={() => run(() => simulate("success"))}
-                        >
-                          Thành công
-                        </button>
-                        <button
-                          className="button button-secondary"
-                          disabled={busy}
-                          onClick={() => run(() => simulate("failed"))}
-                        >
-                          Thất bại / Hủy
-                        </button>
-                        <button
-                          className="button button-secondary"
-                          disabled={busy}
-                          onClick={() => run(() => simulate("mismatch"))}
-                        >
-                          Sai số tiền
-                        </button>
-                      </div>
-                    </section>
-                  )}
-                  {latest &&
-                    state !== "paid" &&
-                    state !== "review_required" && (
+                  </div>
+                )}
+
+                {latest &&
+                  ["processing", "failed", "expired"].includes(state) && (
+                    <details className="payment-support">
+                      <summary>Đã trả tiền nhưng chưa nhận được vé?</summary>
                       <form
-                        className="payment-card"
                         onSubmit={(e) => {
                           e.preventDefault();
                           run(async () => {
@@ -452,41 +374,87 @@ export default function PaymentPage({
                             setOrder(await paymentClient.display(order.id));
                             setGateway(false);
                             setReason("");
-                            setNotice("Đã gửi yêu cầu kiểm tra cho nhân viên.");
+                            setNotice("Đã gửi yêu cầu kiểm tra.");
                           });
                         }}
                       >
-                        <h4>Đã trả tiền nhưng chưa nhận vé?</h4>
-                        <label htmlFor="payment-reason">
-                          Nội dung cần kiểm tra
-                        </label>
                         <textarea
                           id="payment-reason"
+                          aria-label="Nội dung cần kiểm tra"
                           required
                           minLength={10}
                           maxLength={1000}
                           value={reason}
                           onChange={(e) => setReason(e.target.value)}
-                          placeholder="Thời gian giao dịch, mã tham chiếu và vấn đề gặp phải…"
+                          placeholder="Mô tả ngắn: thời gian chuyển khoản, số tiền…"
                         />
-                        <p className="payment-hint">
-                          Không nhập mật khẩu, mã OTP hoặc số thẻ đầy đủ.
-                        </p>
                         <button
                           className="button button-secondary"
                           disabled={busy || reason.trim().length < 10}
                         >
-                          Gửi yêu cầu kiểm tra
+                          Gửi yêu cầu
                         </button>
                       </form>
-                    )}
-                </>
-              )}
-            </>
+                    </details>
+                  )}
+              </section>
+
+              <aside className="payment-card checkout-summary">
+                <div className="summary-row">
+                  <span>Tạm tính ({order.tickets.length} vé)</span>
+                  <span>{money(order.totalAmount)}</span>
+                </div>
+                <div className="summary-row summary-total">
+                  <span>Tổng cộng</span>
+                  <strong>{money(order.totalAmount)}</strong>
+                </div>
+                {canPay && (
+                  <p className="checkout-timer" role="timer">
+                    <Timer size={16} />
+                    Giữ chỗ trong {timeLeft}
+                  </p>
+                )}
+                {canPay && (
+                  <button
+                    className="button button-primary checkout-pay"
+                    disabled={busy}
+                    onClick={() => run(process)}
+                  >
+                    {payStatus === "pending"
+                      ? "Tiếp tục thanh toán"
+                      : `Thanh toán ${money(order.totalAmount)}`}
+                  </button>
+                )}
+                {state === "paid" ? (
+                  <button
+                    className="button button-primary checkout-pay"
+                    disabled={busy}
+                    onClick={() => run(showTickets)}
+                  >
+                    Xem vé
+                  </button>
+                ) : (
+                  ["processing", "review_required", "failed"].includes(state) && (
+                    <button
+                      className="button button-secondary checkout-pay"
+                      disabled={busy}
+                      onClick={() => run(refresh)}
+                    >
+                      {state === "review_required"
+                        ? "Cập nhật trạng thái"
+                        : "Tôi đã thanh toán, kiểm tra lại"}
+                    </button>
+                  )
+                )}
+                <p className="checkout-secure">
+                  <ShieldCheck size={14} /> Thanh toán an toàn qua payOS
+                </p>
+              </aside>
+            </div>
           )}
         </>
       )}
-      {busy && <p role="status">Đang xử lý…</p>}
+      {busy && <p className="payment-hint" role="status">Đang xử lý…</p>}
       {demoMode && (
         <button
           className="payment-reset"

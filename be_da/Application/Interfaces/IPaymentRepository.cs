@@ -15,5 +15,9 @@ public interface IPaymentRepository
     void AddPayment(Payment payment);
     void AddEvent(BankTransaction bankEvent);
     void AddAudit(AuditLog audit);
+    Task<TicketCancelContext?> GetTicketCancelContextAsync(long ticketId);
+    void AddRefund(Refund refund);
+    Task<long?> FindOrderForTicketCodeAsync(string code);
+    Task<CheckInContext?> GetCheckInContextAsync(string code, long actorId);
     Task SaveAsync();
 }

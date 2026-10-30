@@ -20,7 +20,7 @@ export default function HomePage({
     role === "player" &&
     new URLSearchParams(window.location.search).has("orderId")
       ? "Thanh toán"
-      : "overview",
+      : role === "player" && new URLSearchParams(window.location.search).get("view") === "tickets" ? "Vé của tôi" : "overview",
   );
   const [sessionId, setSessionId] = useState(null);
   const [browseSport, setBrowseSport] = useState("ALL");
@@ -33,7 +33,7 @@ export default function HomePage({
     setActive(label);
     if (!preview && label !== "Thanh toán") {
       const url = new URL(window.location.href);
-      ["orderId", "code", "id", "cancel", "status"].forEach((key) =>
+      ["orderId", "code", "id", "cancel", "status", "view"].forEach((key) =>
         url.searchParams.delete(key),
       );
       window.history.replaceState({}, "", url);
