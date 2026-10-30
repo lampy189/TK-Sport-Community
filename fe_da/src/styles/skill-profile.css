@@ -456,6 +456,75 @@
   color: #ffffff;
 }
 
+.sp-mode-btn.is-locked {
+  background: #f8faf9;
+  border-color: #d6e0d9;
+  color: #5b6d62;
+}
+
+.sp-mode-btn.is-locked.is-active {
+  background: #eff4f1;
+  border-color: #94a3b8;
+  color: #334155;
+}
+
+.sp-locked-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.sp-locked-card {
+  padding: 28px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+}
+
+.sp-locked-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sp-locked-card h3 {
+  margin: 4px 0 0;
+  font-size: 1.2rem;
+  color: #1e293b;
+}
+
+.sp-locked-card p {
+  margin: 0;
+  max-width: 680px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.sp-locked-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
 /* Survey Section (UC-06) */
 .sp-survey-section {
   background: #ffffff;

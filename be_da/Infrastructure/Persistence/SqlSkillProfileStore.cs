@@ -124,9 +124,15 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             var latestAssessment = await LoadLatestAssessmentAsync(connection, null, prof.ProfileId, cancellationToken);
             var history = await LoadRatingHistoryAsync(connection, null, prof.ProfileId, cancellationToken);
 
+            var hasOnCourtRefereeRating =
+                string.Equals(latestAssessment?.AssessmentType, "OnCourt", StringComparison.OrdinalIgnoreCase) ||
+                history.Any(h => string.Equals(h.AssessmentType, "OnCourt", StringComparison.OrdinalIgnoreCase));
+
             var normalizedStatus = (!prof.Score.HasValue || string.IsNullOrWhiteSpace(prof.Band))
                 ? "Unrated"
-                : prof.Status;
+                : hasOnCourtRefereeRating
+                    ? "Rated"
+                    : prof.Status;
 
             profiles.Add(new PlayerSportSkillProfileDto(
                 ProfileId: prof.ProfileId,
@@ -241,14 +247,36 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
                 }
             }
 
-            // FR-03.4: Do not overwrite a confirmed referee result
-            if (string.Equals(currentStatus, "Rated", StringComparison.OrdinalIgnoreCase))
+            // FR-03.4: Lock self-assessment once the player has been rated by Referee OR already completed their initial survey
+            bool hasOnCourtRecord = false;
+            if (profileId != 0)
+            {
+                await using var checkOnCourtCmd = new SqlCommand("""
+                    SELECT CASE WHEN EXISTS (
+                        SELECT 1 FROM dbo.assessments
+                        WHERE player_sport_profile_id = @profileId AND assessment_type = 'OnCourt'
+                    ) THEN 1 ELSE 0 END;
+                    """, connection, transaction);
+                checkOnCourtCmd.Parameters.Add("@profileId", SqlDbType.BigInt).Value = profileId;
+                hasOnCourtRecord = Convert.ToInt32(await checkOnCourtCmd.ExecuteScalarAsync(cancellationToken)) == 1;
+            }
+
+            if (string.Equals(currentStatus, "Rated", StringComparison.OrdinalIgnoreCase) || hasOnCourtRecord)
             {
                 await transaction.RollbackAsync(cancellationToken);
                 return new SubmitSkillSurveyResult(
                     false,
                     "ALREADY_RATED",
-                    "Hồ sơ kỹ năng môn này đã được Trọng tài xác nhận chính thức trên sân (Rated), không thể ghi đè bằng khảo sát tự đánh giá.");
+                    "Hồ sơ kỹ năng môn này đã được Trọng tài chấm điểm chính thức trên sân, tự đánh giá đã bị khóa để tránh tự thêm bớt điểm.");
+            }
+
+            if (profileId != 0 && oldScore.HasValue && string.Equals(currentStatus, "Provisional", StringComparison.OrdinalIgnoreCase))
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return new SubmitSkillSurveyResult(
+                    false,
+                    "ALREADY_SURVEYED",
+                    "Bạn đã hoàn thành khảo sát tự đánh giá ban đầu để nhận điểm tạm thời. Tự đánh giá hiện đã khóa để chờ Trọng tài chấm điểm sau buổi chơi.");
             }
 
             if (profileId == 0)
