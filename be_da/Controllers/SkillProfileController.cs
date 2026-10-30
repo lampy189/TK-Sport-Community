@@ -57,7 +57,7 @@ public sealed class SkillProfileController(ISkillProfileStore skillStore, IAntif
         {
             return result.ErrorCode switch
             {
-                "ALREADY_RATED" => Conflict(new { code = result.ErrorCode, message = result.Message }),
+                "ALREADY_RATED" or "ALREADY_SURVEYED" => Conflict(new { code = result.ErrorCode, message = result.Message }),
                 _ => BadRequest(new { code = result.ErrorCode, message = result.Message })
             };
         }

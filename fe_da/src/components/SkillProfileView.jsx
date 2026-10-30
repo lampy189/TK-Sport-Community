@@ -9,331 +9,322 @@ import {
   ShieldCheck,
   ArrowRight,
   RefreshCw,
-  Info,
   Calendar,
   UserCheck,
   AlertCircle,
-  ChevronDown,
-  ChevronUp,
+  Lock,
 } from "lucide-react";
 import { api } from "../api";
 import "../styles/skill-profile.css";
 
 /**
- * Detailed sport-specific 0..4 level anchors & quantitative benchmarks
- * for Badminton (Chuẩn CLB Phong trào VN) and Pickleball (Chuẩn USA Pickleball / IPTPA / DUPR).
+ * Mô tả tự đánh giá theo cảm nhận thực tế trên sân (không lộ mức điểm hay công thức cộng điểm).
  */
 const DIMENSION_ANCHORS = {
-  // ================= BADMINTON (BM-CLB-V1) =================
+  // ================= BADMINTON =================
   BM_SERVE_NET: {
     subtitle:
-      "Giao cầu thuận/trái tay, trả giao cầu và kỹ thuật bỏ nhỏ / gài lưới",
+      "Cảm giác giao cầu, đỡ giao cầu và xử lý các pha cầu ngắn gần lưới",
     levels: [
       {
         score: 0,
-        tag: "Mức 0 · Mới cầm vợt (B1)",
-        desc: "Chưa nắm vững luật giao cầu chéo ô; giao cầu hay rúc lưới hoặc bổng cao giữa sân (< 5/10 quả qua lưới ổn định).",
+        tag: "Mới làm quen",
+        desc: "Mới tập giao cầu, đôi khi cầu còn vướng lưới hoặc bay bổng lên giữa sân cho đối phương dễ tấn công.",
       },
       {
         score: 1,
-        tag: "Mức 1 · Cơ bản (B2 - TB-)",
-        desc: "Giao cầu cao sâu (flick/high serve) hoặc giao ngắn qua lưới đạt ≥ 6/10 quả; đỡ giao cầu trả qua lưới nhưng chưa điều hướng.",
+        tag: "Giao cầu qua lưới cơ bản",
+        desc: "Giao cầu cao sâu hoặc giao ngắn qua lưới khá đều tay; đỡ giao cầu trả sang sân đối phương an toàn.",
       },
       {
         score: 2,
-        tag: "Mức 2 · Ổn định (B3 - TB)",
-        desc: "Giao cầu ngắn trái tay sát mép lưới ổn định (≥ 7/10 quả vào vạch T); biết bỏ nhỏ (net shot) và đẩy cầu ngang lưới.",
+        tag: "Giao ngắn ổn định & Biết bỏ nhỏ",
+        desc: "Giao cầu ngắn trái tay sát mép lưới khá chuẩn; biết bỏ nhỏ và đẩy cầu ngang lưới khi có cơ hội.",
       },
       {
         score: 3,
-        tag: "Mức 3 · Chủ động (B4 - TB+)",
-        desc: "Giao cầu biến hóa (ngắn + búng flick ra 2 góc sau); chụp lưới (net kill), gài lưới xoáy (spinning net) và kéo lưới chéo sân chủ động.",
+        tag: "Xử lý lưới linh hoạt",
+        desc: "Kết hợp giao cầu ngắn và búng cầu nhanh ra sau để tạo bất ngờ; chủ động chụp lưới và gài cầu xoáy sát lưới.",
       },
       {
         score: 4,
-        tag: "Mức 4 · Thành thạo (B5 - Khá)",
-        desc: "Kiểm soát hoàn toàn khu vực lưới (≥ 9/10 quả giao sát lưới không bổng); bắt bài trả giao ép đối phương phông cầu bị động.",
+        tag: "Làm chủ khu vực lưới",
+        desc: "Giao cầu và trả giao rất kín kẽ, kiểm soát nhịp độ trên lưới và thường xuyên ép đối phương phải nâng cầu bổng.",
       },
     ],
   },
   BM_CLEAR_BACKHAND: {
-    subtitle:
-      "Độ sâu cú phông cầu thuận tay từ cuối sân và kỹ thuật xử lý góc trái tay",
+    subtitle: "Khả năng phông cầu về cuối sân và xử lý khi cầu sang góc trái tay",
     levels: [
       {
         score: 0,
-        tag: "Mức 0 · Chưa cuối sân (B1)",
-        desc: "Phông cầu chỉ tới giữa sân đối phương; góc trái tay (backhand) phải quay lưng hoặc đánh hụt nhịp.",
+        tag: "Cầu chưa đi hết sân",
+        desc: "Phông cầu thường chỉ bay tới khoảng giữa sân; khi cầu sang bên trái tay còn lúng túng hoặc đánh hụt nhịp.",
       },
       {
         score: 1,
-        tag: "Mức 1 · Cuối sân thuận tay (B2 - TB-)",
-        desc: "Thuận tay (forehand) phông cầu tới vạch 2 cuối sân khi đứng chủ động; trái tay trên cao mới chỉ đẩy trả qua lưới.",
+        tag: "Phông cầu thuận tay cuối sân",
+        desc: "Khi đứng thoải mái bên thuận tay có thể phông cầu sâu về cuối sân; góc trái tay mới dừng ở mức đỡ cầu qua lưới.",
       },
       {
         score: 2,
-        tag: "Mức 2 · Phông cầu ổn định (B3 - TB)",
-        desc: "Phông cầu thuận tay sâu sát vạch cuối sân ≥ 7/10 quả; trái tay (ve cầu) trả được qua lưới về giữa sân hoặc chéo sân.",
+        tag: "Phông sâu & Biết ve cầu trái tay",
+        desc: "Phông cầu thuận tay sâu về cuối sân đều đặn; biết xoay người ve cầu trái tay trả qua lưới về giữa sân hoặc chéo sân.",
       },
       {
         score: 3,
-        tag: "Mức 3 · Ve cầu sâu & Phông lao (B4 - TB+)",
-        desc: "Phông tấn công (attacking clear) và phông phòng thủ đều tới cuối sân; ve cầu trái tay (backhand clear/drop) thoát cầu sang nửa sau sân.",
+        tag: "Thoát cầu tốt cả hai góc sau",
+        desc: "Đánh phông lao hoặc phông phòng thủ đều tới cuối sân; cú trái tay trên cao thoát cầu sâu sang phần sân sau của đối thủ.",
       },
       {
         score: 4,
-        tag: "Mức 4 · Toàn diện 2 góc sau (B5 - Khá)",
-        desc: "Phông cầu và ve trái tay cuối sân đi thẳng/chéo sâu như nhau ngay cả khi bị ép thế bị động.",
+        tag: "Điều cầu cuối sân toàn diện",
+        desc: "Phông cầu và ve trái tay đi thẳng hoặc chéo sân nhẹ nhàng, giữ được độ sâu ngay cả khi đang bị ép thế bị động.",
       },
     ],
   },
   BM_SMASH_DEFENSE: {
     subtitle:
-      "Uy lực/điểm rơi cú đập cầu, chặt cầu (drop shot), phản tạt (drive) và bung cầu thủ",
+      "Cảm giác đập cầu tấn công, chặt cầu bỏ nhỏ và phản xạ phòng thủ",
     levels: [
       {
         score: 0,
-        tag: "Mức 0 · Chưa biết đập/thủ (B1)",
-        desc: "Chưa định hình động tác đập cầu trên cao; bị đối phương đập cầu là giật mình hoặc đỡ bung ra ngoài.",
+        tag: "Đang tập động tác",
+        desc: "Chưa quen nhịp đập cầu trên cao; khi đối phương đập mạnh thường bị giật mình hoặc đỡ cầu văng ra ngoài.",
       },
       {
         score: 1,
-        tag: "Mức 1 · Đập cơ bản (B2 - TB-)",
-        desc: "Đập cầu (smash) qua lưới khi cầu bổng giữa sân; đỡ đập (block) trả được cầu qua lưới với bóng tốc độ vừa.",
+        tag: "Đập cầu & Đỡ đập cơ bản",
+        desc: "Đập được các quả cầu bổng ở giữa sân qua lưới; đỡ được những cú đập vừa phải trả lại qua lưới.",
       },
       {
         score: 2,
-        tag: "Mức 2 · Biết phối hợp Đập - Chặt (B3 - TB)",
-        desc: "Đập cầu có hướng xuống 2 biên, kết hợp chặt cầu (drop shot) bỏ nhỏ; thủ bung cầu cao sâu hoặc tạt ngang (drive) ổn định.",
+        tag: "Biết phối hợp Đập & Chặt cầu",
+        desc: "Đập cầu có hướng xuống hai biên kết hợp chặt cầu bỏ nhỏ; khi phòng thủ biết bung cầu cao sâu hoặc tạt ngang.",
       },
       {
         score: 3,
-        tag: "Mức 3 · Công sắc & Thủ phản công (B4 - TB+)",
-        desc: "Đập cầu cắm sát biên / nhảy đập (jump smash); thủ điều cầu chéo lưới chuyển từ thế bị động sang phản công nhanh.",
+        tag: "Tấn công có điểm rơi & Thủ chắc",
+        desc: "Đập cầu cắm và có lực tốt; khi phòng thủ biết điều cầu vào khoảng trống để chuyển nhanh từ thủ sang phản công.",
       },
       {
         score: 4,
-        tag: "Mức 4 · Áp đảo tốc độ cao (B5 - Khá)",
-        desc: "Chuỗi tấn công liên hoàn (đập + tràn lưới dứt điểm); phòng thủ phản tạt tốc độ cao trước các cú smash mạnh.",
+        tag: "Công thủ tốc độ cao",
+        desc: "Duy trì chuỗi tấn công đập cầu rồi tràn lưới dứt điểm liên tục; phòng thủ phản tạt rất chắc trước các pha cầu nhanh.",
       },
     ],
   },
   BM_FOOTWORK: {
-    subtitle:
-      "Bước tách (split-step), di chuyển 6 góc sân và tốc độ hồi vị trung tâm",
+    subtitle: "Nhịp bước chân di chuyển khắp sân và giữ thăng bằng sau khi đánh",
     levels: [
       {
         score: 0,
-        tag: "Mức 0 · Chạy tự nhiên (B1)",
-        desc: "Di chuyển theo bản năng, hay chéo chân hoặc đứng yên sau khi đánh cầu; chưa biết hồi vị về trung tâm.",
+        tag: "Di chuyển theo bản năng",
+        desc: "Chạy theo cầu tự nhiên, đôi khi còn bước chéo chân hoặc đứng nguyên tại chỗ sau khi vừa chạm cầu.",
       },
       {
         score: 1,
-        tag: "Mức 1 · Biết hồi vị (B2 - TB-)",
-        desc: "Bước chân lên lưới và lùi sau cơ bản đúng chân thuận; có ý thức quay về vị trí trung tâm sau khi chạm cầu.",
+        tag: "Có ý thức lùi về giữa sân",
+        desc: "Biết bước chân thuận lên lưới và lùi về sau cơ bản; sau khi đánh xong có thói quen quay lại khu vực trung tâm.",
       },
       {
         score: 2,
-        tag: "Mức 2 · Bộ pháp 4–6 góc (B3 - TB)",
-        desc: "Có nhịp bước đệm (split-step), di chuyển 6 góc sân mạch lạc và giữ thăng bằng tốt trong các pha cầu trung bình.",
+        tag: "Di chuyển đều các góc sân",
+        desc: "Bộ pháp lên lưới, lùi hai góc sau khá nhịp nhàng, giữ được thăng bằng cơ thể trong các pha cầu qua lại.",
       },
       {
         score: 3,
-        tag: "Mức 3 · Nhanh & Linh hoạt (B4 - TB+)",
-        desc: "Bộ pháp lướt nhẹ, chuyển hướng đột ngột khi bị lừa cầu vẫn kịp cứu cầu và hồi vị ngay lập tức.",
+        tag: "Bước chân thanh thoát & Linh hoạt",
+        desc: "Có nhịp nhún chuẩn bị trước khi đối phương chạm cầu, đổi hướng nhanh khi bị lừa cầu và hồi vị rất kịp thời.",
       },
       {
         score: 4,
-        tag: "Mức 4 · Bộ pháp chuẩn thi đấu (B5 - Khá)",
-        desc: "Tối ưu số bước di chuyển toàn sân, bật nhảy thu chân liền mạch, duy trì tốc độ cao suốt 3 set đấu.",
+        tag: "Bộ pháp gọn & Bền bỉ",
+        desc: "Di chuyển ít bước nhưng bao quát toàn sân, bật nhảy và thu chân liền mạch, giữ được tốc độ tốt suốt buổi chơi.",
       },
     ],
   },
   BM_DOUBLES: {
-    subtitle:
-      "Luân chuyển đội hình Công (Trên-Dưới) ↔ Thủ (Hai bên) và duy trì chuỗi Rally",
+    subtitle: "Sự ăn ý khi đứng sân đánh đôi và khả năng giữ nhịp pha cầu bền",
     levels: [
       {
         score: 0,
-        tag: "Mức 0 · Chưa rõ vị trí đôi (B1)",
-        desc: "Đứng cố định 1 bên sân hoặc chạy trùng vị trí đồng đội; chuỗi qua lại (rally) thường đứt dưới 6 chạm.",
+        tag: "Chưa quen cách đứng đội hình đôi",
+        desc: "Thường đứng cố định một bên sân hoặc di chuyển trùng vào vị trí của đồng đội; pha cầu thường kết thúc sớm.",
       },
       {
         score: 1,
-        tag: "Mức 1 · Hiểu Công/Thủ cơ bản (B2 - TB-)",
-        desc: "Biết đứng Trên–Dưới khi đội nhà đập cầu và tách Ngang 2 bên khi phông bổng; duy trì rally trung bình 8–10 chạm.",
+        tag: "Hiểu vị trí Công - Thủ cơ bản",
+        desc: "Biết đứng một trên một dưới khi đội nhà tấn công và tách sang hai bên khi phông cầu bổng để phòng thủ.",
       },
       {
         score: 2,
-        tag: "Mức 2 · Xoay tua nhịp nhàng (B3 - TB)",
-        desc: "Chủ động tràn lưới khi đồng đội đập cầu và lùi bọc lót khi đồng đội lên lưới; duy trì rally ≥ 15 chạm ít tự đánh hỏng.",
+        tag: "Xoay tua vị trí nhịp nhàng",
+        desc: "Chủ động tràn lên bắt lưới khi đồng đội lùi đập cầu và lùi xuống bọc lót khi đồng đội tiến lên; giữ cầu bền ít tự hỏng.",
       },
       {
         score: 3,
-        tag: "Mức 3 · Phối hợp chiến thuật (B4 - TB+)",
-        desc: "Biết khoét điểm yếu đối phương, điều cầu tạo cơ hội cho đồng đội công sau và giữ nhịp độ trận đấu ổn định.",
+        tag: "Phối hợp tạo cơ hội cho đồng đội",
+        desc: "Biết điều cầu ép điểm yếu của đối phương để mồi cầu cho đồng đội tuyến sau dứt điểm.",
       },
       {
         score: 4,
-        tag: "Mức 4 · Đánh đôi ăn ý cao (B5 - Khá)",
-        desc: "Xoay chuyển đội hình tức thời không khoảng trống, đọc tình huống bọc lót và tổ chức phản công sắc bén.",
+        tag: "Bọc lót & Đọc tình huống ăn ý",
+        desc: "Chuyển đổi trạng thái công – thủ tức thì cùng đồng đội, hầu như không để lộ khoảng trống trên sân.",
       },
     ],
   },
 
-  // ================= PICKLEBALL (PK-IPTPA-DUPR-V1) =================
+  // ================= PICKLEBALL =================
   PK_SERVE_RETURN: {
-    subtitle:
-      "Giao bóng đúng luật vào nửa sau ô và trả giao bóng sâu để dâng lên vạch Kitchen",
+    subtitle: "Cảm giác giao bóng, trả giao bóng sâu và di chuyển lên vạch bếp",
     levels: [
       {
         score: 0,
-        tag: "Mức 0 · DUPR < 2.0 (B1)",
-        desc: "Đang làm quen luật giao bóng dưới thắt lưng và luật 2 lần nảy (2-bounce rule); giao bóng trong sân < 6/10 quả.",
+        tag: "Đang làm quen luật & Giao bóng",
+        desc: "Đang làm quen cách giao bóng dưới thắt lưng và quy tắc bóng nảy hai lần; đôi khi giao bóng còn ra ngoài hoặc chạm lưới.",
       },
       {
         score: 1,
-        tag: "Mức 1 · DUPR ~2.5 (B2)",
-        desc: "Giao bóng đúng luật vào ô ≥ 7/10 quả; trả giao bóng (return of serve) qua lưới ổn định nhưng bóng còn nông giữa sân.",
+        tag: "Giao & Trả bóng qua lưới an toàn",
+        desc: "Giao bóng vào ô khá đều tay; đỡ giao bóng trả qua lưới ổn định nhưng bóng thường rơi ở khoảng giữa sân.",
       },
       {
         score: 2,
-        tag: "Mức 2 · DUPR ~3.0 (B3)",
-        desc: "Giao bóng và trả giao bóng sâu về 1/3 cuối sân đối phương (≥ 7/10 quả), sau khi trả bóng kịp chạy dâng sát vạch NVZ.",
+        tag: "Trả giao sâu & Chủ động tiến lên",
+        desc: "Giao bóng và trả giao bóng sâu về cuối sân đối phương, sau khi trả bóng kịp chạy dâng lên sát vạch bếp.",
       },
       {
         score: 3,
-        tag: "Mức 3 · DUPR ~3.5 (B4)",
-        desc: "Giao bóng xoáy sâu ép góc trái tay đối phương; trả giao sâu có thời gian dừng bước (split-step) vững tại vạch Kitchen.",
+        tag: "Giao bóng có hướng & Lên lưới vững",
+        desc: "Biết giao bóng sâu vào góc trái tay đối thủ; trả giao bóng sâu để có đủ thời gian chạy lên đứng vững ở vạch bếp.",
       },
       {
         score: 4,
-        tag: "Mức 4 · DUPR 4.0+ (B5)",
-        desc: "Đạt ≥ 9/10 quả giao và trả giao bóng sâu sát baseline với tốc độ/độ xoáy biến hóa, chiếm trọn lợi thế vạch lưới.",
+        tag: "Giao & Trả bóng xoáy áp đặt",
+        desc: "Giao và trả giao bóng có độ xoáy, điểm rơi sát vạch cuối sân giúp cặp đấu chiếm lợi thế trên lưới ngay từ đầu.",
       },
     ],
   },
   PK_THIRD_SHOT: {
     subtitle:
-      "Thực hiện 3rd Shot Drop rơi êm vào Kitchen hoặc 3rd Shot Drive kết hợp tiến lên NVZ",
+      "Cách xử lý cú đánh thứ 3 từ cuối sân để tìm đường tiến lên vạch bếp",
     levels: [
       {
         score: 0,
-        tag: "Mức 0 · DUPR < 2.0 (B1)",
-        desc: "Chưa có khái niệm Cú đánh thứ 3 (3rd shot); thường đứng luôn ở baseline đánh bóng bổng dễ bị đối phương đập trên lưới.",
+        tag: "Thường đứng cuối sân đánh bóng",
+        desc: "Sau khi giao bóng thường đứng lại ở vạch cuối sân đánh qua lại, bóng dễ bay cao cho đối phương trên lưới đập xuống.",
       },
       {
         score: 1,
-        tag: "Mức 1 · DUPR ~2.5 (B2)",
-        desc: "Hiểu mục tiêu tiến lên lưới sau cú thứ 3; thử thực hiện 3rd Shot Drop hoặc Drive nhưng bóng còn cao hoặc rúc lưới.",
+        tag: "Tập bỏ nhỏ hoặc đánh thẳng lên lưới",
+        desc: "Hiểu mục tiêu cần tiến lên vạch bếp sau cú đánh thứ 3; đang tập bỏ nhỏ từ cuối sân nhưng bóng đôi khi còn hơi cao.",
       },
       {
         score: 2,
-        tag: "Mức 2 · DUPR ~3.0 (B3)",
-        desc: "Thực hiện được 3rd Shot Drop rơi vào vùng Kitchen hoặc Drive thấp qua lưới ≥ 5/10 lần để di chuyển qua vùng Transition.",
+        tag: "Bỏ nhỏ cú thứ 3 vào vùng bếp",
+        desc: "Thực hiện được cú bỏ nhỏ rơi êm vào vùng bếp hoặc đánh bóng thấp qua lưới để cùng đồng đội tiến dần lên trên.",
       },
       {
         score: 3,
-        tag: "Mức 3 · DUPR ~3.5 (B4)",
-        desc: "Kết hợp linh hoạt 3rd Shot Drive (tạo bóng bật ra) + 5th Shot Drop rơi êm vào NVZ (≥ 7/10 lần thành công lên lưới).",
+        tag: "Kết hợp đánh nhanh & Bỏ nhỏ linh hoạt",
+        desc: "Biết chọn lúc đánh bóng căng tầm thấp rồi nối tiếp bằng cú bỏ nhỏ rơi sát lưới để dâng lên vạch bếp an toàn.",
       },
       {
         score: 4,
-        tag: "Mức 4 · DUPR 4.0+ (B5)",
-        desc: "3rd Shot Drop có điểm rơi thấp sát lưới vào góc chân đối phương ở cả thuận tay lẫn trái tay, tiến lên NVZ an toàn.",
+        tag: "Lên lưới mượt mà từ mọi vị trí",
+        desc: "Đưa bóng rơi thấp vào chân đối phương ở cả bên thuận tay lẫn trái tay, tiến lên chiếm vạch bếp rất tự nhiên.",
       },
     ],
   },
   PK_DINK_NVZ: {
-    subtitle:
-      "Duy trì chuỗi Dink thấp thẳng/chéo sân và tuân thủ luật vạch Non-Volley Zone",
+    subtitle: "Khả năng gõ bóng ngắn (Dink) và kiểm soát bóng tại vạch bếp",
     levels: [
       {
         score: 0,
-        tag: "Mức 0 · DUPR < 2.0 (B1)",
-        desc: "Chưa kiểm soát được lực Dink ngắn tại vạch Kitchen; dễ dẫm vạch NVZ khi bắt volley.",
+        tag: "Chưa quen lực chạm bóng ngắn",
+        desc: "Khi đứng gần lưới chạm bóng còn hơi mạnh làm bóng nảy cao; đôi khi bước đà theo bóng chạm vào vạch bếp.",
       },
       {
         score: 1,
-        tag: "Mức 1 · DUPR ~2.5 (B2)",
-        desc: "Nắm rõ luật NVZ; duy trì được 3–5 chạm Dink qua lại trước khi bóng nảy cao (pop-up) hoặc tự hỏng.",
+        tag: "Gõ bóng qua lại vài nhịp cơ bản",
+        desc: "Nắm rõ quy tắc không dẫm vạch bếp khi bắt bóng trên không; giữ được vài nhịp bóng ngắn trước khi bóng nảy cao.",
       },
       {
         score: 2,
-        tag: "Mức 2 · DUPR ~3.0 (B3)",
-        desc: "Duy trì chuỗi Dink ≥ 8–10 chạm ổn định; biết điều bóng Dink chéo sân (cross-court dink) và giữ tư thế thấp tại vạch NVZ.",
+        tag: "Duy trì nhịp Dink thẳng & chéo sân",
+        desc: "Giữ tư thế thấp tại vạch bếp, gõ bóng ngắn qua lại ổn định và biết điều bóng chéo sân.",
       },
       {
         score: 3,
-        tag: "Mức 3 · DUPR ~3.5 (B4)",
-        desc: "Dink 14–20 chạm kiên nhẫn không pop-up; biết Dink ép chân (attackable/topspin dink) và nhận diện bóng cao để tăng tốc (speed-up).",
+        tag: "Dink kiên nhẫn & Biết chọn bóng tấn công",
+        desc: "Đấu bóng ngắn bền bỉ không nóng vội; biết gõ bóng ép chân đối phương và nhận ra bóng hơi cao để tăng tốc độ.",
       },
       {
         score: 4,
-        tag: "Mức 4 · DUPR 4.0+ (B5)",
-        desc: "Làm chủ hoàn toàn vạch NVZ bằng Dink xoáy biến hướng 2 góc, ép đối phương nâng bóng cao để kết thúc điểm.",
+        tag: "Kiểm soát hoàn toàn vạch bếp",
+        desc: "Điều bóng ngắn biến hóa hai góc kèm độ xoáy, chủ động gài đối phương nâng bóng cao để dứt điểm.",
       },
     ],
   },
   PK_VOLLEY_RESET: {
     subtitle:
-      "Punch Volley, phản xạ đấu tay đôi trên lưới (Firefight) và Reset bóng từ Mid-court",
+      "Phản xạ bắt bóng trên không (Volley) và làm mềm bóng khi bị tấn công",
     levels: [
       {
         score: 0,
-        tag: "Mức 0 · DUPR < 2.0 (B1)",
-        desc: "Phản xạ bắt bóng trên không (volley) còn chậm; thường vung vợt quá rộng khiến bóng bay ra ngoài.",
+        tag: "Phản xạ trên lưới còn chậm",
+        desc: "Khi bóng đi nhanh trên lưới thường vung vợt rộng hoặc đỡ bóng bay bổng ra ngoài sân.",
       },
       {
         score: 1,
-        tag: "Mức 1 · DUPR ~2.5 (B2)",
-        desc: "Đỡ được các pha volley tốc độ trung bình trước mặt; khi bị bắn bóng căng vào người dễ bật bóng bổng.",
+        tag: "Bắt bóng tốc độ vừa trước mặt",
+        desc: "Đỡ được các pha bóng trên không ở tốc độ trung bình; khi đối phương đánh mạnh vào người còn khó hãm lực bóng.",
       },
       {
         score: 2,
-        tag: "Mức 2 · DUPR ~3.0 (B3)",
-        desc: "Punch volley gọn trước ngực, giữ mặt vợt chuẩn bị (ready position); bắt đầu biết giảm lực (block/reset) khi đứng ở vùng giữa sân.",
+        tag: "Bắt Volley gọn & Biết giảm lực bóng",
+        desc: "Luôn giơ vợt sẵn trước ngực, đẩy bóng gọn gàng và bắt đầu biết lỏng tay hãm lực khi đứng ở vùng giữa sân.",
       },
       {
         score: 3,
-        tag: "Mức 3 · DUPR ~3.5 (B4)",
-        desc: "Phản xạ đấu tay đôi (hand battle) nhanh trên lưới; Reset được bóng tấn công mạnh từ vùng Transition rơi êm lại vào Kitchen.",
+        tag: "Đấu tay đôi nhanh & Reset bóng êm",
+        desc: "Phản xạ nhanh trong các pha đôi công tốc độ cao trên lưới; làm mềm được những cú đánh mạnh rơi êm lại vào vùng bếp.",
       },
       {
         score: 4,
-        tag: "Mức 4 · DUPR 4.0+ (B5)",
-        desc: "Phản công (counter-attack) chuẩn xác trong các pha tốc độ cao, biết nhả bóng out (let it go) và Reset cực kỳ ổn định.",
+        tag: "Phản công sắc bén & Biết bỏ bóng ngoài",
+        desc: "Đấu tay đôi rất chắc, phản đòn chuẩn xác, đồng thời phán đoán tốt để nhả những quả bóng mạnh bay ra ngoài.",
       },
     ],
   },
   PK_DOUBLES_STRATEGY: {
-    subtitle:
-      "Groundstroke 2 bên, di chuyển đồng bộ (Shading) và phối hợp bao bóng giữa (Middle Ball)",
+    subtitle: "Sự phối hợp di chuyển cùng đồng đội và bao sân khi đánh đôi",
     levels: [
       {
         score: 0,
-        tag: "Mức 0 · DUPR < 2.0 (B1)",
-        desc: "Một người đứng lưới, một người đứng cuối sân (lệch nhịp); hay nhường nhau hoặc va vợt ở bóng giữa sân.",
+        tag: "Di chuyển còn lệch nhịp đồng đội",
+        desc: "Thường một người đứng trên lưới còn một người đứng dưới cuối sân; dễ nhường nhau hoặc chạm vợt ở bóng giữa sân.",
       },
       {
         score: 1,
-        tag: "Mức 1 · DUPR ~2.5 (B2)",
-        desc: "Biết cùng đồng đội dâng lên vạch NVZ; cú đánh chạm đất (groundstroke) thuận tay ổn định hơn trái tay.",
+        tag: "Biết cùng đồng đội tiến lên vạch bếp",
+        desc: "Có ý thức dâng lên đứng ngang hàng cùng đồng đội tại vạch bếp; đánh bóng nảy đất bên thuận tay ổn định.",
       },
       {
         score: 2,
-        tag: "Mức 2 · DUPR ~3.0 (B3)",
-        desc: "Groundstroke thuận/trái tay đều đặn; biết phân công người thuận tay (forehand) bao bóng ở trục giữa sân.",
+        tag: "Phân chia bóng ở trục giữa sân",
+        desc: "Đánh bóng cuối sân đều cả hai bên; biết thống nhất người có tay thuận ở giữa sẽ chủ động bao các đường bóng trung lộ.",
       },
       {
         score: 3,
-        tag: "Mức 3 · DUPR ~3.5 (B4)",
-        desc: "Di chuyển ngang đồng bộ theo hướng bóng (side-by-side shading), biết lốp bóng chiến thuật (offensive lob) và bọc lót ăn ý.",
+        tag: "Di chuyển ngang đồng bộ cùng nhau",
+        desc: "Hai người dịch chuyển sang trái/phải nhịp nhàng theo hướng bóng để khép góc, biết lốp bóng qua đầu khi cần.",
       },
       {
         score: 4,
-        tag: "Mức 4 · DUPR 4.0+ (B5)",
-        desc: "Thành thạo đội hình Stacking, Poaching trên lưới và chuyển đổi trạng thái phòng thủ sang tấn công đồng bộ cả cặp.",
+        tag: "Phối hợp chiến thuật đôi ăn ý",
+        desc: "Hiểu ý nhau trong việc đổi vị trí, cắt bóng trên lưới và cùng lùi phòng thủ hoặc cùng dâng tấn công rất nhịp nhàng.",
       },
     ],
   },
@@ -341,76 +332,23 @@ const DIMENSION_ANCHORS = {
 
 const BAND_METADATA = {
   1: {
-    // Badminton
-    standardLabel: "Chuẩn CLB Cầu lông Phong trào VN (BM-CLB-V1)",
+    standardLabel: "Thang trình độ Cầu lông CLB",
     bands: [
-      {
-        code: "B1",
-        range: "0 – 19",
-        title: "Yếu / Mới chơi",
-        short: "Tân binh",
-      },
-      {
-        code: "B2",
-        range: "20 – 39",
-        title: "Trung bình yếu (TB-)",
-        short: "TB-",
-      },
-      {
-        code: "B3",
-        range: "40 – 59",
-        title: "Trung bình (TB)",
-        short: "TB",
-      },
-      {
-        code: "B4",
-        range: "60 – 79",
-        title: "Trung bình khá (TB+)",
-        short: "TB+",
-      },
-      {
-        code: "B5",
-        range: "80 – 100",
-        title: "Khá / Nâng cao",
-        short: "Khá+",
-      },
+      { code: "B1", range: "0 – 19", title: "Mới chơi" },
+      { code: "B2", range: "20 – 39", title: "Cơ bản" },
+      { code: "B3", range: "40 – 59", title: "Trung bình" },
+      { code: "B4", range: "60 – 79", title: "Trung bình khá" },
+      { code: "B5", range: "80 – 100", title: "Khá / Nâng cao" },
     ],
   },
   2: {
-    // Pickleball
-    standardLabel:
-      "Chuẩn USA Pickleball · IPTPA & Quy đổi DUPR (PK-IPTPA-DUPR-V1)",
+    standardLabel: "Thang trình độ Pickleball",
     bands: [
-      {
-        code: "B1",
-        range: "0 – 19",
-        title: "DUPR ~2.0 · Tân binh",
-        short: "DUPR 2.0",
-      },
-      {
-        code: "B2",
-        range: "20 – 39",
-        title: "DUPR ~2.5 · Sơ cấp",
-        short: "DUPR 2.5",
-      },
-      {
-        code: "B3",
-        range: "40 – 59",
-        title: "DUPR ~3.0 · Trung cấp",
-        short: "DUPR 3.0",
-      },
-      {
-        code: "B4",
-        range: "60 – 79",
-        title: "DUPR ~3.5 · Trung khá",
-        short: "DUPR 3.5",
-      },
-      {
-        code: "B5",
-        range: "80 – 100",
-        title: "DUPR 4.0+ · Nâng cao",
-        short: "DUPR 4.0+",
-      },
+      { code: "B1", range: "0 – 19", title: "Mới chơi" },
+      { code: "B2", range: "20 – 39", title: "Sơ cấp" },
+      { code: "B3", range: "40 – 59", title: "Trung cấp" },
+      { code: "B4", range: "60 – 79", title: "Trung khá" },
+      { code: "B5", range: "80 – 100", title: "Nâng cao" },
     ],
   },
 };
@@ -436,30 +374,59 @@ function getBandInfo(sportId, bandCode) {
       code: bandCode || "—",
       range: "—",
       title: "Chưa xếp hạng",
-      short: "Chưa xếp hạng",
     }
   );
 }
 
-function getRatingStatusBadge(status) {
-  if (status === "Rated" || status === "Official") {
+function getProfileLockState(prof) {
+  if (!prof) {
     return {
-      label: "Chính thức · Trọng tài xác thực",
-      tone: "official",
-      desc: "Đã được Trọng tài chấm trực tiếp trên sân (Swimlane 2).",
+      isRefereeRated: false,
+      isAlreadySurveyed: false,
+      canTakeSurvey: true,
+      badgeLabel: "Người mới · Chưa khảo sát",
+      badgeTone: "unrated",
     };
   }
-  if (status === "Provisional") {
+  const hasOnCourt =
+    prof.latestAssessment?.assessmentType === "OnCourt" ||
+    (prof.ratingHistory || []).some((h) => h.assessmentType === "OnCourt");
+  const isRefereeRated =
+    prof.ratingStatus === "Rated" ||
+    prof.ratingStatus === "Official" ||
+    hasOnCourt;
+
+  const isAlreadySurveyed =
+    !isRefereeRated &&
+    prof.currentBand != null &&
+    prof.ratingStatus === "Provisional";
+
+  const canTakeSurvey = !isRefereeRated && !isAlreadySurveyed;
+
+  if (isRefereeRated) {
     return {
-      label: "Tạm thời · Đủ điều kiện đặt sân",
-      tone: "provisional",
-      desc: "Đã có điểm Band để kiểm tra trình độ đặt sân (Swimlane 1).",
+      isRefereeRated: true,
+      isAlreadySurveyed: false,
+      canTakeSurvey: false,
+      badgeLabel: "Chính thức · Trọng tài đã chấm",
+      badgeTone: "official",
+    };
+  }
+  if (isAlreadySurveyed) {
+    return {
+      isRefereeRated: false,
+      isAlreadySurveyed: true,
+      canTakeSurvey: false,
+      badgeLabel: "Điểm tạm thời · Chờ Trọng tài chấm",
+      badgeTone: "provisional",
     };
   }
   return {
-    label: "Chưa khảo sát · Cần hoàn thiện",
-    tone: "unrated",
-    desc: "Làm khảo sát tự đánh giá (UC-06) để mở khóa đặt sân theo Band.",
+    isRefereeRated: false,
+    isAlreadySurveyed: false,
+    canTakeSurvey: true,
+    badgeLabel: "Người mới · Chưa khảo sát",
+    badgeTone: "unrated",
   };
 }
 
@@ -472,7 +439,7 @@ function formatSessionInfo(item) {
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
-export default function SkillProfileView({ user, onBrowseSport }) {
+export default function SkillProfileView({ onBrowseSport }) {
   const [overview, setOverview] = useState(null);
   const [rubrics, setRubrics] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -481,9 +448,8 @@ export default function SkillProfileView({ user, onBrowseSport }) {
   // Selected sport tab: 1 = Badminton, 2 = Pickleball
   const [selectedSportId, setSelectedSportId] = useState(1);
 
-  // Active sub-mode: false = Result & History, true = Self-assessment form UC-06
+  // Active sub-mode: false = Result & History, true = Self-assessment form
   const [showSurveyForm, setShowSurveyForm] = useState(false);
-  const [expandedRubricRef, setExpandedRubricRef] = useState(false);
 
   // Survey state: map of dimension.id -> score (0..4)
   const [surveyAnswers, setSurveyAnswers] = useState({});
@@ -527,7 +493,6 @@ export default function SkillProfileView({ user, onBrowseSport }) {
     return rubrics.find((r) => r.sportId === selectedSportId) || null;
   }, [activeProfile, rubrics, selectedSportId]);
 
-  // Pre-populate survey answers from latest assessment or default to 2 (B3) when switching sport
   useEffect(() => {
     if (!activeRubric?.dimensions) return;
     const initial = {};
@@ -546,32 +511,20 @@ export default function SkillProfileView({ user, onBrowseSport }) {
     setSurveyAnswers(initial);
   }, [selectedSportId, activeRubric, activeProfile]);
 
-  const previewCalc = useMemo(() => {
-    if (!activeRubric?.dimensions?.length) {
-      return { rawSum: 0, totalScore: 0, band: "B1" };
-    }
-    let sum = 0;
-    activeRubric.dimensions.forEach((dim) => {
-      const dimId = dim.id ?? dim.dimensionId;
-      const val = Number(surveyAnswers[dimId] ?? 2);
-      sum += val;
-    });
-    const totalScore = Math.round(sum * 5 * 10) / 10;
-    const band = mapScoreToBand(totalScore);
-    return { rawSum: sum, totalScore, band };
-  }, [activeRubric, surveyAnswers]);
-
   async function handleSurveySubmit(e) {
     e.preventDefault();
     if (!activeRubric?.dimensions?.length) return;
     setSubmitting(true);
     setSubmitBanner(null);
     try {
+      let sum = 0;
       const answers = activeRubric.dimensions.map((dim) => {
         const dimId = dim.id ?? dim.dimensionId;
+        const val = Number(surveyAnswers[dimId] ?? 2);
+        sum += val;
         return {
           dimensionId: dimId,
-          score: Number(surveyAnswers[dimId] ?? 2),
+          score: val,
         };
       });
 
@@ -582,7 +535,7 @@ export default function SkillProfileView({ user, onBrowseSport }) {
         frequencyContext: frequencyText,
       });
 
-      const updatedProfile = res?.updatedProfile || res;
+      const updatedProfile = res?.profile || res?.updatedProfile || res;
 
       if (updatedProfile && updatedProfile.sportId) {
         setOverview((prev) => {
@@ -598,6 +551,7 @@ export default function SkillProfileView({ user, onBrowseSport }) {
         await loadData();
       }
 
+      const fallbackScore = Math.round(sum * 5);
       const sportNameVi = getSportNameVi(
         selectedSportId,
         updatedProfile?.sportName,
@@ -605,8 +559,8 @@ export default function SkillProfileView({ user, onBrowseSport }) {
       setSubmitBanner({
         sportId: selectedSportId,
         sportNameVi,
-        band: updatedProfile?.currentBand || previewCalc.band,
-        score: updatedProfile?.currentScore ?? previewCalc.totalScore,
+        band: updatedProfile?.currentBand || mapScoreToBand(fallbackScore),
+        score: updatedProfile?.currentScore ?? fallbackScore,
       });
       setShowSurveyForm(false);
     } catch (err) {
@@ -621,11 +575,8 @@ export default function SkillProfileView({ user, onBrowseSport }) {
       <div className="skill-profile-page">
         <div className="sp-loading-card">
           <RefreshCw className="sp-spin" size={26} />
-          <h3>Đang tải Hồ sơ Kỹ năng &amp; Lịch sử Trình độ…</h3>
-          <p>
-            Đồng bộ dữ liệu PlayerSportProfiles, Rubric 5 tiêu chí và lịch sử
-            chấm điểm.
-          </p>
+          <h3>Đang tải Hồ sơ Kỹ năng…</h3>
+          <p>Đồng bộ thông tin trình độ và lịch sử đánh giá của bạn.</p>
         </div>
       </div>
     );
@@ -655,41 +606,22 @@ export default function SkillProfileView({ user, onBrowseSport }) {
     selectedSportId,
     activeProfile?.sportName,
   );
+  const activeLock = getProfileLockState(activeProfile);
 
   return (
     <div className="skill-profile-page">
       {/* Page Header */}
       <header className="sp-hero">
         <div className="sp-hero-copy">
-          <span className="eyebrow">
-            UC-06 · UC-07 · UC-25 · HỒ SƠ KỸ NĂNG &amp; LỊCH SỬ TRÌNH ĐỘ
-          </span>
+          <span className="eyebrow">HỒ SƠ KỸ NĂNG &amp; LỊCH SỬ TRÌNH ĐỘ</span>
           <h1>
             Hồ sơ Kỹ năng theo Bộ môn<span>.</span>
           </h1>
           <p>
-            Hiển thị điểm trình độ hiện tại của 2 môn (Cầu lông &amp;
-            Pickleball) từ bảng <code>PlayerSportProfiles</code>, làm khảo sát
-            tự đánh giá ban đầu để khởi tạo dữ liệu kiểm tra trình độ đặt sân
-            (Đầu vào Swimlane 1) và xem kết quả chấm điểm từ Trọng tài cùng
-            lịch sử biến động trình độ (Đầu ra Swimlane 2).
+            Người chơi mới thực hiện khảo sát tự đánh giá 1 lần để nhận mức điểm
+            tạm thời đi đặt sân. Sau khi ra sân và được Trọng tài chấm điểm,
+            chức năng tự đánh giá sẽ khóa lại để đảm bảo tính khách quan.
           </p>
-        </div>
-        <div className="sp-swimlane-pills">
-          <div className="sp-swl-pill">
-            <ClipboardCheck size={16} />
-            <div>
-              <strong>Đầu vào SWL 1 (UC-06)</strong>
-              <span>Khởi tạo Band cho bước Check Skill Eligibility</span>
-            </div>
-          </div>
-          <div className="sp-swl-pill is-swl2">
-            <Award size={16} />
-            <div>
-              <strong>Đầu ra SWL 2 (UC-25)</strong>
-              <span>View Skill Result &amp; Lịch sử tăng/giảm</span>
-            </div>
-          </div>
         </div>
       </header>
 
@@ -700,17 +632,15 @@ export default function SkillProfileView({ user, onBrowseSport }) {
             <CheckCircle2 size={24} />
             <div>
               <strong>
-                Đã lưu khảo sát tự đánh giá môn {submitBanner.sportNameVi}!
+                Đã lưu điểm tạm thời môn {submitBanner.sportNameVi}!
               </strong>
               <p>
-                Hồ sơ của bạn đã được cập nhật lên{" "}
+                Trình độ tạm thời của bạn được ghi nhận ở mức{" "}
                 <b>
-                  Band {submitBanner.band} ({submitBanner.score}/100 điểm · Tạm
-                  thời)
-                </b>{" "}
-                trong <code>PlayerSportProfiles</code>. Bạn đã đủ điều kiện qua
-                bước <em>Check Sport-Specific Skill Eligibility</em> để đặt các
-                buổi chơi {submitBanner.sportNameVi} phù hợp trình độ.
+                  Band {submitBanner.band} ({submitBanner.score}/100 điểm)
+                </b>
+                . Tự đánh giá hiện đã được khóa — điểm chính thức của bạn sẽ do
+                Trọng tài chấm khi tham gia buổi chơi trên sân.
               </p>
             </div>
           </div>
@@ -730,7 +660,7 @@ export default function SkillProfileView({ user, onBrowseSport }) {
         </div>
       )}
 
-      {/* 1. Dual Sport Overview Cards (UC-07: View Player Sport Skill Profile) */}
+      {/* 1. Dual Sport Overview Cards */}
       <section
         className="sp-dual-cards"
         aria-label="Tổng quan trình độ 2 môn thể thao"
@@ -740,13 +670,9 @@ export default function SkillProfileView({ user, onBrowseSport }) {
           const isSelected = prof.sportId === selectedSportId;
           const sportVi = getSportNameVi(prof.sportId, prof.sportName);
           const bandInfo = getBandInfo(prof.sportId, prof.currentBand);
-          const statusBadge = getRatingStatusBadge(prof.ratingStatus);
+          const lockState = getProfileLockState(prof);
           const scoreVal =
             prof.currentScore != null ? Number(prof.currentScore) : 0;
-          const hasProfile =
-            prof.currentBand != null &&
-            prof.ratingStatus !== "Unrated" &&
-            prof.ratingStatus !== "PendingSurvey";
           const latestType = prof.latestAssessment?.assessmentType;
 
           return (
@@ -764,15 +690,15 @@ export default function SkillProfileView({ user, onBrowseSport }) {
                   <span className="sp-sport-dot" />
                   <div>
                     <span className="sp-sport-eyebrow">
-                      {isPk
-                        ? "PICKLEBALL · CHUẨN IPTPA / DUPR"
-                        : "CẦU LÔNG · CHUẨN CLB PHONG TRÀO VN"}
+                      {isPk ? "BỘ MÔN PICKLEBALL" : "BỘ MÔN CẦU LÔNG"}
                     </span>
                     <h2>{sportVi}</h2>
                   </div>
                 </div>
-                <span className={`sp-status-badge is-${statusBadge.tone}`}>
-                  {statusBadge.label}
+                <span
+                  className={`sp-status-badge is-${lockState.badgeTone}`}
+                >
+                  {lockState.badgeLabel}
                 </span>
               </div>
 
@@ -815,7 +741,7 @@ export default function SkillProfileView({ user, onBrowseSport }) {
                         prof.currentBand === b.code ? "is-current-band" : ""
                       }
                     >
-                      {b.code} ({b.short})
+                      {b.code}
                     </span>
                   ))}
                 </div>
@@ -825,14 +751,14 @@ export default function SkillProfileView({ user, onBrowseSport }) {
                 <span>
                   <Calendar size={14} /> Nguồn gần nhất:{" "}
                   {latestType === "OnCourt"
-                    ? `Trọng tài chấm (${prof.latestAssessment?.assessorName || "Referee"})`
+                    ? `Trọng tài chấm (${prof.latestAssessment?.assessorName || "Trọng tài"})`
                     : latestType === "SelfSurvey"
-                      ? "Khảo sát tự đánh giá (UC-06)"
+                      ? "Tự khảo sát ban đầu (Điểm tạm thời)"
                       : "Chưa có bản đánh giá"}
                 </span>
                 <span>
-                  <History size={14} /> {prof.ratingHistory?.length || 0} kỳ
-                  biến động
+                  <History size={14} /> {prof.ratingHistory?.length || 0} lần
+                  cập nhật
                 </span>
               </div>
 
@@ -840,19 +766,29 @@ export default function SkillProfileView({ user, onBrowseSport }) {
                 className="sp-card-actions"
                 onClick={(e) => e.stopPropagation()}
               >
-                <button
-                  type="button"
-                  className="button button-primary sp-btn-sm"
-                  onClick={() => {
-                    setSelectedSportId(prof.sportId);
-                    setShowSurveyForm(true);
-                  }}
-                >
-                  <ClipboardCheck size={15} />
-                  {hasProfile
-                    ? "Cập nhật khảo sát (UC-06)"
-                    : "Khảo sát tự đánh giá (UC-06)"}
-                </button>
+                {lockState.canTakeSurvey ? (
+                  <button
+                    type="button"
+                    className="button button-primary sp-btn-sm"
+                    onClick={() => {
+                      setSelectedSportId(prof.sportId);
+                      setShowSurveyForm(true);
+                    }}
+                  >
+                    <ClipboardCheck size={15} />
+                    Khảo sát tự đánh giá ban đầu
+                  </button>
+                ) : (
+                  <span
+                    className="sp-locked-pill"
+                    title="Chức năng tự đánh giá đã khóa để tránh tự ý thêm bớt điểm"
+                  >
+                    <Lock size={14} />
+                    {lockState.isRefereeRated
+                      ? "Đã khóa tự đánh giá · Trọng tài đã chấm"
+                      : "Đã chốt điểm tạm thời · Chờ Trọng tài chấm"}
+                  </span>
+                )}
                 <button
                   type="button"
                   className="button button-secondary sp-btn-sm"
@@ -903,208 +839,256 @@ export default function SkillProfileView({ user, onBrowseSport }) {
             className={`sp-mode-btn ${!showSurveyForm ? "is-active" : ""}`}
             onClick={() => setShowSurveyForm(false)}
           >
-            <Award size={16} /> Kết quả 5 tiêu chí &amp; Lịch sử (UC-07 / UC-25)
+            <Award size={16} /> Kết quả đánh giá &amp; Lịch sử
           </button>
-          <button
-            type="button"
-            className={`sp-mode-btn is-survey-cta ${
-              showSurveyForm ? "is-active" : ""
-            }`}
-            onClick={() => setShowSurveyForm(true)}
-          >
-            <ClipboardCheck size={16} /> Form Khảo sát Tự đánh giá (UC-06)
-          </button>
+          {activeLock.canTakeSurvey ? (
+            <button
+              type="button"
+              className={`sp-mode-btn is-survey-cta ${
+                showSurveyForm ? "is-active" : ""
+              }`}
+              onClick={() => setShowSurveyForm(true)}
+            >
+              <ClipboardCheck size={16} /> Khảo sát tự đánh giá ban đầu
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={`sp-mode-btn is-locked ${
+                showSurveyForm ? "is-active" : ""
+              }`}
+              onClick={() => setShowSurveyForm(true)}
+            >
+              <Lock size={15} /> Tự đánh giá đã khóa
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 3A. Self-Assessment Survey Form (UC-06 - Input for Swimlane 1) */}
+      {/* 3A. Self-Assessment Survey Section (Active for New Player OR Locked Notice once Rated/Surveyed) */}
       {showSurveyForm && activeRubric && (
         <section
           className={`sp-survey-section ${isPickleball ? "is-pickleball" : ""}`}
           aria-label="Khảo sát tự đánh giá trình độ ban đầu"
         >
-          <div className="sp-section-header">
-            <div>
-              <span className="sp-badge-pill">
-                UC-06 · INITIAL SKILL SELF-ASSESSMENT · ĐẦU VÀO SWIMLANE 1
-              </span>
-              <h2>Khảo sát Tự đánh giá Trình độ {activeSportNameVi}</h2>
+          {!activeLock.canTakeSurvey ? (
+            <div className="sp-locked-card">
+              <div className="sp-locked-icon">
+                <Lock size={28} />
+              </div>
+              <h3>
+                {activeLock.isRefereeRated
+                  ? `Tự đánh giá môn ${activeSportNameVi} đã bị khóa (Đã có điểm Trọng tài)`
+                  : `Bạn đã hoàn thành khảo sát ban đầu môn ${activeSportNameVi}`}
+              </h3>
               <p>
-                Bộ tiêu chí:{" "}
-                <strong>{activeRubric.name || activeRubric.rubricName}</strong>{" "}
-                (Mã:{" "}
-                <code>{activeRubric.version || activeRubric.rubricCode}</code>).
-                Chọn mức mô tả sát nhất với kỹ năng thực tế của bạn ở 5 tiêu chí
-                (thang <code>0 – 4</code> mỗi tiêu chí, trọng số{" "}
-                <code>20%</code>). Hệ thống tự động quy đổi{" "}
-                <code>Tổng điểm = 5 × Tổng 5 tiêu chí (0 – 100)</code> và gán
-                Band <code>B1..B5</code> vào <code>PlayerSportProfiles</code>.
+                {activeLock.isRefereeRated ? (
+                  <>
+                    Hồ sơ môn <strong>{activeSportNameVi}</strong> của bạn đã
+                    được Trọng tài chấm điểm trực tiếp trên sân (
+                    <strong>
+                      Band {activeProfile?.currentBand} ·{" "}
+                      {Number(activeProfile?.currentScore || 0).toFixed(0)}/100
+                      điểm
+                    </strong>
+                    ). Để tránh việc người chơi tự ý thêm bớt điểm, chức năng tự
+                    đánh giá đã được khóa — điểm trình độ chỉ thay đổi khi Trọng
+                    tài chấm ở các buổi chơi tiếp theo.
+                  </>
+                ) : (
+                  <>
+                    Bạn đã nhận mức điểm tạm thời{" "}
+                    <strong>
+                      Band {activeProfile?.currentBand} (
+                      {Number(activeProfile?.currentScore || 0).toFixed(0)}/100
+                      điểm)
+                    </strong>{" "}
+                    từ bài khảo sát ban đầu để đủ điều kiện đặt sân. Chức năng tự
+                    đánh giá hiện được khóa lại để chờ Trọng tài đánh giá chính
+                    thức khi bạn ra sân.
+                  </>
+                )}
               </p>
-            </div>
-            <button
-              type="button"
-              className="button button-secondary sp-btn-sm"
-              onClick={() => setShowSurveyForm(false)}
-            >
-              Đóng form khảo sát
-            </button>
-          </div>
-
-          <form onSubmit={handleSurveySubmit} className="sp-survey-form">
-            {/* Playing Context Questions */}
-            <div className="sp-context-grid">
-              <div className="sp-context-field">
-                <label>Thời gian bạn đã chơi {activeSportNameVi}</label>
-                <select
-                  value={experienceText}
-                  onChange={(e) => setExperienceText(e.target.value)}
-                >
-                  <option value="Mới bắt đầu (< 3 tháng)">
-                    Mới bắt đầu (&lt; 3 tháng)
-                  </option>
-                  <option value="3 - 6 tháng">Từ 3 – 6 tháng</option>
-                  <option value="6 tháng - 2 năm">Từ 6 tháng – 2 năm</option>
-                  <option value="2 - 4 năm (Phong trào thường xuyên)">
-                    Từ 2 – 4 năm (Phong trào thường xuyên)
-                  </option>
-                  <option value="Trên 4 năm / Từng thi đấu giải CLB">
-                    Trên 4 năm / Từng thi đấu giải CLB
-                  </option>
-                </select>
-              </div>
-              <div className="sp-context-field">
-                <label>Tần suất ra sân trung bình</label>
-                <select
-                  value={frequencyText}
-                  onChange={(e) => setFrequencyText(e.target.value)}
-                >
-                  <option value="1 buổi / tuần hoặc ít hơn">
-                    1 buổi / tuần hoặc ít hơn
-                  </option>
-                  <option value="2 - 3 buổi / tuần">2 – 3 buổi / tuần</option>
-                  <option value="4+ buổi / tuần">4+ buổi / tuần</option>
-                </select>
-              </div>
-            </div>
-
-            {/* 5 Concrete Rubric Questions */}
-            <div className="sp-questions-list">
-              {activeRubric.dimensions.map((dim, idx) => {
-                const dimId = dim.id ?? dim.dimensionId;
-                const dimCode = dim.code ?? dim.dimensionCode;
-                const anchorInfo = DIMENSION_ANCHORS[dimCode] || {
-                  subtitle: "",
-                  levels: [0, 1, 2, 3, 4].map((s) => ({
-                    score: s,
-                    tag: `Mức ${s}`,
-                    desc: `Điểm thành phần ${s}/4 (${s * 5}/20 điểm quy đổi).`,
-                  })),
-                };
-                const selectedVal = Number(surveyAnswers[dimId] ?? 2);
-
-                return (
-                  <div key={dimId} className="sp-question-card">
-                    <div className="sp-question-head">
-                      <div>
-                        <span className="sp-q-index">
-                          Tiêu chí {idx + 1}/5 · {dimCode} · Trọng số{" "}
-                          {dim.weightPercent}%
-                        </span>
-                        <h3>{dim.name}</h3>
-                        <p>{anchorInfo.subtitle}</p>
-                      </div>
-                      <div className="sp-q-score-pill">
-                        <strong>{selectedVal} / 4</strong>
-                        <span>({selectedVal * 5} / 20 điểm)</span>
-                      </div>
-                    </div>
-
-                    <div className="sp-level-options">
-                      {anchorInfo.levels.map((lvl) => {
-                        const checked = selectedVal === lvl.score;
-                        return (
-                          <label
-                            key={lvl.score}
-                            className={`sp-level-option ${
-                              checked ? "is-checked" : ""
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name={`dim-${dimId}`}
-                              value={lvl.score}
-                              checked={checked}
-                              onChange={() =>
-                                setSurveyAnswers((prev) => ({
-                                  ...prev,
-                                  [dimId]: lvl.score,
-                                }))
-                              }
-                            />
-                            <div className="sp-level-top">
-                              <span className="sp-level-tag">{lvl.tag}</span>
-                              <span className="sp-level-pts">
-                                +{lvl.score * 5}đ
-                              </span>
-                            </div>
-                            <p className="sp-level-desc">{lvl.desc}</p>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Sticky Live Calculation Footer */}
-            <div className="sp-survey-footer">
-              <div className="sp-preview-summary">
-                <div className="sp-preview-badge">
-                  <span>Band dự kiến</span>
-                  <strong>{previewCalc.band}</strong>
-                </div>
-                <div className="sp-preview-details">
-                  <strong>
-                    Tổng điểm quy đổi: {previewCalc.totalScore} / 100 điểm{" "}
-                    <span>
-                      ({getBandInfo(selectedSportId, previewCalc.band).title})
-                    </span>
-                  </strong>
-                  <p>
-                    Tổng điểm thô 5 tiêu chí:{" "}
-                    <code>{previewCalc.rawSum}/20</code> → Lưu vào{" "}
-                    <code>PlayerSportProfiles</code> với trạng thái{" "}
-                    <code>Provisional</code> (Đủ điều kiện kiểm tra trình độ đặt
-                    sân ở Swimlane 1).
-                  </p>
-                </div>
-              </div>
-              <div className="sp-survey-submit-group">
+              <div className="sp-locked-actions">
                 <button
                   type="button"
                   className="button button-secondary"
                   onClick={() => setShowSurveyForm(false)}
                 >
-                  Hủy
+                  Xem bảng điểm &amp; Lịch sử
                 </button>
                 <button
-                  type="submit"
+                  type="button"
                   className="button button-primary"
-                  disabled={submitting}
+                  onClick={() =>
+                    onBrowseSport?.(
+                      selectedSportId === 2 ? "Pickleball" : "Badminton",
+                    )
+                  }
                 >
-                  <Sparkles size={16} />
-                  {submitting
-                    ? "Đang lưu hồ sơ…"
-                    : `Lưu kết quả khảo sát (${previewCalc.band} · ${previewCalc.totalScore}đ)`}
+                  Tìm buổi chơi {activeSportNameVi} <ArrowRight size={16} />
                 </button>
               </div>
             </div>
-          </form>
+          ) : (
+            <>
+              <div className="sp-section-header">
+                <div>
+                  <h2>Khảo sát Tự đánh giá Trình độ {activeSportNameVi}</h2>
+                </div>
+                <button
+                  type="button"
+                  className="button button-secondary sp-btn-sm"
+                  onClick={() => setShowSurveyForm(false)}
+                >
+                  Đóng khảo sát
+                </button>
+              </div>
+
+              <form onSubmit={handleSurveySubmit} className="sp-survey-form">
+                {/* Playing Context Questions */}
+                <div className="sp-context-grid">
+                  <div className="sp-context-field">
+                    <label>Thời gian bạn đã chơi {activeSportNameVi}</label>
+                    <select
+                      value={experienceText}
+                      onChange={(e) => setExperienceText(e.target.value)}
+                    >
+                      <option value="Mới bắt đầu (< 3 tháng)">
+                        Mới bắt đầu (&lt; 3 tháng)
+                      </option>
+                      <option value="3 - 6 tháng">Từ 3 – 6 tháng</option>
+                      <option value="6 tháng - 2 năm">
+                        Từ 6 tháng – 2 năm
+                      </option>
+                      <option value="2 - 4 năm (Phong trào thường xuyên)">
+                        Từ 2 – 4 năm (Chơi thường xuyên)
+                      </option>
+                      <option value="Trên 4 năm / Từng thi đấu giải CLB">
+                        Trên 4 năm / Từng giao lưu giải CLB
+                      </option>
+                    </select>
+                  </div>
+                  <div className="sp-context-field">
+                    <label>Tần suất ra sân trung bình</label>
+                    <select
+                      value={frequencyText}
+                      onChange={(e) => setFrequencyText(e.target.value)}
+                    >
+                      <option value="1 buổi / tuần hoặc ít hơn">
+                        1 buổi / tuần hoặc ít hơn
+                      </option>
+                      <option value="2 - 3 buổi / tuần">
+                        2 – 3 buổi / tuần
+                      </option>
+                      <option value="4+ buổi / tuần">4+ buổi / tuần</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* 5 Intuitive Questions */}
+                <div className="sp-questions-list">
+                  {activeRubric.dimensions.map((dim, idx) => {
+                    const dimId = dim.id ?? dim.dimensionId;
+                    const dimCode = dim.code ?? dim.dimensionCode;
+                    const anchorInfo = DIMENSION_ANCHORS[dimCode] || {
+                      subtitle: "",
+                      levels: [0, 1, 2, 3, 4].map((s) => ({
+                        score: s,
+                        tag: `Lựa chọn ${s + 1}`,
+                        desc: "Mô tả cảm nhận kỹ năng trên sân.",
+                      })),
+                    };
+                    const selectedVal = Number(surveyAnswers[dimId] ?? 2);
+
+                    return (
+                      <div key={dimId} className="sp-question-card">
+                        <div className="sp-question-head">
+                          <div>
+                            <span className="sp-q-index">
+                              Tiêu chí {idx + 1} / 5
+                            </span>
+                            <h3>{dim.name}</h3>
+                            <p>{anchorInfo.subtitle}</p>
+                          </div>
+                        </div>
+
+                        <div className="sp-level-options">
+                          {anchorInfo.levels.map((lvl) => {
+                            const checked = selectedVal === lvl.score;
+                            return (
+                              <label
+                                key={lvl.score}
+                                className={`sp-level-option ${
+                                  checked ? "is-checked" : ""
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name={`dim-${dimId}`}
+                                  value={lvl.score}
+                                  checked={checked}
+                                  onChange={() =>
+                                    setSurveyAnswers((prev) => ({
+                                      ...prev,
+                                      [dimId]: lvl.score,
+                                    }))
+                                  }
+                                />
+                                <div className="sp-level-top">
+                                  <span className="sp-level-tag">
+                                    {lvl.tag}
+                                  </span>
+                                </div>
+                                <p className="sp-level-desc">{lvl.desc}</p>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Clean Submit Footer */}
+                <div className="sp-survey-footer">
+                  <div className="sp-preview-details">
+                    <strong>
+                      Xác nhận tạo điểm tạm thời môn {activeSportNameVi}
+                    </strong>
+                    <p>
+                      Khảo sát tự đánh giá ban đầu chỉ thực hiện 1 lần để tạo
+                      điểm tạm thời đi đặt sân. Sau khi lưu, tự đánh giá sẽ khóa
+                      lại để chờ Trọng tài chấm chính thức trên sân.
+                    </p>
+                  </div>
+                  <div className="sp-survey-submit-group">
+                    <button
+                      type="button"
+                      className="button button-secondary"
+                      onClick={() => setShowSurveyForm(false)}
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      className="button button-primary"
+                      disabled={submitting}
+                    >
+                      <Sparkles size={16} />
+                      {submitting
+                        ? "Đang lưu hồ sơ…"
+                        : "Lưu khảo sát & Nhận điểm tạm thời"}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </>
+          )}
         </section>
       )}
 
-      {/* 3B. Latest 5-Dimension Skill Evaluation Result (UC-07 & UC-25 - View Skill Result) */}
+      {/* 3B. Latest 5-Dimension Skill Evaluation Result & History */}
       <div className="sp-main-grid">
         <section
           className={`sp-panel sp-result-panel ${
@@ -1114,44 +1098,27 @@ export default function SkillProfileView({ user, onBrowseSport }) {
         >
           <div className="sp-panel-head">
             <div>
-              <span className="sp-eyebrow-sm">
-                UC-07 &amp; UC-25 · VIEW SKILL RESULT (CUỐI SWIMLANE 2)
-              </span>
-              <h2>Bảng điểm 5 Tiêu chí Chuyên môn · {activeSportNameVi}</h2>
-              <p className="sp-subtext">{sportMeta.standardLabel}</p>
+              <span className="sp-eyebrow-sm">CHI TIẾT ĐÁNH GIÁ KỸ NĂNG</span>
+              <h2>Bảng điểm 5 Tiêu chí · {activeSportNameVi}</h2>
             </div>
-            <button
-              type="button"
-              className="button button-secondary sp-btn-sm"
-              onClick={() => setExpandedRubricRef((v) => !v)}
-            >
-              <Info size={15} />
-              {expandedRubricRef ? "Ẩn bảng mốc 0-4" : "Xem mốc chuẩn 0-4"}
-              {expandedRubricRef ? (
-                <ChevronUp size={15} />
-              ) : (
-                <ChevronDown size={15} />
-              )}
-            </button>
           </div>
 
           {!latestAssessment ? (
             <div className="sp-empty-box">
               <ClipboardCheck size={32} />
               <h3>
-                Bạn chưa có bản đánh giá nào cho môn {activeSportNameVi}
+                Bạn chưa có điểm trình độ môn {activeSportNameVi}
               </h3>
               <p>
-                Hãy hoàn thành bài khảo sát tự đánh giá ban đầu (UC-06) để khởi
-                tạo điểm trình độ vào <code>PlayerSportProfiles</code> và mở
-                khóa đặt sân theo Band.
+                Người chơi mới vui lòng làm bài khảo sát tự đánh giá ban đầu để
+                nhận mức điểm tạm thời và đặt các buổi chơi phù hợp.
               </p>
               <button
                 type="button"
                 className="button button-primary"
                 onClick={() => setShowSurveyForm(true)}
               >
-                Làm khảo sát tự đánh giá ngay <ArrowRight size={16} />
+                Làm khảo sát tự đánh giá ban đầu <ArrowRight size={16} />
               </button>
             </div>
           ) : (
@@ -1168,29 +1135,25 @@ export default function SkillProfileView({ user, onBrowseSport }) {
                   >
                     {latestAssessment.assessmentType === "OnCourt" ? (
                       <>
-                        <ShieldCheck size={15} /> Trọng tài chấm trên sân (SWL 2)
+                        <ShieldCheck size={15} /> Trọng tài chấm trên sân
                       </>
                     ) : (
                       <>
-                        <ClipboardCheck size={15} /> Khảo sát tự đánh giá (SWL 1)
+                        <ClipboardCheck size={15} /> Tự khảo sát ban đầu (Điểm
+                        tạm thời)
                       </>
                     )}
                   </span>
                   <h4>
                     Người đánh giá:{" "}
-                    <strong>{latestAssessment.assessorName}</strong>{" "}
-                    <small>({latestAssessment.assessorRole})</small>
+                    <strong>{latestAssessment.assessorName}</strong>
                   </h4>
-                  <p>
-                    Bộ tiêu chí: <code>{latestAssessment.rubricVersion}</code>
-                    {formatSessionInfo(latestAssessment) && (
-                      <>
-                        {" "}
-                        · Buổi chơi:{" "}
-                        <strong>{formatSessionInfo(latestAssessment)}</strong>
-                      </>
-                    )}
-                  </p>
+                  {formatSessionInfo(latestAssessment) && (
+                    <p>
+                      Buổi chơi:{" "}
+                      <strong>{formatSessionInfo(latestAssessment)}</strong>
+                    </p>
+                  )}
                 </div>
                 <div className="sp-assessment-total">
                   <span>Kết quả kỳ này</span>
@@ -1238,14 +1201,12 @@ export default function SkillProfileView({ user, onBrowseSport }) {
                       <div className="sp-dim-header">
                         <div>
                           <span className="sp-dim-code">
-                            Tiêu chí {idx + 1} · {dimCode} ({dim.weightPercent}
-                            %)
+                            Tiêu chí {idx + 1}
                           </span>
                           <h4>{dim.name}</h4>
                         </div>
                         <div className="sp-dim-numbers">
-                          <strong>{rawScore.toFixed(1)} / 4.0</strong>
-                          <span>({weightedPts.toFixed(0)} / 20 điểm)</span>
+                          <strong>{weightedPts.toFixed(0)} / 20 điểm</strong>
                         </div>
                       </div>
 
@@ -1262,24 +1223,6 @@ export default function SkillProfileView({ user, onBrowseSport }) {
                           {achievedAnchor.desc}
                         </p>
                       )}
-
-                      {expandedRubricRef && anchorInfo?.levels && (
-                        <div className="sp-dim-anchor-table">
-                          {anchorInfo.levels.map((lvl) => (
-                            <div
-                              key={lvl.score}
-                              className={`sp-anchor-row ${
-                                Math.round(rawScore) === lvl.score
-                                  ? "is-current"
-                                  : ""
-                              }`}
-                            >
-                              <span className="sp-anchor-tag">{lvl.tag}</span>
-                              <span className="sp-anchor-desc">{lvl.desc}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -1289,7 +1232,7 @@ export default function SkillProfileView({ user, onBrowseSport }) {
 
           {/* Band Reference Table */}
           <div className="sp-band-legend">
-            <h4>Thang quy đổi Band trình độ ({sportMeta.standardLabel})</h4>
+            <h4>{sportMeta.standardLabel}</h4>
             <div className="sp-band-chips">
               {sportMeta.bands.map((b) => (
                 <div
@@ -1308,20 +1251,18 @@ export default function SkillProfileView({ user, onBrowseSport }) {
           </div>
         </section>
 
-        {/* 3C. Rating History Timeline (UC-25 - PlayerRatingHistories / Output Swimlane 2) */}
+        {/* 3C. Rating History Timeline */}
         <section
           className="sp-panel sp-history-panel"
           aria-label="Lịch sử biến động trình độ"
         >
           <div className="sp-panel-head">
             <div>
-              <span className="sp-eyebrow-sm">
-                UC-25 · PLAYERRATINGHISTORIES (LỊCH SỬ TĂNG / GIẢM)
-              </span>
-              <h2>Lịch sử Biến động Trình độ · {activeSportNameVi}</h2>
+              <span className="sp-eyebrow-sm">LỊCH SỬ THAY ĐỔI TRÌNH ĐỘ</span>
+              <h2>Lịch sử Biến động · {activeSportNameVi}</h2>
               <p className="sp-subtext">
-                Theo dõi toàn bộ quá trình từ khảo sát tự đánh giá ban đầu đến
-                các kỳ Trọng tài chấm trực tiếp trên sân.
+                Theo dõi quá trình thay đổi trình độ từ khảo sát ban đầu đến các
+                buổi được Trọng tài đánh giá trên sân.
               </p>
             </div>
           </div>
@@ -1372,14 +1313,12 @@ export default function SkillProfileView({ user, onBrowseSport }) {
                           }`}
                         >
                           {isReferee
-                            ? "Trọng tài chấm trên sân (SWL 2)"
-                            : "Khảo sát tự đánh giá (SWL 1)"}
+                            ? "Trọng tài chấm trên sân"
+                            : "Tự khảo sát ban đầu"}
                         </span>
-                        <time>
-                          {item.sessionDate
-                            ? `Ngày buổi chơi: ${item.sessionDate}`
-                            : `Bản ghi #${item.id}`}
-                        </time>
+                        {item.sessionDate && (
+                          <time>Ngày: {item.sessionDate}</time>
+                        )}
                       </div>
 
                       <div className="sp-history-transition">
@@ -1394,7 +1333,7 @@ export default function SkillProfileView({ user, onBrowseSport }) {
                             </>
                           ) : (
                             <span className="sp-node-init">
-                              Khởi tạo ban đầu →
+                              Khởi tạo tạm thời →
                             </span>
                           )}
                           <strong className="sp-node-new">
@@ -1422,8 +1361,7 @@ export default function SkillProfileView({ user, onBrowseSport }) {
                       <div className="sp-history-details">
                         {item.changedByName && (
                           <span>
-                            Người ghi nhận: <strong>{item.changedByName}</strong>{" "}
-                            <small>({item.changedByRole})</small>
+                            Người ghi nhận: <strong>{item.changedByName}</strong>
                           </span>
                         )}
                         {sessLabel && (
