@@ -1,0 +1,211 @@
+.portal-page {
+  --portal-accent: var(--color-primary);
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 36px 24px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+.portal-admin {
+  --portal-accent: #253c50;
+}
+.portal-card {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  width: min(1040px, 100%);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+.portal-form {
+  padding: 48px;
+  min-width: 0;
+}
+.portal-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 23px;
+  font-weight: 800;
+  text-decoration: none;
+  margin-bottom: 46px;
+}
+.portal-brand svg {
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  background: var(--portal-accent);
+  color: #d4ef91;
+  border-radius: 12px;
+}
+.portal-eyebrow {
+  display: block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: var(--color-muted);
+}
+.portal-form h1 {
+  font-size: 30px;
+  letter-spacing: -1px;
+  margin: 14px 0;
+}
+.portal-form p {
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.portal-primary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  border-radius: 12px;
+  background: var(--portal-accent);
+  color: #fff;
+  padding: 13px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 24px 0 14px;
+}
+.portal-primary:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+.portal-note {
+  font-size: 11px !important;
+}
+.portal-aside {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px;
+  background: var(--portal-accent);
+  color: #d4ef91;
+  overflow: hidden;
+}
+.portal-aside::after {
+  content: "";
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border: 1px solid #ffffff14;
+  border-radius: 50%;
+  right: -160px;
+  top: -40px;
+  box-shadow:
+    0 0 0 40px #ffffff04,
+    0 0 0 80px #ffffff03;
+  pointer-events: none;
+}
+.portal-aside > svg {
+  padding: 14px;
+  width: 66px;
+  height: 66px;
+  background: #ffffff0c;
+  border: 1px solid #ffffff24;
+  border-radius: 20px;
+  stroke-width: 1.4;
+}
+.portal-aside h2 {
+  font-size: 38px;
+  font-weight: 600;
+  letter-spacing: -1.2px;
+  line-height: 1.25;
+  white-space: pre-line;
+  margin: 30px 0 22px;
+  color: #f1f5e9;
+}
+.portal-aside p {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #c8d7c7;
+}
+.portal-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 30px;
+}
+.portal-badges span {
+  padding: 6px 12px;
+  border: 1px solid #ffffff30;
+  border-radius: 30px;
+  font-size: 10px;
+}
+.portal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 22px;
+  margin-top: 30px;
+  font-size: 11px;
+}
+.portal-links a {
+  color: var(--color-muted);
+  text-decoration: none;
+}
+.portal-links a:hover {
+  text-decoration: underline;
+}
+.portal-dev {
+  margin-top: 24px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--color-muted);
+  background: #fafbf8;
+}
+.portal-dev summary {
+  cursor: pointer;
+}
+.portal-dev label {
+  display: block;
+  margin: 16px 0 8px;
+}
+.portal-dev input {
+  width: 100%;
+}
+.portal-error {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger-border);
+  padding: 14px;
+  margin: 16px 0;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.8;
+}
+@media (max-width: 740px) {
+  .portal-page {
+    padding: 20px 16px;
+  }
+  .portal-card {
+    max-width: 480px;
+    grid-template-columns: minmax(0, 1fr);
+    border-radius: 20px;
+  }
+  .portal-form,
+  .portal-aside {
+    padding: 32px 28px;
+  }
+  .portal-form h1 {
+    font-size: 28px;
+  }
+  .portal-aside h2 {
+    font-size: 32px;
+  }
+  .portal-brand {
+    margin-bottom: 32px;
+  }
+  .portal-dev input {
+    font-size: 16px;
+  }
+}

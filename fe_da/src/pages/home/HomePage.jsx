@@ -1,119 +1,185 @@
 import { useState } from "react";
 import HomeLayout from "../../layouts/HomeLayout";
-import SectionLayout from "../../components/layout/SectionLayout";
 import { roleHomeConfig } from "../../config/roleHomeConfig";
+import HomeOverview from "./HomeOverview";
+import HomeWorkspace from "./HomeWorkspace";
+import GuestLayout from "../../components/layout/GuestLayout";
+import GuestHome from "./GuestHome";
+import PlayerLayout from "../../components/layout/PlayerLayout";
+import PlayerHome from "./PlayerHome";
 
-export default function HomePage({ role = "guest" }) {
+export default function HomePage({
+  role = "guest",
+  user,
+  onLogout,
+  onLogin,
+  preview = false,
+}) {
   const config = roleHomeConfig[role] || roleHomeConfig.guest;
-  const [activeId, setActiveId] = useState("overview");
+  const [active, setActive] = useState(() =>
+    role === "player" &&
+    new URLSearchParams(window.location.search).has("orderId")
+      ? "Thanh toán"
+      : role === "player" && new URLSearchParams(window.location.search).get("view") === "tickets" ? "Vé của tôi" : "overview",
+  );
+  const [sessionId, setSessionId] = useState(null);
+  const [browseSport, setBrowseSport] = useState("ALL");
   const navigation = [
     { id: "overview", label: "Trang chủ" },
-    ...config.modules.map((label, index) => ({ id: `module-${index}`, label })),
+    ...config.modules.map((label) => ({ id: label, label })),
   ];
-  const selected = navigation.find((item) => item.id === activeId);
-  const openModule = (id) => {
-    setActiveId(id);
-    requestAnimationFrame(() =>
-      document
-        .getElementById("workspace")
-        ?.scrollIntoView({
-          behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
-            .matches
-            ? "instant"
-            : "smooth",
-          block: "start",
-        }),
+  function open(label) {
+    if (label !== "overview" && !config.modules.includes(label)) return;
+    setActive(label);
+    if (!preview && label !== "Thanh toán") {
+      const url = new URL(window.location.href);
+      ["orderId", "code", "id", "cancel", "status", "view"].forEach((key) =>
+        url.searchParams.delete(key),
+      );
+      window.history.replaceState({}, "", url);
+    }
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+  function payment(id) {
+    const url = new URL(window.location.href);
+    if (id) url.searchParams.set("orderId", id);
+    window.history.replaceState({}, "", url);
+    setActive("Thanh toán");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+  function selectSession(id) {
+    setSessionId(id);
+    setActive("Chi tiết buổi chơi");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+  if (role === "guest") {
+    const browse = (sport = "ALL") => {
+      setBrowseSport(sport);
+      open("Lịch social");
+    };
+    const login =
+      onLogin ||
+      (() => window.location.assign("/player/login" + window.location.search));
+    return (
+      <GuestLayout
+        isOverview={active === "overview"}
+        onHome={() => open("overview")}
+        onBrowse={browse}
+        onLogin={login}
+      >
+        {active === "overview" ? (
+          <GuestHome
+            onBrowse={browse}
+            onSelectSession={selectSession}
+            onLogin={login}
+            preview={preview}
+          />
+        ) : (
+          <HomeWorkspace
+            role={role}
+            active={active}
+            user={user}
+            preview={false}
+            sessionId={sessionId}
+            onOpen={open}
+            onLogin={login}
+            onPayment={payment}
+            onSelectSession={selectSession}
+            initialSport={browseSport}
+          />
+        )}
+      </GuestLayout>
     );
-  };
+  }
+  if (role === "player") {
+    return (
+      <PlayerLayout
+        navigation={navigation}
+        activeId={active === "Chi tiết buổi chơi" ? "Lịch social" : active}
+        onNavigate={open}
+        onLogout={onLogout}
+        accountName={user?.fullName}
+      >
+        {active === "overview" ? (
+          <PlayerHome
+            preview={preview}
+            onBrowse={() => open("Lịch social")}
+            onTickets={() => open("Vé của tôi")}
+            onSelectSession={selectSession}
+          />
+        ) : (
+          <div className="player-container player-workspace">
+            <div className="home-breadcrumb">
+              <button onClick={() => open("overview")}>Trang chủ</button>
+              <span>/</span>
+              <span>{active}</span>
+            </div>
+            <HomeWorkspace
+              role={role}
+              active={active}
+              user={user}
+              preview={preview}
+              sessionId={sessionId}
+              onOpen={open}
+              onLogin={onLogin}
+              onPayment={payment}
+              onSelectSession={selectSession}
+            />
+          </div>
+        )}
+      </PlayerLayout>
+    );
+  }
   return (
     <HomeLayout
+      role={role}
       roleLabel={config.label}
+      accountName={user?.fullName}
+      onLogout={onLogout}
+      onLogin={onLogin}
+      onHome={() => open("overview")}
       navigation={navigation}
-      activeId={activeId}
-      onNavigate={openModule}
-      hero={{
-        ...config,
-        action: (
-          <button
-            className="button button-primary"
-            onClick={() => openModule("module-0")}
-          >
-            {config.action}
-            <span aria-hidden="true">↗</span>
-          </button>
-        ),
-      }}
-    >
-      <div className="stats-grid" aria-label="Số liệu minh họa">
-        {config.stats.map(([value, label], index) => (
-          <div className="stat-card" key={label}>
-            <span className="stat-index">0{index + 1} /</span>
-            <strong>{value}</strong>
-            <span>{label}</span>
-          </div>
-        ))}
-      </div>
-      <div className="workspace-grid" id="workspace">
-        <SectionLayout
-          title={activeId === "overview" ? config.section : selected.label}
-          description="Không gian làm việc theo vai trò của bạn."
-        >
-          {activeId === "overview" ? (
-            <div className="module-grid">
-              {config.modules.map((label, index) => (
+      activeId={active === "Chi tiết buổi chơi" ? "Lịch social" : active}
+      onNavigate={open}
+      hero={
+        active === "overview"
+          ? {
+              ...config,
+              action: (
                 <button
-                  className="module-card"
-                  key={label}
-                  onClick={() => openModule(`module-${index}`)}
+                  className="button button-primary"
+                  onClick={() => open(config.modules[0])}
                 >
-                  <span className="module-number">0{index + 1}</span>
-                  <strong>{label}</strong>
-                  <span className="module-bottom">
-                    Mở không gian <span aria-hidden="true">↗</span>
-                  </span>
+                  {config.action}
+                  <span aria-hidden="true">↗</span>
                 </button>
-              ))}
-            </div>
-          ) : (
-            <div className="module-placeholder" role="status">
-              <span className="eyebrow">KHÔNG GIAN CHỨC NĂNG</span>
-              <h3>{selected.label}</h3>
-              <p>
-                Đây là khu vực dành cho nội dung {selected.label.toLowerCase()}.
-                Chức năng nghiệp vụ sẽ được bổ sung trong màn hình tương ứng.
-              </p>
-              <button
-                className="button button-secondary"
-                onClick={() => setActiveId("overview")}
-              >
-                ← Về tổng quan
-              </button>
-            </div>
-          )}
-        </SectionLayout>
-        <SectionLayout
-          title="Gợi ý tiếp theo"
-          description="Sẵn sàng cho một ngày hiệu quả."
-          className="next-steps"
-        >
-          <ol className="task-list">
-            {config.tasks.map((task) => (
-              <li key={task}>{task}</li>
-            ))}
-          </ol>
-          <div className="sport-note">
-            <span className="eyebrow">ONE COMMUNITY. TWO SPORTS.</span>
-            <h3>Cùng nhau tiến bộ.</h3>
-            <p>
-              Cầu lông hay pickleball, mỗi lần ra sân đều là một khởi đầu mới.
-            </p>
+              ),
+            }
+          : null
+      }
+    >
+      {active === "overview" ? (
+        <HomeOverview config={config} preview={preview} onOpen={open} />
+      ) : (
+        <div className="home-workspace">
+          <div className="home-breadcrumb">
+            <button onClick={() => open("overview")}>Trang chủ</button>
+            <span>/</span>
+            <span>{active}</span>
           </div>
-        </SectionLayout>
-      </div>
-      <p className="demo-note">
-        Bản mẫu giao diện · Toàn bộ số liệu là minh họa, chưa kết nối dữ liệu
-        thực tế.
-      </p>
+          <HomeWorkspace
+            role={role}
+            active={active}
+            user={user}
+            preview={preview}
+            sessionId={sessionId}
+            onOpen={open}
+            onLogin={onLogin}
+            onPayment={payment}
+            onSelectSession={selectSession}
+          />
+        </div>
+      )}
     </HomeLayout>
   );
 }
