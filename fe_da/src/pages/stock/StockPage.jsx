@@ -96,7 +96,6 @@ export default function StockPage() {
           <strong>{loading ? "–" : number(active.length)}</strong>
         </div>
         <button
-          type="button"
           className={lowCount ? "is-warning" : ""}
           aria-pressed={onlyLow}
           onClick={() => setOnlyLow((value) => !value)}
@@ -105,12 +104,6 @@ export default function StockPage() {
           <span>Sắp hết hàng</span>
           <strong>{loading ? "–" : number(lowCount)}</strong>
         </button>
-        <div>
-          <span>Ngừng kinh doanh</span>
-          <strong>
-            {loading ? "–" : number(products.length - active.length)}
-          </strong>
-        </div>
       </div>
 
       <div className="stock-toolbar">
@@ -137,14 +130,6 @@ export default function StockPage() {
               </option>
             ))}
           </select>
-        </label>
-        <label className="stock-check">
-          <input
-            type="checkbox"
-            checked={showInactive}
-            onChange={(e) => setShowInactive(e.target.checked)}
-          />
-          Hiện hàng ngừng kinh doanh
         </label>
       </div>
 
