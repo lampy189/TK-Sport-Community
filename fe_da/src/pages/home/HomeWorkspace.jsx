@@ -3,6 +3,7 @@ import { BrowseSessionsView } from "../../components/BrowseSessionsView";
 import { SessionDetailView } from "../../components/SessionDetailView";
 import CheckInPage from "../payment/CheckInPage";
 import PaymentPage from "../payment/PaymentPage";
+import StockPage from "../stock/StockPage";
 import { Construction, ArrowLeft } from "lucide-react";
 
 export default function HomeWorkspace({
@@ -57,6 +58,8 @@ export default function HomeWorkspace({
     active === "Thanh toán"
   )
     return <PaymentPage staff />;
+  if (!preview && role === "staff" && active === "Kho & vật tư")
+    return <StockPage />;
   return (
     <SectionLayout
       title={active}
