@@ -100,6 +100,29 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
     public void AddRefund(Refund refund) => db.Refunds.Add(refund);
     public Task<long?> FindOrderForTicketCodeAsync(string code) => db.Tickets.AsNoTracking()
         .Where(t => t.TicketCode == code).Select(t => (long?)t.OrderId).SingleOrDefaultAsync();
+    public async Task<IReadOnlyList<AssignedSessionSummary>> GetAssignedSessionsAsync(long actorId)
+    {
+        var sessions = await db.SessionReferees.AsNoTracking()
+            .Where(sr => sr.RefereeId == actorId)
+            .OrderBy(sr => sr.Session.SessionDate).ThenBy(sr => sr.Session.TimeSlot.StartTime)
+            .Select(sr => new AssignedSessionSummary(
+                sr.SessionId,
+                sr.Session.Sport.Name,
+                sr.Session.Court.Name ?? "Sân chưa đặt tên",
+                sr.Session.Court.Venue.Name ?? "TK Sport",
+                sr.Session.SessionDate,
+                sr.Session.TimeSlot.StartTime,
+                sr.Session.TimeSlot.EndTime,
+                sr.Session.Status,
+                sr.Session.Band,
+                sr.Session.Capacity,
+                (short)sr.Session.Tickets.Count(),
+                true,
+                "not_ready",
+                "Đang chờ kiểm tra điều kiện buổi chơi."))
+            .ToListAsync();
+        return sessions;
+    }
     public Task<CheckInContext?> GetCheckInContextAsync(string code, long actorId) => db.Tickets.AsNoTracking()
         .Where(t => t.TicketCode == code).Select(t => new CheckInContext(t.Id, t.OrderId,
             t.Session.SessionDate, t.Session.TimeSlot.EndTime, t.Session.Status,
