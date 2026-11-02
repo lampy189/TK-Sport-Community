@@ -1,3 +1,6 @@
+import TicketOperations from "../payment/TicketOperations";
+import AssessmentPage from "../skill/AssessmentPage";
+import GoodsPaymentPage from "../payment/GoodsPaymentPage";
 import SectionLayout from "../../components/layout/SectionLayout";
 import { BrowseSessionsView } from "../../components/BrowseSessionsView";
 import { SessionDetailView } from "../../components/SessionDetailView";
@@ -19,6 +22,8 @@ export default function HomeWorkspace({
   initialSport = "ALL",
   onBrowseSport,
 }) {
+  if (!preview && role === "referee" && active === "Đánh giá kỹ năng") return <AssessmentPage />;
+  if (!preview && role === "staff" && active === "Bán hàng") return <GoodsPaymentPage />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage />;
   if (!preview && ["player", "guest"].includes(role)) {
     if (active === "Lịch social")
@@ -76,9 +81,9 @@ export default function HomeWorkspace({
   if (
     !preview &&
     ["staff", "manager"].includes(role) &&
-    active === "Thanh toán"
+    ["Thanh toán", "Sự cố sân", "Đổi & hoàn vé"].includes(active)
   )
-    return <PaymentPage staff />;
+    return <TicketOperations key={active} initialTab={active === "Sự cố sân" ? "sessions" : active === "Đổi & hoàn vé" ? "changes" : "reviews"} />;
   return (
     <SectionLayout
       title={active}

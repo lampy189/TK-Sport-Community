@@ -174,7 +174,7 @@ export default function PaymentPage({
   const state = order
     ? deriveState(order.status, latest?.status, order.expiresAt, now)
     : "";
-  const canPay = ["pending", "processing", "failed"].includes(state) && orderStatus === "pending" && seconds > 0 && payStatus !== "paid";
+  const canPay = !order?.tickets?.some(t => ["suspended", "cancelled"].includes(norm(t.sessionStatus))) && ["pending", "processing", "failed"].includes(state) && orderStatus === "pending" && seconds > 0 && payStatus !== "paid";
   const timeLeft = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
   const statusMessage = {
@@ -315,6 +315,7 @@ export default function PaymentPage({
                     {labels[state] || state}
                   </span>
                 </div>
+                {order.tickets.some(t => ["suspended","cancelled"].includes(norm(t.sessionStatus))) && <p className="payment-error">Buổi chơi gặp sự cố sân. Mở Vé của tôi để xem phương án xử lý.</p>}
                 <p className="checkout-code">Mã đơn: {order.orderCode}</p>
                 <ul className="checkout-items">
                   {order.tickets.filter(t => norm(t.status) !== "cancelled").map((t, i) => (

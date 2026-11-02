@@ -462,6 +462,24 @@ export default function SkillProfileView({ onBrowseSport }) {
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (showSurveyForm) return;
+    let active = true;
+    let pending = false;
+    async function refreshPublishedResults() {
+      if (document.hidden || pending) return;
+      pending = true;
+      try {
+        const data = await api.getMySkillProfiles();
+        if (active) setOverview(data);
+      } catch { /* Keep the last result; the next refresh retries. */ }
+      finally { pending = false; }
+    }
+    const timer = window.setInterval(refreshPublishedResults, 10000);
+    window.addEventListener("focus", refreshPublishedResults);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener("focus", refreshPublishedResults); };
+  }, [showSurveyForm]);
+
   async function loadData() {
     setLoading(true);
     setError(null);

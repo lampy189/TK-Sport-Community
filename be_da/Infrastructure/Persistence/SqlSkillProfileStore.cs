@@ -254,7 +254,9 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
                 await using var checkOnCourtCmd = new SqlCommand("""
                     SELECT CASE WHEN EXISTS (
                         SELECT 1 FROM dbo.assessments
-                        WHERE player_sport_profile_id = @profileId AND assessment_type = 'OnCourt'
+                        WHERE player_sport_profile_id = @profileId
+                          AND LOWER(REPLACE(assessment_type, '_', '')) = 'oncourt'
+                          AND LOWER(status) = 'published'
                     ) THEN 1 ELSE 0 END;
                     """, connection, transaction);
                 checkOnCourtCmd.Parameters.Add("@profileId", SqlDbType.BigInt).Value = profileId;
@@ -456,7 +458,8 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
         const string headSql = """
             SELECT TOP 1
                 a.id, a.rubric_id, r.name AS rubric_name, r.version AS rubric_version,
-                ISNULL(a.assessment_type, 'OnCourt') AS assessment_type,
+                CASE WHEN LOWER(REPLACE(a.assessment_type, '_', '')) = 'oncourt'
+                    THEN 'OnCourt' ELSE a.assessment_type END AS assessment_type,
                 ISNULL(a.status, 'Published') AS status,
                 ISNULL(a.total_score, 0) AS total_score,
                 ISNULL(a.band_result, 'B1') AS band_result,
@@ -470,6 +473,7 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             LEFT JOIN dbo.courts c ON c.id = s.court_id
             LEFT JOIN dbo.time_slots ts ON ts.id = s.time_slot_id
             WHERE a.player_sport_profile_id = @profileId
+              AND LOWER(a.status) = 'published'
             ORDER BY a.id DESC;
             """;
 
@@ -573,7 +577,8 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             SELECT
                 h.id, h.old_score, h.new_score, h.old_band, h.new_band,
                 h.changed_by, u.full_name AS changed_by_name, ro.code AS changed_by_role,
-                h.assessment_id, a.assessment_type, a.session_id, s.session_date, c.name AS court_name
+                h.assessment_id, CASE WHEN LOWER(REPLACE(a.assessment_type, '_', '')) = 'oncourt'
+                    THEN 'OnCourt' ELSE a.assessment_type END, a.session_id, s.session_date, c.name AS court_name
             FROM dbo.player_rating_history h
             JOIN dbo.users u ON u.id = h.changed_by
             JOIN dbo.roles ro ON ro.id = u.role_id

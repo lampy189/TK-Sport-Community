@@ -11,8 +11,9 @@ export function paymentState(orderStatus, paymentStatus, expiresAt, now) {
 }
 export function ticketState(ticket, now) {
   const status = norm(ticket.status);
-  if (['cancelled', 'expired', 'invalidated'].includes(status)) return status;
+  if (['cancelled', 'expired', 'invalidated', 'exchanged'].includes(status)) return status;
   if (ticket.checkedIn || status === 'checkedin') return 'checkedin';
+  if (['suspended','cancelled'].includes(norm(ticket.sessionStatus))) return 'venue_issue';
   const payment = paymentState(ticket.orderStatus, ticket.paymentStatus, ticket.expiresAt, now);
   // A pending checkout stays in the pending-ticket filter even with an open/failed payment attempt.
   if (['pending', 'processing', 'failed'].includes(payment)) return 'pending';

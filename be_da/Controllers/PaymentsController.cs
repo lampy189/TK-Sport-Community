@@ -5,12 +5,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TKSC.Application.Interfaces;
 using TKSC.Application.DTOs;
+using TKSC.Application.Services;
 
 namespace TKSC.Controllers;
 
 [ApiController]
 [Route("api/v1/commerce/payment")]
-public class PaymentsController(IPaymentService service, IAntiforgery antiforgery) : ControllerBase
+public class PaymentsController(IPaymentService service, IAntiforgery antiforgery, GoodsPaymentService goods) : ControllerBase
 {
     private long UserId => long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : -1;
     private async Task<bool> HasValidAppRequest()
@@ -67,7 +68,8 @@ public class PaymentsController(IPaymentService service, IAntiforgery antiforger
     [RequestSizeLimit(65536)]
     public async Task<IActionResult> Webhook([FromBody] JsonElement payload)
     {
-        await service.HandleWebhookAsync(payload.GetRawText());
+        if (!await goods.TryWebhookAsync(payload.GetRawText(), HttpContext.RequestAborted))
+            await service.HandleWebhookAsync(payload.GetRawText());
         return Ok(new { code = "00", desc = "success" });
     }
     public record ReviewRequest(string? Reason);
