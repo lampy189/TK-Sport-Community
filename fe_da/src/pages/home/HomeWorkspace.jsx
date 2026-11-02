@@ -6,6 +6,8 @@ import { BrowseSessionsView } from "../../components/BrowseSessionsView";
 import { SessionDetailView } from "../../components/SessionDetailView";
 import CheckInPage from "../payment/CheckInPage";
 import SkillProfileView from "../../components/SkillProfileView";
+import PersonalProfileView from "../../components/PersonalProfileView";
+import { CommunityView } from "../../components/CommunityView";
 import PaymentPage from "../payment/PaymentPage";
 import StockPage from "../stock/StockPage";
 import { Construction, ArrowLeft } from "lucide-react";
@@ -58,6 +60,17 @@ export default function HomeWorkspace({
           onOpenSkills={() =>
             role === "guest" ? onLogin?.() : onOpen("Hồ sơ kỹ năng")
           }
+          onOpenCommunity={() =>
+            role === "guest" ? onLogin?.() : onOpen("Cộng đồng")
+          }
+        />
+      );
+    if (role === "player" && active === "Hồ sơ cá nhân")
+      return (
+        <PersonalProfileView
+          user={user}
+          onNavigateSkill={() => onOpen("Hồ sơ kỹ năng")}
+          onNavigateCommunity={() => onOpen("Cộng đồng")}
         />
       );
     if (role === "player" && active === "Hồ sơ kỹ năng")
@@ -68,6 +81,12 @@ export default function HomeWorkspace({
             if (onBrowseSport) onBrowseSport(sport);
             else onOpen("Lịch social");
           }}
+        />
+      );
+    if (role === "player" && active === "Cộng đồng")
+      return (
+        <CommunityView
+          user={user}
         />
       );
     if (role === "player" && ["Thanh toán", "Vé của tôi"].includes(active))
