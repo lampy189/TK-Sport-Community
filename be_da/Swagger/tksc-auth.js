@@ -5,7 +5,11 @@
         const url = new URL(request.url, location.href);
         const method = (request.method || "GET").toUpperCase();
         if (url.origin === location.origin && ["POST", "PUT", "DELETE", "PATCH"].includes(method)
-            && (url.pathname.startsWith("/api/auth/") || url.pathname.startsWith("/api/sessions/"))) {
+            && (url.pathname.startsWith("/api/auth/")
+                || url.pathname.startsWith("/api/sessions/")
+                || url.pathname.startsWith("/api/profile/")
+                || url.pathname.startsWith("/api/community/")
+                || url.pathname.startsWith("/api/skills/"))) {
             const csrf = await fetch("/api/auth/csrf", { credentials: "same-origin", cache: "no-store" });
             if (!csrf.ok) throw new Error(`Không lấy được mã bảo vệ (HTTP ${csrf.status}). Thử lại sau.`);
             request.headers = request.headers || {};

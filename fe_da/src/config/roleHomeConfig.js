@@ -11,7 +11,6 @@ export const roleHomeConfig = {
       "Lịch social",
       "Thanh toán",
       "Vé của tôi",
-      "Hồ sơ kỹ năng",
       "Cộng đồng",
     ],
   },
