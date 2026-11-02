@@ -7,6 +7,7 @@ import { SessionDetailView } from "../../components/SessionDetailView";
 import CheckInPage from "../payment/CheckInPage";
 import SkillProfileView from "../../components/SkillProfileView";
 import PaymentPage from "../payment/PaymentPage";
+import StockPage from "../stock/StockPage";
 import { Construction, ArrowLeft } from "lucide-react";
 
 export default function HomeWorkspace({
@@ -84,6 +85,8 @@ export default function HomeWorkspace({
     ["Thanh toán", "Sự cố sân", "Đổi & hoàn vé"].includes(active)
   )
     return <TicketOperations key={active} initialTab={active === "Sự cố sân" ? "sessions" : active === "Đổi & hoàn vé" ? "changes" : "reviews"} />;
+  if (!preview && role === "staff" && active === "Kho & vật tư")
+    return <StockPage />;
   return (
     <SectionLayout
       title={active}
