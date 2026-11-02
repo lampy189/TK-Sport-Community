@@ -119,7 +119,9 @@ export const api = {
     clearCsrfToken();
     try {
       await getCsrfToken(true);
-    } catch {}
+    } catch {
+      /* Ignore CSRF refresh failure on logout */
+    }
     return res.ok;
   },
 
@@ -154,11 +156,21 @@ export const api = {
   },
 
   // Sessions API
+  async getTimeSlots() {
+    const res = await request('/api/sessions/time-slots');
+    if (!res.ok) {
+      throw new Error(`Failed to load time slots: HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+
   async getSessions(params = {}) {
     const query = new URLSearchParams();
     if (params.sportId) query.set('sportId', params.sportId);
     if (params.sport) query.set('sport', params.sport);
     if (params.date) query.set('date', params.date);
+    if (params.fromDate) query.set('fromDate', params.fromDate);
+    if (params.toDate) query.set('toDate', params.toDate);
     if (params.timeSlotId) query.set('timeSlotId', params.timeSlotId);
     if (params.status) query.set('status', params.status);
 
@@ -187,6 +199,37 @@ export const api = {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       // Throw backend structured error { code, message, reason }
+      throw data;
+    }
+    return data;
+  },
+
+  // Skill Profile & Self-Assessment API (UC-04, UC-05, UC-19)
+  async getSkillRubrics(sportId) {
+    const query = sportId ? `?sportId=${encodeURIComponent(sportId)}` : '';
+    const res = await request(`/api/skills/rubrics${query}`);
+    if (!res.ok) {
+      throw new Error(`Failed to load skill rubrics: HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async getMySkillProfiles() {
+    const res = await request('/api/skills/me');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw err;
+    }
+    return res.json();
+  },
+
+  async submitSkillSurvey(payload) {
+    const res = await request('/api/skills/me/survey', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
       throw data;
     }
     return data;

@@ -2,6 +2,7 @@ import SectionLayout from "../../components/layout/SectionLayout";
 import { BrowseSessionsView } from "../../components/BrowseSessionsView";
 import { SessionDetailView } from "../../components/SessionDetailView";
 import CheckInPage from "../payment/CheckInPage";
+import SkillProfileView from "../../components/SkillProfileView";
 import PaymentPage from "../payment/PaymentPage";
 import { Construction, ArrowLeft } from "lucide-react";
 
@@ -16,6 +17,7 @@ export default function HomeWorkspace({
   onPayment,
   onLogin,
   initialSport = "ALL",
+  onBrowseSport,
 }) {
   if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage />;
   if (!preview && ["player", "guest"].includes(role)) {
@@ -27,8 +29,15 @@ export default function HomeWorkspace({
           user={user}
           onSelectSession={onSelectSession}
           onNavigate={(view) => {
-            if (view === "tickets" && role === "guest") onLogin?.();
-            else onOpen(view === "tickets" ? "Vé của tôi" : "Lịch social");
+            if (view === "tickets") {
+              if (role === "guest") onLogin?.();
+              else onOpen("Vé của tôi");
+            } else if (view === "skills") {
+              if (role === "guest") onLogin?.();
+              else onOpen("Hồ sơ kỹ năng");
+            } else {
+              onOpen("Lịch social");
+            }
           }}
         />
       );
@@ -40,6 +49,19 @@ export default function HomeWorkspace({
           onBack={() => onOpen("Lịch social")}
           onPayment={onPayment}
           onOpenLogin={onLogin}
+          onOpenSkills={() =>
+            role === "guest" ? onLogin?.() : onOpen("Hồ sơ kỹ năng")
+          }
+        />
+      );
+    if (role === "player" && active === "Hồ sơ kỹ năng")
+      return (
+        <SkillProfileView
+          user={user}
+          onBrowseSport={(sport) => {
+            if (onBrowseSport) onBrowseSport(sport);
+            else onOpen("Lịch social");
+          }}
         />
       );
     if (role === "player" && ["Thanh toán", "Vé của tôi"].includes(active))
