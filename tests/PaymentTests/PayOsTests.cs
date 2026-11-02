@@ -50,6 +50,15 @@ public class PayOsTests
     }
 
     [Fact]
+    public void GoodsReturnNeverUsesSocialOrderParameter()
+    {
+        var request = Gateway().BuildRequest(12, 42, 120000, Now.AddMinutes(15), goods: true);
+        Assert.Equal("https://example.test/?goodsOrderId=42", request.ReturnUrl);
+        Assert.Equal(request.ReturnUrl, request.CancelUrl);
+        Assert.Equal(12, request.OrderCode);
+    }
+
+    [Fact]
     public async Task RejectsUnsignedAndTamperedWebhook()
     {
         var ex = await Assert.ThrowsAsync<GatewayException>(() => Gateway().VerifyAsync(

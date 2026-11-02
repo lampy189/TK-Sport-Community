@@ -58,7 +58,7 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 WHERE t.session_id = s.id
                   AND (
                       LOWER(t.status) IN ('valid', 'paid', 'confirmed', 'checkedin')
-                      OR (LOWER(t.status) = 'pending' AND o.expires_at > SYSUTCDATETIME())
+                      OR (LOWER(t.status) IN ('pending', 'reserved') AND o.expires_at > SYSUTCDATETIME())
                   )
             ) occ
             WHERE (@status IS NOT NULL AND s.status = @status OR @status IS NULL AND s.status IN ('Open', 'Published'))
@@ -359,7 +359,7 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 occupiedCount = Convert.ToInt32(await occCmd.ExecuteScalarAsync(cancellationToken));
             }
 
-            if (occupiedCount >= capacity)
+            if (occupiedCount >= Math.Min(capacity, (short)8))
             {
                 await transaction.RollbackAsync(cancellationToken);
                 return new RegisterSessionResult(false, "SESSION_FULL", "Buổi chơi đã đủ người.");

@@ -49,6 +49,11 @@ public class GoogleLoginTests
         }
         foreach (var path in new[] { "/api/notifications/1/read", "/api/notifications/read-all" })
             Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync(path, new { })).StatusCode);
+        foreach(var path in new[]{"/api/ticket-aftercare/sessions/1/issue","/api/ticket-aftercare/reviews/1/approve","/api/ticket-aftercare/refunds/1/complete","/api/ticket-aftercare/changes/1/complete"})
+            Assert.Equal(HttpStatusCode.Forbidden,(await client.PostAsJsonAsync(path,new {reason="test reason",evidence="test evidence",bankReference="test123"})).StatusCode);
+        foreach(var path in new[]{"/api/ticket-aftercare/tickets/1/change","/api/ticket-aftercare/tickets/1/refund","/api/ticket-aftercare/tickets/1/messages","/api/ticket-aftercare/changes/1/cancel"})
+            Assert.Equal(HttpStatusCode.BadRequest,(await client.PostAsJsonAsync(path,new {sessionId=2})).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden,(await client.GetAsync("/api/ticket-aftercare/inbox")).StatusCode);
         var paymentCsrf = await client.GetFromJsonAsync<JsonElement>("/api/auth/csrf");
         using var paymentRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/commerce/payment/orders/3/process")
         {
@@ -339,6 +344,7 @@ internal sealed class LoginApp : WebApplicationFactory<Program>
         builder.UseEnvironment(EnvironmentName);
         builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
         {
+            ["Email:Enabled"] = "false",
             ["Authentication:Google:ClientId"] = Configured ? "test-client" : null,
             ["Authentication:Google:ClientSecret"] = Configured ? "test-secret-not-real" : null,
             ["Payments:PayOS:ClientId"] = null,

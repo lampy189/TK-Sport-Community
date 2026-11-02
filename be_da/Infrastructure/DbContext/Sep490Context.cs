@@ -16,6 +16,8 @@ public partial class Sep490Context : Microsoft.EntityFrameworkCore.DbContext
     {
     }
 
+    public DbSet<TicketSupportMessage> TicketSupportMessages { get; set; }
+
     public virtual DbSet<AccountAuditLog> AccountAuditLogs { get; set; }
 
     public virtual DbSet<Approval> Approvals { get; set; }
@@ -88,6 +90,8 @@ public partial class Sep490Context : Microsoft.EntityFrameworkCore.DbContext
 
     public virtual DbSet<StockMovement> StockMovements { get; set; }
 
+    public DbSet<TicketChange> TicketChanges { get; set; }
+    public DbSet<TicketFunding> TicketFunding { get; set; }
     public virtual DbSet<Ticket> Tickets { get; set; }
 
     public virtual DbSet<TimeSlot> TimeSlots { get; set; }

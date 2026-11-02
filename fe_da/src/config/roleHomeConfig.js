@@ -43,7 +43,7 @@ export const roleHomeConfig = {
       "Không gian làm việc cho bán hàng tại quầy, kho, kiểm tra thanh toán và đối soát ca.",
     action: "Mở công việc trong ca",
     section: "Công việc trong ca",
-    modules: ["Bán hàng", "Kho & vật tư", "Thanh toán", "Đối soát ca"],
+    modules: ["Bán hàng", "Kho & vật tư", "Thanh toán", "Sự cố sân", "Đổi & hoàn vé", "Đối soát ca"],
     stats: [
       ["08", "Đơn trong ca"],
       ["03", "Thanh toán cần kiểm tra"],
@@ -69,6 +69,8 @@ export const roleHomeConfig = {
       "Điểm danh",
       "Khiếu nại đánh giá",
       "Ngoại lệ vận hành",
+      "Sự cố sân",
+      "Đổi & hoàn vé",
       "Thanh toán",
     ],
     stats: [

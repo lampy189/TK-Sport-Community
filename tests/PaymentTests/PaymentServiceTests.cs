@@ -339,6 +339,8 @@ public class PaymentServiceTests
         public Task<long?> FindOrderForTicketCodeAsync(string code) => Task.FromResult<long?>(Order.Tickets.Any(t => t.TicketCode == code) ? Order.Id : null);
         public Task<CheckInContext?> GetCheckInContextAsync(string code, long actorId) => Task.FromResult<CheckInContext?>(
             new CheckInContext(1, Order.Id, SessionDate, new TimeOnly(20, 0), "Open", Assigned, "Người chơi", "Cầu lông", "Sân 1", new TimeOnly(18, 0)));
+        public Task<bool> HasPendingChangeAsync(long ticketId) => Task.FromResult(false);
+        public Task<IReadOnlyList<TicketFundingSummary>> GetFundingAsync(long ticketId) => Task.FromResult<IReadOnlyList<TicketFundingSummary>>([]);
         public Task SaveAsync() => Task.CompletedTask;
     }
 }

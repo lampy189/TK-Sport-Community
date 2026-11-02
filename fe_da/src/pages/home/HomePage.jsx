@@ -17,6 +17,7 @@ export default function HomePage({
 }) {
   const config = roleHomeConfig[role] || roleHomeConfig.guest;
   const [active, setActive] = useState(() =>
+    role === "staff" && new URLSearchParams(window.location.search).has("goodsOrderId") ? "Bán hàng" :
     role === "player" &&
     new URLSearchParams(window.location.search).has("orderId")
       ? "Thanh toán"

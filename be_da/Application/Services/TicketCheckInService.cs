@@ -32,7 +32,7 @@ public sealed class TicketCheckInService(IPaymentRepository repository, TimeProv
                 var localNow = clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7));
                 if (context.SessionDate != DateOnly.FromDateTime(localNow.DateTime)
                     || TimeOnly.FromDateTime(localNow.DateTime) >= context.EndTime
-                    || context.SessionStatus.ToLowerInvariant() is "cancelled" or "completed")
+                    || context.SessionStatus.ToLowerInvariant() is "cancelled" or "completed" or "suspended")
                     throw new PaymentException(409, "Vé chỉ được check-in trong ngày chơi và trước khi buổi chơi kết thúc.");
                 if (confirm)
                 {

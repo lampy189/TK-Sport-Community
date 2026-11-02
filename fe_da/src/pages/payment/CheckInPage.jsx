@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { paymentClient } from './paymentClient';
-import './payment.css';
+import { Camera, Upload, ScanLine, Ticket, UserRound, MapPin, CalendarDays, CircleCheck, ArrowRight, LoaderCircle, AlertCircle } from 'lucide-react';
+import SectionLayout from '../../components/layout/SectionLayout';
+import './checkin.css';
 
 export default function CheckInPage() {
   const [code,setCode]=useState('');
@@ -60,11 +62,76 @@ export default function CheckInPage() {
     catch(e){setTicket(null);setVerified(false);setError(e.message);}
     finally{busyRef.current=false;setBusy(false);}
   }
-  return <section className="payment-workspace"><div className="payment-heading"><h1>Check-in vào sân</h1></div><p>Quét QR trên vé, đối chiếu người chơi và sân trước khi xác nhận.</p>
-    {error&&<p role="alert" className="payment-error">{error}</p>}
-    <div className="checkout"><section className="payment-card"><h4>Quét vé người chơi</h4><div className="payment-actions"><button className="button button-primary" disabled={busy} onClick={scanning?stop:scan}>{scanning?'Dừng camera':'Mở camera quét QR'}</button><label className="button button-secondary">Chọn ảnh QR<input type="file" accept="image/*" disabled={busy||scanning} onChange={e=>{void upload(e.target.files?.[0]);e.target.value='';}}/></label></div>
-    <video ref={video} className="checkin-camera" hidden={!scanning} muted playsInline aria-label="Camera quét QR"/>
-    <form className="checkin-form" onSubmit={e=>{e.preventDefault();stop();void inspect(code.trim());}}><label htmlFor="checkin-code">Hoặc nhập mã vé</label><input id="checkin-code" autoComplete="off" required maxLength={100} value={code} disabled={busy||scanning} onChange={e=>{setCode(e.target.value);setTicket(null);setVerified(false);}}/><button className="button button-secondary" disabled={busy||scanning||!code.trim()}>Kiểm tra vé</button></form></section>
-    <section className="payment-card" aria-live="polite">{busy?<p>Đang kiểm tra…</p>:ticket?<><span className={`payment-badge ${ticket.checkedIn?'confirmed':'pending'}`}>{ticket.checkedIn?'Đã check-in':'Vé hợp lệ — chưa check-in'}</span><h4>{ticket.holderName}</h4><p>{ticket.sportName} · {ticket.courtName}</p><p>{ticket.sessionDate} · {ticket.startTime?.slice(0,5)} – {ticket.endTime?.slice(0,5)}</p><code className="ticket-code">{ticket.ticketCode}</code>{ticket.checkedIn?<p className="payment-notice">Vé đã được ghi nhận vào sân. Không ghi nhận thêm lần check-in.</p>:<><label className="checkin-verify"><input type="checkbox" checked={verified} onChange={e=>setVerified(e.target.checked)}/> Tôi đã đối chiếu đúng người chơi và đúng sân.</label><button className="button button-primary checkout-pay" disabled={!verified||busy} onClick={confirm}>Xác nhận vào sân</button></>}</>:<p>Thông tin người chơi, sân và thời gian sẽ xuất hiện sau khi quét vé.</p>}</section></div>
-  </section>;
+  const step = ticket?.checkedIn ? 3 : ticket ? 2 : 1;
+  const date = ticket?.sessionDate?.split('-').reverse().join('/');
+  return (
+    <SectionLayout className="checkin-workspace" title="Điểm danh vào sân"
+      description="Kiểm tra vé và đối chiếu người chơi trước khi xác nhận vào sân.">
+      <ol className="checkin-steps" aria-label="Quy trình điểm danh">
+        {['Kiểm tra vé', 'Đối chiếu người chơi', 'Xác nhận vào sân'].map((label, index) => (
+          <li key={label} className={step >= index + 1 ? 'is-active' : ''} aria-current={step === index + 1 ? 'step' : undefined}>
+            <span>{step > index + 1 ? <CircleCheck size={16} aria-hidden="true" /> : index + 1}</span>{label}
+          </li>
+        ))}
+      </ol>
+      {error && <div role="alert" className="checkin-alert"><AlertCircle size={20} aria-hidden="true" /><p>{error}</p></div>}
+      <div className="checkin-grid">
+        <section className="checkin-panel" aria-labelledby="checkin-scan-title">
+          <div className="checkin-panel-heading"><span className="checkin-icon"><ScanLine size={22} aria-hidden="true" /></span>
+            <div><h3 id="checkin-scan-title">Quét vé người chơi</h3><p>Sử dụng mã QR hoặc mã vé đã được cấp.</p></div>
+          </div>
+          <div className={`checkin-viewfinder ${scanning ? 'is-scanning' : ''}`}>
+            <video ref={video} hidden={!scanning} muted playsInline aria-label="Camera quét QR" />
+            {!scanning && <div className="checkin-camera-placeholder"><ScanLine size={48} strokeWidth={1.3} aria-hidden="true" />
+              <strong>Sẵn sàng quét mã QR</strong><p>Đưa mã trên vé vào giữa khung hình.</p></div>}
+          </div>
+          <div className="checkin-scan-actions">
+            <button type="button" className="button button-primary" disabled={busy} onClick={scanning ? stop : scan}>
+              <Camera size={18} aria-hidden="true" />{scanning ? 'Dừng camera' : 'Mở camera'}</button>
+            <label className={`button button-secondary checkin-upload ${busy || scanning ? 'is-disabled' : ''}`}>
+              <Upload size={18} aria-hidden="true" />Tải ảnh QR
+              <input type="file" aria-label="Tải ảnh mã QR của vé" accept="image/*" disabled={busy || scanning}
+                onChange={e => { void upload(e.target.files?.[0]); e.target.value = ''; }} />
+            </label>
+          </div>
+          <div className="checkin-divider"><span>hoặc nhập mã vé</span></div>
+          <form className="checkin-code-form" onSubmit={e => { e.preventDefault(); stop(); void inspect(code.trim()); }}>
+            <label htmlFor="checkin-code">Mã vé</label>
+            <input id="checkin-code" autoComplete="off" spellCheck={false} required maxLength={100} value={code}
+              placeholder="Nhập mã trên vé người chơi" disabled={busy || scanning}
+              onChange={e => { setCode(e.target.value); setTicket(null); setVerified(false); }} />
+            <button className="button button-secondary" disabled={busy || scanning || !code.trim()}>
+              {busy ? <LoaderCircle className="checkin-spinner" size={18} aria-hidden="true" /> : <Ticket size={18} aria-hidden="true" />}
+              {busy ? 'Đang xử lý…' : 'Kiểm tra vé'}</button>
+          </form>
+        </section>
+        <section className="checkin-panel checkin-result" aria-labelledby="checkin-result-title" aria-busy={busy}>
+          <div className="checkin-panel-heading"><span className="checkin-icon"><UserRound size={22} aria-hidden="true" /></span>
+            <div><h3 id="checkin-result-title">Thông tin vào sân</h3><p>Đối chiếu thông tin với người đang có mặt.</p></div>
+          </div>
+          <div aria-live="polite" className="checkin-result-body">
+            {busy ? <div className="checkin-empty" role="status"><LoaderCircle size={32} className="checkin-spinner" aria-hidden="true" />
+              <h4>Đang xử lý vé</h4><p>Vui lòng đợi trong giây lát.</p></div> : ticket ? <>
+              <span className={`checkin-status ${ticket.checkedIn ? 'is-complete' : ''}`}><CircleCheck size={15} aria-hidden="true" />
+                {ticket.checkedIn ? 'Đã điểm danh' : 'Vé hợp lệ · Chưa điểm danh'}</span>
+              <h4 className="checkin-player">{ticket.holderName}</h4>
+              <dl className="checkin-details">
+                <div><dt><MapPin size={16} aria-hidden="true" />Sân chơi</dt><dd>{ticket.courtName}<span>{ticket.sportName}</span></dd></div>
+                <div><dt><CalendarDays size={16} aria-hidden="true" />Thời gian</dt><dd>{date}<span>{ticket.startTime?.slice(0, 5)} – {ticket.endTime?.slice(0, 5)}</span></dd></div>
+                <div><dt><Ticket size={16} aria-hidden="true" />Mã vé</dt><dd><code>{ticket.ticketCode}</code></dd></div>
+              </dl>
+              {ticket.checkedIn ? <div className="checkin-success"><CircleCheck size={20} aria-hidden="true" /><div><strong>Đã ghi nhận vào sân</strong>
+                <p>Vé này không cần điểm danh lại. Bạn có thể tiếp tục kiểm tra vé tiếp theo.</p></div></div> : <>
+                <label className="checkin-confirm-label"><input type="checkbox" checked={verified} onChange={e => setVerified(e.target.checked)} />
+                  <span>Tôi đã đối chiếu <strong>đúng người chơi và đúng sân</strong>.</span></label>
+                <button type="button" className="button button-primary checkin-confirm-button" disabled={!verified || busy} onClick={confirm}>
+                  Xác nhận vào sân<ArrowRight size={18} aria-hidden="true" /></button>
+              </>}
+            </> : <div className="checkin-empty"><span className="checkin-empty-icon"><Ticket size={32} strokeWidth={1.4} aria-hidden="true" /></span>
+              <h4>Chưa có vé được chọn</h4><p>Quét QR, tải ảnh hoặc nhập mã vé.<br />Thông tin người chơi sẽ hiển thị tại đây.</p></div>}
+          </div>
+        </section>
+      </div>
+    </SectionLayout>
+  );
 }

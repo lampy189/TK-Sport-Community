@@ -24,15 +24,21 @@ public sealed class PayOsGateway(IConfiguration config, IPayOsClientFactory fact
                 throw new GatewayException("URL quay về của payOS chưa hợp lệ.");
     }
 
-    public CreatePaymentLinkRequest BuildRequest(long paymentId, long orderId, int amount, DateTimeOffset expiry) => new()
+    public CreatePaymentLinkRequest BuildRequest(long paymentId, long orderId, int amount, DateTimeOffset expiry, bool goods = false) => new()
     {
         OrderCode = paymentId, Amount = amount, Description = $"TKSC {paymentId}",
         ExpiredAt = expiry.ToUnixTimeSeconds(),
-        ReturnUrl = QueryHelpers.AddQueryString(Required("ReturnUrl"), "orderId", orderId.ToString(CultureInfo.InvariantCulture)),
-        CancelUrl = QueryHelpers.AddQueryString(Required("CancelUrl"), "orderId", orderId.ToString(CultureInfo.InvariantCulture))
+        ReturnUrl = QueryHelpers.AddQueryString(Required("ReturnUrl"), goods ? "goodsOrderId" : "orderId", orderId.ToString(CultureInfo.InvariantCulture)),
+        CancelUrl = QueryHelpers.AddQueryString(Required("CancelUrl"), goods ? "goodsOrderId" : "orderId", orderId.ToString(CultureInfo.InvariantCulture))
     };
 
-    public async Task<GatewayCheckout> CreateAsync(long paymentId, long orderId, int amount, DateTimeOffset expiresAt)
+    public Task<GatewayCheckout> CreateAsync(long paymentId, long orderId, int amount, DateTimeOffset expiresAt) =>
+        CreateLinkAsync(paymentId, orderId, amount, expiresAt, false);
+
+    public Task<GatewayCheckout> CreateGoodsAsync(long paymentId, long goodsOrderId, int amount, DateTimeOffset expiresAt) =>
+        CreateLinkAsync(paymentId, goodsOrderId, amount, expiresAt, true);
+
+    private async Task<GatewayCheckout> CreateLinkAsync(long paymentId, long orderId, int amount, DateTimeOffset expiresAt, bool goods)
     {
         ValidateConfiguration();
         try
@@ -40,7 +46,7 @@ public sealed class PayOsGateway(IConfiguration config, IPayOsClientFactory fact
             var client = factory.Create();
             try
             {
-                var link = await client.PaymentRequests.CreateAsync(BuildRequest(paymentId, orderId, amount, expiresAt));
+                var link = await client.PaymentRequests.CreateAsync(BuildRequest(paymentId, orderId, amount, expiresAt, goods));
                 return new(link.OrderCode, link.Amount, link.PaymentLinkId, link.CheckoutUrl, Status(link.Status));
             }
             catch (ApiException)
