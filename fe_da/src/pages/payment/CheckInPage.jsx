@@ -1,66 +1,164 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { paymentClient } from './paymentClient';
 import { Camera, Upload, ScanLine, Ticket, UserRound, MapPin, CalendarDays, CircleCheck, ArrowRight, LoaderCircle, AlertCircle } from 'lucide-react';
 import SectionLayout from '../../components/layout/SectionLayout';
+import './payment.css';
 import './checkin.css';
 
+function SessionConditionBadge({ code }) {
+  if (code === 'ready') return <span className="payment-badge confirmed">Sẵn sàng</span>;
+  if (code === 'completed') return <span className="payment-badge failed">Đã kết thúc</span>;
+  return <span className="payment-badge pending">Chưa phù hợp</span>;
+}
+
 export default function CheckInPage() {
-  const [code,setCode]=useState('');
-  const [ticket,setTicket]=useState(null);
-  const [error,setError]=useState('');
-  const [busy,setBusy]=useState(false);
-  const [scanning,setScanning]=useState(false);
-  const [verified,setVerified]=useState(false);
-  const video=useRef(null);
-  const controls=useRef(null);
-  const generation=useRef(0);
-  const busyRef=useRef(false);
-  useEffect(()=>()=>{generation.current++; controls.current?.stop();},[]);
-  function stop() { generation.current++; controls.current?.stop(); controls.current=null; setScanning(false); }
+  const [code, setCode] = useState('');
+  const [ticket, setTicket] = useState(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  const video = useRef(null);
+  const controls = useRef(null);
+  const generation = useRef(0);
+  const busyRef = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const data = await paymentClient.getAssignedSessions();
+        if (!active) return;
+        setSessions(data || []);
+        if (data?.length) setSelectedSessionId((current) => current ?? data[0].sessionId);
+      } catch (e) {
+        if (active) setError(e.message);
+      } finally {
+        if (active) setLoadingSessions(false);
+      }
+    })();
+    return () => {
+      active = false;
+      generation.current += 1;
+      controls.current?.stop();
+    };
+  }, []);
+
+  const selectedSession = useMemo(
+    () => sessions.find((session) => session.sessionId === selectedSessionId) ?? null,
+    [sessions, selectedSessionId],
+  );
+
+  function stop() {
+    generation.current += 1;
+    controls.current?.stop();
+    controls.current = null;
+    setScanning(false);
+  }
+
+  function requireSelectedSession() {
+    if (!selectedSession) {
+      setError('Chọn một buổi được phân công trước khi điểm danh người chơi.');
+      return false;
+    }
+    return true;
+  }
+
   async function inspect(value) {
-    if(busyRef.current) return;
-    busyRef.current=true; setBusy(true); setError(''); setTicket(null); setVerified(false);
-    try { setTicket(await paymentClient.inspectTicket(value)); }
-    catch(e) { setError(e.message); }
-    finally { busyRef.current=false; setBusy(false); }
-  }
-  async function scan() {
-    stop(); setError(''); setTicket(null); setVerified(false); setScanning(true);
-    const current=generation.current;
+    if (!requireSelectedSession()) return;
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
+    setError('');
+    setTicket(null);
+    setVerified(false);
     try {
-      if(!navigator.mediaDevices?.getUserMedia) throw new Error('Camera cần HTTPS hoặc localhost. Bạn có thể tải ảnh QR hoặc nhập mã vé.');
-      const {BrowserQRCodeReader}=await import('@zxing/browser');
-      if(current!==generation.current) return;
-      const reader=new BrowserQRCodeReader();
-      let found=false;
-      const scanner=await reader.decodeFromConstraints({video:{facingMode:{ideal:'environment'}},audio:false},video.current,(result,_error,scannerControls)=>{
-        if(!result || found || current!==generation.current) return;
-        found=true; scannerControls.stop(); stop(); setCode(result.getText()); void inspect(result.getText());
-      });
-      if(current!==generation.current) scanner.stop(); else controls.current=scanner;
-    } catch(e) { if(current===generation.current) {stop();setError(e.name==='NotAllowedError'?'Chưa được cấp quyền camera. Hãy cho phép camera, tải ảnh QR hoặc nhập mã vé.':e.message);} }
+      setTicket(await paymentClient.inspectTicket(value));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
   }
+
+  async function scan() {
+    if (!requireSelectedSession()) return;
+    stop();
+    setError('');
+    setTicket(null);
+    setVerified(false);
+    setScanning(true);
+    const current = generation.current;
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('Camera cần HTTPS hoặc localhost. Bạn có thể tải ảnh QR hoặc nhập mã vé.');
+      const { BrowserQRCodeReader } = await import('@zxing/browser');
+      if (current !== generation.current) return;
+      const reader = new BrowserQRCodeReader();
+      let found = false;
+      const scanner = await reader.decodeFromConstraints({ video: { facingMode: { ideal: 'environment' } }, audio: false }, video.current, (result, _error, scannerControls) => {
+        if (!result || found || current !== generation.current) return;
+        found = true;
+        scannerControls.stop();
+        stop();
+        setCode(result.getText());
+        void inspect(result.getText());
+      });
+      if (current !== generation.current) scanner.stop(); else controls.current = scanner;
+    } catch (e) {
+      if (current === generation.current) {
+        stop();
+        setError(e.name === 'NotAllowedError' ? 'Chưa được cấp quyền camera. Hãy cho phép camera, tải ảnh QR hoặc nhập mã vé.' : e.message);
+      }
+    }
+  }
+
   async function upload(file) {
-    if(!file || busyRef.current) return;
-    stop(); setError(''); setTicket(null); setVerified(false);
-    busyRef.current=true; setBusy(true);
-    const current=generation.current;
-    const url=URL.createObjectURL(file);
+    if (!file || busyRef.current || !requireSelectedSession()) return;
+    stop();
+    setError('');
+    setTicket(null);
+    setVerified(false);
+    busyRef.current = true;
+    setBusy(true);
+    const current = generation.current;
+    const url = URL.createObjectURL(file);
     let decoded;
     try {
-      const {BrowserQRCodeReader}=await import('@zxing/browser');
-      const result=await new BrowserQRCodeReader().decodeFromImageUrl(url);
-      decoded=result.getText();
-    } catch { if(current===generation.current) setError('Không đọc được QR trong ảnh. Hãy chọn ảnh rõ nét hoặc nhập mã vé.'); }
-    finally { URL.revokeObjectURL(url); busyRef.current=false; setBusy(false); }
-    if(decoded && current===generation.current) { setCode(decoded); await inspect(decoded); }
+      const { BrowserQRCodeReader } = await import('@zxing/browser');
+      const result = await new BrowserQRCodeReader().decodeFromImageUrl(url);
+      decoded = result.getText();
+    } catch {
+      if (current === generation.current) setError('Không đọc được QR trong ảnh. Hãy chọn ảnh rõ nét hoặc nhập mã vé.');
+    } finally {
+      URL.revokeObjectURL(url);
+      busyRef.current = false;
+      setBusy(false);
+    }
+    if (decoded && current === generation.current) {
+      setCode(decoded);
+      await inspect(decoded);
+    }
   }
+
   async function confirm() {
-    if(busyRef.current || !ticket || !verified) return;
-    busyRef.current=true;setBusy(true);setError('');
-    try {setTicket(await paymentClient.checkIn(ticket.ticketCode));}
-    catch(e){setTicket(null);setVerified(false);setError(e.message);}
-    finally{busyRef.current=false;setBusy(false);}
+    if (busyRef.current || !ticket || !verified) return;
+    busyRef.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      setTicket(await paymentClient.checkIn(ticket.ticketCode));
+    } catch (e) {
+      setTicket(null);
+      setVerified(false);
+      setError(e.message);
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
   }
   const step = ticket?.checkedIn ? 3 : ticket ? 2 : 1;
   const date = ticket?.sessionDate?.split('-').reverse().join('/');
@@ -75,6 +173,26 @@ export default function CheckInPage() {
         ))}
       </ol>
       {error && <div role="alert" className="checkin-alert"><AlertCircle size={20} aria-hidden="true" /><p>{error}</p></div>}
+      <section className="checkin-panel checkin-sessions" aria-labelledby="checkin-sessions-title">
+        <div className="checkin-panel-heading"><span className="checkin-icon"><CalendarDays size={22} aria-hidden="true" /></span>
+          <div><h3 id="checkin-sessions-title">Buổi được phân công</h3><p>Chọn buổi trước khi điểm danh người chơi.</p></div>
+        </div>
+        {loadingSessions ? <p>Đang tải danh sách buổi được phân công…</p>
+          : sessions.length === 0 ? <p>Hiện chưa có buổi nào được giao cho bạn.</p>
+          : <div className="session-list">
+            {sessions.map(session => (
+              <button key={session.sessionId} type="button"
+                className={`session-option ${selectedSessionId === session.sessionId ? 'selected' : ''}`}
+                aria-pressed={selectedSessionId === session.sessionId}
+                onClick={() => setSelectedSessionId(session.sessionId)}>
+                <div className="session-option-header"><strong>{session.sportName}</strong><SessionConditionBadge code={session.conditionCode} /></div>
+                <span>{session.courtName} · {session.venueName}</span>
+                <small>{session.sessionDate} · {session.startTime} – {session.endTime}</small>
+                <small>{session.conditionMessage}</small>
+              </button>
+            ))}
+          </div>}
+      </section>
       <div className="checkin-grid">
         <section className="checkin-panel" aria-labelledby="checkin-scan-title">
           <div className="checkin-panel-heading"><span className="checkin-icon"><ScanLine size={22} aria-hidden="true" /></span>
@@ -86,11 +204,11 @@ export default function CheckInPage() {
               <strong>Sẵn sàng quét mã QR</strong><p>Đưa mã trên vé vào giữa khung hình.</p></div>}
           </div>
           <div className="checkin-scan-actions">
-            <button type="button" className="button button-primary" disabled={busy} onClick={scanning ? stop : scan}>
+            <button type="button" className="button button-primary" disabled={busy || !selectedSession} onClick={scanning ? stop : scan}>
               <Camera size={18} aria-hidden="true" />{scanning ? 'Dừng camera' : 'Mở camera'}</button>
-            <label className={`button button-secondary checkin-upload ${busy || scanning ? 'is-disabled' : ''}`}>
+            <label className={`button button-secondary checkin-upload ${busy || scanning || !selectedSession ? 'is-disabled' : ''}`}>
               <Upload size={18} aria-hidden="true" />Tải ảnh QR
-              <input type="file" aria-label="Tải ảnh mã QR của vé" accept="image/*" disabled={busy || scanning}
+              <input type="file" aria-label="Tải ảnh mã QR của vé" accept="image/*" disabled={busy || scanning || !selectedSession}
                 onChange={e => { void upload(e.target.files?.[0]); e.target.value = ''; }} />
             </label>
           </div>
@@ -98,9 +216,9 @@ export default function CheckInPage() {
           <form className="checkin-code-form" onSubmit={e => { e.preventDefault(); stop(); void inspect(code.trim()); }}>
             <label htmlFor="checkin-code">Mã vé</label>
             <input id="checkin-code" autoComplete="off" spellCheck={false} required maxLength={100} value={code}
-              placeholder="Nhập mã trên vé người chơi" disabled={busy || scanning}
+              placeholder="Nhập mã trên vé người chơi" disabled={busy || scanning || !selectedSession}
               onChange={e => { setCode(e.target.value); setTicket(null); setVerified(false); }} />
-            <button className="button button-secondary" disabled={busy || scanning || !code.trim()}>
+            <button className="button button-secondary" disabled={busy || scanning || !selectedSession || !code.trim()}>
               {busy ? <LoaderCircle className="checkin-spinner" size={18} aria-hidden="true" /> : <Ticket size={18} aria-hidden="true" />}
               {busy ? 'Đang xử lý…' : 'Kiểm tra vé'}</button>
           </form>

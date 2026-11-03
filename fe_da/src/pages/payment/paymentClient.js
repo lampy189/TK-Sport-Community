@@ -37,6 +37,17 @@ async function request(path, body) {
   return response.json();
 }
 export const paymentClient = {
+  getAssignedSessions: async () => {
+    const response = await authenticatedRequest('/api/v1/referee/sessions', {
+      cache: 'no-store',
+      credentials: 'same-origin',
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.message || 'Không thể tải danh sách buổi được phân công.');
+    }
+    return response.json();
+  },
   inspectTicket: code => request('check-in/inspect', { ticketCode: code }),
   checkIn: code => request('check-in/confirm', { ticketCode: code }),
   cancel: async (id) => {
