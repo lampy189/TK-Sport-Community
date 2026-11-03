@@ -32,7 +32,17 @@ Staff → **Kho & vật tư** → tab **Vật tư buổi chơi**: chọn ngày, 
 
 GET cho Staff/Manager; POST chỉ Staff. Người nhận phải là trọng tài được phân công (`session_referees`) hoặc Quản lý. Trả lại không vượt số đã cấp; chốt lại lần hai không ghi thêm.
 
-Chưa có bảng phân bổ vật tư: số lượng nằm trong `stock_movements` (`reference_type = 'Session'`), người nhận và kết quả chốt nằm trong `audit_logs` (`entity_type = 'SessionSupply'`). Chưa làm bước Trọng tài/Quản lý gửi yêu cầu vật tư và màn Trọng tài tự ghi số đã dùng; nếu nhóm cần trạng thái Requested → Issued → Reconciled đầy đủ thì đề xuất bảng riêng.
+Trọng tài → **Vật tư buổi chơi**: chỉ thấy buổi mình được phân công, xem vật tư đã cấp và báo số đã dùng. Báo dùng không đổi tồn kho; Staff thấy cột "TT báo dùng", form chốt điền sẵn số trả lại = cấp − báo dùng, Staff sửa theo số thực nhận rồi chốt.
+
+| Method | Đường dẫn dưới `/api/stock/referee-supplies` (role Referee) | Kết quả |
+| --- | --- | --- |
+| GET | `?date=yyyy-MM-dd` | Buổi được phân công trong ngày |
+| GET | `/{sessionId}` | Vật tư của buổi; buổi không được phân công trả 404 |
+| POST | `/{sessionId}/products/{productId}/usage` | `{ usedQuantity }`: ghi `supply_use_reported` vào `audit_logs`; không vượt số đang cấp, không sửa sau khi Staff chốt |
+
+Chưa có chức năng Quản lý phân công trọng tài (không code nào ghi `session_referees`); Điểm danh, Chấm điểm và Vật tư của trọng tài đều cần dữ liệu này. Khi test local, thêm dòng `session_referees` bằng tay.
+
+Chưa có bảng phân bổ vật tư: số lượng nằm trong `stock_movements` (`reference_type = 'Session'`), người nhận và kết quả chốt nằm trong `audit_logs` (`entity_type = 'SessionSupply'`). Chưa làm bước Trọng tài/Quản lý gửi yêu cầu vật tư trước buổi; nếu nhóm cần trạng thái Requested → Issued → Reconciled đầy đủ thì đề xuất bảng riêng.
 
 ## Database cần có
 

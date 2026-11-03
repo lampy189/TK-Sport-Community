@@ -55,7 +55,8 @@ public sealed class SqlSessionSupplyStore(string connectionString) : ISessionSup
                    SELECT 1 FROM dbo.audit_logs a
                    WHERE a.entity_type = 'SessionSupply' AND a.entity_id = @sessionId AND a.action = 'supply_reconciled'
                      AND TRY_CAST(JSON_VALUE(a.new_value, '$.productId') AS bigint) = mv.product_id
-               ) THEN 1 ELSE 0 END AS bit) AS reconciled
+               ) THEN 1 ELSE 0 END AS bit) AS reconciled,
+               rep.used AS reported_used
         FROM mv
         JOIN dbo.products p ON p.id = mv.product_id
         OUTER APPLY (
@@ -65,20 +66,30 @@ public sealed class SqlSessionSupplyStore(string connectionString) : ISessionSup
               AND TRY_CAST(JSON_VALUE(a.new_value, '$.productId') AS bigint) = mv.product_id
             ORDER BY a.id DESC
         ) rcp
+        OUTER APPLY (
+            SELECT TOP (1) TRY_CAST(JSON_VALUE(a.new_value, '$.used') AS int) AS used
+            FROM dbo.audit_logs a
+            WHERE a.entity_type = 'SessionSupply' AND a.entity_id = @sessionId AND a.action = 'supply_use_reported'
+              AND TRY_CAST(JSON_VALUE(a.new_value, '$.productId') AS bigint) = mv.product_id
+            ORDER BY a.id DESC
+        ) rep
         LEFT JOIN dbo.users u ON u.id = rcp.recipient_id
         ORDER BY p.name;
         """;
 
-    public async Task<IReadOnlyList<SupplySession>> GetSessionsAsync(DateOnly date, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<SupplySession>> GetSessionsAsync(DateOnly date, long? refereeId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var command = new SqlCommand(SessionSelect + """
 
             WHERE s.session_date = @date AND s.status <> 'Cancelled'
+              AND (@refereeId IS NULL OR EXISTS (
+                  SELECT 1 FROM dbo.session_referees sr WHERE sr.session_id = s.id AND sr.referee_id = @refereeId))
             ORDER BY ts.start_time, c.name;
             """, connection);
         command.Parameters.Add("@date", SqlDbType.Date).Value = date.ToDateTime(TimeOnly.MinValue);
+        command.Parameters.Add("@refereeId", SqlDbType.BigInt).Value = (object?)refereeId ?? DBNull.Value;
         var sessions = new List<SupplySession>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken)) sessions.Add(ReadSession(reader));
@@ -151,6 +162,67 @@ public sealed class SqlSessionSupplyStore(string connectionString) : ISessionSup
                 5 => SupplyResult.Fail("PRODUCT_NOT_FOUND", "Không tìm thấy vật tư."),
                 6 => SupplyResult.Fail("PRODUCT_INACTIVE", "Vật tư đã ngừng sử dụng."),
                 _ => SupplyResult.Fail("INSUFFICIENT_STOCK", "Không đủ tồn kho để cấp số lượng này.")
+            };
+        }
+        var details = await LoadDetailsAsync(connection, transaction, sessionId, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return SupplyResult.Ok(details!);
+    }
+
+    public async Task<bool> IsRefereeAssignedAsync(long sessionId, long refereeId, CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new SqlCommand(
+            "SELECT COUNT(*) FROM dbo.session_referees WHERE session_id = @sessionId AND referee_id = @refereeId;", connection);
+        command.Parameters.Add("@sessionId", SqlDbType.BigInt).Value = sessionId;
+        command.Parameters.Add("@refereeId", SqlDbType.BigInt).Value = refereeId;
+        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) > 0;
+    }
+
+    public async Task<SupplyResult> ReportUseAsync(long sessionId, long productId, ReportSupplyUseRequest request, long refereeId, CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
+        // Status: 0 recorded, 1 not assigned, 2 nothing issued, 3 already closed, 4 use exceeds outstanding.
+        const string sql = """
+            DECLARE @lock int;
+            EXEC @lock = sys.sp_getapplock @Resource = @lockName, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 10000;
+            IF @lock < 0 THROW 51000, 'Session supplies are busy.', 1;
+            IF NOT EXISTS (SELECT 1 FROM dbo.session_referees WHERE session_id = @sessionId AND referee_id = @refereeId)
+                BEGIN SELECT 1; RETURN; END;
+            IF EXISTS (SELECT 1 FROM dbo.audit_logs WHERE entity_type = 'SessionSupply' AND entity_id = @sessionId
+                AND action = 'supply_reconciled' AND TRY_CAST(JSON_VALUE(new_value, '$.productId') AS bigint) = @productId)
+                BEGIN SELECT 3; RETURN; END;
+            DECLARE @issued int, @returned int;
+            SELECT @issued = ISNULL(SUM(CASE WHEN m.movement_type = 'SessionIssue' THEN -m.quantity ELSE 0 END), 0),
+                   @returned = ISNULL(SUM(CASE WHEN m.movement_type = 'SessionReturn' THEN m.quantity ELSE 0 END), 0)
+            FROM dbo.stock_movements m JOIN dbo.stock_items si ON si.id = m.stock_item_id
+            WHERE m.reference_type = 'Session' AND m.reference_id = @sessionId AND si.product_id = @productId;
+            IF @issued = 0 BEGIN SELECT 2; RETURN; END;
+            IF @used > @issued - @returned BEGIN SELECT 4; RETURN; END;
+            INSERT dbo.audit_logs (actor_id, action, entity_type, entity_id, new_value)
+            VALUES (@refereeId, 'supply_use_reported', 'SessionSupply', @sessionId,
+                CONCAT('{"productId":', @productId, ',"used":', @used, '}'));
+            SELECT 0;
+            """;
+        await using var command = new SqlCommand(sql, connection, transaction);
+        command.Parameters.Add("@lockName", SqlDbType.NVarChar, 255).Value = $"TKSC:session-supply:{sessionId}";
+        command.Parameters.Add("@sessionId", SqlDbType.BigInt).Value = sessionId;
+        command.Parameters.Add("@productId", SqlDbType.BigInt).Value = productId;
+        command.Parameters.Add("@used", SqlDbType.Int).Value = request.UsedQuantity;
+        command.Parameters.Add("@refereeId", SqlDbType.BigInt).Value = refereeId;
+        var status = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken));
+        if (status != 0)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return status switch
+            {
+                1 => SupplyResult.Fail("NOT_ASSIGNED", "Bạn không được phân công cho buổi chơi này."),
+                2 => SupplyResult.Fail("ALLOCATION_NOT_FOUND", "Vật tư này chưa được cấp cho buổi chơi."),
+                3 => SupplyResult.Fail("ALLOCATION_CLOSED", "Nhân viên đã chốt vật tư này, không sửa số đã dùng."),
+                _ => SupplyResult.Fail("USE_EXCEEDS_ISSUED", "Số đã dùng vượt quá số được cấp.")
             };
         }
         var details = await LoadDetailsAsync(connection, transaction, sessionId, cancellationToken);
@@ -246,7 +318,8 @@ public sealed class SqlSessionSupplyStore(string connectionString) : ISessionSup
                     reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.GetInt32(3), reader.GetInt32(4),
                     reader.IsDBNull(5) ? null : reader.GetInt64(5),
                     reader.IsDBNull(6) ? null : reader.GetString(6),
-                    reader.GetBoolean(7)));
+                    reader.GetBoolean(7),
+                    reader.IsDBNull(8) ? null : reader.GetInt32(8)));
             }
         }
         return new SessionSupplyDetails(session, recipients, allocations);

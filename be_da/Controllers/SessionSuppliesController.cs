@@ -19,7 +19,7 @@ public sealed class SessionSuppliesController(ISessionSupplyStore store, IAntifo
     {
         // Venue days follow Vietnam time regardless of server timezone.
         var day = date ?? DateOnly.FromDateTime(clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7)).DateTime);
-        return Ok(await store.GetSessionsAsync(day, cancellationToken));
+        return Ok(await store.GetSessionsAsync(day, null, cancellationToken));
     }
 
     [HttpGet("{sessionId:long}")]

@@ -103,6 +103,20 @@
   gap: 8px;
   font-size: 14px;
 }
+.supply-use {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.supply-use input {
+  width: 88px;
+  padding: 8px 10px;
+}
+.supply-use .button {
+  min-height: 36px;
+  padding: 7px 12px;
+  font-size: 12px;
+}
 .handover {
   display: flex;
   flex-direction: column;

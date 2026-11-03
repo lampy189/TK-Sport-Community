@@ -20,6 +20,7 @@ public sealed class SessionSupplyTests
     private static readonly Account Staff = new(20, "staff@example.test", "Staff One", "Staff", "Active", "sub-20", false);
     private static readonly Account Manager = new(21, "manager@example.test", "Manager One", "Manager", "Active", "sub-21", false);
     private static readonly Account Player = new(30, "player@example.test", "Player One", "Player", "Active", "sub-30", false);
+    private static readonly Account Referee = new(40, "referee@example.test", "Referee One", "Referee", "Active", "sub-40", false);
 
     [Fact]
     public async Task Supplies_AreHiddenFromPlayers_AndOnlyStaffWrites()
@@ -95,6 +96,33 @@ public sealed class SessionSupplyTests
     }
 
     [Fact]
+    public async Task Referee_SeesOnlyAssignedSessions_AndReportsUseWithoutClosing()
+    {
+        await using var app = new SupplyApp();
+        using var staff = app.Client();
+        await DevLogin(staff, Staff.Email);
+        await Send(staff, "/api/stock/session-supplies/5/issue", new { productId = 1, quantity = 12, recipientId = 9 });
+
+        using var referee = app.Client();
+        await DevLogin(referee, Referee.Email);
+        Assert.Empty((await referee.GetFromJsonAsync<List<JsonElement>>("/api/stock/referee-supplies"))!);
+        Assert.Equal(HttpStatusCode.NotFound, (await referee.GetAsync("/api/stock/referee-supplies/5")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await referee.GetAsync("/api/stock/session-supplies")).StatusCode);
+
+        app.Store.AssignedReferees.Add(Referee.Id);
+        Assert.Single((await referee.GetFromJsonAsync<List<JsonElement>>("/api/stock/referee-supplies"))!);
+        var tooMany = await Send(referee, "/api/stock/referee-supplies/5/products/1/usage", new { usedQuantity = 13 });
+        Assert.Equal(HttpStatusCode.Conflict, tooMany.StatusCode);
+
+        var reported = await Send(referee, "/api/stock/referee-supplies/5/products/1/usage", new { usedQuantity = 9 });
+        Assert.Equal(HttpStatusCode.OK, reported.StatusCode);
+        var allocation = (await reported.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("allocations")[0];
+        Assert.Equal(9, allocation.GetProperty("reportedUsed").GetInt32());
+        Assert.False(allocation.GetProperty("isReconciled").GetBoolean());
+        Assert.Equal(12, allocation.GetProperty("outstanding").GetInt32());
+    }
+
+    [Fact]
     public async Task GoodsHandover_RequiresStaff()
     {
         await using var app = new SupplyApp();
@@ -129,7 +157,7 @@ public sealed class SessionSupplyTests
 
         public SupplyApp()
         {
-            foreach (var account in new[] { Staff, Manager, Player })
+            foreach (var account in new[] { Staff, Manager, Player, Referee })
             {
                 AccountStore.Accounts[account.Email] = account;
                 AccountStore.AccountsById[account.Id] = account;
@@ -169,11 +197,28 @@ internal sealed class FakeSupplyStore : ISessionSupplyStore
     public long? LastOperator { get; private set; }
     public string? NextFailure { get; set; }
 
-    public Task<IReadOnlyList<SupplySession>> GetSessionsAsync(DateOnly date, CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyList<SupplySession>>([Session]);
+    public HashSet<long> AssignedReferees { get; } = new();
+
+    public Task<IReadOnlyList<SupplySession>> GetSessionsAsync(DateOnly date, long? refereeId, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<SupplySession>>(refereeId is null || AssignedReferees.Contains(refereeId.Value) ? [Session] : []);
 
     public Task<SessionSupplyDetails?> GetDetailsAsync(long sessionId, CancellationToken cancellationToken) =>
         Task.FromResult<SessionSupplyDetails?>(sessionId == Session.Id ? Details() : null);
+
+    public Task<bool> IsRefereeAssignedAsync(long sessionId, long refereeId, CancellationToken cancellationToken) =>
+        Task.FromResult(sessionId == Session.Id && AssignedReferees.Contains(refereeId));
+
+    public Task<SupplyResult> ReportUseAsync(long sessionId, long productId, ReportSupplyUseRequest request, long refereeId, CancellationToken cancellationToken)
+    {
+        if (!AssignedReferees.Contains(refereeId)) return Task.FromResult(SupplyResult.Fail("NOT_ASSIGNED", "not assigned"));
+        if (!allocations.TryGetValue(productId, out var allocation))
+            return Task.FromResult(SupplyResult.Fail("ALLOCATION_NOT_FOUND", "missing"));
+        if (allocation.IsReconciled) return Task.FromResult(SupplyResult.Fail("ALLOCATION_CLOSED", "closed"));
+        if (request.UsedQuantity > allocation.Outstanding)
+            return Task.FromResult(SupplyResult.Fail("USE_EXCEEDS_ISSUED", "too many"));
+        allocations[productId] = allocation with { ReportedUsed = request.UsedQuantity };
+        return Task.FromResult(SupplyResult.Ok(Details()));
+    }
 
     public Task<SupplyResult> IssueAsync(long sessionId, IssueSupplyRequest request, long staffUserId, CancellationToken cancellationToken)
     {
