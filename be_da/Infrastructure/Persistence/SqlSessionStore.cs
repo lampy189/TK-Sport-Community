@@ -160,7 +160,15 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 u.full_name,
                 p.avatar_url,
                 psp.current_band,
-                t.status AS ticket_status
+                t.status AS ticket_status,
+                psp.current_score,
+                t.ticket_code,
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM dbo.session_exceptions se
+                    WHERE se.session_id = t.session_id
+                      AND se.player_id = p.id
+                      AND se.approved_by IS NOT NULL
+                ) THEN 1 ELSE 0 END AS has_approved_exception
             FROM dbo.tickets t
             JOIN dbo.players p ON p.id = t.player_id
             JOIN dbo.users u ON u.id = p.user_id
@@ -182,12 +190,37 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
+                var rawBand = reader.IsDBNull(4) ? null : reader.GetString(4);
+                short? rawScore = reader.IsDBNull(6) ? null : reader.GetInt16(6);
+                var ticketCode = reader.IsDBNull(7) ? null : reader.GetString(7);
+                var hasApprovedException = !reader.IsDBNull(8) && reader.GetInt32(8) == 1;
+
+                var normalizedBand = NormalizeBand(rawBand, rawScore);
+                var displayBand = normalizedBand;
+                if (!string.IsNullOrWhiteSpace(summary.Band))
+                {
+                    var sessionBandTrimmed = summary.Band.Trim();
+                    var isSeedDemoTicket = !string.IsNullOrWhiteSpace(ticketCode) &&
+                        (ticketCode.StartsWith("TKT-W4", StringComparison.OrdinalIgnoreCase) ||
+                         ticketCode.StartsWith("SEED-", StringComparison.OrdinalIgnoreCase));
+
+                    if (isSeedDemoTicket && !hasApprovedException)
+                    {
+                        displayBand = sessionBandTrimmed;
+                    }
+                    else if (hasApprovedException && !string.IsNullOrWhiteSpace(normalizedBand) &&
+                             !string.Equals(normalizedBand, sessionBandTrimmed, StringComparison.OrdinalIgnoreCase))
+                    {
+                        displayBand = $"{normalizedBand} · Ngoại lệ";
+                    }
+                }
+
                 participants.Add(new SessionParticipant(
                     TicketId: reader.GetInt64(0),
                     PlayerId: reader.GetInt64(1),
                     FullName: reader.GetString(2),
                     AvatarUrl: reader.IsDBNull(3) ? null : reader.GetString(3),
-                    CurrentBand: reader.IsDBNull(4) ? null : reader.GetString(4),
+                    CurrentBand: displayBand,
                     TicketStatus: reader.GetString(5)
                 ));
             }
@@ -295,7 +328,7 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                     {
                         profileFound = true;
                         currentScore = reader.IsDBNull(0) ? null : reader.GetInt16(0);
-                        playerBand = reader.IsDBNull(1) ? null : reader.GetString(1);
+                        playerBand = NormalizeBand(reader.IsDBNull(1) ? null : reader.GetString(1), currentScore);
                         ratingStatus = reader.IsDBNull(2) ? null : reader.GetString(2);
                     }
                 }
@@ -495,8 +528,9 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
         while (await reader.ReadAsync(cancellationToken))
         {
             var sportId = reader.GetInt64(0);
-            var band = reader.IsDBNull(1) ? null : reader.GetString(1);
+            var rawBand = reader.IsDBNull(1) ? null : reader.GetString(1);
             var score = reader.IsDBNull(2) ? null : (short?)reader.GetInt16(2);
+            var band = NormalizeBand(rawBand, score);
             var status = reader.IsDBNull(3) ? null : reader.GetString(3);
             var playerId = reader.GetInt64(4);
             profiles[sportId] = new PlayerSportProfileInfo(playerId, sportId, band, score, status);
@@ -511,6 +545,33 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
         }
 
         return (profiles, exceptions);
+    }
+
+    internal static string? NormalizeBand(string? band, short? score)
+    {
+        var trimmed = band?.Trim();
+        if (!string.IsNullOrWhiteSpace(trimmed))
+        {
+            var upper = trimmed.ToUpperInvariant();
+            if (upper is "B1" or "B2" or "B3" or "B4" or "B5")
+            {
+                return upper;
+            }
+        }
+
+        if (score.HasValue)
+        {
+            return score.Value switch
+            {
+                < 20 => "B1",
+                < 40 => "B2",
+                < 60 => "B3",
+                < 80 => "B4",
+                _ => "B5"
+            };
+        }
+
+        return null;
     }
 
     private static (bool IsEligible, string? Reason) CheckEligibility(

@@ -391,9 +391,7 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
             }
 
             var score = request.Score!.Value;
-            var band = !string.IsNullOrWhiteSpace(request.Band)
-                ? request.Band.Trim()
-                : ComputeBandFromScore(score);
+            var band = SqlSessionStore.NormalizeBand(request.Band, score) ?? ComputeBandFromScore(score);
 
             const string newStatus = "Provisional";
 
@@ -525,7 +523,8 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
             var code = reader.GetString(1);
             var name = reader.GetString(2);
             short? score = reader.IsDBNull(3) ? null : reader.GetInt16(3);
-            var band = reader.IsDBNull(4) ? "Unrated" : reader.GetString(4);
+            var rawBand = reader.IsDBNull(4) ? null : reader.GetString(4);
+            var band = SqlSessionStore.NormalizeBand(rawBand, score) ?? "Unrated";
             var status = reader.IsDBNull(5) ? "Unrated" : reader.GetString(5);
 
             sports.Add(new SportProfileItem(code, name, score, band, status, sportId));
