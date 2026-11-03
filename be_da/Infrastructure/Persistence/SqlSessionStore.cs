@@ -260,9 +260,10 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
 
             // Lock and inspect session
             const string sessionLockSql = """
-                SELECT id, sport_id, band, capacity, price_vnd, status
-                FROM dbo.sessions WITH (UPDLOCK, HOLDLOCK)
-                WHERE id = @sessionId;
+                SELECT s.id, s.sport_id, s.band, s.capacity, s.price_vnd, s.status, s.session_date, ts.start_time
+                FROM dbo.sessions s WITH (UPDLOCK, HOLDLOCK)
+                JOIN dbo.time_slots ts ON ts.id = s.time_slot_id
+                WHERE s.id = @sessionId;
                 """;
 
             long sportId;
@@ -270,6 +271,8 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
             short capacity;
             int priceVnd;
             string sessionStatus;
+            DateOnly sessionDate;
+            TimeSpan startTime;
 
             await using (var sessionCmd = new SqlCommand(sessionLockSql, connection, transaction))
             {
@@ -286,6 +289,8 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 capacity = reader.GetInt16(3);
                 priceVnd = reader.GetInt32(4);
                 sessionStatus = reader.GetString(5);
+                sessionDate = DateOnly.FromDateTime(reader.GetDateTime(6));
+                startTime = reader.GetTimeSpan(7);
             }
 
             if (!string.Equals(sessionStatus, "Open", StringComparison.OrdinalIgnoreCase) &&
@@ -293,6 +298,14 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
             {
                 await transaction.RollbackAsync(cancellationToken);
                 return new RegisterSessionResult(false, "SESSION_NOT_OPEN", "Buổi chơi chưa mở hoặc đã kết thúc đăng ký.");
+            }
+
+            var nowVn = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)).DateTime;
+            var sessionStartVn = sessionDate.ToDateTime(TimeOnly.FromTimeSpan(startTime));
+            if (sessionStartVn <= nowVn)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return new RegisterSessionResult(false, "SESSION_PAST_START", "Buổi chơi đã qua thời điểm bắt đầu và đã khóa đăng ký.");
             }
 
             // Bước A: Check Sport-Specific Skill Eligibility
