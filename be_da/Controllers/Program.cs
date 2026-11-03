@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using be_da.Authorization;
 using be_da.Application.Abstractions;
 using be_da.Application.Accounts;
+using be_da.Infrastructure.Notifications;
 using be_da.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -50,7 +51,17 @@ builder.Services.AddScoped<ISessionStore>(services => new SqlSessionStore(
 builder.Services.AddScoped<ISkillProfileStore>(services => new SqlSkillProfileStore(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
+builder.Services.AddScoped<IProfileStore>(services => new SqlProfileStore(
+    services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
+    ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
+builder.Services.AddScoped<IFriendshipStore>(services => new SqlFriendshipStore(
+    services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
+    ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
+builder.Services.AddScoped<IFirebaseNotificationService, FirebaseNotificationService>();
 builder.Services.AddScoped<IStockStore>(services => new SqlStockStore(
+    services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
+    ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
+builder.Services.AddScoped<ISessionSupplyStore>(services => new SqlSessionSupplyStore(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
 builder.Services.AddScoped<GoogleSignIn>();

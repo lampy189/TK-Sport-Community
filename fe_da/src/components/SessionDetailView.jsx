@@ -2,12 +2,15 @@ import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Users,
+  UserPlus,
   ShieldCheck,
   Sparkles,
   CheckCircle2,
   Clock,
 } from "lucide-react";
 import StatePanel from "./ui/StatePanel";
+import { PublicPlayerProfileModal } from "./PublicPlayerProfileModal";
+import { InviteFriendsToSessionModal } from "./SessionInviteCard";
 import "../styles/sessions.css";
 import { api } from "../api";
 import { ExceptionRequest } from "../pages/skill/SkillReviews";
@@ -49,6 +52,7 @@ export function SessionDetailView({
   onOpenLogin,
   onPayment,
   onOpenSkills,
+  onOpenCommunity,
 }) {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,11 +62,26 @@ export function SessionDetailView({
   const [registering, setRegistering] = useState(false);
   const [registrationFeedback, setRegistrationFeedback] = useState(null);
 
+  // SWL 1 (UC-05 & UC-25c): Selected participant in "Cùng ra sân" to view Public Profile, Friend & Direct Chat
+  const [selectedParticipantPlayerId, setSelectedParticipantPlayerId] = useState(null);
+  const [showInviteFriendModal, setShowInviteFriendModal] = useState(false);
+
   const displayName = user?.fullName || "Khách";
 
   useEffect(() => {
     loadSessionDetails();
   }, [sessionId, user]);
+
+  useEffect(() => {
+    const onOpenSameSession = (e) => {
+      if (Number(e.detail?.sessionId) === Number(sessionId)) {
+        loadSessionDetails();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    };
+    window.addEventListener("tksc:open-session", onOpenSameSession);
+    return () => window.removeEventListener("tksc:open-session", onOpenSameSession);
+  }, [sessionId]);
 
   async function loadSessionDetails(silent = false) {
     if (!silent) setLoading(true);
@@ -305,7 +324,24 @@ export function SessionDetailView({
               </strong>
             </div>
           </div>
-          <h3 className="participants-heading">Cùng ra sân</h3>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", marginTop: "20px", marginBottom: "10px" }}>
+            <h3 className="participants-heading" style={{ margin: 0 }}>
+              Cùng ra sân{" "}
+              <small style={{ fontSize: "12px", fontWeight: 500, color: "#64748b", marginLeft: "6px" }}>
+                (Bấm vào người chơi để xem Hồ sơ công khai, kết bạn &amp; nhắn tin)
+              </small>
+            </h3>
+            {user && !isSessionLocked && (
+              <button
+                type="button"
+                className="comm-btn comm-btn-outline"
+                onClick={() => setShowInviteFriendModal(true)}
+              >
+                <UserPlus size={14} />
+                <span>Rủ bạn bè cùng đặt sân</span>
+              </button>
+            )}
+          </div>
           {publicParticipants.length === 0 ? (
             <p className="participants-empty">
               Chưa có người chơi nào tham gia buổi này. Một kết nối mới đang chờ
@@ -314,13 +350,33 @@ export function SessionDetailView({
           ) : (
             <div className="participants-list">
               {publicParticipants.map((p, idx) => (
-                <span key={p.ticketId || idx} className="participant">
+                <button
+                  key={p.ticketId || idx}
+                  type="button"
+                  className="participant"
+                  style={{
+                    cursor: "pointer",
+                    border: "1px solid #cbd5e1",
+                    background: "#ffffff",
+                    transition: "all 0.15s ease",
+                  }}
+                  title={`Xem hồ sơ công khai, kết bạn & nhắn tin với ${p.fullName}`}
+                  onClick={() => p.playerId && setSelectedParticipantPlayerId(p.playerId)}
+                >
                   <span className="participant-avatar" aria-hidden="true">
-                    {p.fullName?.slice(0, 1)}
+                    {p.avatarUrl ? (
+                      <img
+                        src={p.avatarUrl}
+                        alt={p.fullName}
+                        style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      p.fullName?.slice(0, 1)
+                    )}
                   </span>
-                  {p.fullName}
+                  <span>{p.fullName}</span>
                   {p.currentBand && <small>{p.currentBand}</small>}
-                </span>
+                </button>
               ))}
             </div>
           )}
@@ -483,6 +539,28 @@ export function SessionDetailView({
           )}
         </aside>
       </div>
+
+      {selectedParticipantPlayerId && (
+        <PublicPlayerProfileModal
+          playerId={selectedParticipantPlayerId}
+          onClose={() => setSelectedParticipantPlayerId(null)}
+          onOpenFullChat={
+            onOpenCommunity
+              ? () => {
+                  setSelectedParticipantPlayerId(null);
+                  onOpenCommunity();
+                }
+              : undefined
+          }
+        />
+      )}
+
+      {showInviteFriendModal && (
+        <InviteFriendsToSessionModal
+          sessionSummary={{ ...summary, id: summary.id || sessionId }}
+          onClose={() => setShowInviteFriendModal(false)}
+        />
+      )}
     </div>
   );
 }

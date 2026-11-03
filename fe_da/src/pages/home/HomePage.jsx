@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import HomeLayout from "../../layouts/HomeLayout";
 import { roleHomeConfig } from "../../config/roleHomeConfig";
 import HomeOverview from "./HomeOverview";
@@ -54,6 +55,8 @@ export default function HomePage({
       label !== "overview" &&
       label !== "Chi tiết buổi chơi" &&
       label !== "Tin nhắn" &&
+      label !== "Hồ sơ cá nhân" &&
+      label !== "Hồ sơ kỹ năng" &&
       !config.modules.includes(label)
     )
       return;
@@ -82,6 +85,16 @@ export default function HomePage({
     setActive("Chi tiết buổi chơi");
     window.scrollTo({ top: 0, behavior: "instant" });
   }
+  useEffect(() => {
+    const onOpenSessionEvent = (e) => {
+      const targetId = e.detail?.sessionId;
+      if (targetId) {
+        selectSession(targetId);
+      }
+    };
+    window.addEventListener("tksc:open-session", onOpenSessionEvent);
+    return () => window.removeEventListener("tksc:open-session", onOpenSessionEvent);
+  }, []);
   if (role === "guest") {
     const browse = (sport = "ALL") => {
       setBrowseSport(sport);
