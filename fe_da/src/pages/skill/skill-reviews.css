@@ -1,0 +1,24 @@
+.skill-reviews { display: grid; gap: 16px; min-width: 0; }
+.skill-reviews form, .skill-reviews label { display: grid; gap: 8px; }
+.skill-reviews form { margin-top: 16px; }
+.skill-reviews textarea, .skill-reviews select, .skill-reviews input {
+  width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #a8b5b0;
+  border-radius: 8px; font: inherit; color: #183b30; background: #fff;
+}
+.skill-reviews textarea { min-height: 90px; resize: vertical; }
+.skill-reviews p { overflow-wrap: anywhere; }
+.skill-reviews time { font-size: .85em; }
+.skill-reviews summary { cursor: pointer; padding: 8px 0; }
+.skill-reviews [role="alert"] { color: #a12b20; }
+.skill-reviews .exception-result {
+  display: grid; gap: 10px; padding: 18px; border: 1px solid #b6c9dc;
+  border-left: 4px solid #355e87; border-radius: 12px; background: #eef5fc; color: #203f5f;
+}
+.skill-reviews .exception-result.is-approved { background: #edf8f0; border-color: #a5cfb2; border-left-color: #267343; color: #184d2e; }
+.skill-reviews .exception-result.is-rejected { background: #fff2ef; border-color: #e2b3a9; border-left-color: #aa402d; color: #7e3023; }
+.skill-reviews .exception-result-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.skill-reviews .exception-result-title { font-size: 20px; line-height: 1.35; }
+.skill-reviews .exception-result p { margin: 0; color: inherit; font-size: 14px; line-height: 1.65; }
+.skill-reviews .exception-result-reason { padding-top: 12px; border-top: 1px solid currentColor; }
+.skill-reviews .exception-result-reason > span { display: block; margin-bottom: 4px; font-size: 12px; font-weight: 700; }
+.skill-reviews .exception-result-reason p { white-space: pre-wrap; }

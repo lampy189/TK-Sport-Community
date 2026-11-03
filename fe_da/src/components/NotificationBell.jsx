@@ -99,6 +99,7 @@ export default function NotificationBell({ onTickets }) {
       <div className="notification-heading" aria-label="Lọc thông báo"><button aria-pressed={!messageOnly} onClick={()=>setMessageOnly(false)}>Tất cả</button><button aria-pressed={messageOnly} onClick={()=>setMessageOnly(true)}>Tin nhắn</button></div>
       {!items.filter(item=>!messageOnly||isMessage(item)).length && <p>{messageOnly?'Chưa có thông báo tin nhắn.':'Chưa có thông báo về vé.'}</p>}
       <div className="notification-items">{items.filter(item=>!messageOnly||isMessage(item)).map(item => <button disabled={busy} className={`notification-item ${item.status === 'unread' ? 'is-unread' : ''}`} key={item.id} onClick={() => mark(item.id)}><span>{item.title}</span><small>{item.status === 'unread' ? 'Chưa đọc' : 'Đã đọc'}{isMessage(item)?' · Xem lại tin nhắn':onTickets ? ' · Xem vé' : ''}</small></button>)}</div>
+      <a className="notification-inbox-link" href="?view=messages">Mở màn hình Tin nhắn →</a>
       {items.length === 50 && <small>Hiển thị 50 thông báo gần nhất.</small>}
     </section>}
     {toast && <aside className="notification-toast" role="status"><Bell size={19}/><div><strong>Thông báo vé</strong><p>{toast.title}</p>{(onTickets||isMessage(toast)) && <button onClick={() => mark(toast.id)}>{isMessage(toast)?'Xem tin nhắn':'Xem vé'}</button>}</div><button aria-label="Đóng thông báo" onClick={() => setToast(null)}><X size={18}/></button></aside>}

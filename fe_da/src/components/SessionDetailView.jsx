@@ -10,6 +10,7 @@ import {
 import StatePanel from "./ui/StatePanel";
 import "../styles/sessions.css";
 import { api } from "../api";
+import { ExceptionRequest } from "../pages/skill/SkillReviews";
 
 function CountdownTimer({ expiresAt }) {
   const [secondsLeft, setSecondsLeft] = useState(() => calcSeconds(expiresAt));
@@ -63,8 +64,8 @@ export function SessionDetailView({
     loadSessionDetails();
   }, [sessionId, user]);
 
-  async function loadSessionDetails() {
-    setLoading(true);
+  async function loadSessionDetails(silent = false) {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const data = await api.getSessionById(sessionId);
@@ -381,16 +382,7 @@ export function SessionDetailView({
               Tiếp tục thanh toán qua payOS
             </button>
           )}
-          <button
-            className="button button-secondary booking-action"
-            onClick={() =>
-              alert(
-                "Chức năng nộp đơn Xin ngoại lệ trình độ sẽ gửi tới Trọng tài duyệt.",
-              )
-            }
-          >
-            Xin ngoại lệ trình độ
-          </button>
+          <ExceptionRequest key={sessionId} sessionId={sessionId} user={user} onLogin={onOpenLogin} onUpdated={() => loadSessionDetails(true)} />
           <p className="booking-footnote">
             Ngoại lệ chỉ áp dụng cho buổi chơi được duyệt.
           </p>
@@ -430,7 +422,7 @@ export function SessionDetailView({
                       className="button button-primary booking-action"
                       onClick={onOpenSkills}
                     >
-                      Mở Hồ sơ kỹ năng &amp; Khảo sát (UC-06)
+                      Mở hồ sơ kỹ năng &amp; khảo sát
                     </button>
                   )}
                   <p>

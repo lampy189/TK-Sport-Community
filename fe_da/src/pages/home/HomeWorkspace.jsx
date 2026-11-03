@@ -1,3 +1,5 @@
+import MessagesPage from "../messages/MessagesPage";
+import SkillReviews from "../skill/SkillReviews";
 import TicketOperations from "../payment/TicketOperations";
 import AssessmentPage from "../skill/AssessmentPage";
 import GoodsPaymentPage from "../payment/GoodsPaymentPage";
@@ -23,6 +25,9 @@ export default function HomeWorkspace({
   initialSport = "ALL",
   onBrowseSport,
 }) {
+  if (active === "Tin nhắn" && role !== "guest") return <MessagesPage preview={preview} />;
+  if (!preview && ["referee", "manager"].includes(role) && active === "Ngoại lệ trình độ") return <SkillReviews role={role} kind="exceptions" />;
+  if (!preview && ["referee", "manager"].includes(role) && active === "Khiếu nại đánh giá") return <SkillReviews role={role} />;
   if (!preview && role === "referee" && active === "Đánh giá kỹ năng") return <AssessmentPage />;
   if (!preview && role === "staff" && active === "Bán hàng") return <GoodsPaymentPage />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage />;

@@ -124,13 +124,13 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
                 || !request.Marks.Select(m => m.DimensionId).OrderBy(x => x).SequenceEqual(dimensions))
                 throw Error(400, "Gửi mỗi tiêu chí của rubric đúng một lần; dùng null cho tiêu chí chưa quan sát.");
             if (request.Marks.Any(m => m.Evidence?.Length > 2000)) throw Error(400, "Ghi chú mỗi tiêu chí tối đa 2000 ký tự.");
-            if (!BadmintonScoring.Supports(a.Rubric) && request.Marks.Any(m => m.Score != null))
+            if (!SportAssessmentScoring.Supports(a.Rubric) && request.Marks.Any(m => m.Score != null))
                 throw Error(409, "Chưa có quy tắc thang điểm cho rubric này; có thể lưu ghi chú với điểm null.");
-            if (request.Marks.Any(m => m.Score is < 0 or > 4)) throw Error(400, "Điểm Cầu lông phải từ 0 đến 4.");
+            if (request.Marks.Any(m => m.Score is < 0 or > 4)) throw Error(400, "Điểm mỗi tiêu chí phải từ 0 đến 4.");
             foreach (var mark in request.Marks)
                 a.AssessmentScores.Single(s => s.DimensionId == mark.DimensionId).Score = mark.Score;
-            a.TotalScore = BadmintonScoring.Supports(a.Rubric) ? BadmintonScoring.Calculate(request.Marks.Select(m => m.Score)) : null;
-            a.BandResult = a.TotalScore is short total ? BadmintonScoring.Band(total) : null;
+            a.TotalScore = SportAssessmentScoring.Supports(a.Rubric) ? SportAssessmentScoring.Calculate(request.Marks.Select(m => m.Score)) : null;
+            a.BandResult = a.TotalScore is short total ? SportAssessmentScoring.Band(total) : null;
             Audit(a, "assessment_saved", new AssessmentEvidence(clock.GetUtcNow(), request.Marks));
             await db.SaveChangesAsync(ct);
             return await ViewAsync(a, ct);
@@ -144,8 +144,8 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
             if (a.Status == "published") return await ViewAsync(a, ct);
             await EditableAsync(a, request.Revision, ct);
             await CheckAttendanceAsync(a.SessionId!.Value, a.PlayerSportProfile, actorId, ct);
-            if (!BadmintonScoring.Supports(a.Rubric)) throw Error(409, "Rubric chưa có quy tắc công bố điểm.");
-            var total = BadmintonScoring.Calculate(a.AssessmentScores.Select(s => s.Score))
+            if (!SportAssessmentScoring.Supports(a.Rubric)) throw Error(409, "Rubric chưa có quy tắc công bố điểm.");
+            var total = SportAssessmentScoring.Calculate(a.AssessmentScores.Select(s => s.Score))
                 ?? throw Error(409, "Phải quan sát đủ các tiêu chí trước khi công bố.");
             var evidence = await EvidenceAsync(a.Id, ct);
             if (a.AssessmentScores.Any(s => (s.Score == 0 || s.Score == 4)
@@ -175,9 +175,9 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
             {
                 if (previous?.TotalScore is not short prior)
                     throw Error(409, "Đánh giá định kỳ cần hai lần quan sát đầy đủ ở hai buổi chơi khác nhau.");
-                total = BadmintonScoring.ReviewScore(total, prior);
+                total = SportAssessmentScoring.ReviewScore(total, prior);
             }
-            var band = BadmintonScoring.Band(total);
+            var band = SportAssessmentScoring.Band(total);
             // Appendix A leaves essential movement/coordination thresholds unspecified.
             // Do not bypass those checks by automatically approving a confirmed band change.
             if (confirmed && !string.Equals(profile.CurrentBand, band, StringComparison.OrdinalIgnoreCase))
@@ -194,8 +194,8 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
             profile.RatingStatus = "Rated";
             a.Status = "published";
             // Keep the raw observation on Assessment; the smoothed published value lives in history/profile.
-            a.TotalScore = BadmintonScoring.Calculate(a.AssessmentScores.Select(s => s.Score));
-            a.BandResult = BadmintonScoring.Band(a.TotalScore!.Value);
+            a.TotalScore = SportAssessmentScoring.Calculate(a.AssessmentScores.Select(s => s.Score));
+            a.BandResult = SportAssessmentScoring.Band(a.TotalScore!.Value);
             if (!string.Equals(oldBand, band, StringComparison.OrdinalIgnoreCase))
                 await CheckFutureTicketsAsync(profile, actorId, ct);
             Audit(a, "assessment_published", new { at = clock.GetUtcNow(), oldScore, oldBand, score = total, band,
@@ -204,7 +204,7 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
             return await ViewAsync(a, ct);
         }, ct);
 
-    private async Task CheckFutureTicketsAsync(PlayerSportProfile profile, long actorId, CancellationToken ct)
+    public async Task CheckFutureTicketsAsync(PlayerSportProfile profile, long actorId, CancellationToken ct)
     {
         var now = clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7));
         var today = DateOnly.FromDateTime(now.DateTime);
@@ -260,7 +260,7 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
             a.TotalScore, a.BandResult, a.PlayerSportProfile.CurrentScore, a.PlayerSportProfile.CurrentBand);
     }
 
-    private static RubricView Map(Rubric r) => new(r.Id, r.SportId, r.Version, r.Name, BadmintonScoring.Supports(r),
+    private static RubricView Map(Rubric r) => new(r.Id, r.SportId, r.Version, r.Name, SportAssessmentScoring.Supports(r),
         r.RubricDimensions.OrderBy(d => d.Code).Select(d => new CriterionView(d.Id, d.Code, d.Name, d.WeightPercent)).ToList());
 
     private void Audit(Assessment a, string action, object value) => db.AuditLogs.Add(new AuditLog
