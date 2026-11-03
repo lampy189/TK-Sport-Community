@@ -21,6 +21,7 @@ public class StoreController(Sep490Context context) : ControllerBase
         var products = await context.Products
             .AsNoTracking()
             .Where(product => product.IsActive != false)
+            .OrderBy(product => product.Name)
             .Select(product => new StoreProductItem(
                 product.Id,
                 product.Sku,
@@ -29,7 +30,6 @@ public class StoreController(Sep490Context context) : ControllerBase
                 product.UnitPriceVnd,
                 product.StockItem != null ? product.StockItem.QuantityOnHand : 0,
                 product.StockItem != null ? product.StockItem.ReorderLevel : 0))
-            .OrderBy(product => product.Name)
             .ToListAsync();
 
         return Ok(products);
