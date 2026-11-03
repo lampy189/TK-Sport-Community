@@ -256,7 +256,7 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
                         SELECT 1 FROM dbo.assessments
                         WHERE player_sport_profile_id = @profileId
                           AND LOWER(REPLACE(assessment_type, '_', '')) = 'oncourt'
-                          AND LOWER(status) = 'published'
+                          AND LOWER(status) IN ('published', 'submitted')
                     ) THEN 1 ELSE 0 END;
                     """, connection, transaction);
                 checkOnCourtCmd.Parameters.Add("@profileId", SqlDbType.BigInt).Value = profileId;
@@ -473,8 +473,8 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             LEFT JOIN dbo.courts c ON c.id = s.court_id
             LEFT JOIN dbo.time_slots ts ON ts.id = s.time_slot_id
             WHERE a.player_sport_profile_id = @profileId
-              AND LOWER(a.status) = 'published'
-            ORDER BY a.id DESC;
+              AND LOWER(a.status) IN ('published', 'submitted')
+            ORDER BY CASE WHEN LOWER(REPLACE(a.assessment_type, '_', '')) = 'oncourt' THEN 1 ELSE 0 END DESC, a.id DESC;
             """;
 
         long assessmentId;
@@ -616,4 +616,3 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
         return items;
     }
 }
-
