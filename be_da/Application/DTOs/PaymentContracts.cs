@@ -33,3 +33,6 @@ public record CheckInResult(long TicketId, string TicketCode, string HolderName,
     DateOnly SessionDate, TimeOnly StartTime, TimeOnly EndTime, bool CheckedIn, long? CheckedInBy);
 
 public record TicketFundingSummary(long PaymentId, int AmountVnd);
+public record AssignedSessionSummary(long SessionId, string SportName, string CourtName, string VenueName,
+    DateOnly SessionDate, TimeOnly StartTime, TimeOnly EndTime, string SessionStatus, string? Band,
+    short Capacity, short OccupiedPlaces, bool Assigned, string ConditionCode, string ConditionMessage);
