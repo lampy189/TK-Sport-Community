@@ -119,7 +119,9 @@ export const api = {
     clearCsrfToken();
     try {
       await getCsrfToken(true);
-    } catch {}
+    } catch {
+      /* Ignore CSRF refresh failure on logout */
+    }
     return res.ok;
   },
 
@@ -154,11 +156,21 @@ export const api = {
   },
 
   // Sessions API
+  async getTimeSlots() {
+    const res = await request('/api/sessions/time-slots');
+    if (!res.ok) {
+      throw new Error(`Failed to load time slots: HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+
   async getSessions(params = {}) {
     const query = new URLSearchParams();
     if (params.sportId) query.set('sportId', params.sportId);
     if (params.sport) query.set('sport', params.sport);
     if (params.date) query.set('date', params.date);
+    if (params.fromDate) query.set('fromDate', params.fromDate);
+    if (params.toDate) query.set('toDate', params.toDate);
     if (params.timeSlotId) query.set('timeSlotId', params.timeSlotId);
     if (params.status) query.set('status', params.status);
 
@@ -186,9 +198,183 @@ export const api = {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      // Throw backend structured error { code, message, reason }
       throw data;
     }
     return data;
+  },
+
+  // Skill Profile & Self-Assessment API (UC-04, UC-05, UC-19, SWL-2)
+  async getSkillRubrics(sportId) {
+    const query = sportId ? `?sportId=${encodeURIComponent(sportId)}` : '';
+    const res = await request(`/api/skills/rubrics${query}`);
+    if (!res.ok) {
+      throw new Error(`Failed to load skill rubrics: HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async getMySkillProfiles() {
+    const res = await request('/api/skills/me');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw err;
+    }
+    return res.json();
+  },
+
+  // SWL 2: LamNV's Official Referee Published Skill Results API (/api/v1/skill/my-results)
+  async getMyOfficialSkillResults(sportId = 1) {
+    const res = await request(`/api/v1/skill/my-results?sportId=${encodeURIComponent(sportId)}`);
+    if (!res.ok) {
+      return [];
+    }
+    return res.json().catch(() => []);
+  },
+
+  async submitSkillSurvey(payload) {
+    const res = await request('/api/skills/me/survey', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw data;
+    }
+    return data;
+  },
+
+  // Personal & Public Player Profile API (UC-03 & UC-05)
+  async getMyProfile() {
+    const res = await request('/api/profile/me');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw err;
+    }
+    return res.json();
+  },
+
+  async updateMyProfile(payload) {
+    const res = await request('/api/profile/me', {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw data;
+    }
+    return data;
+  },
+
+  async getPublicPlayerProfile(playerId) {
+    const res = await request(`/api/profile/players/${encodeURIComponent(playerId)}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw data;
+    }
+    return data;
+  },
+
+  // Community, Friendships & Direct Chat Messaging API (UC-25c / UC-23 / UC-24)
+  async searchCommunityMembers(query = '', limit = 40) {
+    const params = new URLSearchParams();
+    if (query) params.set('query', query);
+    if (limit) params.set('limit', String(limit));
+    const qs = params.toString();
+    const res = await request(`/api/community/members${qs ? `?${qs}` : ''}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw err;
+    }
+    return res.json();
+  },
+
+  async getFriends() {
+    const res = await request('/api/community/friends');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw err;
+    }
+    return res.json();
+  },
+
+  async getFriendSuggestions() {
+    const res = await request('/api/community/friends/suggestions');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw err;
+    }
+    return res.json();
+  },
+
+  async getFriendRequests() {
+    const res = await request('/api/community/friends/requests');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw err;
+    }
+    return res.json();
+  },
+
+  async sendFriendRequest(targetPlayerId) {
+    const res = await request('/api/community/friends/request', {
+      method: 'POST',
+      body: JSON.stringify({ targetPlayerId })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw data;
+    }
+    return data;
+  },
+
+  async respondFriendRequest(friendshipId, accept) {
+    const res = await request(`/api/community/friends/${encodeURIComponent(friendshipId)}/respond`, {
+      method: 'POST',
+      body: JSON.stringify({ accept })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw data;
+    }
+    return data;
+  },
+
+  async removeFriend(friendPlayerId) {
+    const res = await request(`/api/community/friends/${encodeURIComponent(friendPlayerId)}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok && res.status !== 204) {
+      const data = await res.json().catch(() => ({}));
+      throw data;
+    }
+    return true;
+  },
+
+  async getConversation(friendPlayerId, limit = 60) {
+    const res = await request(`/api/community/messages/${encodeURIComponent(friendPlayerId)}?limit=${encodeURIComponent(limit)}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw data;
+    }
+    return data;
+  },
+
+  async sendMessage(recipientPlayerId, content) {
+    const res = await request('/api/community/messages', {
+      method: 'POST',
+      body: JSON.stringify({ recipientPlayerId, content })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw data;
+    }
+    return data;
+  },
+
+  async markMessagesAsRead(friendPlayerId) {
+    const res = await request(`/api/community/messages/${encodeURIComponent(friendPlayerId)}/read`, {
+      method: 'POST'
+    });
+    return res.ok;
   }
 };

@@ -5,7 +5,7 @@ public record TicketSummary(long Id, long OrderId, long PlayerId, long SessionId
     string Status, string? TicketCode, bool Valid, DateOnly? SessionDate, TimeOnly? StartTime, TimeOnly? EndTime,
     string OrderStatus, DateTimeOffset? ExpiresAt, string? PaymentStatus,
     string? SportName, string? CourtName, string? VenueName, string? HolderName, bool CheckedIn,
-    string? RefundStatus, int? RefundAmountVnd) { public bool CanManage { get; init; } = true; }
+    string? RefundStatus, int? RefundAmountVnd) { public bool CanManage { get; init; } = true; public string? SessionStatus { get; init; } public string? VenueIssue { get; init; } public long? PendingChangeId { get; init; } public bool CanResolveIssue { get; init; } }
 public record TicketCancelContext(long OrderId, DateOnly SessionDate, TimeOnly StartTime);
 public record TicketCancelResult(long TicketId, string Status, int RefundAmountVnd);
 public record OrderSummary(long Id, string OrderCode, int TotalAmount, string Status,
@@ -31,3 +31,8 @@ public record CheckInContext(long TicketId, long OrderId, DateOnly SessionDate, 
     string SessionStatus, bool Assigned, string HolderName, string SportName, string CourtName, TimeOnly StartTime);
 public record CheckInResult(long TicketId, string TicketCode, string HolderName, string SportName, string CourtName,
     DateOnly SessionDate, TimeOnly StartTime, TimeOnly EndTime, bool CheckedIn, long? CheckedInBy);
+
+public record TicketFundingSummary(long PaymentId, int AmountVnd);
+public record AssignedSessionSummary(long SessionId, string SportName, string CourtName, string VenueName,
+    DateOnly SessionDate, TimeOnly StartTime, TimeOnly EndTime, string SessionStatus, string? Band,
+    short Capacity, short OccupiedPlaces, bool Assigned, string ConditionCode, string ConditionMessage);

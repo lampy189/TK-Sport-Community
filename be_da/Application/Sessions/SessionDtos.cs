@@ -7,7 +7,9 @@ public sealed record SessionFilter(
     string? Sport = null,
     DateOnly? Date = null,
     long? TimeSlotId = null,
-    string? Status = null
+    string? Status = null,
+    DateOnly? FromDate = null,
+    DateOnly? ToDate = null
 );
 
 public sealed record RegisterSessionResult(

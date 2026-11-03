@@ -247,3 +247,24 @@ h4 {
     animation: none !important;
   }
 }
+/* Workspace pages inherit their shell's gutter instead of nesting a second one. */
+:is(.player-workspace, .home-workspace) > :is(.workflow, .skill-profile-page, .payment-workspace) {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+:is(.player-workspace, .home-workspace) > .skill-profile-page { padding-top: 0; }
+.workflow > *, .workflow-criterion > *, .filter-fields > *, .sp-hero > * { min-width: 0; }
+.workflow-actions { align-items: center; }
+.workflow-actions > button { min-height: 44px; }
+.workflow :is(input:not([type=checkbox]):not([type=radio]), select) { min-height: 46px; }
+.workflow :is(th, td) { vertical-align: top; }
+.workflow-table { max-width: 100%; }
+.results-heading { gap: 16px; flex-wrap: wrap; }
+.filter-footer { flex-wrap: wrap; }
+.home-breadcrumb { flex-wrap: wrap; row-gap: 6px; }
+@media (max-width: 600px) {
+  .workflow-actions > .button { flex: 1 1 160px; }
+  .sp-swimlane-pills { min-width: 0; width: 100%; }
+  .sp-hero { padding: 20px; }
+}

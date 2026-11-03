@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using be_da.Authorization;
 using be_da.Application.Abstractions;
 using be_da.Application.Accounts;
+using be_da.Infrastructure.Notifications;
 using be_da.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,11 @@ builder.Services.AddExceptionHandler<PaymentExceptionHandler>();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<TicketCheckInService>();
+builder.Services.AddScoped<TicketAftercareService>();
+builder.Services.AddScoped<TicketSupportService>();
+builder.Services.AddScoped<SkillAssessmentService>();
+builder.Services.AddScoped<SkillReviewService>();
+builder.Services.AddScoped<GoodsPaymentService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddHostedService<TKSC.Infrastructure.Notifications.TicketEmailWorker>();
 builder.Services.AddCors(options =>
@@ -40,6 +46,22 @@ builder.Services.AddScoped<IAccountStore>(services => new SqlAccountStore(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
 builder.Services.AddScoped<ISessionStore>(services => new SqlSessionStore(
+    services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
+    ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
+builder.Services.AddScoped<ISkillProfileStore>(services => new SqlSkillProfileStore(
+    services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
+    ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
+builder.Services.AddScoped<IProfileStore>(services => new SqlProfileStore(
+    services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
+    ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
+builder.Services.AddScoped<IFriendshipStore>(services => new SqlFriendshipStore(
+    services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
+    ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
+builder.Services.AddScoped<IFirebaseNotificationService, FirebaseNotificationService>();
+builder.Services.AddScoped<IStockStore>(services => new SqlStockStore(
+    services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
+    ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
+builder.Services.AddScoped<ISessionSupplyStore>(services => new SqlSessionSupplyStore(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
 builder.Services.AddScoped<GoogleSignIn>();

@@ -281,7 +281,7 @@
   background: #12382a;
 }
 .guest-pickleball {
-  margin-top: 24px;
+  margin-top: 0;
 }
 .guest-sport img {
   position: absolute;
@@ -1084,3 +1084,25 @@
     transform: none;
   }
 }
+
+/* Shared two-column alignment across the public home. */
+@media (min-width: 701px) {
+  .guest-sports > .guest-section-heading,
+  .guest-community-inner {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+  .guest-sports > .guest-section-heading > p {
+    justify-self: start;
+    margin-bottom: 0;
+    max-width: 420px;
+  }
+  .guest-sport-grid { align-items: stretch; }
+  .guest-footer-top { align-items: flex-start; }
+}
+@media (min-width: 701px) and (max-width: 800px) {
+  .guest-sports > .guest-section-heading,
+  .guest-community-inner { gap: 18px; }
+}
+.guest-section-heading > *, .guest-community-inner > * { min-width: 0; }

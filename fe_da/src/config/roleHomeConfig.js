@@ -9,9 +9,9 @@ export const roleHomeConfig = {
     label: "Người chơi",
     modules: [
       "Lịch social",
+      "Cửa hàng",
       "Thanh toán",
       "Vé của tôi",
-      "Hồ sơ kỹ năng",
       "Cộng đồng",
     ],
   },
@@ -23,7 +23,7 @@ export const roleHomeConfig = {
       "Theo dõi buổi được phân công, ghi nhận điểm danh và đánh giá kỹ năng người chơi.",
     action: "Xem phân công",
     section: "Bàn làm việc trọng tài",
-    modules: ["Phân công", "Điểm danh", "Đánh giá kỹ năng", "Vật tư buổi chơi"],
+    modules: ["Phân công", "Điểm danh", "Đánh giá kỹ năng", "Ngoại lệ trình độ", "Khiếu nại đánh giá", "Vật tư buổi chơi"],
     stats: [
       ["02", "Buổi được phân công"],
       ["16", "Người chơi dự kiến"],
@@ -43,7 +43,7 @@ export const roleHomeConfig = {
       "Không gian làm việc cho bán hàng tại quầy, kho, kiểm tra thanh toán và đối soát ca.",
     action: "Mở công việc trong ca",
     section: "Công việc trong ca",
-    modules: ["Bán hàng", "Kho & vật tư", "Thanh toán", "Đối soát ca"],
+    modules: ["Bán hàng", "Kho & vật tư", "Thanh toán", "Sự cố sân", "Đổi & hoàn vé", "Đối soát ca"],
     stats: [
       ["08", "Đơn trong ca"],
       ["03", "Thanh toán cần kiểm tra"],
@@ -68,7 +68,10 @@ export const roleHomeConfig = {
       "Phân công nhân sự",
       "Điểm danh",
       "Khiếu nại đánh giá",
+      "Ngoại lệ trình độ",
       "Ngoại lệ vận hành",
+      "Sự cố sân",
+      "Đổi & hoàn vé",
       "Thanh toán",
     ],
     stats: [

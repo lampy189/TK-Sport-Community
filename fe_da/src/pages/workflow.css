@@ -1,0 +1,13 @@
+.workflow { display: grid; gap: 1.2rem; max-width: 1000px; padding: 1.5rem; background: var(--surface, #fff); border: 1px solid #dce5df; border-radius: 18px; color: #173629; }
+.workflow label { display: grid; gap: .45rem; font-weight: 600; }
+.workflow input, .workflow select, .workflow textarea { width: 100%; padding: .75rem; border: 1px solid #b4c6ba; border-radius: 8px; font: inherit; background: white; color: #173629; }
+.workflow textarea { min-height: 80px; resize: vertical; }
+.workflow fieldset { border: 0; padding: 0; min-width: 0; }
+.workflow-criterion { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid #dce5df; }
+.workflow-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.workflow button:disabled { opacity: .55; cursor: not-allowed; }
+.workflow-error { background: #fff0ed; border-left: 4px solid #ac3822; padding: 1rem; color: #892913; }
+.workflow table { width: 100%; border-collapse: collapse; }
+.workflow th, .workflow td { text-align: left; padding: .65rem; border-bottom: 1px solid #dce5df; }
+.workflow-table { overflow-x: auto; }
+@media(max-width: 640px) { .workflow-criterion { grid-template-columns: 1fr; } .workflow { padding: 1rem; } }

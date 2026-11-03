@@ -2,14 +2,18 @@ import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Users,
+  UserPlus,
   ShieldCheck,
   Sparkles,
   CheckCircle2,
   Clock,
 } from "lucide-react";
 import StatePanel from "./ui/StatePanel";
+import { PublicPlayerProfileModal } from "./PublicPlayerProfileModal";
+import { InviteFriendsToSessionModal } from "./SessionInviteCard";
 import "../styles/sessions.css";
 import { api } from "../api";
+import { ExceptionRequest } from "../pages/skill/SkillReviews";
 
 function CountdownTimer({ expiresAt }) {
   const [secondsLeft, setSecondsLeft] = useState(() => calcSeconds(expiresAt));
@@ -47,6 +51,8 @@ export function SessionDetailView({
   onBack,
   onOpenLogin,
   onPayment,
+  onOpenSkills,
+  onOpenCommunity,
 }) {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -56,14 +62,29 @@ export function SessionDetailView({
   const [registering, setRegistering] = useState(false);
   const [registrationFeedback, setRegistrationFeedback] = useState(null);
 
+  // SWL 1 (UC-05 & UC-25c): Selected participant in "Cùng ra sân" to view Public Profile, Friend & Direct Chat
+  const [selectedParticipantPlayerId, setSelectedParticipantPlayerId] = useState(null);
+  const [showInviteFriendModal, setShowInviteFriendModal] = useState(false);
+
   const displayName = user?.fullName || "Khách";
 
   useEffect(() => {
     loadSessionDetails();
   }, [sessionId, user]);
 
-  async function loadSessionDetails() {
-    setLoading(true);
+  useEffect(() => {
+    const onOpenSameSession = (e) => {
+      if (Number(e.detail?.sessionId) === Number(sessionId)) {
+        loadSessionDetails();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    };
+    window.addEventListener("tksc:open-session", onOpenSameSession);
+    return () => window.removeEventListener("tksc:open-session", onOpenSameSession);
+  }, [sessionId]);
+
+  async function loadSessionDetails(silent = false) {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const data = await api.getSessionById(sessionId);
@@ -213,6 +234,18 @@ export function SessionDetailView({
   const availableSlots =
     summary.availableSlots ?? summary.capacity - summary.occupiedPlaces;
   const isFull = availableSlots <= 0;
+  const isPastStart = (() => {
+    const dateStr = summary.sessionDate;
+    const timeStr = (summary.startTime || summary.timeLabel?.split("-")[0] || "")
+      .trim()
+      .slice(0, 5);
+    if (!dateStr || !timeStr) return false;
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const [hh, mm] = timeStr.split(":").map(Number);
+    if (!y || !m || !d || Number.isNaN(hh) || Number.isNaN(mm)) return false;
+    return new Date(y, m - 1, d, hh, mm, 0, 0).getTime() <= Date.now();
+  })();
+  const isSessionLocked = isFull || isPastStart;
   const isEligible = summary.isEligibleSuggestion;
   return (
     <div className="session-detail">
@@ -291,7 +324,24 @@ export function SessionDetailView({
               </strong>
             </div>
           </div>
-          <h3 className="participants-heading">Cùng ra sân</h3>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", marginTop: "20px", marginBottom: "10px" }}>
+            <h3 className="participants-heading" style={{ margin: 0 }}>
+              Cùng ra sân{" "}
+              <small style={{ fontSize: "12px", fontWeight: 500, color: "#64748b", marginLeft: "6px" }}>
+                (Bấm vào người chơi để xem Hồ sơ công khai, kết bạn &amp; nhắn tin)
+              </small>
+            </h3>
+            {user && !isSessionLocked && (
+              <button
+                type="button"
+                className="comm-btn comm-btn-outline"
+                onClick={() => setShowInviteFriendModal(true)}
+              >
+                <UserPlus size={14} />
+                <span>Rủ bạn bè cùng đặt sân</span>
+              </button>
+            )}
+          </div>
           {publicParticipants.length === 0 ? (
             <p className="participants-empty">
               Chưa có người chơi nào tham gia buổi này. Một kết nối mới đang chờ
@@ -300,13 +350,33 @@ export function SessionDetailView({
           ) : (
             <div className="participants-list">
               {publicParticipants.map((p, idx) => (
-                <span key={p.ticketId || idx} className="participant">
+                <button
+                  key={p.ticketId || idx}
+                  type="button"
+                  className="participant"
+                  style={{
+                    cursor: "pointer",
+                    border: "1px solid #cbd5e1",
+                    background: "#ffffff",
+                    transition: "all 0.15s ease",
+                  }}
+                  title={`Xem hồ sơ công khai, kết bạn & nhắn tin với ${p.fullName}`}
+                  onClick={() => p.playerId && setSelectedParticipantPlayerId(p.playerId)}
+                >
                   <span className="participant-avatar" aria-hidden="true">
-                    {p.fullName?.slice(0, 1)}
+                    {p.avatarUrl ? (
+                      <img
+                        src={p.avatarUrl}
+                        alt={p.fullName}
+                        style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      p.fullName?.slice(0, 1)
+                    )}
                   </span>
-                  {p.fullName}
+                  <span>{p.fullName}</span>
                   {p.currentBand && <small>{p.currentBand}</small>}
-                </span>
+                </button>
               ))}
             </div>
           )}
@@ -326,23 +396,39 @@ export function SessionDetailView({
             <span>/ người</span>
           </div>
           <span
-            className={isFull ? "session-status is-full" : "session-status"}
+            className={
+              isSessionLocked ? "session-status is-full" : "session-status"
+            }
           >
-            {isFull ? "Đã hết chỗ" : `Còn ${availableSlots} chỗ`}
+            {isPastStart
+              ? "Đã qua giờ bắt đầu"
+              : isFull
+                ? "Đã hết chỗ"
+                : `Còn ${availableSlots} chỗ`}
           </span>
           <p className="booking-note">
-            Hệ thống kiểm tra trình độ và chỗ trống trước khi giữ chỗ.
+            {isPastStart
+              ? "Buổi chơi đã qua thời điểm bắt đầu và đã khóa đăng ký."
+              : isFull
+                ? "Buổi chơi đã đủ số lượng người tham gia và đã khóa đăng ký."
+                : "Hệ thống kiểm tra trình độ và chỗ trống trước khi giữ chỗ."}
           </p>
           <button
             className="button button-primary booking-action"
             disabled={
               registering ||
-              isFull ||
+              isSessionLocked ||
               registrationFeedback?.type === "SUCCESS_PENDING"
             }
             onClick={handleRegister}
           >
-            {registering ? "Đang xử lý…" : "Đăng ký buổi chơi"}
+            {registering
+              ? "Đang xử lý…"
+              : isPastStart
+                ? "Đã khóa (Qua giờ bắt đầu)"
+                : isFull
+                  ? "Đã khóa (Đủ chỗ)"
+                  : "Đăng ký buổi chơi"}
           </button>
           {registrationFeedback?.type === "SUCCESS_PENDING" && (
             <button
@@ -352,16 +438,7 @@ export function SessionDetailView({
               Tiếp tục thanh toán qua payOS
             </button>
           )}
-          <button
-            className="button button-secondary booking-action"
-            onClick={() =>
-              alert(
-                "Chức năng nộp đơn Xin ngoại lệ trình độ sẽ gửi tới Trọng tài duyệt.",
-              )
-            }
-          >
-            Xin ngoại lệ trình độ
-          </button>
+          <ExceptionRequest key={sessionId} sessionId={sessionId} user={user} onLogin={onOpenLogin} onUpdated={() => loadSessionDetails(true)} />
           <p className="booking-footnote">
             Ngoại lệ chỉ áp dụng cho buổi chơi được duyệt.
           </p>
@@ -395,9 +472,18 @@ export function SessionDetailView({
                           ? `Trình độ của bạn chưa khớp với yêu cầu Band ${summary.band} của buổi chơi.`
                           : registrationFeedback.message}
                   </p>
+                  {onOpenSkills && (
+                    <button
+                      type="button"
+                      className="button button-primary booking-action"
+                      onClick={onOpenSkills}
+                    >
+                      Mở hồ sơ kỹ năng &amp; khảo sát
+                    </button>
+                  )}
                   <p>
-                    Bạn có thể chọn “Xin ngoại lệ trình độ” để tìm hiểu bước
-                    tiếp theo.
+                    Bạn cũng có thể chọn “Xin ngoại lệ trình độ” để tìm hiểu
+                    bước tiếp theo.
                   </p>
                 </div>
               )}
@@ -453,6 +539,28 @@ export function SessionDetailView({
           )}
         </aside>
       </div>
+
+      {selectedParticipantPlayerId && (
+        <PublicPlayerProfileModal
+          playerId={selectedParticipantPlayerId}
+          onClose={() => setSelectedParticipantPlayerId(null)}
+          onOpenFullChat={
+            onOpenCommunity
+              ? () => {
+                  setSelectedParticipantPlayerId(null);
+                  onOpenCommunity();
+                }
+              : undefined
+          }
+        />
+      )}
+
+      {showInviteFriendModal && (
+        <InviteFriendsToSessionModal
+          sessionSummary={{ ...summary, id: summary.id || sessionId }}
+          onClose={() => setShowInviteFriendModal(false)}
+        />
+      )}
     </div>
   );
 }

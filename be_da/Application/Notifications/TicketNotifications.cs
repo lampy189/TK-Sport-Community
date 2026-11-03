@@ -18,6 +18,12 @@ public static class TicketNotifications
     }
     public static string Title(string kind, long ticketId) => kind switch
     {
+        "ticket_staff_reply" => $"Staff đã phản hồi về vé #{ticketId}. Mở Vé của tôi để xem trao đổi.",
+        "ticket_venue_issue" => $"Buổi chơi của vé #{ticketId} gặp sự cố sân. Mở Vé của tôi để chọn đổi buổi hoặc yêu cầu hoàn tiền.",
+        "ticket_change_requested" => $"Đã nhận yêu cầu đổi vé #{ticketId}. Staff sẽ kiểm tra chỗ và chênh lệch giá trước khi xác nhận.",
+        "ticket_changed" => $"Đổi vé thành công. Vé mới #{ticketId} và QR mới đã sẵn sàng.",
+        "ticket_difference_refund" => $"Đã tạo yêu cầu hoàn chênh lệch giá của vé #{ticketId}. Tiền chưa được hoàn ngay.",
+        "ticket_refund_completed" => $"Một khoản hoàn của vé #{ticketId} đã được Staff xác nhận chuyển trả. Xem vé để theo dõi các khoản còn lại.",
         "ticket_reserved" => $"Đã giữ chỗ vé #{ticketId}. Vui lòng thanh toán trong thời hạn giữ chỗ.",
         "ticket_paid" => $"Thanh toán thành công. Vé #{ticketId} đã được xác nhận, QR vào sân đã sẵn sàng.",
         "ticket_refund_requested" => $"Đã hủy vé #{ticketId}. Yêu cầu hoàn tiền đang chờ nhân viên xử lý; tiền chưa được hoàn ngay.",

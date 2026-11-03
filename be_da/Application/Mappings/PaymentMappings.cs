@@ -21,12 +21,12 @@ public static class PaymentMappings
 
     public static Expression<Func<Ticket, TicketSummary>> TicketProjection => t => new(
         t.Id, t.OrderId, t.PlayerId, t.SessionId, t.AmountVnd, t.Status.ToLower(), t.TicketCode,
-        t.Order.Status.ToLower() == "paid" && t.Status.ToLower() == "confirmed", t.Session.SessionDate,
+        t.Order.Status.ToLower() == "paid" && t.Status.ToLower() == "confirmed" && t.Session.Status.ToLower() != "suspended" && t.Session.Status.ToLower() != "cancelled", t.Session.SessionDate,
         t.Session.TimeSlot.StartTime, t.Session.TimeSlot.EndTime,
         t.Order.Status.ToLower(), t.Order.ExpiresAt,
         t.Order.Payments.OrderByDescending(p => p.Id).Select(p => p.Status.ToLower()).FirstOrDefault(),
         t.Session.Sport.Name, t.Session.Court.Name, t.Session.Court.Venue.Name, t.Player.User.FullName,
         t.CheckedInBy != null || t.Status.ToLower() == "checkedin",
-        t.Refunds.OrderByDescending(r => r.Id).Select(r => r.Status).FirstOrDefault(),
-        t.Refunds.OrderByDescending(r => r.Id).Select(r => r.AmountVnd).FirstOrDefault());
+        t.Refunds.Any(r => r.Status == "requested") ? "requested" : t.Refunds.Any(r => r.Status == "processing") ? "processing" : t.Refunds.OrderByDescending(r => r.Id).Select(r => r.Status).FirstOrDefault(),
+        t.Refunds.Where(r => r.Status != "failed").Sum(r => r.AmountVnd)) { SessionStatus = t.Session.Status.ToLower() };
 }

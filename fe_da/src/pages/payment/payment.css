@@ -445,7 +445,59 @@
 .checkin-camera { width:100%; max-height:340px; border-radius:12px; margin-top:18px; background:#17251b; }
 .checkin-form { display:grid; gap:12px; margin-top:24px; }
 .payment-workspace .checkin-form input { width:100%; padding:12px; border:1px solid var(--color-border); border-radius:10px; }
+.session-list { display:grid; gap:12px; margin:16px 0 22px; }
+.session-option {
+  width:100%; text-align:left; border:1px solid var(--color-border); border-radius:12px; background:#f9faf5; padding:14px 16px; display:grid; gap:6px; cursor:pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.session-option:hover { border-color: #aac274; transform: translateY(-1px); }
+.session-option.selected { border-color: var(--color-primary); box-shadow: var(--shadow-sm); background:#f4f9ee; }
+.session-option-header { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.session-option span, .session-option small, .selected-session-summary p { color: var(--color-muted); }
+.selected-session-summary { margin-top:16px; padding:14px 16px; border-radius:12px; background:#f5f7f0; border:1px solid var(--color-border); }
+.selected-session-summary h5 { margin:0 0 8px; }
 .checkin-verify { display:flex; gap:10px; align-items:center; margin-top:24px; line-height:1.6; }
 .payment-workspace .checkin-verify input { width:20px; height:20px; flex-shrink:0; }
 .payment-workspace input[type="file"] { width:100%; max-width:200px; }
 .ticket-side > svg { background:white; max-width:100%; height:auto; }
+.ticket-issue { margin:16px 0; padding:18px; border:1px solid #e6bc78; border-radius:12px; background:#fff8e9; font-size:14px; line-height:1.7; }
+.aftercare-form { display:grid; gap:14px; margin-top:18px; }
+.aftercare-form label { display:grid; gap:7px; }
+.payment-workspace .aftercare-form input,.payment-workspace .aftercare-form select { width:100%; padding:11px; border:1px solid #ccd8ce; border-radius:8px; background:white; color:#244233; }
+.aftercare-form .checkin-verify { display:flex; }
+.payment-workspace .aftercare-form input[type=checkbox] { width:20px; }
+.payment-badge.venue_issue { background:#fff0cd; color:#875311; }
+
+.ticket-support{margin:12px 0}.support-messages{max-height:420px;overflow:auto;display:grid;gap:10px}.support-message{padding:12px;border:1px solid #d5dce3;border-radius:10px;background:#fff}.support-message.staff{background:#eff9f5}.support-message time{display:block;font-size:.8rem;color:#596675}.support-message p{white-space:pre-wrap;overflow-wrap:anywhere}.support-message img{display:block;max-width:100%;width:220px;max-height:260px;object-fit:contain;margin-top:8px}.ticket-support form{display:grid;gap:12px}
+/* Align checkout and tickets with the player navigation and workspace gutter. */
+.player-workspace > .payment-workspace {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+.payment-heading h1 { margin: 0; line-height: 1.3; }
+.payment-heading { align-items: baseline; }
+.checkout > *, .checkout-items li > *, .summary-row > * { min-width: 0; }
+.checkout-items li, .summary-row { gap: 20px; align-items: baseline; }
+.checkout-items li > :last-child, .summary-row > :last-child { text-align: right; flex-shrink: 0; }
+.payment-details dd { margin: 0; }
+.ticket-list > .payment-card { margin: 0; }
+.ticket-main { display: flex; flex-direction: column; }
+.ticket-main > .payment-actions { margin-top: auto; padding-top: 20px; }
+.ticket-top { align-items: flex-start; }
+.ticket-top h4 { flex: 1; min-width: 140px; line-height: 1.5; overflow-wrap: anywhere; }
+.ticket-top .payment-badge { flex-shrink: 0; }
+.ticket-meta span { align-items: flex-start; }
+.ticket-meta svg { flex-shrink: 0; margin-top: 3px; }
+.payment-actions .button { min-height: 44px; justify-content: center; }
+.ticket-toolbar { align-items: stretch; }
+.payment-workspace .ticket-toolbar input { min-width: 0; min-height: 44px; }
+.ticket-side > .button { width: 100%; justify-content: center; }
+@media (max-width: 600px) {
+  .payment-heading { margin-bottom: 20px; }
+  .ticket-toolbar { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .payment-workspace .ticket-toolbar input { width: 100%; }
+  .ticket-main, .ticket-side { padding: 20px; }
+  .checkout-items li { flex-wrap: wrap; gap: 8px; }
+  .summary-row { gap: 12px; }
+}
