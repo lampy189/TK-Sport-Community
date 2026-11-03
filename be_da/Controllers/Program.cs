@@ -52,6 +52,9 @@ builder.Services.AddScoped<ISkillProfileStore>(services => new SqlSkillProfileSt
 builder.Services.AddScoped<IStockStore>(services => new SqlStockStore(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
+builder.Services.AddScoped<ISessionSupplyStore>(services => new SqlSessionSupplyStore(
+    services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
+    ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
 builder.Services.AddScoped<GoogleSignIn>();
 builder.Services.AddScoped<AccountCookieEvents>();
 var isDevelopment = builder.Environment.IsDevelopment();
