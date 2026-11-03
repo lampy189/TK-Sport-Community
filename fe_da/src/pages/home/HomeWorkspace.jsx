@@ -2,6 +2,8 @@ import SectionLayout from "../../components/layout/SectionLayout";
 import { BrowseSessionsView } from "../../components/BrowseSessionsView";
 import { SessionDetailView } from "../../components/SessionDetailView";
 import PaymentPage from "../payment/PaymentPage";
+import StorePage from "../store/StorePage";
+import CheckInPage from "../payment/CheckInPage";
 import { Construction, ArrowLeft } from "lucide-react";
 
 export default function HomeWorkspace({
@@ -52,6 +54,8 @@ export default function HomeWorkspace({
           }
         />
       );
+    if (role === "player" && active === "Cửa hàng")
+      return <StorePage role="player" user={user} />;
     if (role === "player" && active === "Hồ sơ kỹ năng")
       return (
         <SkillProfileView
@@ -71,6 +75,8 @@ export default function HomeWorkspace({
         />
       );
   }
+  if (!preview && ["staff", "manager"].includes(role) && active === "Bán hàng")
+    return <StorePage role="staff" user={user} />;
   if (
     !preview &&
     ["staff", "manager"].includes(role) &&
