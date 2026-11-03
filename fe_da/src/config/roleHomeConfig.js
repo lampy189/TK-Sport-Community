@@ -23,7 +23,7 @@ export const roleHomeConfig = {
       "Theo dõi buổi được phân công, ghi nhận điểm danh và đánh giá kỹ năng người chơi.",
     action: "Xem phân công",
     section: "Bàn làm việc trọng tài",
-    modules: ["Phân công", "Điểm danh", "Đánh giá kỹ năng", "Vật tư buổi chơi"],
+    modules: ["Phân công", "Điểm danh", "Đánh giá kỹ năng", "Ngoại lệ trình độ", "Khiếu nại đánh giá", "Vật tư buổi chơi"],
     stats: [
       ["02", "Buổi được phân công"],
       ["16", "Người chơi dự kiến"],
@@ -68,6 +68,7 @@ export const roleHomeConfig = {
       "Phân công nhân sự",
       "Điểm danh",
       "Khiếu nại đánh giá",
+      "Ngoại lệ trình độ",
       "Ngoại lệ vận hành",
       "Sự cố sân",
       "Đổi & hoàn vé",

@@ -297,11 +297,7 @@ export default function PaymentPage({
               })} />
           ) : !order ? (
             <>
-              <StatePanel
-                title="Chọn vé để thanh toán"
-                description="Chọn vé chờ thanh toán hoặc tìm buổi chơi phù hợp."
-              />
-              <TicketList key="pending-checkouts" tickets={tickets} initialFilter="pending" now={now} busy={busy} onBrowse={onBrowse}
+              <TicketList key="pending-checkouts" checkoutOnly tickets={tickets} initialFilter="pending" now={now} busy={busy} onBrowse={onBrowse}
                 onRefresh={() => run(async () => setTickets(await paymentClient.tickets()))}
                 onCancel={(id) => run(async () => { await paymentClient.cancel(id); setTickets(await paymentClient.tickets()); })}
                 onPay={(ticket) => run(async () => { setOrderId(String(ticket.orderId)); setOrder(await paymentClient.refresh(ticket.orderId)); })} />

@@ -6,16 +6,16 @@ import { QRCodeSVG } from 'qrcode.react';
 import StatePanel from '../../components/ui/StatePanel';
 const money = n => new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(n);
 const labels = {confirmed:'Sắp diễn ra',pending:'Chờ thanh toán',cancelled:'Đã hủy',expired:'Hết hạn',completed:'Đã kết thúc',checkedin:'Đã check-in',review_required:'Đang kiểm tra',invalidated:'Không còn hiệu lực',processing:'Đang xác nhận',venue_issue:'Sự cố sân',exchanged:'Đã đổi vé'};
-export default function TicketList({tickets,now,busy,onRefresh,onPay,onCancel,onBrowse,initialFilter='all'}) {
+export default function TicketList({tickets,now,busy,onRefresh,onPay,onCancel,onBrowse,initialFilter='all',checkoutOnly=false}) {
   const [filter,setFilter]=useState(initialFilter);
   const [query,setQuery]=useState('');
   const [detail,setDetail]=useState(null);
   const [cancelId,setCancelId]=useState(null);
-  const visible=tickets.filter(t=>(filter==='all'||(filter==='history'?['cancelled','expired','completed','invalidated','checkedin','exchanged'].includes(state(t,now)):state(t,now)===filter))&&[t.ticketCode,t.sportName,t.courtName,t.venueName,t.holderName].join(' ').toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi'))).sort((a,b)=>(start(b)||0)-(start(a)||0));
+  const visible=tickets.filter(t=>((checkoutOnly ? state(t,now)==='pending' : filter==='all')||(filter==='history'?['cancelled','expired','completed','invalidated','checkedin','exchanged'].includes(state(t,now)):state(t,now)===filter))&&[t.ticketCode,t.sportName,t.courtName,t.venueName,t.holderName].join(' ').toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi'))).sort((a,b)=>(start(b)||0)-(start(a)||0));
   return <>
     <div className="ticket-toolbar"><input aria-label="Tìm vé" placeholder="Tìm sân, người chơi, mã vé…" value={query} onChange={e=>setQuery(e.target.value)}/><button className="button button-secondary" disabled={busy} onClick={onRefresh}>Cập nhật</button>{onBrowse&&<button className="button button-primary" onClick={onBrowse}>Đặt buổi chơi</button>}</div>
-    <div className="ticket-filters" aria-label="Lọc vé">{[['all','Tất cả'],['confirmed','Sắp diễn ra'],['pending','Chờ thanh toán'],['venue_issue','Sự cố sân'],['history','Lịch sử']].map(([key,label])=><button key={key} className="button" aria-pressed={filter===key} onClick={()=>setFilter(key)}>{label}</button>)}</div>
-    <div className="ticket-list">{!visible.length&&<StatePanel title={tickets.length?'Không có vé phù hợp':'Bạn chưa có vé nào'} description="Chọn buổi chơi mới hoặc thay đổi bộ lọc để tìm vé."/>}
+    {!checkoutOnly && <div className="ticket-filters" aria-label="Lọc vé">{[['all','Tất cả'],['confirmed','Sắp diễn ra'],['pending','Chờ thanh toán'],['venue_issue','Sự cố sân'],['history','Lịch sử']].map(([key,label])=><button key={key} className="button" aria-pressed={filter===key} onClick={()=>setFilter(key)}>{label}</button>)}</div>}
+    <div className="ticket-list">{!visible.length&&<StatePanel title={checkoutOnly ? (query ? 'Không tìm thấy vé chờ thanh toán' : 'Bạn không có vé chờ thanh toán') : tickets.length?'Không có vé phù hợp':'Bạn chưa có vé nào'} description={checkoutOnly ? (query ? 'Thử tìm bằng tên sân hoặc mã vé khác.' : 'Vé cần thanh toán sẽ xuất hiện tại đây sau khi bạn đăng ký buổi chơi.') : 'Chọn buổi chơi mới hoặc thay đổi bộ lọc để tìm vé.'}/>}
     {visible.map(t=>{const status=state(t,now); const open=detail===t.id; const canCancel=t.canManage!==false&&['pending','confirmed'].includes(status)&&(status==='pending'||start(t)-now>=43200000);
       return <article className="ticket-stub" key={t.id}><div className="ticket-main">
         <div className="ticket-top"><h4>{t.sportName||'Buổi chơi'} · {t.courtName||'Thông tin sân đang cập nhật'}</h4><span className={`payment-badge ${status}`}>{labels[status]}</span></div>
