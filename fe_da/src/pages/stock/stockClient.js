@@ -40,6 +40,9 @@ export const movementLabels = {
   Receipt: "Nhập kho",
   Issue: "Xuất kho",
   OpeningBalance: "Tồn đầu kỳ",
+  SaleOut: "Xuất bán (giao hàng)",
+  SessionIssue: "Cấp cho buổi chơi",
+  SessionReturn: "Buổi chơi trả lại",
 };
 
 export const stockClient = {
@@ -49,4 +52,15 @@ export const stockClient = {
   move: (id, type, quantity) =>
     send(`products/${id}/movements`, "POST", { type, quantity }),
   movements: (id) => call(`products/${id}/movements`),
+  supplySessions: (date) =>
+    call(`session-supplies${date ? `?date=${encodeURIComponent(date)}` : ""}`),
+  supplyDetails: (sessionId) => call(`session-supplies/${sessionId}`),
+  issueSupply: (sessionId, body) =>
+    send(`session-supplies/${sessionId}/issue`, "POST", body),
+  reconcileSupply: (sessionId, productId, returnedQuantity) =>
+    send(
+      `session-supplies/${sessionId}/products/${productId}/reconcile`,
+      "POST",
+      { returnedQuantity },
+    ),
 };

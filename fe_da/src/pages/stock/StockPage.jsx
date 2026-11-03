@@ -12,6 +12,7 @@ import {
 import SectionLayout from "../../components/layout/SectionLayout";
 import StatePanel from "../../components/ui/StatePanel";
 import { categoryLabels, movementLabels, stockClient } from "./stockClient";
+import SessionSuppliesView from "./SessionSuppliesView";
 import "./stock.css";
 
 const money = (value) =>
@@ -20,8 +21,35 @@ const money = (value) =>
   );
 const number = (value) => new Intl.NumberFormat("vi-VN").format(value);
 
-// UC-26 / UC-27 (team breakdown; RP3 SCR-22): Staff catalogue, receipts/issues and movement history.
+const tabs = [
+  { id: "catalog", label: "Danh mục & tồn kho" },
+  { id: "supplies", label: "Vật tư buổi chơi" },
+];
+
 export default function StockPage() {
+  const [tab, setTab] = useState("catalog");
+  return (
+    <div className="stock-workspace">
+      <div className="stock-tabs" role="tablist" aria-label="Kho & vật tư">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={tab === t.id}
+            className={tab === t.id ? "is-active" : ""}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "catalog" ? <StockCatalog /> : <SessionSuppliesView />}
+    </div>
+  );
+}
+
+// UC-26 / UC-27 (team breakdown; RP3 SCR-22): Staff catalogue, receipts/issues and movement history.
+function StockCatalog() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,7 +57,7 @@ export default function StockPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [onlyLow, setOnlyLow] = useState(false);
-  const [showInactive, setShowInactive] = useState(false);
+  const [showInactive] = useState(false);
   const [dialog, setDialog] = useState(null);
 
   const [reloadKey, setReloadKey] = useState(0);
