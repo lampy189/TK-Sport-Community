@@ -94,7 +94,7 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
                 var pId = reader.GetInt64(0);
                 var spId = reader.GetInt64(1);
                 var score = reader.IsDBNull(2) ? null : (short?)reader.GetInt16(2);
-                var band = reader.IsDBNull(3) ? null : reader.GetString(3);
+                var band = SqlSessionStore.NormalizeBand(reader.IsDBNull(3) ? null : reader.GetString(3), score);
                 var status = reader.IsDBNull(4) ? "Unrated" : reader.GetString(4);
                 rawProfiles[spId] = (pId, score, band, status);
             }
