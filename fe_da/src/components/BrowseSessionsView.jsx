@@ -738,12 +738,6 @@ export function BrowseSessionsView({
                                               />
                                             )}
                                         </div>
-                                        <div className="timetable-event-time">
-                                          <Clock size={12} />
-                                          <span>
-                                            {s.timeLabel || rangeLabel}
-                                          </span>
-                                        </div>
                                         <div className="timetable-event-meta">
                                           <MapPin size={12} />
                                           <span>{s.courtName}</span>

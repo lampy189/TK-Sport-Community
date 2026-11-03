@@ -337,6 +337,9 @@ public class PaymentServiceTests
         public void AddRefund(Refund r) => Refunds.Add(r);
         public bool Assigned = true;
         public Task<long?> FindOrderForTicketCodeAsync(string code) => Task.FromResult<long?>(Order.Tickets.Any(t => t.TicketCode == code) ? Order.Id : null);
+        public Task<IReadOnlyList<AssignedSessionSummary>> GetAssignedSessionsAsync(long actorId) => Task.FromResult<IReadOnlyList<AssignedSessionSummary>>([
+            new AssignedSessionSummary(1, "Cầu lông", "Sân 1", "TK Sport", SessionDate, new TimeOnly(18, 0), new TimeOnly(20, 0), "Open", "B1", 8, 0, Assigned, "ready", "Buổi đang mở, có thể điểm danh người chơi.")
+        ]);
         public Task<CheckInContext?> GetCheckInContextAsync(string code, long actorId) => Task.FromResult<CheckInContext?>(
             new CheckInContext(1, Order.Id, SessionDate, new TimeOnly(20, 0), "Open", Assigned, "Người chơi", "Cầu lông", "Sân 1", new TimeOnly(18, 0)));
         public Task<bool> HasPendingChangeAsync(long ticketId) => Task.FromResult(false);

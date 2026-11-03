@@ -18,7 +18,7 @@ public sealed record GoodsOrderView(long Id, string OrderCode, string? CustomerN
     string Status, string? PaymentState, string? HandoverState, IReadOnlyList<GoodsLine> Lines,
     string? PaymentMethod, string? ReferenceCode, string? CheckoutUrl, DateTimeOffset? ExpiresAt, GoodsInvoice? Invoice);
 
-public sealed class GoodsPaymentService(Sep490Context db, IPaymentGateway gateway, TimeProvider clock)
+public sealed partial class GoodsPaymentService(Sep490Context db, IPaymentGateway gateway, TimeProvider clock)
 {
     public async Task<object> ListAsync(CancellationToken ct) => await db.Orders.AsNoTracking()
         .OrderByDescending(o => o.Id).Take(100)
