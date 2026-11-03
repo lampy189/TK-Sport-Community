@@ -280,7 +280,11 @@ public sealed class CommunityController(
             return BadRequest(new { code = "invalid_recipient_id", message = "Recipient player ID is required." });
 
         if (string.IsNullOrWhiteSpace(request.Content))
-            return BadRequest(new { code = "invalid_message_content", message = "Message content cannot be blank." });
+            return BadRequest(new { code = "invalid_message_content", message = "Nội dung tin nhắn không được để trống." });
+
+        var trimmedContent = request.Content.Trim();
+        if (trimmedContent.Length > 2000)
+            return BadRequest(new { code = "message_too_long", message = "Tin nhắn không được vượt quá 2000 ký tự." });
 
         var areFriends = await friendshipStore.AreFriendsAsync(userId, request.RecipientPlayerId.Value, cancellationToken);
         if (!areFriends)
@@ -292,14 +296,16 @@ public sealed class CommunityController(
             });
         }
 
-        var result = await friendshipStore.SendMessageAsync(userId, request.RecipientPlayerId.Value, request.Content.Trim(), cancellationToken);
+        var result = await friendshipStore.SendMessageAsync(userId, request.RecipientPlayerId.Value, trimmedContent, cancellationToken);
         if (result is null)
         {
             return NotFound(new { code = "recipient_not_found", message = "Recipient player was not found." });
         }
 
         var senderName = User.FindFirstValue(ClaimTypes.Name) ?? "Người chơi";
-        var preview = request.Content.Length > 100 ? request.Content[..100] + "..." : request.Content;
+        var preview = trimmedContent.StartsWith("[[TKSC_SESSION_INVITE:", StringComparison.Ordinal)
+            ? "Đã gửi lời mời cùng đặt sân chơi thể thao."
+            : (trimmedContent.Length > 100 ? trimmedContent[..100] + "..." : trimmedContent);
         await notificationService.SendPushNotificationAsync(
             result.RecipientUserId,
             $"Tin nhắn mới từ {senderName}",

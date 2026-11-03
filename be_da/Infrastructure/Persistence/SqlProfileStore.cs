@@ -483,10 +483,10 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
 
     private static string ComputeBandFromScore(short score) => score switch
     {
-        <= 20 => "B1",
-        <= 40 => "B2",
-        <= 60 => "B3",
-        <= 80 => "B4",
+        < 20 => "B1",
+        < 40 => "B2",
+        < 60 => "B3",
+        < 80 => "B4",
         _ => "B5"
     };
 
