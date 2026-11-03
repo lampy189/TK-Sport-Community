@@ -194,6 +194,7 @@ function SupplyDetails({ sessionId, onSummary }) {
               <tr>
                 <th scope="col">Vật tư</th>
                 <th scope="col" className="num">Đã cấp</th>
+                <th scope="col" className="num">TT báo dùng</th>
                 <th scope="col" className="num">Trả lại</th>
                 <th scope="col" className="num">Đã dùng</th>
                 <th scope="col">Người nhận</th>
@@ -208,6 +209,7 @@ function SupplyDetails({ sessionId, onSummary }) {
                     <span className="stock-sku">{a.sku}</span>
                   </td>
                   <td data-label="Đã cấp" className="num">{number(a.issued)}</td>
+                  <td data-label="TT báo dùng" className="num">{a.reportedUsed ?? "—"}</td>
                   <td data-label="Trả lại" className="num">{a.isReconciled ? number(a.returned) : "—"}</td>
                   <td data-label="Đã dùng" className="num">{a.used ?? "—"}</td>
                   <td data-label="Người nhận">{a.recipientName || "—"}</td>
@@ -219,7 +221,13 @@ function SupplyDetails({ sessionId, onSummary }) {
                         className="button button-secondary"
                         disabled={busy}
                         onClick={() =>
-                          setClosing({ productId: a.productId, name: a.name, max: a.outstanding, returned: "0" })
+                          // Prefill from the referee's report; Staff enters what was physically returned.
+                          setClosing({
+                            productId: a.productId,
+                            name: a.name,
+                            max: a.outstanding,
+                            returned: String(a.reportedUsed == null ? 0 : a.outstanding - a.reportedUsed),
+                          })
                         }
                       >
                         <Undo2 size={15} aria-hidden="true" /> Chốt cuối buổi

@@ -22,7 +22,8 @@ public sealed record SupplyAllocation(
     int Returned,
     long? RecipientId,
     string? RecipientName,
-    bool IsReconciled
+    bool IsReconciled,
+    int? ReportedUsed = null
 )
 {
     public int Outstanding => IsReconciled ? 0 : Issued - Returned;
@@ -34,6 +35,8 @@ public sealed record SessionSupplyDetails(SupplySession Session, IReadOnlyList<S
 public sealed record IssueSupplyRequest(long ProductId, int Quantity, long RecipientId);
 
 public sealed record ReturnSupplyRequest(int ReturnedQuantity);
+
+public sealed record ReportSupplyUseRequest(int UsedQuantity);
 
 public sealed record SupplyResult(bool Success, string? ErrorCode, string? Message, SessionSupplyDetails? Details = null)
 {
@@ -55,4 +58,7 @@ public static class SupplyRules
 
     public static string? ValidateReturn(ReturnSupplyRequest request) =>
         request.ReturnedQuantity < 0 || request.ReturnedQuantity > StockRules.MaxQuantity ? "Số lượng trả lại không hợp lệ." : null;
+
+    public static string? ValidateUse(ReportSupplyUseRequest request) =>
+        request.UsedQuantity < 0 || request.UsedQuantity > StockRules.MaxQuantity ? "Số lượng đã dùng không hợp lệ." : null;
 }

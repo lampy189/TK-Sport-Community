@@ -8,6 +8,7 @@ import CheckInPage from "../payment/CheckInPage";
 import SkillProfileView from "../../components/SkillProfileView";
 import PaymentPage from "../payment/PaymentPage";
 import StockPage from "../stock/StockPage";
+import RefereeSuppliesView from "../stock/RefereeSuppliesView";
 import StorePage from "../store/StorePage";
 import { Construction, ArrowLeft } from "lucide-react";
 
@@ -33,6 +34,7 @@ export default function HomeWorkspace({
       </>
     );
   if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage />;
+  if (!preview && role === "referee" && active === "Vật tư buổi chơi") return <RefereeSuppliesView />;
   if (!preview && ["player", "guest"].includes(role)) {
     if (active === "Lịch social")
       return (

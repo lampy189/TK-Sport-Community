@@ -57,6 +57,15 @@ export const stockClient = {
   supplyDetails: (sessionId) => call(`session-supplies/${sessionId}`),
   issueSupply: (sessionId, body) =>
     send(`session-supplies/${sessionId}/issue`, "POST", body),
+  refereeSessions: (date) =>
+    call(`referee-supplies${date ? `?date=${encodeURIComponent(date)}` : ""}`),
+  refereeDetails: (sessionId) => call(`referee-supplies/${sessionId}`),
+  reportSupplyUse: (sessionId, productId, usedQuantity) =>
+    send(
+      `referee-supplies/${sessionId}/products/${productId}/usage`,
+      "POST",
+      { usedQuantity },
+    ),
   reconcileSupply: (sessionId, productId, returnedQuantity) =>
     send(
       `session-supplies/${sessionId}/products/${productId}/reconcile`,
