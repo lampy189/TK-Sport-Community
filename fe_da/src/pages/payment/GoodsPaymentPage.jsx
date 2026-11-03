@@ -3,10 +3,11 @@ import { QRCodeSVG } from "qrcode.react";
 import SectionLayout from "../../components/layout/SectionLayout";
 import { workflowRequest } from "../workflowClient";
 import "../workflow.css";
+import GoodsHandoverPanel from "../stock/GoodsHandoverPanel";
 
 const root = "/api/v1/commerce/goods-orders";
 const money = n => `${Number(n).toLocaleString("vi-VN")} ₫`;
-const stateLabel = { Cart: "Giỏ hàng", PendingPayment: "Chờ chuyển khoản", Paid: "Đã thanh toán", Invoiced: "Đã xuất hóa đơn", NeedsReview: "Cần đối soát", Pending: "Chờ thanh toán", Unpaid: "Chưa thanh toán" };
+const stateLabel = { Cart: "Giỏ hàng", PendingPayment: "Chờ chuyển khoản", Paid: "Đã thanh toán", Invoiced: "Đã xuất hóa đơn", Completed: "Hoàn tất",NeedsReview: "Cần đối soát", Pending: "Chờ thanh toán", Unpaid: "Chưa thanh toán" };
 
 export default function GoodsPaymentPage() {
   const [orders, setOrders] = useState([]);
@@ -106,7 +107,10 @@ export default function GoodsPaymentPage() {
             window.setTimeout(() => URL.revokeObjectURL(url), 1000);
           }}>Tải hóa đơn</button>
         </article>}
-        <p>Bàn giao hàng: {order.handoverState || "Chưa ghi nhận"}</p>
+        <GoodsHandoverPanel order={order} onUpdated={updated => {
+          setOrder(updated);
+          setOrders(list => list.map(o => o.id === updated.id ? updated : o));
+        }} />
       </>}
     </div>
   </SectionLayout>;

@@ -29,6 +29,7 @@ const icons = {
   "Điểm danh": ClipboardCheck,
   "Đánh giá kỹ năng": ChartNoAxesCombined,
   "Vật tư buổi chơi": Package,
+  "Cửa hàng": ShoppingBag,
   "Bán hàng": ShoppingBag,
   "Kho & vật tư": Package,
   "Đối soát ca": ClipboardCheck,

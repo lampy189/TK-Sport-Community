@@ -330,6 +330,13 @@ const DIMENSION_ANCHORS = {
   },
 };
 
+// Alias D1..D5 from LamNV's badminton-pilot-r1 rubric to the 5 Badminton anchors
+DIMENSION_ANCHORS.D1 = DIMENSION_ANCHORS.BM_SERVE_NET;
+DIMENSION_ANCHORS.D2 = DIMENSION_ANCHORS.BM_CLEAR_BACKHAND;
+DIMENSION_ANCHORS.D3 = DIMENSION_ANCHORS.BM_SMASH_DEFENSE;
+DIMENSION_ANCHORS.D4 = DIMENSION_ANCHORS.BM_FOOTWORK;
+DIMENSION_ANCHORS.D5 = DIMENSION_ANCHORS.BM_DOUBLES;
+
 const BAND_METADATA = {
   1: {
     standardLabel: "Thang trình độ Cầu lông CLB",
@@ -378,7 +385,7 @@ function getBandInfo(sportId, bandCode) {
   );
 }
 
-function getProfileLockState(prof) {
+function getProfileLockState(prof, officialList = []) {
   if (!prof) {
     return {
       isRefereeRated: false,
@@ -390,9 +397,11 @@ function getProfileLockState(prof) {
   }
   const hasOnCourt =
     prof.latestAssessment?.assessmentType === "OnCourt" ||
-    (prof.ratingHistory || []).some((h) => h.assessmentType === "OnCourt");
+    (prof.ratingHistory || []).some((h) => h.assessmentType === "OnCourt") ||
+    (Array.isArray(officialList) && officialList.length > 0);
   const isRefereeRated =
     prof.ratingStatus === "Rated" ||
+    prof.ratingStatus === "Confirmed" ||
     prof.ratingStatus === "Official" ||
     hasOnCourt;
 
@@ -442,6 +451,7 @@ function formatSessionInfo(item) {
 export default function SkillProfileView({ onBrowseSport }) {
   const [overview, setOverview] = useState(null);
   const [rubrics, setRubrics] = useState([]);
+  const [officialResults, setOfficialResults] = useState({ 1: [], 2: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -470,8 +480,18 @@ export default function SkillProfileView({ onBrowseSport }) {
       if (document.hidden || pending) return;
       pending = true;
       try {
-        const data = await api.getMySkillProfiles();
-        if (active) setOverview(data);
+        const [data, offBm, offPk] = await Promise.all([
+          api.getMySkillProfiles(),
+          api.getMyOfficialSkillResults(1),
+          api.getMyOfficialSkillResults(2),
+        ]);
+        if (active) {
+          setOverview(data);
+          setOfficialResults({
+            1: Array.isArray(offBm) ? offBm : [],
+            2: Array.isArray(offPk) ? offPk : [],
+          });
+        }
       } catch { /* Keep the last result; the next refresh retries. */ }
       finally { pending = false; }
     }
@@ -484,12 +504,18 @@ export default function SkillProfileView({ onBrowseSport }) {
     setLoading(true);
     setError(null);
     try {
-      const [rubricList, myData] = await Promise.all([
+      const [rubricList, myData, offBm, offPk] = await Promise.all([
         api.getSkillRubrics(),
         api.getMySkillProfiles(),
+        api.getMyOfficialSkillResults(1),
+        api.getMyOfficialSkillResults(2),
       ]);
       setRubrics(Array.isArray(rubricList) ? rubricList : []);
       setOverview(myData);
+      setOfficialResults({
+        1: Array.isArray(offBm) ? offBm : [],
+        2: Array.isArray(offPk) ? offPk : [],
+      });
     } catch (err) {
       setError(err.message || "Không thể tải hồ sơ kỹ năng.");
     } finally {
@@ -624,7 +650,10 @@ export default function SkillProfileView({ onBrowseSport }) {
     selectedSportId,
     activeProfile?.sportName,
   );
-  const activeLock = getProfileLockState(activeProfile);
+  const activeLock = getProfileLockState(
+    activeProfile,
+    officialResults[selectedSportId],
+  );
 
   return (
     <div className="skill-profile-page">
@@ -688,7 +717,10 @@ export default function SkillProfileView({ onBrowseSport }) {
           const isSelected = prof.sportId === selectedSportId;
           const sportVi = getSportNameVi(prof.sportId, prof.sportName);
           const bandInfo = getBandInfo(prof.sportId, prof.currentBand);
-          const lockState = getProfileLockState(prof);
+          const lockState = getProfileLockState(
+            prof,
+            officialResults[prof.sportId],
+          );
           const scoreVal =
             prof.currentScore != null ? Number(prof.currentScore) : 0;
           const latestType = prof.latestAssessment?.assessmentType;
