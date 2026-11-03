@@ -6,13 +6,18 @@ namespace TKSC.Domain.Assessments;
 public static class BadmintonScoring
 {
     public const string RubricVersion = "badminton-pilot-r1";
+    public const string ClubRubricVersion = "BM-CLB-V1";
+    private static readonly string[] PilotCodes = { "D1", "D2", "D3", "D4", "D5" };
+    private static readonly string[] ClubCodes = { "BM_CLEAR_BACKHAND", "BM_DOUBLES", "BM_FOOTWORK", "BM_SERVE_NET", "BM_SMASH_DEFENSE" };
+
     public static bool Supports(Rubric rubric) =>
         string.Equals(rubric.Sport.Code, "badminton", StringComparison.OrdinalIgnoreCase)
-        && rubric.Version == RubricVersion
         && rubric.RubricDimensions.Count == 5
         && rubric.RubricDimensions.All(d => d.WeightPercent == 20)
-        && rubric.RubricDimensions.Select(d => d.Code).OrderBy(c => c)
-            .SequenceEqual(new[] { "D1", "D2", "D3", "D4", "D5" });
+        && ((rubric.Version == RubricVersion
+                && rubric.RubricDimensions.Select(d => d.Code).OrderBy(c => c).SequenceEqual(PilotCodes))
+            || (rubric.Version == ClubRubricVersion
+                && rubric.RubricDimensions.Select(d => d.Code).OrderBy(c => c).SequenceEqual(ClubCodes)));
 
     public static short? Calculate(IEnumerable<short?> marks)
     {
