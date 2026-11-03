@@ -14,7 +14,8 @@ const steps = [
 export default function GoodsHandoverPanel({ order, onUpdated }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const state = order.handoverState;
+  // Carts from the store start as "Pending"; older rows may be null.
+  const state = order.handoverState === "Pending" ? null : order.handoverState;
   const reached = {
     Delivered: state === "Delivered" || state === "Received",
     Received: state === "Received",
