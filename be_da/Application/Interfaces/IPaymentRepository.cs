@@ -18,6 +18,9 @@ public interface IPaymentRepository
     Task<TicketCancelContext?> GetTicketCancelContextAsync(long ticketId);
     void AddRefund(Refund refund);
     Task<long?> FindOrderForTicketCodeAsync(string code);
+    Task<IReadOnlyList<AssignedSessionSummary>> GetAssignedSessionsAsync(long actorId);
     Task<CheckInContext?> GetCheckInContextAsync(string code, long actorId);
+    Task<bool> HasPendingChangeAsync(long ticketId);
+    Task<IReadOnlyList<TicketFundingSummary>> GetFundingAsync(long ticketId);
     Task SaveAsync();
 }

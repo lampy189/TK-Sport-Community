@@ -1,0 +1,13 @@
+.assessment-criteria > legend { margin-bottom: 16px; font-weight: 700; }
+.assessment-criteria .assessment-evidence { margin-top: 18px; }
+.assessment-criteria .sp-level-option { position: relative; align-content: start; font-weight: 400; }
+.assessment-criteria .sp-level-option input[type="radio"] { display: block; width: 18px; height: 18px; margin: 0 0 4px; padding: 0; accent-color: #28764f; }
+.assessment-criteria .sp-level-option:has(input:disabled) { opacity: .6; background: #f1f3f2; }
+.assessment-criteria .sp-level-option:focus-within { outline: 3px solid #28764f; outline-offset: 3px; }
+.assessment-criteria:disabled .sp-level-option, .assessment-criteria .sp-level-option:has(input:disabled) { cursor: default; }
+.assessment-criteria textarea { box-sizing: border-box; }
+@media (max-width: 560px) {
+  .assessment-criteria .sp-question-card { padding: 14px; }
+  .assessment-criteria .sp-question-head { flex-wrap: wrap; }
+  .assessment-criteria .sp-level-options { grid-template-columns: 1fr; }
+}

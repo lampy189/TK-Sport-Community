@@ -25,6 +25,7 @@ public sealed class PaymentService(IPaymentRepository repository, IPaymentGatewa
             var now = clock.GetUtcNow();
             var ticket = order!.Tickets.SingleOrDefault(t => t.Id == ticketId)
                 ?? throw new PaymentException(404, "Không tìm thấy vé.");
+            if(await repository.HasPendingChangeAsync(ticketId)) throw new PaymentException(409,"Hãy rút yêu cầu đổi trước khi hủy vé.");
             var status = ticket.Status.ToLowerInvariant();
             if (status == "cancelled") throw new PaymentException(409, "Vé đã được hủy trước đó.");
             if (status == "checkedin" || ticket.CheckedInBy is not null)
@@ -43,12 +44,17 @@ public sealed class PaymentService(IPaymentRepository repository, IPaymentGatewa
             {
                 if (start - now < PaidCancelWindow)
                     throw new PaymentException(409, "Chỉ hủy được vé đã thanh toán trước giờ chơi ít nhất 12 giờ.");
-                var payment = order.Payments.Where(p => p.Status == "paid").OrderByDescending(p => p.Id).FirstOrDefault()
-                    ?? throw new PaymentException(409, "Không tìm thấy giao dịch đã thanh toán của vé.");
+                var funds = await repository.GetFundingAsync(ticket.Id);
+                if (funds.Count == 0 && ticket.AmountVnd > 0)
+                {
+                    var payment = order.Payments.Where(p => p.Status == "paid").OrderByDescending(p => p.Id).FirstOrDefault()
+                        ?? throw new PaymentException(409, "Không tìm thấy nguồn tiền của vé.");
+                    funds = [new TicketFundingSummary(payment.Id, ticket.AmountVnd)];
+                }
+                if(funds.Sum(f=>f.AmountVnd)!=ticket.AmountVnd) throw new PaymentException(409,"Nguồn tiền không khớp vé.");
                 refundAmount = ticket.AmountVnd;
-                // Refund goes to the original payer, never automatically to the invited player.
-                repository.AddRefund(new Refund { PaymentId = payment.Id, TicketId = ticket.Id, RecipientId = order.PayerId,
-                    AmountVnd = refundAmount, Status = "requested", InitiatedBy = userId });
+                foreach(var fund in funds) repository.AddRefund(new Refund { PaymentId = fund.PaymentId, TicketId = ticket.Id,
+                    RecipientId = order.PayerId, AmountVnd = fund.AmountVnd, Status = "requested", InitiatedBy = userId });
             }
             else
             {
@@ -239,7 +245,8 @@ public sealed class PaymentService(IPaymentRepository repository, IPaymentGatewa
     private static IEnumerable<Ticket> Active(SocialBookingOrder order) =>
         order.Tickets.Where(t => !string.Equals(t.Status, "cancelled", StringComparison.OrdinalIgnoreCase));
     private static bool Eligible(SocialBookingOrder order) => Active(order).Any()
-        && Active(order).All(t => (t.Status == "reserved" || t.Status == "Pending"))
+        && Active(order).All(t => (t.Status.Equals("reserved", StringComparison.OrdinalIgnoreCase) || t.Status.Equals("pending", StringComparison.OrdinalIgnoreCase))
+            && (t.Session == null || !TicketAftercareRules.Disrupted(t.Session.Status)))
         && Active(order).Sum(t => (long)t.AmountVnd) == order.TotalAmount;
     private void Flag(SocialBookingOrder order, Payment payment, string action, string detail, long? actor = null)
     {

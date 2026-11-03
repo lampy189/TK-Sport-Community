@@ -6,6 +6,35 @@ namespace TKSC.Application.Services;
 
 public sealed class TicketCheckInService(IPaymentRepository repository, TimeProvider clock)
 {
+    public async Task<IReadOnlyList<AssignedSessionSummary>> GetAssignedSessionsAsync(long actorId)
+    {
+        var sessions = await repository.GetAssignedSessionsAsync(actorId);
+        var localNow = clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7));
+        var today = DateOnly.FromDateTime(localNow.DateTime);
+        var nowTime = TimeOnly.FromDateTime(localNow.DateTime);
+
+        return sessions.Select(session =>
+        {
+            var isActive = !string.Equals(session.SessionStatus, "cancelled", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(session.SessionStatus, "completed", StringComparison.OrdinalIgnoreCase)
+                && session.SessionDate == today
+                && nowTime >= session.StartTime
+                && nowTime < session.EndTime;
+
+            var conditionCode = isActive ? "ready" : session.SessionDate < today || nowTime >= session.EndTime ? "completed" : "not_ready";
+            var conditionMessage = conditionCode switch
+            {
+                "ready" => "Buổi đang mở, có thể điểm danh người chơi.",
+                "completed" => "Buổi đã kết thúc hoặc đã ngoài ngày hoạt động.",
+                _ => string.Equals(session.SessionStatus, "cancelled", StringComparison.OrdinalIgnoreCase)
+                    ? "Buổi đã bị hủy; không thực hiện check-in."
+                    : "Buổi chưa đến giờ hoặc chưa phù hợp điều kiện sân."
+            };
+
+            return session with { ConditionCode = conditionCode, ConditionMessage = conditionMessage };
+        }).ToList();
+    }
+
     public async Task<CheckInResult> ExecuteAsync(string? ticketCode, long actorId, bool manager, bool confirm)
     {
         var code = ticketCode?.Trim();
@@ -32,7 +61,7 @@ public sealed class TicketCheckInService(IPaymentRepository repository, TimeProv
                 var localNow = clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7));
                 if (context.SessionDate != DateOnly.FromDateTime(localNow.DateTime)
                     || TimeOnly.FromDateTime(localNow.DateTime) >= context.EndTime
-                    || context.SessionStatus.ToLowerInvariant() is "cancelled" or "completed")
+                    || context.SessionStatus.ToLowerInvariant() is "cancelled" or "completed" or "suspended")
                     throw new PaymentException(409, "Vé chỉ được check-in trong ngày chơi và trước khi buổi chơi kết thúc.");
                 if (confirm)
                 {

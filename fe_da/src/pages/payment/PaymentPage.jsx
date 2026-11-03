@@ -174,7 +174,7 @@ export default function PaymentPage({
   const state = order
     ? deriveState(order.status, latest?.status, order.expiresAt, now)
     : "";
-  const canPay = ["pending", "processing", "failed"].includes(state) && orderStatus === "pending" && seconds > 0 && payStatus !== "paid";
+  const canPay = !order?.tickets?.some(t => ["suspended", "cancelled"].includes(norm(t.sessionStatus))) && ["pending", "processing", "failed"].includes(state) && orderStatus === "pending" && seconds > 0 && payStatus !== "paid";
   const timeLeft = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
   const statusMessage = {
@@ -297,11 +297,7 @@ export default function PaymentPage({
               })} />
           ) : !order ? (
             <>
-              <StatePanel
-                title="Chọn vé để thanh toán"
-                description="Chọn vé chờ thanh toán hoặc tìm buổi chơi phù hợp."
-              />
-              <TicketList key="pending-checkouts" tickets={tickets} initialFilter="pending" now={now} busy={busy} onBrowse={onBrowse}
+              <TicketList key="pending-checkouts" checkoutOnly tickets={tickets} initialFilter="pending" now={now} busy={busy} onBrowse={onBrowse}
                 onRefresh={() => run(async () => setTickets(await paymentClient.tickets()))}
                 onCancel={(id) => run(async () => { await paymentClient.cancel(id); setTickets(await paymentClient.tickets()); })}
                 onPay={(ticket) => run(async () => { setOrderId(String(ticket.orderId)); setOrder(await paymentClient.refresh(ticket.orderId)); })} />
@@ -315,6 +311,7 @@ export default function PaymentPage({
                     {labels[state] || state}
                   </span>
                 </div>
+                {order.tickets.some(t => ["suspended","cancelled"].includes(norm(t.sessionStatus))) && <p className="payment-error">Buổi chơi gặp sự cố sân. Mở Vé của tôi để xem phương án xử lý.</p>}
                 <p className="checkout-code">Mã đơn: {order.orderCode}</p>
                 <ul className="checkout-items">
                   {order.tickets.filter(t => norm(t.status) !== "cancelled").map((t, i) => (

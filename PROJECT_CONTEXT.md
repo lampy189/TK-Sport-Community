@@ -1,5 +1,9 @@
 # TK Sport Community — Project Context
 
+## Approved assessment update (3 Nov 2026)
+
+The user approved referee scoring for Pickleball using the existing Profile internal scale: `PK-IPTPA-DUPR-V1`, five sport-specific criteria at 0–4 and 20% each, total 0–100 and internal B1–B5 bands. These are not official DUPR ratings. This explicitly supersedes the earlier restriction against this internal scale for Pickleball. New badminton forms use `BM-CLB-V1`; deactivate the old pilot rubric for new forms while retaining all existing forms and history. Upgrade 009 records the approved active-flag changes. Legacy pilot forms remain readable and scoreable under their original rubric.
+
 ## Source priority
 - RP1: project purpose, venue workflow, scope and operating assumptions.
 - RP2: project plan, stack and timeline.

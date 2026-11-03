@@ -41,6 +41,13 @@ public sealed record SessionDetails(
     IReadOnlyList<SessionParticipant> PublicParticipants
 );
 
+public sealed record TimeSlotSummary(
+    long Id,
+    TimeSpan StartTime,
+    TimeSpan EndTime,
+    string Label
+);
+
 public sealed record PlayerSportProfileInfo(
     long PlayerId,
     long SportId,

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import HomeLayout from "../../layouts/HomeLayout";
 import { roleHomeConfig } from "../../config/roleHomeConfig";
 import HomeOverview from "./HomeOverview";
@@ -17,26 +18,57 @@ export default function HomePage({
 }) {
   const config = roleHomeConfig[role] || roleHomeConfig.guest;
   const [active, setActive] = useState(() =>
+    role !== "guest" && new URLSearchParams(window.location.search).get("view") === "messages" ? "Tin nhắn" :
+    role === "staff" && new URLSearchParams(window.location.search).has("goodsOrderId") ? "Bán hàng" :
     role === "player" &&
     new URLSearchParams(window.location.search).has("orderId")
       ? "Thanh toán"
       : role === "player" && new URLSearchParams(window.location.search).get("view") === "tickets" ? "Vé của tôi" : "overview",
   );
-  const [sessionId, setSessionId] = useState(null);
-  const [browseSport, setBrowseSport] = useState("ALL");
+  const [sessionId, setSessionId] = useState(() => window.history.state?.tkscHome?.role === role ? window.history.state.tkscHome.sessionId : null);
+  const [browseSport, setBrowseSport] = useState(() => window.history.state?.tkscHome?.role === role ? window.history.state.tkscHome.browseSport : "ALL");
   const navigation = [
     { id: "overview", label: "Trang chủ" },
     ...config.modules.map((label) => ({ id: label, label })),
+    ...(role !== "guest" ? [{ id: "Tin nhắn", label: "Tin nhắn" }] : []),
   ];
+  useEffect(() => {
+    // Keep every visited workspace with its detail and filter context.
+    const snapshot = { role, active, sessionId, browseSport };
+    window.history.replaceState({ ...window.history.state, tkscHome: snapshot }, "");
+    function restore(event) {
+      const saved = event.state?.tkscHome;
+      if (saved?.role !== role) return;
+      setActive(saved.active);
+      setSessionId(saved.sessionId);
+      setBrowseSport(saved.browseSport || "ALL");
+    }
+    window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
+  }, [role, active, sessionId, browseSport]);
+  function remember(next, nextSession = sessionId, url = window.location.href) {
+    if (next === active && nextSession === sessionId && String(url) === window.location.href) return;
+    window.history.pushState({ tkscHome: { role, active: next, sessionId: nextSession, browseSport } }, "", url);
+  }
   function open(label) {
-    if (label !== "overview" && !config.modules.includes(label)) return;
+    if (
+      label !== "overview" &&
+      label !== "Chi tiết buổi chơi" &&
+      label !== "Tin nhắn" &&
+      label !== "Hồ sơ cá nhân" &&
+      label !== "Hồ sơ kỹ năng" &&
+      !config.modules.includes(label)
+    )
+      return;
+    if (preview || label === "Thanh toán") remember(label);
     setActive(label);
     if (!preview && label !== "Thanh toán") {
       const url = new URL(window.location.href);
       ["orderId", "code", "id", "cancel", "status", "view"].forEach((key) =>
         url.searchParams.delete(key),
       );
-      window.history.replaceState({}, "", url);
+      if (label === "Tin nhắn") url.searchParams.set("view", "messages");
+      remember(label, sessionId, url);
     }
     window.scrollTo({ top: 0, behavior: "instant" });
   }
@@ -48,10 +80,21 @@ export default function HomePage({
     window.scrollTo({ top: 0, behavior: "instant" });
   }
   function selectSession(id) {
+    remember("Chi tiết buổi chơi", id);
     setSessionId(id);
     setActive("Chi tiết buổi chơi");
     window.scrollTo({ top: 0, behavior: "instant" });
   }
+  useEffect(() => {
+    const onOpenSessionEvent = (e) => {
+      const targetId = e.detail?.sessionId;
+      if (targetId) {
+        selectSession(targetId);
+      }
+    };
+    window.addEventListener("tksc:open-session", onOpenSessionEvent);
+    return () => window.removeEventListener("tksc:open-session", onOpenSessionEvent);
+  }, []);
   if (role === "guest") {
     const browse = (sport = "ALL") => {
       setBrowseSport(sport);
@@ -86,12 +129,17 @@ export default function HomePage({
             onPayment={payment}
             onSelectSession={selectSession}
             initialSport={browseSport}
+            onBrowseSport={browse}
           />
         )}
       </GuestLayout>
     );
   }
   if (role === "player") {
+    const browse = (sport = "ALL") => {
+      setBrowseSport(sport);
+      open("Lịch social");
+    };
     return (
       <PlayerLayout
         navigation={navigation}
@@ -103,7 +151,7 @@ export default function HomePage({
         {active === "overview" ? (
           <PlayerHome
             preview={preview}
-            onBrowse={() => open("Lịch social")}
+            onBrowse={() => browse("ALL")}
             onTickets={() => open("Vé của tôi")}
             onSelectSession={selectSession}
           />
@@ -124,6 +172,8 @@ export default function HomePage({
               onLogin={onLogin}
               onPayment={payment}
               onSelectSession={selectSession}
+              initialSport={browseSport}
+              onBrowseSport={browse}
             />
           </div>
         )}

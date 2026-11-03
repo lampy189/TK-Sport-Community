@@ -18,19 +18,27 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
         if (order is null) return null;
         var tickets = await db.Tickets.AsNoTracking().Where(t => t.OrderId == orderId)
             .Select(PaymentMappings.TicketProjection).ToListAsync();
-        return PaymentMappings.ToSummary(order) with { Tickets = tickets };
+        return PaymentMappings.ToSummary(order) with { Tickets = await Decorate(tickets, payerId) };
     }
     public async Task<IReadOnlyList<TicketSummary>> GetTicketsAsync(long userId)
     {
         var tickets = await db.Tickets.AsNoTracking().Where(t => t.Player.UserId == userId || t.Order.PayerId == userId)
             .Select(PaymentMappings.TicketProjection).ToListAsync();
-        var owned = await db.SocialBookingOrders.Where(o => o.PayerId == userId).Select(o => o.Id).ToListAsync();
-        return tickets.Select(t => t with { CanManage = owned.Contains(t.OrderId) }).ToList();
+        return await Decorate(tickets, userId);
     }
 
+    private async Task<IReadOnlyList<TicketSummary>> Decorate(List<TicketSummary> tickets, long userId)
+    {
+        var ids=tickets.Select(t=>t.Id).ToList(); var sessions=tickets.Select(t=>t.SessionId).Distinct().ToList();
+        var owned=await db.SocialBookingOrders.Where(o=>o.PayerId==userId).Select(o=>o.Id).ToListAsync();
+        var held=await db.Tickets.Where(t=>ids.Contains(t.Id) && t.Player.UserId==userId).Select(t=>t.Id).ToListAsync();
+        var changes=await db.TicketChanges.AsNoTracking().Where(c=>ids.Contains(c.TicketId) && c.Status=="requested").ToListAsync();
+        var issues=await db.AuditLogs.AsNoTracking().Where(a=>a.EntityType=="Session" && a.Action=="venue_condition_issue" && a.EntityId!=null && sessions.Contains(a.EntityId.Value)).OrderByDescending(a=>a.Id).ToListAsync();
+        return tickets.Select(t=>t with {CanManage=owned.Contains(t.OrderId), CanResolveIssue=owned.Contains(t.OrderId)||held.Contains(t.Id), PendingChangeId=changes.FirstOrDefault(c=>c.TicketId==t.Id)?.Id, VenueIssue=issues.FirstOrDefault(a=>a.EntityId==t.SessionId)?.NewValue?.Split(" | ", 2).Last()}).ToList();
+    }
     public async Task<IReadOnlyList<ReviewSummary>> GetReviewsAsync()
     {
-        var payments = await db.Payments.AsNoTracking().Where(p => p.Status == "review_required")
+        var payments = await db.Payments.AsNoTracking().Where(p => p.Status == "review_required" && p.OrderId != null && p.GoodsOrderId == null)
             .OrderByDescending(p => p.Id).ToListAsync();
         var ids = payments.Select(p => p.Id).ToList();
         var audits = await db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "Payment" && a.EntityId != null
@@ -70,6 +78,11 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
             {
                 await db.Entry(order).Collection(o => o.Payments).LoadAsync();
                 await db.Entry(order).Collection(o => o.Tickets).LoadAsync();
+                foreach(var sessionId in order.Tickets.Select(t=>t.SessionId).Distinct().OrderBy(id=>id))
+                {
+                    var session=await db.Sessions.FromSqlInterpolated($"SELECT * FROM sessions WITH (UPDLOCK,HOLDLOCK) WHERE id={sessionId}").SingleAsync();
+                    foreach(var ticket in order.Tickets.Where(t=>t.SessionId==sessionId)) ticket.Session=session;
+                }
             }
         }
         var previousOrder = order?.Status ?? "";
@@ -100,10 +113,35 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
     public void AddRefund(Refund refund) => db.Refunds.Add(refund);
     public Task<long?> FindOrderForTicketCodeAsync(string code) => db.Tickets.AsNoTracking()
         .Where(t => t.TicketCode == code).Select(t => (long?)t.OrderId).SingleOrDefaultAsync();
+    public async Task<IReadOnlyList<AssignedSessionSummary>> GetAssignedSessionsAsync(long actorId)
+    {
+        var sessions = await db.SessionReferees.AsNoTracking()
+            .Where(sr => sr.RefereeId == actorId)
+            .OrderBy(sr => sr.Session.SessionDate).ThenBy(sr => sr.Session.TimeSlot.StartTime)
+            .Select(sr => new AssignedSessionSummary(
+                sr.SessionId,
+                sr.Session.Sport.Name,
+                sr.Session.Court.Name ?? "Sân chưa đặt tên",
+                sr.Session.Court.Venue.Name ?? "TK Sport",
+                sr.Session.SessionDate,
+                sr.Session.TimeSlot.StartTime,
+                sr.Session.TimeSlot.EndTime,
+                sr.Session.Status,
+                sr.Session.Band,
+                sr.Session.Capacity,
+                (short)sr.Session.Tickets.Count(),
+                true,
+                "not_ready",
+                "Đang chờ kiểm tra điều kiện buổi chơi."))
+            .ToListAsync();
+        return sessions;
+    }
     public Task<CheckInContext?> GetCheckInContextAsync(string code, long actorId) => db.Tickets.AsNoTracking()
         .Where(t => t.TicketCode == code).Select(t => new CheckInContext(t.Id, t.OrderId,
             t.Session.SessionDate, t.Session.TimeSlot.EndTime, t.Session.Status,
             t.Session.SessionReferees.Any(r => r.RefereeId == actorId), t.Player.User.FullName,
             t.Session.Sport.Name, t.Session.Court.Name ?? "Sân chưa đặt tên", t.Session.TimeSlot.StartTime)).SingleOrDefaultAsync();
+    public Task<bool> HasPendingChangeAsync(long ticketId) => db.TicketChanges.AnyAsync(c=>c.TicketId==ticketId && c.Status=="requested");
+    public async Task<IReadOnlyList<TicketFundingSummary>> GetFundingAsync(long ticketId) => await db.TicketFunding.Where(f=>f.TicketId==ticketId && !f.Retired).Select(f=>new TicketFundingSummary(f.PaymentId,f.AmountVnd)).ToListAsync();
     public Task SaveAsync() => db.SaveChangesAsync();
 }

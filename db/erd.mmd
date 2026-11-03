@@ -415,3 +415,44 @@ account_audit_logs {
 	users||--o{friendships:"requester_or_addressee"
 	users||--o{messages:"sender_or_recipient"
 	users||--o{notifications:"receives"
+
+ ticket_changes {
+ BIGINT id PK
+ BIGINT ticket_id FK
+ BIGINT target_session_id FK
+ INT old_price_vnd
+ INT new_price_vnd
+ VARCHAR status
+ BIGINT requested_by FK
+ BIGINT processed_by FK
+ BIGINT new_ticket_id FK
+ DATETIMEOFFSET created_at
+ DATETIMEOFFSET completed_at
+ }
+ ticket_funding {
+ BIGINT id PK
+ BIGINT ticket_id FK
+ BIGINT payment_id FK
+ INT amount_vnd
+ BIT retired
+ }
+ tickets||--o{ticket_changes:"exchanged_from"
+ tickets|o--o{ticket_changes:"issued_as"
+ sessions||--o{ticket_changes:"target"
+ users||--o{ticket_changes:"requests"
+ users|o--o{ticket_changes:"processes"
+ tickets||--o{ticket_funding:"funded_by"
+ payments||--o{ticket_funding:"allocated"
+
+ ticket_support_messages {
+ BIGINT id PK
+ BIGINT ticket_id FK
+ BIGINT sender_id FK
+ BIT is_staff
+ NVARCHAR content
+ VARBINARY image_data
+ VARCHAR image_type
+ DATETIMEOFFSET created_at
+ }
+ tickets||--o{ticket_support_messages:"discussed"
+ users||--o{ticket_support_messages:"sends"
