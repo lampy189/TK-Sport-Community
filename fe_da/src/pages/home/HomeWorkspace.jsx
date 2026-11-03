@@ -8,6 +8,7 @@ import CheckInPage from "../payment/CheckInPage";
 import SkillProfileView from "../../components/SkillProfileView";
 import PaymentPage from "../payment/PaymentPage";
 import StockPage from "../stock/StockPage";
+import StorePage from "../store/StorePage";
 import { Construction, ArrowLeft } from "lucide-react";
 
 export default function HomeWorkspace({
@@ -24,7 +25,13 @@ export default function HomeWorkspace({
   onBrowseSport,
 }) {
   if (!preview && role === "referee" && active === "Đánh giá kỹ năng") return <AssessmentPage />;
-  if (!preview && role === "staff" && active === "Bán hàng") return <GoodsPaymentPage />;
+  if (!preview && role === "staff" && active === "Bán hàng")
+    return (
+      <>
+        <StorePage role="staff" user={user} />
+        <GoodsPaymentPage />
+      </>
+    );
   if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage />;
   if (!preview && ["player", "guest"].includes(role)) {
     if (active === "Lịch social")
@@ -60,6 +67,8 @@ export default function HomeWorkspace({
           }
         />
       );
+    if (role === "player" && active === "Cửa hàng")
+      return <StorePage role="player" user={user} />;
     if (role === "player" && active === "Hồ sơ kỹ năng")
       return (
         <SkillProfileView
@@ -79,6 +88,8 @@ export default function HomeWorkspace({
         />
       );
   }
+  if (!preview && ["staff", "manager"].includes(role) && active === "Bán hàng")
+    return <StorePage role="staff" user={user} />;
   if (
     !preview &&
     ["staff", "manager"].includes(role) &&
