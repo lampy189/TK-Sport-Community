@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using be_da.Application.Abstractions;
 using be_da.Application.Stock;
+using TKSC.Controllers.Middlewares;
 
 namespace be_da.Controllers;
 
@@ -11,6 +12,7 @@ namespace be_da.Controllers;
 [ApiController]
 [Route("api/stock/session-supplies")]
 [Authorize(Roles = "Staff,Manager")]
+[ValidatedRequest]
 public sealed class SessionSuppliesController(ISessionSupplyStore store, IAntiforgery antiforgery, TimeProvider clock) : ControllerBase
 {
     [HttpGet]
@@ -18,11 +20,13 @@ public sealed class SessionSuppliesController(ISessionSupplyStore store, IAntifo
     public async Task<IActionResult> GetSessions([FromQuery] DateOnly? date, CancellationToken cancellationToken)
     {
         // Venue days follow Vietnam time regardless of server timezone.
-        var day = date ?? DateOnly.FromDateTime(clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7)).DateTime);
+        var today = DateOnly.FromDateTime(clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7)).DateTime);
+        var day = date ?? today;
+        if (SupplyRules.ValidateDay(day, today) is { } error) return BadRequest(new { code = "VALIDATION_FAILED", message = error });
         return Ok(await store.GetSessionsAsync(day, null, cancellationToken));
     }
 
-    [HttpGet("{sessionId:long}")]
+    [HttpGet("{sessionId:long:min(1)}")]
     [ProducesResponseType(typeof(SessionSupplyDetails), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDetails(long sessionId, CancellationToken cancellationToken)
@@ -33,7 +37,7 @@ public sealed class SessionSuppliesController(ISessionSupplyStore store, IAntifo
             : Ok(details);
     }
 
-    [HttpPost("{sessionId:long}/issue")]
+    [HttpPost("{sessionId:long:min(1)}/issue")]
     [Authorize(Roles = "Staff")]
     [ProducesResponseType(typeof(SessionSupplyDetails), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -46,7 +50,7 @@ public sealed class SessionSuppliesController(ISessionSupplyStore store, IAntifo
         return ToResponse(await store.IssueAsync(sessionId, request, staffUserId, cancellationToken));
     }
 
-    [HttpPost("{sessionId:long}/products/{productId:long}/reconcile")]
+    [HttpPost("{sessionId:long:min(1)}/products/{productId:long:min(1)}/reconcile")]
     [Authorize(Roles = "Staff")]
     [ProducesResponseType(typeof(SessionSupplyDetails), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -63,6 +67,8 @@ public sealed class SessionSuppliesController(ISessionSupplyStore store, IAntifo
         ? Ok(result.Details)
         : result.ErrorCode is "SESSION_NOT_FOUND" or "PRODUCT_NOT_FOUND" or "ALLOCATION_NOT_FOUND"
             ? NotFound(new { code = result.ErrorCode, message = result.Message })
+            : result.ErrorCode is "UNIT_NOT_FOUND" or "QUANTITY_TOO_LARGE"
+            ? BadRequest(new { code = result.ErrorCode, message = result.Message })
             : Conflict(new { code = result.ErrorCode, message = result.Message });
 
     private bool TryGetUserId(out long userId)

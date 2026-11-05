@@ -5,7 +5,9 @@ import {
   History,
   PackagePlus,
   Pencil,
+  Plus,
   Search,
+  Trash2,
   TriangleAlert,
   X,
 } from "lucide-react";
@@ -13,6 +15,7 @@ import SectionLayout from "../../components/layout/SectionLayout";
 import StatePanel from "../../components/ui/StatePanel";
 import { categoryLabels, movementLabels, stockClient } from "./stockClient";
 import SessionSuppliesView from "./SessionSuppliesView";
+import BulkReceiptView from "./BulkReceiptView";
 import "./stock.css";
 
 const money = (value) =>
@@ -23,6 +26,7 @@ const number = (value) => new Intl.NumberFormat("vi-VN").format(value);
 
 const tabs = [
   { id: "catalog", label: "Danh mục & tồn kho" },
+  { id: "receipts", label: "Nhập hàng loạt" },
   { id: "supplies", label: "Vật tư buổi chơi" },
 ];
 
@@ -43,7 +47,9 @@ export default function StockPage() {
           </button>
         ))}
       </div>
-      {tab === "catalog" ? <StockCatalog /> : <SessionSuppliesView />}
+      {tab === "catalog" && <StockCatalog />}
+      {tab === "receipts" && <BulkReceiptView />}
+      {tab === "supplies" && <SessionSuppliesView />}
     </div>
   );
 }
@@ -86,7 +92,8 @@ function StockCatalog() {
         (!onlyLow || p.isLowStock) &&
         (!term ||
           p.sku.toLowerCase().includes(term) ||
-          p.name.toLowerCase().includes(term)),
+          p.name.toLowerCase().includes(term) ||
+          (p.units ?? []).some((u) => u.barcode?.toLowerCase().includes(term))),
     );
   }, [products, search, category, onlyLow, showInactive]);
   const active = products.filter((p) => p.isActive);
@@ -140,7 +147,7 @@ function StockCatalog() {
           <span className="sr-only">Tìm mặt hàng</span>
           <input
             type="search"
-            placeholder="Tìm theo mã hoặc tên hàng"
+            placeholder="Tìm theo mã, mã vạch hoặc tên hàng"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -237,8 +244,11 @@ function StockCatalog() {
                         {p.isLowStock && (
                           <TriangleAlert size={14} aria-hidden="true" />
                         )}
-                        {number(p.quantityOnHand)}
+                        {number(p.quantityOnHand)} {p.baseUnit}
                       </strong>
+                      {p.quantityBreakdown !== `${p.quantityOnHand} ${p.baseUnit}` && (
+                        <span className="stock-reorder">{p.quantityBreakdown}</span>
+                      )}
                       <span className="stock-reorder">
                         Cảnh báo ≤ {number(p.reorderLevel)}
                       </span>
@@ -315,10 +325,10 @@ function StockCatalog() {
           type={dialog.type}
           product={dialog.product}
           onClose={() => setDialog(null)}
-          onSaved={(product, quantity) =>
+          onSaved={(product, quantity, unitName) =>
             saved(
               product,
-              `${movementLabels[dialog.type]} ${number(quantity)} × ${product.name}. Tồn hiện tại: ${number(product.quantityOnHand)}.`,
+              `${movementLabels[dialog.type]} ${number(quantity)} ${unitName} × ${product.name}. Tồn hiện tại: ${number(product.quantityOnHand)} ${product.baseUnit}.`,
             )
           }
         />
@@ -371,6 +381,21 @@ function ProductDialog({ product, onClose, onSaved }) {
     initialQuantity: 0,
     isActive: product?.isActive ?? true,
   }));
+  const [units, setUnits] = useState(() =>
+    product?.units?.length
+      ? [...product.units]
+          .sort((a, b) => a.factorToBase - b.factorToBase)
+          .map((u) => ({
+            key: u.id,
+            unitName: u.unitName,
+            factorToBase: u.factorToBase,
+            barcode: u.barcode ?? "",
+            existing: true,
+          }))
+      : [{ key: "base", unitName: "", factorToBase: 1, barcode: "", existing: false }],
+  );
+  const locked = Boolean(product?.unitsLocked);
+  const baseName = units[0]?.unitName.trim() || "đơn vị chuẩn";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const set = (key) => (e) =>
@@ -388,6 +413,11 @@ function ProductDialog({ product, onClose, onSaved }) {
       category: form.category || null,
       unitPriceVnd: Number(form.unitPriceVnd),
       reorderLevel: Number(form.reorderLevel),
+      units: units.map((u) => ({
+        unitName: u.unitName.trim(),
+        factorToBase: Number(u.factorToBase),
+        barcode: u.barcode.trim() || null,
+      })),
     };
     try {
       onSaved(
@@ -492,6 +522,79 @@ function ProductDialog({ product, onClose, onSaved }) {
             />
           </label>
         </div>
+        <fieldset className="unit-editor">
+          <legend>Đơn vị tính &amp; mã vạch</legend>
+          <p className="stock-hint">
+            Dòng đầu là đơn vị chuẩn, phải là đơn vị nhỏ nhất. Tồn kho luôn tính theo đơn vị này.
+            {locked && " Đã có phiếu kho nên không đổi được tên và hệ số của đơn vị cũ."}
+          </p>
+          {units.map((unit, i) => {
+            const fixed = locked && unit.existing;
+            const update = (patch) =>
+              setUnits((list) => list.map((u) => (u.key === unit.key ? { ...u, ...patch } : u)));
+            return (
+              <div className="unit-row" key={unit.key}>
+                <label>
+                  {i === 0 ? "Đơn vị chuẩn" : "Đơn vị"}
+                  <input
+                    value={unit.unitName}
+                    onChange={(e) => update({ unitName: e.target.value })}
+                    required
+                    maxLength={50}
+                    disabled={fixed}
+                    placeholder={i === 0 ? "VD: Chai" : "VD: Thùng"}
+                  />
+                </label>
+                <label>
+                  {i === 0 ? "Hệ số" : `1 ${unit.unitName.trim() || "đơn vị"} = ? ${baseName}`}
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={i === 0 ? 1 : 2}
+                    max="100000"
+                    value={unit.factorToBase}
+                    onChange={(e) => update({ factorToBase: e.target.value })}
+                    required
+                    disabled={i === 0 || fixed}
+                  />
+                </label>
+                <label>
+                  Mã vạch
+                  <input
+                    value={unit.barcode}
+                    onChange={(e) => update({ barcode: e.target.value })}
+                    maxLength={64}
+                    pattern="[A-Za-z0-9\-]{4,64}"
+                    title="4–64 ký tự chữ, số hoặc '-'"
+                    placeholder="Không bắt buộc"
+                  />
+                </label>
+                {i > 0 && !fixed && (
+                  <button
+                    type="button"
+                    className="stock-icon-button"
+                    aria-label={`Xóa đơn vị ${unit.unitName}`}
+                    onClick={() => setUnits((list) => list.filter((u) => u.key !== unit.key))}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          <button
+            type="button"
+            className="button button-secondary unit-add"
+            onClick={() =>
+              setUnits((list) => [
+                ...list,
+                { key: `new-${Date.now()}`, unitName: "", factorToBase: "", barcode: "", existing: false },
+              ])
+            }
+          >
+            <Plus size={15} aria-hidden="true" /> Thêm đơn vị
+          </button>
+        </fieldset>
         {editing && (
           <label className="stock-check">
             <input
@@ -527,18 +630,22 @@ function ProductDialog({ product, onClose, onSaved }) {
 
 function MovementDialog({ type, product, onClose, onSaved }) {
   const issue = type === "Issue";
+  const units = [...(product.units ?? [])].sort((a, b) => a.factorToBase - b.factorToBase);
+  const [unitName, setUnitName] = useState(product.baseUnit);
   const [quantity, setQuantity] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const factor = units.find((u) => u.unitName === unitName)?.factorToBase ?? 1;
   const amount = Number(quantity) || 0;
-  const after = product.quantityOnHand + (issue ? -amount : amount);
+  const baseAmount = amount * factor;
+  const after = product.quantityOnHand + (issue ? -baseAmount : baseAmount);
 
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
     setError("");
     try {
-      onSaved(await stockClient.move(product.id, type, amount), amount);
+      onSaved(await stockClient.move(product.id, type, amount, unitName), amount, unitName);
     } catch (err) {
       setError(err.message);
       setBusy(false);
@@ -551,28 +658,46 @@ function MovementDialog({ type, product, onClose, onSaved }) {
         <div className="stock-balance">
           <div>
             <span>Tồn hiện tại</span>
-            <strong>{number(product.quantityOnHand)}</strong>
+            <strong>{number(product.quantityOnHand)} {product.baseUnit}</strong>
           </div>
           <div>
             <span>Sau khi {issue ? "xuất" : "nhập"}</span>
             <strong className={after < 0 ? "is-invalid" : ""}>
-              {amount ? number(after) : "–"}
+              {amount ? `${number(after)} ${product.baseUnit}` : "–"}
             </strong>
           </div>
         </div>
-        <label>
-          Số lượng {issue ? "xuất" : "thực nhận"}
-          <input
-            type="number"
-            inputMode="numeric"
-            min="1"
-            max={issue ? product.quantityOnHand : 100000}
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            required
-            autoFocus
-          />
-        </label>
+        <div className="stock-form-row">
+          <label>
+            Đơn vị
+            <select value={unitName} onChange={(e) => setUnitName(e.target.value)}>
+              {units.map((u) => (
+                <option key={u.unitName} value={u.unitName}>
+                  {u.unitName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Số lượng {issue ? "xuất" : "thực nhận"}
+            <input
+              type="number"
+              inputMode="numeric"
+              min="1"
+              max={issue ? Math.floor(product.quantityOnHand / factor) : 100000}
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              required
+              autoFocus
+            />
+          </label>
+        </div>
+        {factor > 1 && (
+          <p className="stock-hint">
+            1 {unitName} = {number(factor)} {product.baseUnit}
+            {amount > 0 && ` → ${number(baseAmount)} ${product.baseUnit}`}
+          </p>
+        )}
         <p className="stock-hint">
           {issue
             ? "Không thể xuất vượt số tồn. Bán hàng và cấp vật tư buổi chơi sẽ tự trừ kho ở luồng riêng."
@@ -630,12 +755,19 @@ function HistoryDialog({ product, onClose }) {
                 <strong>{movementLabels[m.movementType] || m.movementType}</strong>
                 <small>
                   Phiếu #{m.id}
+                  {m.sourceRef ? ` · ${m.sourceRef}` : ""}
+                  {m.enteredUnit && m.enteredQuantity
+                    ? ` · ${number(m.enteredQuantity)} ${m.enteredUnit}`
+                    : ""}
                   {m.createdByName ? ` · ${m.createdByName}` : ""}
+                  {m.createdAt
+                    ? ` · ${new Date(m.createdAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}`
+                    : ""}
                 </small>
               </span>
               <strong className={m.quantity < 0 ? "is-out" : "is-in"}>
                 {m.quantity > 0 ? "+" : ""}
-                {number(m.quantity)}
+                {number(m.quantity)} {product.baseUnit}
               </strong>
             </li>
           ))}
