@@ -159,6 +159,8 @@ internal sealed class FakeStockStore : IStockStore
 {
     public Dictionary<long, StockProduct> Products { get; } = new();
     public long? LastOperator { get; private set; }
+    public Dictionary<string, StockCodeLookup> Lookups { get; } = new();
+    public BatchReceiptResult? NextBatchResult { get; set; }
 
     public Task<IReadOnlyList<StockProduct>> GetProductsAsync(StockProductFilter filter, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<StockProduct>>(Products.Values.ToList());
@@ -194,6 +196,15 @@ internal sealed class FakeStockStore : IStockStore
         LastOperator = staffUserId;
         Products[productId] = product = product with { QuantityOnHand = product.QuantityOnHand + delta };
         return Task.FromResult(StockResult.Ok(product));
+    }
+
+    public Task<StockCodeLookup?> LookupCodeAsync(string code, CancellationToken cancellationToken) =>
+        Task.FromResult(Lookups.GetValueOrDefault(code));
+
+    public Task<BatchReceiptResult> PostBatchReceiptAsync(BatchReceiptRequest request, long staffUserId, CancellationToken cancellationToken)
+    {
+        LastOperator = staffUserId;
+        return Task.FromResult(NextBatchResult ?? BatchReceiptResult.Ok([]));
     }
 
     public Task<IReadOnlyList<StockMovementEntry>?> GetMovementsAsync(long productId, CancellationToken cancellationToken) =>

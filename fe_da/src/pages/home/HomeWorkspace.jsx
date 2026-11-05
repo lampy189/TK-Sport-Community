@@ -13,6 +13,7 @@ import { CommunityView } from "../../components/CommunityView";
 import PaymentPage from "../payment/PaymentPage";
 import StockPage from "../stock/StockPage";
 import RefereeSuppliesView from "../stock/RefereeSuppliesView";
+import MyGoodsOrders from "../stock/MyGoodsOrders";
 import StorePage from "../store/StorePage";
 import { Construction, ArrowLeft } from "lucide-react";
 
@@ -88,7 +89,12 @@ export default function HomeWorkspace({
         />
       );
     if (role === "player" && active === "Cửa hàng")
-      return <StorePage role="player" user={user} />;
+      return (
+        <>
+          <StorePage role="player" user={user} />
+          <MyGoodsOrders />
+        </>
+      );
     if (role === "player" && active === "Hồ sơ kỹ năng")
       return (
         <SkillProfileView

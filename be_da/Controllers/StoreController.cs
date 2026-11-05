@@ -82,6 +82,7 @@ public class StoreController(Sep490Context context) : ControllerBase
         {
             OrderCode = orderCode,
             StaffId = UserId,
+            BuyerId = User.IsInRole("Player") ? UserId : null,
             CustomerName = User.FindFirstValue(ClaimTypes.Name) ?? "Khách hàng",
             TotalAmount = totalAmount,
             Status = "Cart",
