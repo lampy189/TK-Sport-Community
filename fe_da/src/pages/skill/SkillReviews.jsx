@@ -21,13 +21,17 @@ function ReasonForm({ label, onSubmit, children, maxLength = 2000 }) {
   </form>;
 }
 
-export function ExceptionRequest({ sessionId, user, onLogin, onUpdated }) {
+export function ExceptionRequest({ sessionId, user, onLogin, onUpdated, canRequest = true, defaultOpen = false }) {
   const [rows, setRows] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [checked, setChecked] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   async function load() { setRows(await workflowRequest(`${base}/exceptions?sessionId=${sessionId}`)); }
+  useEffect(() => {
+    setOpen(defaultOpen);
+  }, [defaultOpen]);
   useEffect(() => {
     let active = true;
     if (!user) return;
@@ -35,11 +39,31 @@ export function ExceptionRequest({ sessionId, user, onLogin, onUpdated }) {
       .catch(err => { if (active) setError(err.message); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [sessionId, user]);
-  if (!user) return <button className="button button-secondary booking-action" onClick={onLogin}>Đăng nhập để xin ngoại lệ trình độ</button>;
+  if (!user) return canRequest ? <button className="button button-secondary booking-action" onClick={onLogin}>Đăng nhập để xin ngoại lệ trình độ</button> : null;
+  if (loading) return canRequest ? <p style={{ fontSize: "13px", color: "#64748b", margin: "8px 0 0" }}>Đang kiểm tra yêu cầu ngoại lệ…</p> : null;
+  if (!rows.length && !canRequest) return null;
+  if (!rows.length && !open) {
+    return (
+      <button
+        type="button"
+        className="button button-secondary booking-action"
+        onClick={() => setOpen(true)}
+      >
+        Xin ngoại lệ trình độ
+      </button>
+    );
+  }
   return <section className="skill-reviews" aria-label="Xin ngoại lệ trình độ">
-    <h3>Xin ngoại lệ trình độ</h3>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
+      <h3>Xin ngoại lệ trình độ</h3>
+      {!rows.length && (
+        <button type="button" className="text-button" style={{ fontSize: "13px" }} onClick={() => setOpen(false)}>
+          Thu gọn
+        </button>
+      )}
+    </div>
     {error && <p role="alert">{error}</p>}
-    {loading ? <p>Đang tải yêu cầu…</p> : rows.length ? <>
+    {rows.length ? <>
       <div className={`exception-result is-${rows[0].status.toLowerCase()}`} role="status" aria-live="polite">
         <span className="exception-result-label">KẾT QUẢ YÊU CẦU</span>
         <strong className="exception-result-title">{labels[rows[0].status] || rows[0].status}</strong>

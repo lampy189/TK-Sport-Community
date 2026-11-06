@@ -349,6 +349,7 @@ public static class Sep490ModelConfiguration
                 .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("handover_state");
+            entity.Property(e => e.BuyerId).HasColumnName("buyer_id");
             entity.Property(e => e.OrderCode)
                 .HasMaxLength(100)
                 .IsUnicode(false)
