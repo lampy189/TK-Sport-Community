@@ -92,10 +92,33 @@ public sealed class ProfileController(IProfileStore profileStore, IAntiforgery a
         if (!TryGetUserId(out var userId)) return Unauthorized();
 
         if (string.IsNullOrWhiteSpace(request.FullName))
-            return BadRequest(new { code = "invalid_full_name", message = "Full name cannot be blank." });
+            return BadRequest(new { code = "invalid_full_name", message = "Họ và tên không được để trống." });
 
-        if (request.DateOfBirth.HasValue && request.DateOfBirth.Value > DateOnly.FromDateTime(DateTime.UtcNow))
-            return BadRequest(new { code = "invalid_date_of_birth", message = "Date of birth cannot be in the future." });
+        var trimmedName = request.FullName.Trim();
+        if (trimmedName.Length is < 2 or > 100)
+            return BadRequest(new { code = "invalid_full_name", message = "Họ và tên phải có độ dài từ 2 đến 100 ký tự." });
+
+        var todayVn = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)).DateTime);
+        if (request.DateOfBirth.HasValue && (request.DateOfBirth.Value > todayVn || request.DateOfBirth.Value < new DateOnly(1920, 1, 1)))
+            return BadRequest(new { code = "invalid_date_of_birth", message = "Ngày sinh không hợp lệ (không được ở tương lai hoặc trước năm 1920)." });
+
+        if (!string.IsNullOrWhiteSpace(request.Gender))
+        {
+            var g = request.Gender.Trim();
+            if (!string.Equals(g, "Male", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(g, "Female", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(g, "Other", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(g, "Nam", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(g, "Nữ", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(g, "Nu", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(g, "Khác", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { code = "invalid_gender", message = "Giới tính không hợp lệ (Male, Female, Other)." });
+            }
+        }
+
+        if (request.Bio is not null && request.Bio.Trim().Length > 500)
+            return BadRequest(new { code = "invalid_bio", message = "Giới thiệu bản thân không được vượt quá 500 ký tự." });
 
         var normalizedRequest = request;
         if (!string.IsNullOrWhiteSpace(request.AvatarUrl))
