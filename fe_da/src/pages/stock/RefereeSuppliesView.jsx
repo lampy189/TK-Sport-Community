@@ -159,11 +159,11 @@ function RefereeSupplyDetails({ sessionId }) {
                     <strong>{a.name}</strong>
                     <span className="stock-sku">{a.sku}</span>
                   </td>
-                  <td data-label="Được cấp" className="num">{number(a.issued)}</td>
+                  <td data-label="Được cấp" className="num">{number(a.issued)} {a.baseUnit}</td>
                   <td data-label="Người nhận">{a.recipientName || "—"}</td>
                   <td data-label="Số đã dùng">
                     {a.isReconciled ? (
-                      <span className="badge-lime">Đã chốt: dùng {number(a.used)}</span>
+                      <span className="badge-lime">Đã chốt: dùng {number(a.used)} {a.baseUnit}</span>
                     ) : (
                       <form
                         className="supply-use"
@@ -173,7 +173,7 @@ function RefereeSupplyDetails({ sessionId }) {
                         }}
                       >
                         <label>
-                          <span className="sr-only">Số {a.name} đã dùng</span>
+                          <span className="sr-only">Số {a.name} đã dùng ({a.baseUnit})</span>
                           <input
                             type="number"
                             inputMode="numeric"
