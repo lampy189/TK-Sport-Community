@@ -21,6 +21,8 @@ public partial class Order
 
     public string? HandoverState { get; set; }
 
+    public long? BuyerId { get; set; }
+
     public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
