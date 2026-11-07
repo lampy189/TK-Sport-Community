@@ -11,10 +11,39 @@ namespace TKSC.Application.Services;
 
 public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
 {
-    public async Task<object> SessionsAsync(long actorId, CancellationToken ct) => await db.Sessions.AsNoTracking()
-        .Where(s => s.SessionReferees.Any(r => r.RefereeId == actorId) && s.Status != "cancelled")
-        .OrderByDescending(s => s.SessionDate).ThenByDescending(s => s.TimeSlot.StartTime).Take(100)
-        .Select(s => new { s.Id, s.SessionDate, s.Sport.Name, Court = s.Court.Name, s.TimeSlot.StartTime }).ToListAsync(ct);
+    public async Task<object> SessionsAsync(long actorId, CancellationToken ct)
+    {
+        var today = DateOnly.FromDateTime(clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7)).DateTime);
+        return await db.Sessions.AsNoTracking()
+            .Where(s => s.SessionReferees.Any(r => r.RefereeId == actorId) && s.Status != "cancelled" && s.SessionDate >= today)
+            .OrderBy(s => s.SessionDate).ThenBy(s => s.TimeSlot.StartTime).Take(100)
+            .Select(s => new { s.Id, s.SessionDate, s.Sport.Name, Court = s.Court.Name, s.TimeSlot.StartTime }).ToListAsync(ct);
+    }
+
+    public async Task<object> PlayerContextAsync(long sessionId, long playerId, long actorId, CancellationToken ct)
+    {
+        var session = await AssignedSessionAsync(sessionId, actorId, ct);
+        // Only expose context for an eligible attendee of the referee's assigned session.
+        var attendee = (await GetAttendeesAsync(sessionId, actorId, ct)).SingleOrDefault(p => p.PlayerId == playerId)
+            ?? throw Error(403, "Chỉ xem hồ sơ người chơi đã điểm danh trong buổi được phân công.");
+        var venueId = await db.Courts.Where(c => c.Id == session.CourtId).Select(c => c.VenueId).SingleAsync(ct);
+        var profile = await db.PlayerSportProfiles.AsNoTracking()
+            .Where(p => p.PlayerId == playerId && p.SportId == session.SportId)
+            .Select(p => new { p.CurrentScore, p.CurrentBand, p.RatingStatus, Sport = p.Sport.Name }).SingleOrDefaultAsync(ct);
+        var participation = await db.Tickets.AsNoTracking()
+            .Where(t => t.PlayerId == playerId && t.Session.SportId == session.SportId && t.Session.Court.VenueId == venueId
+                && t.Status == "checkedin" && t.CheckedInBy != null && t.Order.Status == "paid" && t.SessionId != sessionId
+                && t.Session.SessionDate <= session.SessionDate)
+            .Select(t => new { t.SessionId, t.Session.SessionDate, t.Session.TimeSlot.StartTime, Court = t.Session.Court.Name })
+            .Distinct().OrderByDescending(t => t.SessionDate).ThenByDescending(t => t.StartTime).Take(20).ToListAsync(ct);
+        var ratings = await db.PlayerRatingHistories.AsNoTracking().Where(RatingPublicationRules.OfficialHistory)
+            .Where(h => h.PlayerSportProfile.PlayerId == playerId && h.PlayerSportProfile.SportId == session.SportId
+                && h.Assessment != null && h.Assessment.Session != null && h.Assessment.Session.Court.VenueId == venueId)
+            .OrderByDescending(h => h.Id).Take(20)
+            .Select(h => new { h.Id, h.NewScore, h.NewBand, h.OldScore, h.OldBand,
+                SessionDate = h.Assessment!.Session!.SessionDate, Rubric = h.Assessment.Rubric.Name }).ToListAsync(ct);
+        return new { attendee.PlayerId, attendee.Name, Profile = profile, Participation = participation, Ratings = ratings };
+    }
 
     private IQueryable<Rubric> Rubrics => db.Rubrics.Include(r => r.Sport).Include(r => r.RubricDimensions);
     private IQueryable<Assessment> Assessments => db.Assessments

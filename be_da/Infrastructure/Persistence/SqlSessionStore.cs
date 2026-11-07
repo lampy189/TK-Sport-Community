@@ -11,7 +11,7 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
     public async Task<IReadOnlyList<TimeSlotSummary>> GetTimeSlotsAsync(CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         const string sql = """
             SELECT id, start_time, end_time, label
@@ -37,7 +37,7 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
     public async Task<IReadOnlyList<SessionSummary>> GetSessionsAsync(SessionFilter filter, long? currentUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         const string sql = """
             SELECT 
@@ -112,7 +112,7 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
     public async Task<SessionDetails?> GetSessionByIdAsync(long id, long? currentUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         const string sessionSql = """
             SELECT 
@@ -206,7 +206,7 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
     public async Task<RegisterSessionResult> RegisterSessionAsync(long userId, long sessionId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         try

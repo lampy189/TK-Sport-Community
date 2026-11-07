@@ -1,3 +1,5 @@
+import RevenuePage from "../revenue/RevenuePage";
+import SportCenterPersonnel from "../revenue/SportCenterPersonnel";
 import MessagesPage from "../messages/MessagesPage";
 import SkillReviews from "../skill/SkillReviews";
 import TicketOperations from "../payment/TicketOperations";
@@ -29,6 +31,8 @@ export default function HomeWorkspace({
   initialSport = "ALL",
   onBrowseSport,
 }) {
+  if (!preview && ["owner", "manager", "staff"].includes(role) && ["Kinh doanh", "Thống kê doanh số"].includes(active)) return <RevenuePage />;
+  if (!preview && role === "owner" && active === "Phân quyền Sport Center") return <SportCenterPersonnel />;
   if (active === "Tin nhắn" && role !== "guest") return <MessagesPage preview={preview} />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Ngoại lệ trình độ") return <SkillReviews role={role} kind="exceptions" />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Khiếu nại đánh giá") return <SkillReviews role={role} />;

@@ -20,7 +20,7 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
     public async Task<IReadOnlyList<StockProduct>> GetProductsAsync(StockProductFilter filter, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         var sql = ProductSelect + """
 
             WHERE (@search IS NULL OR p.sku LIKE @search OR p.name LIKE @search)
@@ -44,14 +44,14 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
     public async Task<StockProduct?> GetProductAsync(long productId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         return await LoadProductAsync(connection, null, productId, cancellationToken);
     }
 
     public async Task<StockResult> CreateProductAsync(CreateProductRequest request, long staffUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
         try
         {
@@ -91,7 +91,7 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
     public async Task<StockResult> UpdateProductAsync(long productId, UpdateProductRequest request, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
         const string sql = """
             UPDATE dbo.products
@@ -124,7 +124,7 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
     public async Task<StockResult> RecordMovementAsync(long productId, StockMovementRequest request, long staffUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
         // Status: 0 posted, 1 product missing, 2 inactive, 3 insufficient stock.
         const string sql = """
@@ -169,7 +169,7 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
     public async Task<IReadOnlyList<StockMovementEntry>?> GetMovementsAsync(long productId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using (var exists = new SqlCommand("SELECT COUNT(*) FROM dbo.products WHERE id = @productId;", connection))
         {
             exists.Parameters.Add("@productId", SqlDbType.BigInt).Value = productId;
