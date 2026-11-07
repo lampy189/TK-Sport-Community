@@ -16,6 +16,7 @@ public static class AccountPrincipal
         new Claim(ClaimTypes.Email, account.Email),
         new Claim(ClaimTypes.Role, account.Role),
         new Claim(GoogleSubject, account.GoogleSubject),
+        new Claim(SportCenterConnection.VenueClaim, account.VenueId?.ToString(CultureInfo.InvariantCulture) ?? ""),
         new Claim(LoginMethod, developmentLogin ? "development" : "google")
     ], Scheme));
 }

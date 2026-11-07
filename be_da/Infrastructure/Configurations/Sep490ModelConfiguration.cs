@@ -427,7 +427,7 @@ public static class Sep490ModelConfiguration
         {
             entity.Property(e => e.GatewayPaymentLinkId).HasMaxLength(100).HasColumnName("gateway_payment_link_id");
             entity.Property(e => e.CheckoutUrl).HasMaxLength(2048).HasColumnName("checkout_url");
-            entity.ToTable("payments");
+            entity.ToTable("payments", t => t.HasTrigger("TR_payments_revenue"));
 
             entity.HasIndex(e => e.ReferenceCode, "UX_payments_reference_code").IsUnique();
 
@@ -661,7 +661,7 @@ public static class Sep490ModelConfiguration
 
         modelBuilder.Entity<Refund>(entity =>
         {
-            entity.ToTable("refunds");
+            entity.ToTable("refunds", t => t.HasTrigger("TR_refunds_revenue"));
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.AmountVnd).HasColumnName("amount_vnd");

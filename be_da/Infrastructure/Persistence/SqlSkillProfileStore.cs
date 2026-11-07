@@ -10,14 +10,14 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
     public async Task<IReadOnlyList<SportRubricDto>> GetActiveRubricsAsync(long? sportId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         return await LoadActiveRubricsInternalAsync(connection, null, sportId, cancellationToken);
     }
 
     public async Task<PlayerSkillOverviewDto?> GetPlayerSkillOverviewAsync(long userId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         // 1. Resolve User and Ensure Player Record Exists
         const string userPlayerSql = """
@@ -168,7 +168,7 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
         }
 
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         try
