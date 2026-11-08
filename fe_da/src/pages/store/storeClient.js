@@ -12,6 +12,21 @@ export const storeClient = {
     }
     return response.json();
   },
+  lookupBarcode: async (code) => {
+    const value = (code || '').trim();
+    if (!value) {
+      throw new Error('Vui lòng nhập mã vạch hoặc mã hàng để kiểm tra.');
+    }
+    const response = await request(`/api/stock/lookup?code=${encodeURIComponent(value)}`, {
+      cache: 'no-store',
+      credentials: 'same-origin',
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.message || 'Không tìm thấy mặt hàng phù hợp với mã này.');
+    }
+    return response.json();
+  },
   createCart: async (items) => {
     const response = await request('/api/v1/store/orders/cart', {
       method: 'POST',

@@ -1,14 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Camera, CameraOff, ScanLine } from 'lucide-react';
 import { storeClient } from './storeClient';
 import './store.css';
 
 export default function StorePage({ role = 'staff', user }) {
   const [products, setProducts] = useState([]);
   const [quantities, setQuantities] = useState({});
+  const [barcodeInput, setBarcodeInput] = useState('');
+  const [scanning, setScanning] = useState(false);
   const [error, setError] = useState('');
   const [order, setOrder] = useState(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const videoRef = useRef(null);
+  const scannerRef = useRef(null);
+  const scanGeneration = useRef(0);
 
   useEffect(() => {
     let active = true;
@@ -24,6 +30,9 @@ export default function StorePage({ role = 'staff', user }) {
     })();
     return () => {
       active = false;
+      scanGeneration.current += 1;
+      scannerRef.current?.stop();
+      scannerRef.current = null;
     };
   }, []);
 
@@ -42,15 +51,103 @@ export default function StorePage({ role = 'staff', user }) {
 
   const totalAmount = selectedItems.reduce((sum, item) => sum + item.subtotal, 0);
 
+  function stopScanner() {
+    scanGeneration.current += 1;
+    scannerRef.current?.stop();
+    scannerRef.current = null;
+    setScanning(false);
+  }
+
+  function getAvailableQuantity(productId) {
+    return products.find((product) => product.productId === productId)?.quantityOnHand ?? 0;
+  }
+
+  function addItemByBarcode(lookup) {
+    const productId = lookup.productId;
+    const product = products.find((entry) => entry.productId === productId);
+    const unitQuantity = Number(lookup.factorToBase || 1);
+    const currentQty = Number(quantities[productId] ?? 0);
+    const availableQty = Number(product?.quantityOnHand ?? lookup.quantityOnHand ?? 0);
+    const nextQty = currentQty + unitQuantity;
+
+    if (nextQty > availableQty) {
+      const remaining = Math.max(availableQty - currentQty, 0);
+      const unitLabel = unitQuantity > 1 ? `(${unitQuantity} đơn vị chuẩn)` : '';
+      setError(`Sản phẩm '${lookup.name}' chỉ còn ${availableQty} trong kho. Hiện giỏ hàng đang có ${currentQty}. ${unitLabel}`.trim());
+      return;
+    }
+
+    setOrder(null);
+    setError('');
+    setQuantities((current) => ({ ...current, [productId]: nextQty }));
+    setBarcodeInput('');
+  }
+
+  async function checkBarcode(value) {
+    const code = (value ?? barcodeInput).trim();
+    if (!code) {
+      setError('Vui lòng nhập mã vạch hoặc mã hàng trước khi kiểm tra.');
+      return;
+    }
+
+    try {
+      const lookup = await storeClient.lookupBarcode(code);
+      addItemByBarcode(lookup);
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function startScanner() {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Camera cần HTTPS hoặc localhost để quét mã vạch.');
+      }
+      stopScanner();
+      setError('');
+      setScanning(true);
+      const generation = scanGeneration.current;
+      const { BrowserMultiFormatReader } = await import('@zxing/browser');
+      const reader = new BrowserMultiFormatReader();
+      const scanner = await reader.decodeFromConstraints(
+        { video: { facingMode: { ideal: 'environment' } }, audio: false },
+        videoRef.current,
+        (result, _error, controls) => {
+          if (!result || generation !== scanGeneration.current) return;
+          controls.stop();
+          stopScanner();
+          setBarcodeInput(result.getText());
+          void checkBarcode(result.getText());
+        },
+      );
+      if (generation !== scanGeneration.current) {
+        scanner.stop();
+      } else {
+        scannerRef.current = scanner;
+      }
+    } catch (e) {
+      stopScanner();
+      setError(e.name === 'NotAllowedError' ? 'Chưa được cấp quyền camera. Hãy cho phép camera hoặc nhập mã bằng bàn phím.' : e.message);
+    }
+  }
+
   function updateQuantity(productId, delta) {
     setOrder(null);
     setError('');
     setQuantities((current) => {
+      const available = getAvailableQuantity(productId);
       const next = Number(current[productId] ?? 0) + delta;
+
       if (next <= 0) {
         const { [productId]: _removed, ...rest } = current;
         return rest;
       }
+
+      if (next > available) {
+        setError(`Sản phẩm chỉ còn ${available} trong kho. Vui lòng giảm số lượng.`);
+        return current;
+      }
+
       return { ...current, [productId]: next };
     });
   }
@@ -92,6 +189,46 @@ export default function StorePage({ role = 'staff', user }) {
           <p>{subtitle}</p>
         </div>
         <span className="payment-badge pending">{user?.fullName || 'Người dùng'}</span>
+      </div>
+
+      <div className="store-barcode-panel">
+        <label className="store-barcode-field">
+          <span>Check / Quét Barcode</span>
+          <div className="store-barcode-actions">
+            <input
+              value={barcodeInput}
+              onChange={(event) => setBarcodeInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  void checkBarcode(barcodeInput);
+                }
+              }}
+              placeholder="Nhập mã vạch hoặc SKU..."
+              autoComplete="off"
+            />
+            <button type="button" className="button button-primary" onClick={() => void checkBarcode(barcodeInput)}>
+              Check
+            </button>
+            <button type="button" className="button button-secondary" onClick={() => {
+              if (scanning) {
+                stopScanner();
+                return;
+              }
+              void startScanner();
+            }}>
+              {scanning ? <CameraOff size={16} aria-hidden="true" /> : <Camera size={16} aria-hidden="true" />}
+              {scanning ? 'Tắt camera' : 'Quét'}
+            </button>
+          </div>
+        </label>
+
+        {scanning && (
+          <div className="store-camera-wrap">
+            <video ref={videoRef} className="store-camera" muted playsInline aria-label="Camera quét mã vạch" />
+            <div className="store-camera-overlay"><ScanLine size={18} aria-hidden="true" /> Đang quét...</div>
+          </div>
+        )}
       </div>
 
       {error && <div className="store-error" role="alert">{error}</div>}
