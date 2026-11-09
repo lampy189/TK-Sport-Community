@@ -10,7 +10,7 @@ public sealed class TicketAftercareService(Sep490Context db, TimeProvider clock)
 {
  private DateTimeOffset Now => clock.GetUtcNow();
  private static void Require(bool ok,string message,int code=409) { if(!ok) throw new PaymentException(code,message); }
- private static string Evidence(string? text) { text=text?.Trim(); Require(text is {Length:>=10 and <=1000},"Nhập nội dung/bằng chứng từ 10 đến 1000 ký tự.",400); return text!; }
+ private static string Evidence(string? text) => TicketAftercareRules.Evidence(text);
  private static bool Paid(string status)=>status.Equals("paid",StringComparison.OrdinalIgnoreCase);
  private void Audit(long actor,string action,string entity,long id,string? old,string value)=>db.AuditLogs.Add(new AuditLog{ActorId=actor,Action=action,EntityType=entity,EntityId=id,OldValue=old,NewValue=$"{Now:O} | {value}"});
  private void Notify(Ticket t,string kind)=>db.Notifications.AddRange(TicketNotifications.Create(kind,t.Id,t.Player.UserId,t.Order.PayerId));
@@ -83,15 +83,13 @@ public sealed class TicketAftercareService(Sep490Context db, TimeProvider clock)
  {
   var today=DateOnly.FromDateTime(Now.ToOffset(TimeSpan.FromHours(7)).DateTime);
   return await db.Sessions.AsNoTracking().Where(s=>issuesOnly ? s.Status.ToLower()=="suspended" || s.Status.ToLower()=="cancelled" : s.SessionDate>=today.AddDays(-1)).OrderBy(s=>s.SessionDate).ThenBy(s=>s.TimeSlot.StartTime)
-   .Select(s=>new{s.Id,s.SessionDate,s.Status,s.TimeSlot.StartTime,s.TimeSlot.EndTime,Sport=s.Sport.Name,Court=s.Court.Name,Venue=s.Court.Venue.Name}).ToListAsync();
+   .Select(s=>new{s.Id,s.SessionDate,s.Status,s.TimeSlot.StartTime,s.TimeSlot.EndTime,Sport=s.Sport.Name,Court=s.Court.Name,Venue=s.Court.Venue.Name,Reason=db.AuditLogs.Where(a=>a.EntityType=="Session" && a.EntityId==s.Id && a.Action=="venue_condition_issue").OrderByDescending(a=>a.Id).Select(a=>a.NewValue).FirstOrDefault()}).ToListAsync();
  }
  public Task<object> ReportAsync(long id,long actor,string? reason,bool cancel) => Transaction<object>(async()=>
  {
   var note=Evidence(reason);var s=await Session(id);
-  Require(s.Status.ToLowerInvariant()!="completed","Buổi đã kết thúc không thể báo dừng.");
-  var status=cancel?"cancelled":"suspended";
+  var status=TicketAftercareRules.VenueDecision(s.Status,cancel);
   if(s.Status.ToLowerInvariant()==status) return new{status=s.Status};
-  Require(s.Status.ToLowerInvariant()!="cancelled","Buổi đã hủy không chuyển về tạm ngưng.");
   var old=s.Status;s.Status=status;
   Audit(actor,"venue_condition_issue","Session",id,old,note);
   var tickets=await db.Tickets.Include(t=>t.Player).Include(t=>t.Order).Where(t=>t.SessionId==id && (t.Status.ToLower()=="confirmed" || t.Status.ToLower()=="pending" || t.Status.ToLower()=="reserved")).ToListAsync();
