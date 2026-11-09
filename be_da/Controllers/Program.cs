@@ -1,5 +1,6 @@
 using TKSC.Infrastructure;
 using TKSC.Application.Interfaces;
+using TKSC.Application.Assessments;
 using TKSC.Application.Services;
 using TKSC.Controllers.Middlewares;
 using System.Security.Claims;
@@ -28,6 +29,7 @@ builder.Services.AddScoped<TicketCheckInService>();
 builder.Services.AddScoped<TicketAftercareService>();
 builder.Services.AddScoped<TicketSupportService>();
 builder.Services.AddScoped<SkillAssessmentService>();
+builder.Services.AddScoped<ISkillAssessmentService>(services => services.GetRequiredService<SkillAssessmentService>());
 builder.Services.AddScoped<SkillReviewService>();
 builder.Services.AddScoped<GoodsPaymentService>();
 builder.Services.AddSingleton(TimeProvider.System);
