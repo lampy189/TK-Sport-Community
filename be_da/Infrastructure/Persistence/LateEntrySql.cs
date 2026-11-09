@@ -64,7 +64,9 @@ public static class LateEntrySql
             (SELECT COUNT(*) FROM dbo.tickets t JOIN dbo.social_booking_orders o ON o.id=t.order_id
              WHERE t.session_id=s.id AND {OccupiedPredicate})
           FROM dbo.late_entry_tickets lt JOIN dbo.sessions s ON s.id=lt.session_id
-          JOIN dbo.time_slots ts ON ts.id=s.time_slot_id WHERE lt.ticket_id=@ticket
+          JOIN dbo.time_slots ts ON ts.id=s.time_slot_id
+          JOIN dbo.courts c ON c.id=s.court_id JOIN dbo.venues v ON v.id=c.venue_id
+          WHERE lt.ticket_id=@ticket AND v.is_active=1
           """,c,tx);
         cmd.Parameters.AddWithValue("@ticket",ticket.Id);cmd.Parameters.AddWithValue("@now",now);
         bool valid=false;

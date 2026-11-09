@@ -306,7 +306,8 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 SELECT s.id, s.sport_id, s.band, s.capacity, s.price_vnd, s.status, s.session_date, ts.start_time, ts.end_time
                 FROM dbo.sessions s WITH (UPDLOCK, HOLDLOCK)
                 JOIN dbo.time_slots ts ON ts.id = s.time_slot_id
-                WHERE s.id = @sessionId;
+                JOIN dbo.courts c ON c.id=s.court_id JOIN dbo.venues v ON v.id=c.venue_id
+                WHERE s.id = @sessionId AND (@late=0 OR v.is_active=1);
                 """;
 
             long sportId;
@@ -321,6 +322,7 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
             await using (var sessionCmd = new SqlCommand(sessionLockSql, connection, transaction))
             {
                 sessionCmd.Parameters.Add("@sessionId", SqlDbType.BigInt).Value = sessionId;
+                sessionCmd.Parameters.Add("@late",SqlDbType.Bit).Value=lateRevision.HasValue;
                 await using var reader = await sessionCmd.ExecuteReaderAsync(cancellationToken);
                 if (!await reader.ReadAsync(cancellationToken))
                 {
@@ -372,19 +374,25 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                     await using var previous=await retry.ExecuteReaderAsync(cancellationToken);
                     if(await previous.ReadAsync(cancellationToken))return new(true,null,"Tiếp tục thanh toán chỗ đang giữ.",null,previous.GetInt64(0),previous.GetString(1),previous.GetInt64(2),previous.GetString(3),previous.GetInt32(4),previous.GetFieldValue<DateTimeOffset>(5));
                 }
-                await using var offerCmd=new SqlCommand($"""
-                    SELECT f.price_vnd,f.revision,f.is_open,f.max_tickets-
-                      (SELECT COUNT(*) FROM dbo.late_entry_tickets lt JOIN dbo.tickets t ON t.id=lt.ticket_id
-                       JOIN dbo.social_booking_orders o ON o.id=t.order_id WHERE lt.session_id=f.session_id AND {LateEntrySql.OccupiedPredicate})
-                    FROM dbo.late_entry_offers f WITH(UPDLOCK,HOLDLOCK) WHERE f.session_id=@session
-                    """,connection,transaction);
-                offerCmd.Parameters.AddWithValue("@session",sessionId);offerCmd.Parameters.AddWithValue("@now",now);
-                await using(var offer=await offerCmd.ExecuteReaderAsync(cancellationToken))
+                var quote=TKSC.Domain.Payments.LateEntryRules.Quote(
+                    TKSC.Domain.Payments.LateEntryRules.End(sessionDate,TimeOnly.FromTimeSpan(startTime)),endsAt,sessionStatus,now,priceVnd);
+                if(quote is null)return new(false,"LATE_ENTRY_CLOSED","Buổi không còn đủ điều kiện bán vé giờ lẻ.");
+                if(quote.Revision!=lateRevision.Value)return new(false,"LATE_ENTRY_CHANGED","Giá theo thời gian vừa thay đổi. Tải lại và xác nhận giá mới.");
+                priceVnd=quote.PriceVnd;
+                // A read never writes an offer. Materialize its automatic quote atomically
+                // with the first hold, under the session lock, for the ticket's FK/history.
+                await using(var offerCmd=new SqlCommand("""
+                    IF EXISTS(SELECT 1 FROM dbo.late_entry_offers WHERE session_id=@session)
+                      UPDATE dbo.late_entry_offers SET max_tickets=@capacity,price_vnd=@price,is_open=1,
+                        revision=@revision,updated_by=@actor,updated_at=@now WHERE session_id=@session;
+                    ELSE INSERT dbo.late_entry_offers(session_id,max_tickets,price_vnd,is_open,revision,updated_by,updated_at)
+                      VALUES(@session,@capacity,@price,1,@revision,@actor,@now);
+                    """,connection,transaction))
                 {
-                    if(!await offer.ReadAsync(cancellationToken)||!offer.GetBoolean(2)||offer.GetInt32(3)<1)
-                        return new(false,"LATE_ENTRY_CLOSED","Đợt rao đã dừng hoặc hết suất. Vui lòng tải lại.");
-                    if(offer.GetInt64(1)!=lateRevision.Value)return new(false,"LATE_ENTRY_CHANGED","Giá hoặc đợt mở bán vừa thay đổi. Tải lại và xác nhận giá mới.");
-                    priceVnd=offer.GetInt32(0);
+                    offerCmd.Parameters.AddWithValue("@session",sessionId);offerCmd.Parameters.AddWithValue("@capacity",Math.Min((int)capacity,8));
+                    offerCmd.Parameters.AddWithValue("@price",priceVnd);offerCmd.Parameters.AddWithValue("@revision",quote.Revision);
+                    offerCmd.Parameters.AddWithValue("@actor",userId);offerCmd.Parameters.AddWithValue("@now",now);
+                    await offerCmd.ExecuteNonQueryAsync(cancellationToken);
                 }
                 if(!await LateEntrySql.Eligible(connection,transaction,sessionId,playerId,now,cancellationToken))
                     return new(false,"SKILL_INELIGIBLE","Chưa đủ điều kiện trình độ/tài khoản hoặc trùng lịch với vé khác.");

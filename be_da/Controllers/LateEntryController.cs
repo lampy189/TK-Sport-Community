@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
 using be_da.Application.Sessions;
 using be_da.Application.Abstractions;
-using be_da.Infrastructure.Persistence;
 using TKSC.Application.DTOs;
 
 namespace be_da.Controllers;
@@ -15,18 +14,6 @@ public sealed class LateEntryController(ILateEntryStore store,ISessionStore sess
     public async Task<IActionResult> List([FromQuery]long? venueId,[FromQuery]long? sessionId,CancellationToken ct)=>Ok(await store.List(venueId,sessionId,false,ct));
     [Authorize(Roles="Staff,Manager"),HttpGet("manage")]
     public async Task<IActionResult> Manage(CancellationToken ct)=>Ok(await store.List(Venue(),null,true,ct));
-    [Authorize(Roles="Staff,Manager"),HttpPut("{id:long}")]
-    public async Task<IActionResult> Publish(long id,PublishLateEntryRequest input,CancellationToken ct)
-    {
-        await ValidateCsrf();
-        return Ok(await store.Publish(id,Venue(),Actor(),input,false,ct));
-    }
-    [Authorize(Roles="Staff,Manager"),HttpPost("{id:long}/stop")]
-    public async Task<IActionResult> Stop(long id,StopLateEntryRequest input,CancellationToken ct)
-    {
-        await ValidateCsrf();
-        return Ok(await store.Publish(id,Venue(),Actor(),new(0,0,input.ExpectedRevision),true,ct));
-    }
     [Authorize(Roles="Player"),HttpPost("{id:long}/holds")]
     public async Task<IActionResult> Hold(long id,HoldLateEntryRequest input,CancellationToken ct)
     {

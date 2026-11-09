@@ -1,4 +1,3 @@
-using TKSC.Application.DTOs;
 using TKSC.Domain.Payments;
 using Xunit;
 namespace TKSC.Api.Tests;
@@ -21,13 +20,34 @@ public sealed class LateEntryRulesTests
         Assert.Equal(Start.AddMinutes(35),LateEntryRules.HoldExpiry(Start.AddMinutes(30),End));
     }
     [Theory]
-    [InlineData(3,2,80000)] [InlineData(0,2,80000)] [InlineData(1,2,0)] [InlineData(1,2,100000001)]
-    public void SaleCannotExceedFreeSeatsOrAcceptInvalidPrices(int seats,int free,int price)
-        =>Assert.Throws<PaymentException>(()=>LateEntryRules.CheckSale(Start,End,"Open",Start.AddMinutes(90),seats,free,price));
+    [InlineData(120,0,80000)] [InlineData(120,15,70000)] [InlineData(120,30,60000)]
+    [InlineData(120,60,40000)] [InlineData(120,90,40000)] [InlineData(120,119,40000)]
+    [InlineData(60,15,60000)] [InlineData(60,30,40000)] [InlineData(180,45,60000)]
+    public void PriceScalesByElapsedShareOfOriginalDurationWithFiftyPercentFloor(int duration,int elapsed,int expected)
+        =>Assert.Equal(expected,LateEntryRules.Quote(Start,Start.AddMinutes(duration),"Open",Start.AddMinutes(elapsed),80000)!.PriceVnd);
     [Fact]
-    public void LessThanOneHourStillUsesThePublishedPriceAndSessionEnd()
+    public void PricesAreStableWithinAMinuteAndChangeRevisionWhenThePayablePriceChanges()
     {
-        LateEntryRules.CheckSale(Start,End,"Open",End.AddMinutes(-20),2,2,50000);
-        Assert.Equal(End,LateEntryRules.End(new DateOnly(2026,11,9),new TimeOnly(20,0)));
+        var quote=LateEntryRules.Quote(Start,End,"Open",Start.AddMinutes(15),80000)!;
+        Assert.Equal(quote,LateEntryRules.Quote(Start,End,"Open",Start.AddMinutes(15).AddSeconds(59),80000));
+        Assert.NotEqual(quote.Revision,LateEntryRules.Quote(Start,End,"Open",Start.AddMinutes(16),80000)!.Revision);
+        Assert.NotEqual(quote.Revision,LateEntryRules.Quote(Start,End,"Open",Start.AddMinutes(15),100000)!.Revision);
+    }
+    [Theory]
+    [InlineData(-1,"Open",80000)] [InlineData(120,"Open",80000)]
+    [InlineData(15,"cancelled",80000)] [InlineData(15,"suspended",80000)]
+    [InlineData(15,"completed",80000)] [InlineData(15,"Open",0)] [InlineData(15,"Open",1999)]
+    public void NoAutomaticQuoteOutsideRunningSaleOrPayablePriceRange(int elapsed,string status,int price)
+        =>Assert.Null(LateEntryRules.Quote(Start,End,status,Start.AddMinutes(elapsed),price));
+    [Fact]
+    public void AutomaticPriceNeverIncreasesOrDropsBelowHalfEvenWithFractionalDong()
+    {
+        const int original=80001;var previous=original;
+        for(var minute=0;minute<120;minute++)
+        {
+            var price=LateEntryRules.Quote(Start,End,"Open",Start.AddMinutes(minute),original)!.PriceVnd;
+            Assert.InRange(price,(int)Math.Ceiling(original/2m),previous);previous=price;
+        }
+        Assert.Equal(40001,previous);
     }
 }
