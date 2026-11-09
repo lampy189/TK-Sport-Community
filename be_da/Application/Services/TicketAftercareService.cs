@@ -79,10 +79,10 @@ public sealed class TicketAftercareService(Sep490Context db, TimeProvider clock)
   Require(amount>0 && already+amount<=p.AmountVnd,"Số tiền hoàn vượt khoản đã thanh toán.");
   db.Refunds.Add(new Refund{TicketId=t.Id,PaymentId=paymentId,RecipientId=t.Order.PayerId,AmountVnd=amount,Status="requested",InitiatedBy=actor});
  }
- public async Task<object> SessionsAsync()
+ public async Task<object> SessionsAsync(bool issuesOnly = false)
  {
   var today=DateOnly.FromDateTime(Now.ToOffset(TimeSpan.FromHours(7)).DateTime);
-  return await db.Sessions.AsNoTracking().Where(s=>s.SessionDate>=today.AddDays(-1)).OrderBy(s=>s.SessionDate).ThenBy(s=>s.TimeSlot.StartTime).Take(200)
+  return await db.Sessions.AsNoTracking().Where(s=>issuesOnly ? s.Status.ToLower()=="suspended" || s.Status.ToLower()=="cancelled" : s.SessionDate>=today.AddDays(-1)).OrderBy(s=>s.SessionDate).ThenBy(s=>s.TimeSlot.StartTime)
    .Select(s=>new{s.Id,s.SessionDate,s.Status,s.TimeSlot.StartTime,s.TimeSlot.EndTime,Sport=s.Sport.Name,Court=s.Court.Name,Venue=s.Court.Venue.Name}).ToListAsync();
  }
  public Task<object> ReportAsync(long id,long actor,string? reason,bool cancel) => Transaction<object>(async()=>
