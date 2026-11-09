@@ -9,7 +9,7 @@ using TKSC.Infrastructure.DbContext;
 
 namespace TKSC.Application.Services;
 
-public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
+public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock) : ISkillAssessmentService
 {
     public async Task<object> SessionsAsync(long actorId, CancellationToken ct) => await db.Sessions.AsNoTracking()
         .Where(s => s.SessionReferees.Any(r => r.RefereeId == actorId) && s.Status != "cancelled")

@@ -11,7 +11,7 @@ namespace TKSC.Controllers;
 [Authorize(Roles = "referee,Referee")]
 [Route("api/v1/skill")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class AssessmentsController(SkillAssessmentService service, IAntiforgery antiforgery) : ControllerBase
+public sealed class AssessmentsController(ISkillAssessmentService service, IAntiforgery antiforgery) : ControllerBase
 {
     [HttpGet("sessions")]
     public Task<IActionResult> Sessions(CancellationToken ct) => Execute(() => service.SessionsAsync(ActorId, ct));
