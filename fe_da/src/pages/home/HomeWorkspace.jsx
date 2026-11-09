@@ -129,9 +129,9 @@ export default function HomeWorkspace({
   if (
     !preview &&
     ["staff", "manager"].includes(role) &&
-    ["Thanh toán", "Sự cố sân", "Đổi & hoàn vé"].includes(active)
+    ["Thanh toán", "Sự cố", "Sự cố sân", "Đổi & hoàn vé"].includes(active)
   )
-    return <TicketOperations key={active} initialTab={active === "Sự cố sân" ? "sessions" : active === "Đổi & hoàn vé" ? "changes" : "reviews"} />;
+    return <TicketOperations key={active} initialTab={["Sự cố", "Sự cố sân"].includes(active) ? "issues" : active === "Đổi & hoàn vé" ? "changes" : "reviews"} />;
   if (!preview && role === "staff" && active === "Kho & vật tư")
     return <StockPage />;
   return (
