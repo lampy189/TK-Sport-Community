@@ -2,7 +2,7 @@
   margin-bottom: 28px;
 }
 .page-heading h1 {
-  font-size: clamp(28px, 3vw, 38px);
+  font-size: clamp(30px, 3.2vw, 42px);
   letter-spacing: -1.4px;
   margin: 10px 0 12px;
   font-weight: 700;
@@ -12,7 +12,9 @@
 }
 .page-heading p {
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 15.5px;
+  line-height: 1.65;
+  max-width: 880px;
 }
 .sessions-page,
 .session-detail {
@@ -21,8 +23,8 @@
 .session-banner {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 26px 28px;
+  gap: 22px;
+  padding: 26px 30px;
   border-radius: 18px;
   background: #eaf0df;
   margin-bottom: 24px;
@@ -31,71 +33,77 @@
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  width: 54px;
-  height: 54px;
+  width: 56px;
+  height: 56px;
   border: 1px solid #d4dec3;
   border-radius: 16px;
 }
 .session-banner h2 {
-  font-size: 17px;
+  font-size: 19px;
   letter-spacing: -0.3px;
 }
 .session-banner p {
   margin-top: 7px;
-  font-size: 12px;
-  color: #657357;
+  font-size: 14.5px;
+  color: #546347;
+  line-height: 1.55;
 }
 .banner-label {
   margin-left: auto;
-  font-size: 8px;
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: 1.4px;
-  color: #6f7d5d;
+  color: #5f6e4d;
   white-space: nowrap;
 }
 .session-filters {
   background: #fff;
-  padding: 24px;
+  padding: 26px 28px;
   border: 1px solid var(--color-border);
   border-radius: 18px;
 }
 .filter-heading {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-size: 12px;
+  gap: 10px;
+  font-size: 14.5px;
   margin-bottom: 20px;
 }
 .filter-heading strong {
-  font-weight: 600;
+  font-weight: 700;
 }
 .filter-fields {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   align-items: end;
-  gap: 14px;
+  gap: 16px;
 }
 .filter-field {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 11px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
   color: var(--color-muted);
 }
 .filter-fields input,
 .filter-fields select {
   width: 100%;
-  height: 46px;
-  font-size: 12px;
+  height: 48px;
+  font-size: 14.5px;
+  font-weight: 500;
   background: #fafbf8;
 }
 .filter-fields .button {
-  height: 46px;
+  height: 48px;
+  font-size: 14.5px;
 }
 .filter-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   padding-top: 18px;
   margin-top: 20px;
   border-top: 1px solid #edf0e9;
@@ -103,19 +111,21 @@
 .eligibility-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: 14.5px;
+  font-weight: 500;
   cursor: pointer;
 }
 .eligibility-toggle input {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 .text-button {
   color: var(--color-primary);
-  font-size: 11px;
-  min-height: 32px;
+  font-size: 13.5px;
+  font-weight: 600;
+  min-height: 36px;
 }
 .text-button:hover {
   text-decoration: underline;
@@ -124,26 +134,26 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 30px 0 18px;
+  margin: 30px 0 20px;
 }
 .results-heading h2 {
-  font-size: 21px;
+  font-size: 24px;
   letter-spacing: -0.5px;
 }
 .results-heading span {
-  font-size: 12px;
+  font-size: 14.5px;
   color: var(--color-muted);
 }
 .session-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 275px), 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 22px;
 }
 .session-card {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 24px;
+  padding: 26px;
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: 18px;
@@ -157,34 +167,71 @@
   box-shadow: var(--shadow-lg);
   border-color: #bbcdad;
 }
+.session-card.is-hourly-card {
+  border-color: #f59e0b;
+  background: linear-gradient(180deg, #fffdf7 0%, #ffffff 42%);
+}
+.session-card.is-hourly-card:hover {
+  border-color: #d97706;
+}
 .session-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
+}
+.session-card-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.session-hourly-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #b45309;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.session-duration-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
 }
 .sport-label {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 10px;
-  font-weight: 600;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.7px;
   color: var(--color-muted);
 }
 .sport-dot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #8ea865;
 }
 .session-status {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 4px 9px;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 5px 12px;
   background: #edf5e5;
   color: #456b34;
   border-radius: 20px;
@@ -194,39 +241,49 @@
   color: #b14d39;
 }
 .session-card h3 {
-  font-size: 18px;
-  letter-spacing: -0.5px;
+  font-size: 20px;
+  line-height: 1.35;
+  letter-spacing: -0.4px;
   margin-bottom: 12px;
 }
 .session-match {
   display: inline-flex;
-  gap: 6px;
+  gap: 7px;
   align-items: center;
-  font-size: 10px;
-  color: #60803f;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4f732d;
+}
+.session-match.is-hourly-note {
+  color: #b45309;
+  background: #fffbeb;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #fde68a;
 }
 .session-meta {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 11px;
-  margin: 20px 0 24px;
-  font-size: 12px;
+  gap: 12px;
+  margin: 18px 0 24px;
+  font-size: 14.5px;
   color: var(--color-muted);
 }
 .session-meta li {
   display: flex;
   gap: 10px;
   align-items: flex-start;
+  line-height: 1.45;
 }
 .session-meta svg {
   flex-shrink: 0;
-  margin-top: 2px;
-  color: #8a9a83;
+  margin-top: 3px;
+  color: #798c72;
 }
 .session-meta strong {
   color: var(--color-text);
-  font-weight: 500;
+  font-weight: 600;
 }
 .session-card-bottom {
   border-top: 1px solid #edf0e9;
@@ -234,23 +291,25 @@
   margin-top: auto;
 }
 .session-price {
-  font-size: 22px;
+  font-size: 25px;
   font-weight: 700;
   letter-spacing: -0.5px;
   display: flex;
-  gap: 6px;
+  gap: 7px;
   align-items: baseline;
   margin-bottom: 16px;
 }
 .session-price span {
-  font-size: 11px;
+  font-size: 13.5px;
   color: var(--color-muted);
-  font-weight: 400;
+  font-weight: 500;
   letter-spacing: 0;
 }
 .session-card .button {
   width: 100%;
   justify-content: space-between;
+  font-size: 14.5px;
+  min-height: 46px;
 }
 .session-skeleton {
   height: 320px;
@@ -289,36 +348,36 @@
 .tickets-callout {
   display: flex;
   align-items: center;
-  gap: 18px;
-  margin-top: 30px;
-  padding: 24px;
+  gap: 20px;
+  margin-top: 32px;
+  padding: 26px 28px;
   border: 1px solid var(--color-border);
-  border-radius: 16px;
+  border-radius: 18px;
 }
 .callout-icon {
   color: #78955d;
 }
 .tickets-callout strong {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 16.5px;
+  font-weight: 700;
 }
 .tickets-callout p {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--color-muted);
-  margin-top: 4px;
+  margin-top: 5px;
 }
 .tickets-callout .button {
   margin-left: auto;
-  font-size: 12px;
+  font-size: 14px;
 }
 .session-detail-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1.55fr) minmax(360px, 1fr);
+  gap: 28px;
   align-items: start;
 }
 .detail-card {
-  padding: 28px;
+  padding: 32px;
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: 18px;
@@ -338,17 +397,19 @@
 }
 .detail-fact {
   display: grid;
-  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1fr);
-  gap: 16px;
-  padding: 15px 0;
+  grid-template-columns: minmax(150px, 0.78fr) minmax(0, 1.22fr);
+  gap: 18px;
+  padding: 16px 0;
   border-bottom: 1px solid #edf0e9;
-  font-size: 12px;
+  font-size: 14.5px;
+  line-height: 1.55;
 }
 .detail-fact > span {
   color: var(--color-muted);
+  font-weight: 500;
 }
 .detail-fact strong {
-  font-weight: 500;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 .registration-feedback {
@@ -356,10 +417,10 @@
   overflow-wrap: anywhere;
 }
 .session-detail button {
-  min-height: 42px;
+  min-height: 46px;
 }
 .session-detail .page-heading h1 {
-  font-size: clamp(26px, 3vw, 36px);
+  font-size: clamp(28px, 3.2vw, 40px);
 }
 .detail-booking h2 {
   letter-spacing: -0.5px;
@@ -387,7 +448,7 @@
     display: none;
   }
   .session-banner h2 {
-    font-size: 16px;
+    font-size: 17px;
   }
   .session-filters {
     padding: 20px;
@@ -402,7 +463,7 @@
   .filter-footer {
     align-items: flex-start;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
   }
   .session-card {
     padding: 22px;
@@ -434,6 +495,7 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 20px;
+  font-size: 14px;
 }
 .detail-user {
   color: #788578;
@@ -446,21 +508,23 @@
   margin-bottom: 22px;
 }
 .detail-section-title h2 {
-  font-size: 20px;
-  letter-spacing: -0.6px;
+  font-size: 22px;
+  letter-spacing: -0.5px;
 }
 .detail-section-title svg {
   color: #809272;
 }
 .eligibility-note {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
-  padding: 12px 14px;
-  border-radius: 10px;
+  padding: 13px 16px;
+  border-radius: 12px;
   background: #f0f5e9;
-  color: #527139;
-  font-size: 11px;
+  color: #46682e;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.5;
 }
 .eligibility-note svg {
   flex-shrink: 0;
@@ -469,14 +533,19 @@
   background: var(--color-warning-bg);
   color: var(--color-warning);
 }
+.eligibility-note.is-hourly-banner {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
 .participants-heading {
-  font-size: 16px;
+  font-size: 18px;
   margin-bottom: 16px;
 }
 .participants-empty {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--color-muted);
-  line-height: 1.8;
+  line-height: 1.7;
 }
 .participants-list {
   display: flex;
@@ -487,8 +556,9 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
-  padding: 5px 12px 5px 5px;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 6px 14px 6px 6px;
   border: 1px solid var(--color-border);
   border-radius: 30px;
 }
@@ -496,18 +566,37 @@
   color: var(--color-muted);
 }
 .participant-avatar {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
   border-radius: 50%;
   background: #eaf1e0;
+  overflow: hidden;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.participant-avatar img {
+  display: block;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
 }
 .detail-reminder {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 18px;
+  padding: 18px 20px;
   background: #f7f9f4;
   border-radius: 12px;
   margin-top: 28px;
@@ -517,39 +606,40 @@
   color: #819371;
 }
 .detail-reminder p {
-  font-size: 11px;
+  font-size: 13.5px;
   color: var(--color-muted);
-  line-height: 1.8;
+  line-height: 1.7;
 }
 .detail-booking h2 {
   margin: 12px 0 22px;
-  font-size: 21px;
+  font-size: 23px;
 }
 .booking-price {
-  font-size: 30px;
+  font-size: 32px;
   letter-spacing: -1px;
   font-weight: 700;
   margin-bottom: 14px;
 }
 .booking-price span {
-  font-size: 12px;
-  font-weight: 400;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--color-muted);
-  margin-left: 7px;
+  margin-left: 8px;
   letter-spacing: 0;
 }
 .booking-note {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--color-muted);
-  line-height: 1.8;
+  line-height: 1.75;
   margin: 20px 0;
 }
 .booking-action {
   width: 100%;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  font-size: 15px;
 }
 .booking-footnote {
-  font-size: 10px;
+  font-size: 12.5px;
   color: var(--color-muted);
   text-align: center;
 }
@@ -560,12 +650,12 @@
   border-radius: 12px;
 }
 .feedback-box h3 {
-  font-size: 15px;
+  font-size: 16.5px;
   margin: 8px 0;
 }
 .feedback-box p {
-  font-size: 12px;
-  line-height: 1.8;
+  font-size: 14px;
+  line-height: 1.7;
   margin: 10px 0;
 }
 .feedback-error {
@@ -589,7 +679,7 @@
   justify-content: space-between;
   gap: 8px;
   padding: 12px 0;
-  font-size: 11px;
+  font-size: 13.5px;
 }
 .countdown {
   display: inline-flex;
@@ -599,20 +689,20 @@
   background: #d4ef91;
   padding: 5px 10px;
   border-radius: 8px;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
 }
 .reservation-details {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 4px;
-  font-size: 12px;
+  font-size: 14px;
   border-top: 1px solid #d8e5cb;
   padding-top: 12px;
 }
 .reservation-details dt {
   color: var(--color-muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 .reservation-details dd {
   font-weight: 600;
@@ -622,7 +712,7 @@
 .banner-action {
   margin-left: auto;
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: 13.5px;
   background: #f8fbf1;
 }
 @media (max-width: 1150px) {
@@ -632,6 +722,101 @@
   .banner-action {
     margin-left: 0;
   }
+}
+
+/* Quick Pills Row: Session Type & Sport Center Venues */
+.session-quick-pills-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed #e2e8dc;
+}
+.session-type-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.session-type-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid #d5e0ce;
+  background: #f8faf6;
+  color: var(--color-text-secondary);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+.session-type-pill:hover {
+  border-color: #9bb885;
+  background: #f0f6eb;
+  color: var(--color-text);
+}
+.session-type-pill.is-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #ffffff;
+}
+.session-type-pill.is-hourly-pill {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #b45309;
+}
+.session-type-pill.is-hourly-pill:hover {
+  background: #fef3c7;
+  border-color: #f59e0b;
+}
+.session-type-pill.is-hourly-pill.is-active {
+  background: #d97706;
+  border-color: #d97706;
+  color: #ffffff;
+}
+
+.session-venue-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.venue-pill-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-muted);
+  margin-right: 4px;
+}
+.session-venue-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid #dce5d7;
+  background: #ffffff;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+.session-venue-pill:hover {
+  border-color: #a6bf94;
+  background: #f5f9f2;
+  color: var(--color-text);
+}
+.session-venue-pill.is-active {
+  background: #e7f2df;
+  border-color: #5b823b;
+  color: #2c4e15;
+  font-weight: 700;
 }
 
 /* View Mode Switcher & Weekly Timetable (UC-06 / SCR-04) */
@@ -657,10 +842,10 @@
 .view-mode-btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
+  gap: 8px;
+  padding: 9px 16px;
   border-radius: 9px;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--color-text-secondary);
   background: transparent;
@@ -702,8 +887,8 @@
   gap: 8px;
 }
 .timetable-week-picker > label {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12.5px;
+  font-weight: 700;
   color: var(--color-muted);
 }
 .timetable-week-input-row {
@@ -715,19 +900,19 @@
 .timetable-week-badge {
   display: inline-flex;
   align-items: center;
-  height: 40px;
-  padding: 0 14px;
+  height: 42px;
+  padding: 0 15px;
   background: #f7f9f5;
   border: 1px solid var(--color-border);
   border-radius: 10px;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--color-text);
 }
 .timetable-week-input-row input[type="date"] {
-  height: 40px;
-  padding: 0 12px;
-  font-size: 12px;
+  height: 42px;
+  padding: 0 14px;
+  font-size: 13.5px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: #fff;
@@ -743,9 +928,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 40px;
-  padding: 0 14px;
-  font-size: 12px;
+  height: 42px;
+  padding: 0 16px;
+  font-size: 13.5px;
   font-weight: 600;
   border-radius: 10px;
   border: 1px solid var(--color-border);
@@ -776,11 +961,11 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 12px 18px;
+  padding: 13px 18px;
   background: #f3f8ec;
   border: 1px solid #d5e4c3;
   border-radius: 12px;
-  font-size: 12px;
+  font-size: 13.5px;
   color: #3f5c2a;
 }
 
@@ -788,7 +973,7 @@
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: 18px;
-  padding: 22px 24px;
+  padding: 24px 26px;
   overflow: hidden;
 }
 .timetable-card-header {
@@ -802,12 +987,12 @@
   border-bottom: 1px solid #edf0e9;
 }
 .timetable-card-header h3 {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.3px;
 }
 .timetable-card-header p {
-  font-size: 12px;
+  font-size: 13.5px;
   color: var(--color-muted);
   margin-top: 4px;
 }
@@ -815,8 +1000,9 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
-  font-size: 11px;
+  gap: 16px;
+  font-size: 12.5px;
+  font-weight: 500;
   color: var(--color-muted);
 }
 .legend-item {
@@ -825,8 +1011,8 @@
   gap: 6px;
 }
 .legend-dot {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   display: inline-block;
 }
@@ -835,6 +1021,9 @@
 }
 .legend-dot.is-pickleball {
   background: #3b82f6;
+}
+.legend-dot.is-hourly {
+  background: #f59e0b;
 }
 .legend-dot.is-full,
 .legend-dot.is-locked {
@@ -847,7 +1036,7 @@
 }
 .timetable-table {
   width: 100%;
-  min-width: 920px;
+  min-width: 980px;
   border-collapse: collapse;
   table-layout: fixed;
   border: 1px solid #e2e8dd;
@@ -858,28 +1047,28 @@
   vertical-align: top;
 }
 .timetable-slot-col {
-  width: 132px;
+  width: 144px;
   background: #f7f9f5;
-  padding: 12px 10px;
+  padding: 13px 10px;
   text-align: center;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--color-text);
 }
 .timetable-day-col {
   background: #f7f9f5;
-  padding: 11px 8px;
+  padding: 12px 8px;
   text-align: center;
 }
 .timetable-day-col .day-title {
   display: block;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--color-text);
 }
 .timetable-day-col .day-subtitle {
   display: block;
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 500;
   color: var(--color-muted);
   margin-top: 2px;
@@ -900,31 +1089,31 @@
 }
 .timetable-slot-cell .slot-number {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--color-text);
 }
 .timetable-slot-cell .slot-range {
   display: inline-block;
   margin-top: 5px;
-  padding: 3px 7px;
+  padding: 4px 8px;
   border-radius: 6px;
   background: #ebf2e4;
   color: #365926;
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 600;
 }
 .timetable-slot-cell .slot-period {
   display: block;
   margin-top: 4px;
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--color-muted);
   font-weight: 500;
 }
 
 .timetable-cell {
   padding: 10px 8px;
-  min-height: 92px;
+  min-height: 98px;
   background: #fff;
 }
 .timetable-cell.is-today-col {
@@ -933,7 +1122,7 @@
 .timetable-empty {
   display: block;
   color: #98a498;
-  font-size: 13px;
+  font-size: 13.5px;
   padding: 20px 4px;
   text-align: center;
   user-select: none;
@@ -946,7 +1135,7 @@
 .timetable-event {
   width: 100%;
   text-align: left;
-  padding: 9px 10px;
+  padding: 10px 11px;
   border-radius: 10px;
   background: #f5faf6;
   border: 1px solid #cce2d2;
@@ -964,6 +1153,23 @@
   background: #f2f7ff;
   border-color: #c8ddf8;
   border-left-color: #3b82f6;
+}
+.timetable-event.is-hourly {
+  background: #fffbeb;
+  border-color: #fde68a;
+  border-left-color: #f59e0b;
+}
+.timetable-hourly-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #b45309;
+  background: #fef3c7;
+  padding: 2px 6px;
+  border-radius: 5px;
+  width: fit-content;
 }
 .timetable-event.is-full,
 .timetable-event.is-locked {
@@ -987,7 +1193,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 4px;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #1d4ed8;
 }
@@ -996,6 +1202,9 @@
 }
 .timetable-event.is-pickleball .timetable-event-title {
   color: #1d4f91;
+}
+.timetable-event.is-hourly .timetable-event-title {
+  color: #92400e;
 }
 .timetable-event.is-locked .timetable-event-title {
   color: #64748b;
@@ -1011,7 +1220,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 600;
   color: #3d6652;
 }
@@ -1027,7 +1236,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--color-muted);
 }
 .timetable-event-meta span {
@@ -1043,7 +1252,7 @@
   padding-top: 4px;
   margin-top: 2px;
   border-top: 1px dashed #dce5d8;
-  font-size: 10px;
+  font-size: 11.5px;
 }
 .timetable-event.is-pickleball .timetable-event-footer {
   border-top-color: #d3e3f8;

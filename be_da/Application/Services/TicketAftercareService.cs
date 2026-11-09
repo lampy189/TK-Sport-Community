@@ -1,5 +1,6 @@
 using System.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using TKSC.Application.DTOs;
 using TKSC.Application.Notifications;
 using TKSC.Domain.Entities;
@@ -199,9 +200,19 @@ public sealed class TicketAftercareService(Sep490Context db, TimeProvider clock)
   Require(tickets.Count>0 && tickets.All(t=>t.Status.ToLower() is "pending" or "reserved") && tickets.Sum(t=>t.AmountVnd)==order.TotalAmount,"Vé không còn đủ điều kiện kích hoạt.");
   foreach(var group in tickets.GroupBy(t=>t.SessionId).OrderBy(g=>g.Key))
   {
-   var session=await Session(group.Key);Require(session.Status.ToLower() is "open" or "published","Buổi chơi đang dừng hoặc chưa mở.");Require(new DateTimeOffset(session.SessionDate.ToDateTime(session.TimeSlot.StartTime),TimeSpan.FromHours(7))>Now,"Buổi chơi đã bắt đầu.");
+   var session=await Session(group.Key);Require(session.Status.ToLower() is "open" or "published" or "ongoing","Buổi chơi đang dừng hoặc chưa mở.");
+   if(group.Any(t=>!TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode)))Require(new DateTimeOffset(session.SessionDate.ToDateTime(session.TimeSlot.StartTime),TimeSpan.FromHours(7))>Now,"Buổi chơi đã bắt đầu.");
    var other=await Occupied(session.Id).Where(t=>t.OrderId!=order.Id).CountAsync();Require(other+group.Count()<=TicketAftercareRules.Limit(session.Capacity),"Buổi chơi không còn đủ chỗ.");
-   foreach(var t in group){await Eligibility(t.PlayerId,session,t.Id);t.Order=order;}
+   foreach(var t in group)
+   {
+    if(TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode))
+    {
+     await be_da.Infrastructure.Persistence.LateEntrySql.ValidatePayment((Microsoft.Data.SqlClient.SqlConnection)db.Database.GetDbConnection(),(Microsoft.Data.SqlClient.SqlTransaction)db.Database.CurrentTransaction!.GetDbTransaction(),t,Now);
+     Require(t.LateEntryEligible,"Vé giờ lẻ đã hết hiệu lực hoặc không còn đủ điều kiện kích hoạt.");
+    }
+    else await Eligibility(t.PlayerId,session,t.Id);
+    t.Order=order;
+   }
   }
   payment.Status="paid";payment.ConfirmedBy=actor;order.Status="paid";bank!.MatchStatus="matched";
   foreach(var t in tickets){t.Status="confirmed";t.TicketCode??=$"TK-{Guid.NewGuid():N}";Notify(t,"ticket_paid");}

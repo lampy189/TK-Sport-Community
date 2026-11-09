@@ -7,13 +7,54 @@ import {
   Sparkles,
   CheckCircle2,
   Clock,
+  Building2,
+  Zap,
 } from "lucide-react";
 import StatePanel from "./ui/StatePanel";
 import { PublicPlayerProfileModal } from "./PublicPlayerProfileModal";
 import { InviteFriendsToSessionModal } from "./SessionInviteCard";
 import "../styles/sessions.css";
 import { api } from "../api";
+import { LateEntryPurchase } from '../pages/late-entry/LateEntrySales';
 import { ExceptionRequest } from "../pages/skill/SkillReviews";
+
+function parseTimeToMinutes(rawTime) {
+  if (!rawTime) return null;
+  const clean = String(rawTime).trim().slice(0, 5);
+  const parts = clean.split(":").map((n) => parseInt(n, 10));
+  if (parts.length < 2 || parts.some((n) => Number.isNaN(n))) return null;
+  return parts[0] * 60 + parts[1];
+}
+
+function getDurationMinutes(item) {
+  if (!item) return 120;
+  if (typeof item.durationMinutes === "number" && item.durationMinutes > 0) {
+    return item.durationMinutes;
+  }
+  const startStr =
+    item.startTime || (item.timeLabel || "").split("-")[0]?.trim();
+  const endStr =
+    item.endTime || (item.timeLabel || "").split("-")[1]?.trim();
+  const sMin = parseTimeToMinutes(startStr);
+  const eMin = parseTimeToMinutes(endStr);
+  if (sMin != null && eMin != null && eMin > sMin) {
+    return eMin - sMin;
+  }
+  return 120;
+}
+
+function isHourlyCourtSession(s) {
+  if (!s) return false;
+  if (s.isHourlyCourt === true) return true;
+  if (
+    String(s.sessionType || "").toLowerCase() === "hourlycourt" ||
+    String(s.sessionType || "").toLowerCase() === "1h"
+  ) {
+    return true;
+  }
+  const mins = getDurationMinutes(s);
+  return mins > 0 && mins <= 60;
+}
 
 function CountdownTimer({ expiresAt }) {
   const [secondsLeft, setSecondsLeft] = useState(() => calcSeconds(expiresAt));
@@ -183,6 +224,11 @@ export function SessionDetailView({
 
   function getSessionTitle(s) {
     if (!s) return "Buổi chơi";
+    const isHourly = isHourlyCourtSession(s);
+    const sportVi = s.sportName === "Badminton" ? "Cầu lông" : "Pickleball";
+    if (isHourly) {
+      return `Vé giờ lẻ 1h (Rao sân) · ${sportVi}`;
+    }
     if (s.sportName === "Badminton") {
       if (s.timeLabel?.includes("18:00") && s.band === "B2")
         return "Cầu lông sau giờ làm";
@@ -247,63 +293,90 @@ export function SessionDetailView({
     return new Date(y, m - 1, d, hh, mm, 0, 0).getTime() <= Date.now();
   })();
   const isSessionLocked = isFull || isPastStart;
-  const isEligible = summary.isEligibleSuggestion;
+  const isHourly = isHourlyCourtSession(summary);
+  const durationMins = getDurationMinutes(summary);
+  const isEligible = isHourly ? true : summary.isEligibleSuggestion;
   return (
     <div className="session-detail">
       <button className="text-button detail-back" onClick={onBack}>
-        <ArrowLeft size={16} /> Quay lại khám phá
+        <ArrowLeft size={16} /> Quay lại khám phá lịch sân
       </button>
       <header className="page-heading">
         <span className="eyebrow">
-          BUỔI CHƠI ·{" "}
+          {isHourly ? "VÉ GIỜ LẺ 1H (RAO SÂN) · " : "BUỔI CHƠI SOCIAL · "}
           {summary.sportName === "Badminton" ? "CẦU LÔNG" : "PICKLEBALL"}
         </span>
         <h1>{getSessionTitle(summary)}</h1>
         <p>
-          {summary.courtName} · {summary.venueName}{" "}
+          <strong>{summary.venueName}</strong> · {summary.courtName}
+          {summary.venueAddress ? ` (${summary.venueAddress})` : ""}{" "}
           <span className="detail-user">/ {displayName}</span>
         </p>
       </header>
+      <LateEntryPurchase sessionId={sessionId} user={user} onLogin={onOpenLogin} onPayment={onPayment}/>
       <div className="session-detail-grid">
         <section className="detail-card">
           <div className="detail-section-title">
-            <h2>Thông tin buổi chơi</h2>
-            <Users size={20} />
+            <h2>
+              {isHourly
+                ? "Thông tin Vé giờ lẻ 1 tiếng (Rao sân trống)"
+                : "Thông tin buổi chơi"}
+            </h2>
+            {isHourly ? <Zap size={22} /> : <Users size={22} />}
           </div>
-          <div
-            className={`eligibility-note ${isEligible === false ? "is-warning" : ""}`}
-          >
-            {isEligible === true ? (
-              <>
-                <Sparkles size={16} /> Bạn phù hợp với buổi chơi này
-              </>
-            ) : isEligible === false ? (
-              <>
-                Chưa phù hợp trình độ:{" "}
-                {summary.ineligibilityReason === "chưa làm survey" ||
-                summary.ineligibilityReason === "chưa có hồ sơ môn này"
-                  ? "Chưa hoàn tất khảo sát trình độ môn này"
-                  : summary.ineligibilityReason === "lệch band kỹ năng"
-                    ? `Chưa khớp yêu cầu Band ${summary.band} (Có thể xin ngoại lệ trình độ)`
-                    : summary.ineligibilityReason || "Lệch band kỹ năng"}
-              </>
-            ) : (
-              <>
-                <ShieldCheck size={16} /> Đăng nhập để xem đối chiếu trình độ
-              </>
-            )}
-          </div>
+
+          {isHourly ? (
+            <div className="eligibility-note is-hourly-banner">
+              <Zap size={18} />
+              <div>
+                <strong>Vé giờ lẻ 1h (Rao sân trống):</strong> Khung giờ lẻ 1
+                tiếng do cơ sở <strong>{summary.venueName}</strong> mở bán khi
+                sân còn trống. Mở tự do cho mọi trình độ — đặt vé và giữ sân
+                ngay!
+              </div>
+            </div>
+          ) : (
+            <div
+              className={`eligibility-note ${isEligible === false ? "is-warning" : ""}`}
+            >
+              {isEligible === true ? (
+                <>
+                  <Sparkles size={17} /> Bạn phù hợp với buổi chơi này
+                </>
+              ) : isEligible === false ? (
+                <>
+                  Chưa phù hợp trình độ:{" "}
+                  {summary.ineligibilityReason === "chưa làm survey" ||
+                  summary.ineligibilityReason === "chưa có hồ sơ môn này"
+                    ? "Chưa hoàn tất khảo sát trình độ môn này"
+                    : summary.ineligibilityReason === "lệch band kỹ năng"
+                      ? `Chưa khớp yêu cầu Band ${summary.band} (Có thể xin ngoại lệ trình độ)`
+                      : summary.ineligibilityReason || "Lệch band kỹ năng"}
+                </>
+              ) : (
+                <>
+                  <ShieldCheck size={17} /> Đăng nhập để xem đối chiếu trình độ
+                </>
+              )}
+            </div>
+          )}
+
           <div className="detail-facts">
             <div className="detail-fact">
-              <span>Môn thể thao</span>
+              <span>Cơ sở Sport Center</span>
               <strong>
-                {summary.sportName === "Badminton" ? "Cầu lông" : "Pickleball"}
+                <Building2
+                  size={15}
+                  style={{ verticalAlign: "middle", marginRight: 5 }}
+                />
+                {summary.venueName}
               </strong>
             </div>
             <div className="detail-fact">
-              <span>Địa điểm</span>
+              <span>Sân &amp; Bộ môn</span>
               <strong>
-                {summary.courtName} · {summary.venueName}
+                {summary.courtName} ·{" "}
+                {summary.sportName === "Badminton" ? "Cầu lông" : "Pickleball"}
               </strong>
             </div>
             <div className="detail-fact">
@@ -311,29 +384,35 @@ export function SessionDetailView({
               <strong>{formatSessionDate(summary.sessionDate)}</strong>
             </div>
             <div className="detail-fact">
-              <span>Khung giờ</span>
+              <span>Khung giờ &amp; Thời lượng</span>
               <strong>
                 {summary.timeLabel ||
-                  `${summary.startTime} - ${summary.endTime}`}
+                  `${summary.startTime} - ${summary.endTime}`}{" "}
+                ({isHourly ? "1 tiếng · Rao sân" : `${Math.round(durationMins / 60)} tiếng`})
               </strong>
             </div>
             <div className="detail-fact">
-              <span>Trình độ yêu cầu</span>
+              <span>Loại vé &amp; Trình độ</span>
               <strong>
-                {summary.band ? `Band ${summary.band}` : "Tự do / Mọi trình độ"}
+                {isHourly
+                  ? "Vé giờ lẻ 1h · Mọi trình độ"
+                  : summary.band
+                    ? `Lịch Social · Band ${summary.band}`
+                    : "Lịch Social · Tự do"}
               </strong>
             </div>
             <div className="detail-fact">
-              <span>Đã xác nhận</span>
+              <span>Số chỗ đã đặt</span>
               <strong>
-                {summary.occupiedPlaces} / {summary.capacity} người
+                {summary.occupiedPlaces} / {summary.capacity} chỗ (Còn{" "}
+                {availableSlots} chỗ)
               </strong>
             </div>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", marginTop: "20px", marginBottom: "10px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "14px", flexWrap: "wrap", marginTop: "24px", marginBottom: "12px" }}>
             <h3 className="participants-heading" style={{ margin: 0 }}>
               Cùng ra sân{" "}
-              <small style={{ fontSize: "12px", fontWeight: 500, color: "#64748b", marginLeft: "6px" }}>
+              <small style={{ fontSize: "14px", fontWeight: 500, color: "#64748b", marginLeft: "6px" }}>
                 (Bấm vào người chơi để xem Hồ sơ công khai, kết bạn &amp; nhắn tin)
               </small>
             </h3>
@@ -343,7 +422,7 @@ export function SessionDetailView({
                 className="comm-btn comm-btn-outline"
                 onClick={() => setShowInviteFriendModal(true)}
               >
-                <UserPlus size={14} />
+                <UserPlus size={15} />
                 <span>Rủ bạn bè cùng đặt sân</span>
               </button>
             )}
@@ -374,7 +453,6 @@ export function SessionDetailView({
                       <img
                         src={p.avatarUrl}
                         alt={p.fullName}
-                        style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
                       />
                     ) : (
                       p.fullName?.slice(0, 1)
@@ -395,11 +473,13 @@ export function SessionDetailView({
           </div>
         </section>
         <aside className="detail-card detail-booking">
-          <span className="eyebrow">HẸN GẶP BẠN TRÊN SÂN</span>
-          <h2>Đăng ký tham gia</h2>
+          <span className="eyebrow">
+            {isHourly ? "RAO SÂN TRỐNG · ĐẶT NHANH 1H" : "HẸN GẶP BẠN TRÊN SÂN"}
+          </span>
+          <h2>{isHourly ? "Đặt Vé giờ lẻ 1h" : "Đăng ký tham gia"}</h2>
           <div className="booking-price">
             {formatPrice(summary.priceVnd)}
-            <span>/ người</span>
+            <span>{isHourly ? "/ vé giờ lẻ 1h" : "/ người"}</span>
           </div>
           <span
             className={
@@ -410,14 +490,16 @@ export function SessionDetailView({
               ? "Đã qua giờ bắt đầu"
               : isFull
                 ? "Đã hết chỗ"
-                : `Còn ${availableSlots} chỗ`}
+                : `Còn ${availableSlots}/${summary.capacity} chỗ`}
           </span>
           <p className="booking-note">
             {isPastStart
-              ? "Buổi chơi đã qua thời điểm bắt đầu và đã khóa đăng ký."
+              ? "Khung giờ này đã qua thời điểm bắt đầu và đã khóa đăng ký."
               : isFull
-                ? "Buổi chơi đã đủ số lượng người tham gia và đã khóa đăng ký."
-                : "Hệ thống kiểm tra trình độ và chỗ trống trước khi giữ chỗ."}
+                ? "Khung giờ này đã đủ số lượng người đặt và đã khóa đăng ký."
+                : isHourly
+                  ? `Vé giờ lẻ 1 tiếng tại ${summary.venueName} (${summary.courtName}). Giữ chỗ trực tuyến và thanh toán QR nhanh chóng.`
+                  : "Hệ thống kiểm tra trình độ và chỗ trống trước khi giữ chỗ."}
           </p>
           <button
             className="button button-primary booking-action"
@@ -434,7 +516,9 @@ export function SessionDetailView({
                 ? "Đã khóa (Qua giờ bắt đầu)"
                 : isFull
                   ? "Đã khóa (Đủ chỗ)"
-                  : "Đăng ký buổi chơi"}
+                  : isHourly
+                    ? "Đặt vé giờ lẻ 1h ngay"
+                    : "Đăng ký buổi chơi"}
           </button>
           {registrationFeedback?.type === "SUCCESS_PENDING" && (
             <button
