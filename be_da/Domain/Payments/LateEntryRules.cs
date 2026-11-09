@@ -1,4 +1,3 @@
-using TKSC.Application.DTOs;
 namespace TKSC.Domain.Payments;
 
 public static class LateEntryRules
@@ -9,10 +8,18 @@ public static class LateEntryRules
     public static bool Running(DateTimeOffset start, DateTimeOffset end, string status, DateTimeOffset now) =>
         now >= start && now < end && status.ToLowerInvariant() is "open" or "published" or "ongoing";
     public static DateTimeOffset HoldExpiry(DateTimeOffset now, DateTimeOffset end) => now.AddMinutes(5) < end ? now.AddMinutes(5) : end;
-    public static void CheckSale(DateTimeOffset start, DateTimeOffset end, string status, DateTimeOffset now, int seats, int available, int price)
+    // Quote in whole elapsed minutes so an offer remains stable while the player confirms it.
+    // The original price remains the source of truth; the maximum reduction is 50%.
+    public static LateEntryPrice? Quote(DateTimeOffset start, DateTimeOffset end, string status, DateTimeOffset now, int basePriceVnd)
     {
-        if (!Running(start, end, status, now)) throw new PaymentException(409, "Chỉ rao suất trong buổi đang diễn ra và chưa kết thúc.");
-        if (seats < 1 || seats > available) throw new PaymentException(409, "Số suất mở bán vượt số chỗ còn trống, đã trừ vé đã trả tiền và giữ chỗ.");
-        if (price is < 1000 or > 100000000) throw new PaymentException(400, "Giá vé phải từ 1.000 đến 100.000.000 VNĐ.");
+        if (!Running(start, end, status, now) || end<=start || basePriceVnd is < 2000 or > 100000000) return null;
+        var duration=(decimal)(end-start).TotalMinutes;
+        var elapsed=(decimal)Math.Floor((now-start).TotalMinutes);
+        var fraction=Math.Max(0.5m,1m-elapsed/duration);
+        var price=(int)decimal.Ceiling(basePriceVnd*fraction);
+        // The quoted amount is the revision: any changed payable price needs confirmation.
+        return new(price,fraction*100m,price);
     }
 }
+
+public sealed record LateEntryPrice(int PriceVnd, decimal PricePercent, long Revision);

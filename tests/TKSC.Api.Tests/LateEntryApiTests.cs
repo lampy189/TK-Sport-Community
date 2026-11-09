@@ -38,23 +38,33 @@ public sealed class LateEntryApiTests
         Assert.Equal(7,app.Store.Venue);
     }
     [Fact]
-    public async Task PublishingWithoutCsrfIsRejectedBeforeAnyStoreWrite()
+    public async Task HoldingWithoutCsrfIsRejectedBeforeAnyStoreWrite()
     {
-        await using var app=new App();using var c=app.CreateClient();c.DefaultRequestHeaders.Add("X-Test-Role","Staff");
-        var response=await c.PutAsJsonAsync("/api/late-entry/1",new{seats=1,priceVnd=80000,expectedRevision=0});
-        Assert.Equal(HttpStatusCode.BadRequest,response.StatusCode);Assert.Equal(0,app.Store.Writes);
+        await using var app=new App();using var c=app.CreateClient();c.DefaultRequestHeaders.Add("X-Test-Role","Player");
+        var response=await c.PostAsJsonAsync("/api/late-entry/1/holds",new{expectedRevision=60000});
+        Assert.Equal(HttpStatusCode.BadRequest,response.StatusCode);Assert.Equal(0,app.Sessions.Writes);
     }
     [Fact]
-    public async Task PublishingWithCsrfUsesOnlyAssignedVenue()
+    public async Task HoldingUsesAuthenticatedPlayerAndDoesNotAcceptClientPrice()
+    {
+        await using var app=new App();using var c=app.CreateClient();c.DefaultRequestHeaders.Add("X-Test-Role","Player");
+        var csrf=await c.GetFromJsonAsync<JsonElement>("/api/auth/csrf");c.DefaultRequestHeaders.Add("X-CSRF-TOKEN",csrf.GetProperty("token").GetString());
+        var response=await c.PostAsJsonAsync("/api/late-entry/1/holds",new{userId=999,priceVnd=1,expectedRevision=60000});
+        Assert.Equal(HttpStatusCode.OK,response.StatusCode);Assert.Equal(99,app.Sessions.UserId);Assert.Equal(60000,app.Sessions.Revision);
+        Assert.Equal(1,app.Sessions.Writes);
+    }
+    [Fact]
+    public async Task ManualPricePublicationIsNoLongerAvailable()
     {
         await using var app=new App();using var c=app.CreateClient();c.DefaultRequestHeaders.Add("X-Test-Role","Manager");
-        var csrf=await c.GetFromJsonAsync<JsonElement>("/api/auth/csrf");c.DefaultRequestHeaders.Add("X-CSRF-TOKEN",csrf.GetProperty("token").GetString());
-        var response=await c.PutAsJsonAsync("/api/late-entry/1",new{venueId=999,seats=1,priceVnd=80000,expectedRevision=0});
-        Assert.Equal(HttpStatusCode.OK,response.StatusCode);Assert.Equal(7,app.Store.Venue);Assert.Equal(1,app.Store.Writes);
+        Assert.False((await c.PutAsJsonAsync("/api/late-entry/1",new{priceVnd=1})).IsSuccessStatusCode);
+        Assert.False((await c.PostAsJsonAsync("/api/late-entry/1/stop",new{})).IsSuccessStatusCode);
+        Assert.Equal(0,app.Sessions.Writes);
     }
     private sealed class App:WebApplicationFactory<Program>
     {
         public FakeStore Store=new();
+        public HoldStore Sessions=new();
         public new HttpClient CreateClient()=>base.CreateClient(new WebApplicationFactoryClientOptions{BaseAddress=new Uri("https://localhost"),AllowAutoRedirect=false,HandleCookies=true});
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -62,7 +72,7 @@ public sealed class LateEntryApiTests
             builder.ConfigureTestServices(s=>
             {
                 s.RemoveAll<ILateEntryStore>();s.AddSingleton<ILateEntryStore>(Store);
-                s.RemoveAll<ISessionStore>();s.AddSingleton<ISessionStore>(new FakeSessionStore());
+                s.RemoveAll<ISessionStore>();s.AddSingleton<ISessionStore>(Sessions);
                 s.RemoveAll<IAccountStore>();s.AddSingleton<IAccountStore>(new FakeSessionAccounts());
                 s.AddAuthentication(o=>{o.DefaultAuthenticateScheme="late-test";o.DefaultChallengeScheme="late-test";o.DefaultForbidScheme="late-test";}).AddScheme<AuthenticationSchemeOptions,TestAuth>("late-test",_=>{});
             });
@@ -70,11 +80,20 @@ public sealed class LateEntryApiTests
     }
     private sealed class FakeStore:ILateEntryStore
     {
-        public long? Venue;public int Writes;
+        public long? Venue;
         public Task<IReadOnlyList<LateEntryOffer>> List(long? venue,long? session,bool manage,CancellationToken ct){Venue=venue;return Task.FromResult<IReadOnlyList<LateEntryOffer>>([]);}
-        public Task<LateEntryOffer> Publish(long id,long venue,long actor,PublishLateEntryRequest input,bool stop,CancellationToken ct)
+    }
+    private sealed class HoldStore:ISessionStore
+    {
+        public int Writes;public long UserId;public long Revision;
+        public Task<IReadOnlyList<TimeSlotSummary>> GetTimeSlotsAsync(CancellationToken ct)=>throw new NotSupportedException();
+        public Task<IReadOnlyList<SessionSummary>> GetSessionsAsync(SessionFilter filter,long? user,CancellationToken ct)=>throw new NotSupportedException();
+        public Task<SessionDetails?> GetSessionByIdAsync(long id,long? user,CancellationToken ct)=>throw new NotSupportedException();
+        public Task<RegisterSessionResult> RegisterSessionAsync(long user,long id,CancellationToken ct)=>throw new NotSupportedException();
+        public Task<RegisterSessionResult> RegisterLateEntryAsync(long user,long id,long revision,CancellationToken ct)
         {
-            Venue=venue;Writes++;return Task.FromResult(new LateEntryOffer(id,venue,"Cơ sở 7","Sân 1","Badminton","B2",DateTimeOffset.UtcNow.AddHours(-1),DateTimeOffset.UtcNow.AddHours(1),8,4,1,1,2,1,input.PriceVnd,!stop,1));
+            Writes++;UserId=user;Revision=revision;
+            return Task.FromResult(new RegisterSessionResult(true,null,"OK",OrderId:123,AmountVnd:60000));
         }
     }
     private sealed class TestAuth(IOptionsMonitor<AuthenticationSchemeOptions> options,ILoggerFactory logger,UrlEncoder encoder):AuthenticationHandler<AuthenticationSchemeOptions>(options,logger,encoder)
