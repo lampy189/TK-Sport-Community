@@ -18,6 +18,7 @@ be_da/*.suo
 
 # Environment
 .env
+deploy/runtime.env
 *.env.local
 
 # OS
