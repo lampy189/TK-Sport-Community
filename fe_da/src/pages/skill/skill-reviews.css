@@ -22,19 +22,3 @@
 .skill-reviews .exception-result-reason { padding-top: 12px; border-top: 1px solid currentColor; }
 .skill-reviews .exception-result-reason > span { display: block; margin-bottom: 4px; font-size: 12px; font-weight: 700; }
 .skill-reviews .exception-result-reason p { white-space: pre-wrap; }
-
-/* Operational review screens: readable text and compact cards. */
-.workflow-page.skill-reviews { font-size:16px; gap:12px; }
-.workflow-page.skill-reviews h2 { font-size:24px; margin:0; }
-.workflow-page.skill-reviews h3 { font-size:18px; margin:0; }
-.workflow-page.skill-reviews .detail-card { padding:16px; display:grid; gap:8px; }
-.workflow-page.skill-reviews .detail-card p { margin:0; line-height:1.5; }
-.workflow-page.skill-reviews form { margin-top:8px; gap:8px; }
-.workflow-page.skill-reviews textarea { min-height:76px; font-size:16px; }
-.workflow-page.skill-reviews time { font-size:14px; }
-.workflow-page.skill-reviews .workflow-actions { display:flex; flex-wrap:wrap; gap:8px; }
-.workflow-page.skill-reviews .button { font-size:16px; min-height:44px; }
-@media(max-width:600px) {
- .workflow-page.skill-reviews .detail-card { padding:12px; }
- .workflow-page.skill-reviews .workflow-actions .button { flex:1; }
-}

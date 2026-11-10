@@ -1,5 +1,3 @@
-import RevenuePage from "../revenue/RevenuePage";
-import SportCenterPersonnel from "../revenue/SportCenterPersonnel";
 import MessagesPage from "../messages/MessagesPage";
 import SkillReviews from "../skill/SkillReviews";
 import TicketOperations from "../payment/TicketOperations";
@@ -15,7 +13,6 @@ import { CommunityView } from "../../components/CommunityView";
 import PaymentPage from "../payment/PaymentPage";
 import StockPage from "../stock/StockPage";
 import RefereeSuppliesView from "../stock/RefereeSuppliesView";
-import MyGoodsOrders from "../stock/MyGoodsOrders";
 import StorePage from "../store/StorePage";
 import { Construction, ArrowLeft } from "lucide-react";
 
@@ -32,8 +29,6 @@ export default function HomeWorkspace({
   initialSport = "ALL",
   onBrowseSport,
 }) {
-  if (!preview && ["owner", "manager", "staff"].includes(role) && ["Kinh doanh", "Thống kê doanh số"].includes(active)) return <RevenuePage />;
-  if (!preview && role === "owner" && active === "Phân quyền Sport Center") return <SportCenterPersonnel />;
   if (active === "Tin nhắn" && role !== "guest") return <MessagesPage preview={preview} />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Ngoại lệ trình độ") return <SkillReviews role={role} kind="exceptions" />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Khiếu nại đánh giá") return <SkillReviews role={role} />;
@@ -93,12 +88,7 @@ export default function HomeWorkspace({
         />
       );
     if (role === "player" && active === "Cửa hàng")
-      return (
-        <>
-          <StorePage role="player" user={user} />
-          <MyGoodsOrders />
-        </>
-      );
+      return <StorePage role="player" user={user} />;
     if (role === "player" && active === "Hồ sơ kỹ năng")
       return (
         <SkillProfileView
@@ -129,9 +119,9 @@ export default function HomeWorkspace({
   if (
     !preview &&
     ["staff", "manager"].includes(role) &&
-    ["Thanh toán", "Sự cố", "Sự cố sân", "Đổi & hoàn vé"].includes(active)
+    ["Thanh toán", "Sự cố sân", "Đổi & hoàn vé"].includes(active)
   )
-    return <TicketOperations key={active} initialTab={["Sự cố", "Sự cố sân"].includes(active) ? "issues" : active === "Đổi & hoàn vé" ? "changes" : "reviews"} />;
+    return <TicketOperations key={active} initialTab={active === "Sự cố sân" ? "sessions" : active === "Đổi & hoàn vé" ? "changes" : "reviews"} />;
   if (!preview && role === "staff" && active === "Kho & vật tư")
     return <StockPage />;
   return (

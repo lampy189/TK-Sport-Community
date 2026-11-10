@@ -10,7 +10,7 @@ async function call(path, options = {}) {
     data = null;
   }
   if (!response.ok) {
-    const error = new Error(
+    throw new Error(
       data?.message ||
         {
           401: "Phiên đăng nhập đã hết. Vui lòng đăng nhập lại.",
@@ -20,8 +20,6 @@ async function call(path, options = {}) {
         }[response.status] ||
         "Không kết nối được dịch vụ kho. Vui lòng thử lại.",
     );
-    error.data = data;
-    throw error;
   }
   return data;
 }
@@ -51,9 +49,8 @@ export const stockClient = {
   products: () => call("products"),
   create: (product) => send("products", "POST", product),
   update: (id, product) => send(`products/${id}`, "PUT", product),
-  move: (id, type, quantity, unitName) =>
-    send(`products/${id}/movements`, "POST", { type, quantity, unitName: unitName || null }),
-  batchReceipt: (body) => send("receipts/batch", "POST", body),
+  move: (id, type, quantity) =>
+    send(`products/${id}/movements`, "POST", { type, quantity }),
   movements: (id) => call(`products/${id}/movements`),
   supplySessions: (date) =>
     call(`session-supplies${date ? `?date=${encodeURIComponent(date)}` : ""}`),
