@@ -1,4 +1,6 @@
 using System.Data;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore.Storage;
 using TKSC.Application.Notifications;
 using Microsoft.EntityFrameworkCore;
 using TKSC.Application.DTOs;
@@ -34,7 +36,20 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
         var held=await db.Tickets.Where(t=>ids.Contains(t.Id) && t.Player.UserId==userId).Select(t=>t.Id).ToListAsync();
         var changes=await db.TicketChanges.AsNoTracking().Where(c=>ids.Contains(c.TicketId) && c.Status=="requested").ToListAsync();
         var issues=await db.AuditLogs.AsNoTracking().Where(a=>a.EntityType=="Session" && a.Action=="venue_condition_issue" && a.EntityId!=null && sessions.Contains(a.EntityId.Value)).OrderByDescending(a=>a.Id).ToListAsync();
-        return tickets.Select(t=>t with {CanManage=owned.Contains(t.OrderId), CanResolveIssue=owned.Contains(t.OrderId)||held.Contains(t.Id), PendingChangeId=changes.FirstOrDefault(c=>c.TicketId==t.Id)?.Id, VenueIssue=issues.FirstOrDefault(a=>a.EntityId==t.SessionId)?.NewValue?.Split(" | ", 2).Last()}).ToList();
+        var lateEnds=new Dictionary<long,DateTimeOffset>();
+        if(tickets.Any(t=>TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode)))
+        {
+            await db.Database.OpenConnectionAsync();
+            try
+            {
+                await using var cmd=db.Database.GetDbConnection().CreateCommand();
+                cmd.CommandText="SELECT lt.ticket_id,lt.ends_at FROM dbo.late_entry_tickets lt JOIN dbo.tickets t ON t.id=lt.ticket_id JOIN dbo.players p ON p.id=t.player_id JOIN dbo.social_booking_orders o ON o.id=t.order_id WHERE p.user_id=@user OR o.payer_id=@user";
+                var p=cmd.CreateParameter();p.ParameterName="@user";p.Value=userId;cmd.Parameters.Add(p);
+                await using var reader=await cmd.ExecuteReaderAsync();while(await reader.ReadAsync())lateEnds[reader.GetInt64(0)]=reader.GetFieldValue<DateTimeOffset>(1);
+            }
+            finally{await db.Database.CloseConnectionAsync();}
+        }
+        return tickets.Select(t=>t with {CanManage=owned.Contains(t.OrderId), CanResolveIssue=owned.Contains(t.OrderId)||held.Contains(t.Id), PendingChangeId=changes.FirstOrDefault(c=>c.TicketId==t.Id)?.Id, VenueIssue=issues.FirstOrDefault(a=>a.EntityId==t.SessionId)?.NewValue?.Split(" | ", 2).Last(),TicketKind=TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode)?"remaining":"social",ValidUntil=lateEnds.TryGetValue(t.Id,out var until)?until:null,Valid=t.Valid&&(!TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode)||(lateEnds.TryGetValue(t.Id,out var end)&&end>DateTimeOffset.UtcNow))}).ToList();
     }
     public async Task<IReadOnlyList<ReviewSummary>> GetReviewsAsync()
     {
@@ -83,6 +98,8 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
                     var session=await db.Sessions.FromSqlInterpolated($"SELECT * FROM sessions WITH (UPDLOCK,HOLDLOCK) WHERE id={sessionId}").SingleAsync();
                     foreach(var ticket in order.Tickets.Where(t=>t.SessionId==sessionId)) ticket.Session=session;
                 }
+                foreach(var ticket in order.Tickets.Where(t=>TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode)))
+                    await be_da.Infrastructure.Persistence.LateEntrySql.ValidatePayment((SqlConnection)db.Database.GetDbConnection(),(SqlTransaction)transaction.GetDbTransaction(),ticket,DateTimeOffset.UtcNow);
             }
         }
         var previousOrder = order?.Status ?? "";
@@ -115,32 +132,54 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
         .Where(t => t.TicketCode == code).Select(t => (long?)t.OrderId).SingleOrDefaultAsync();
     public async Task<IReadOnlyList<AssignedSessionSummary>> GetAssignedSessionsAsync(long actorId)
     {
-        var sessions = await db.SessionReferees.AsNoTracking()
-            .Where(sr => sr.RefereeId == actorId)
-            .OrderBy(sr => sr.Session.SessionDate).ThenBy(sr => sr.Session.TimeSlot.StartTime)
+        // Preserve assigned-referee admission on databases awaiting the center upgrade.
+        // Managers remain denied until their persisted venue assignment exists.
+        var scoped = await HasVenueAssignmentAsync()
+            ? db.Sessions.FromSqlInterpolated($"""
+            SELECT s.* FROM dbo.sessions s JOIN dbo.courts c ON c.id=s.court_id
+            WHERE EXISTS(SELECT 1 FROM dbo.session_referees sr WHERE sr.session_id=s.id AND sr.referee_id={actorId})
+             OR EXISTS(SELECT 1 FROM dbo.users u JOIN dbo.roles r ON r.id=u.role_id WHERE u.id={actorId}
+               AND LOWER(r.code)='manager' AND LOWER(u.status)='active' AND u.deleted_at IS NULL AND u.venue_id=c.venue_id)
+            """)
+            : db.Sessions.Where(s=>s.SessionReferees.Any(sr=>sr.RefereeId==actorId));
+        var sessions = await scoped.AsNoTracking()
+            .OrderBy(sr => sr.SessionDate).ThenBy(sr => sr.TimeSlot.StartTime)
             .Select(sr => new AssignedSessionSummary(
-                sr.SessionId,
-                sr.Session.Sport.Name,
-                sr.Session.Court.Name ?? "Sân chưa đặt tên",
-                sr.Session.Court.Venue.Name ?? "TK Sport",
-                sr.Session.SessionDate,
-                sr.Session.TimeSlot.StartTime,
-                sr.Session.TimeSlot.EndTime,
-                sr.Session.Status,
-                sr.Session.Band,
-                sr.Session.Capacity,
-                (short)sr.Session.Tickets.Count(),
+                sr.Id,
+                sr.Sport.Name,
+                sr.Court.Name ?? "Sân chưa đặt tên",
+                sr.Court.Venue.Name ?? "TK Sport",
+                sr.SessionDate,
+                sr.TimeSlot.StartTime,
+                sr.TimeSlot.EndTime,
+                sr.Status,
+                sr.Band,
+                sr.Capacity,
+                (short)sr.Tickets.Count(t=>t.Status.ToLower()=="confirmed"||t.Status.ToLower()=="checkedin"||((t.Status.ToLower()=="pending"||t.Status.ToLower()=="reserved")&&t.Order.ExpiresAt>DateTimeOffset.UtcNow)),
                 true,
                 "not_ready",
                 "Đang chờ kiểm tra điều kiện buổi chơi."))
             .ToListAsync();
         return sessions;
     }
-    public Task<CheckInContext?> GetCheckInContextAsync(string code, long actorId) => db.Tickets.AsNoTracking()
-        .Where(t => t.TicketCode == code).Select(t => new CheckInContext(t.Id, t.OrderId,
+    private async Task<bool> HasVenueAssignmentAsync() => await db.Database.SqlQueryRaw<int>(
+        "SELECT CASE WHEN COL_LENGTH('dbo.users','venue_id') IS NOT NULL THEN 1 ELSE 0 END AS [Value]").SingleAsync()==1;
+
+    public async Task<CheckInContext?> GetCheckInContextAsync(string code, long actorId)
+    {
+        var scoped = await HasVenueAssignmentAsync()
+            ? db.Tickets.FromSqlInterpolated($"""
+        SELECT t.* FROM dbo.tickets t JOIN dbo.sessions s ON s.id=t.session_id JOIN dbo.courts c ON c.id=s.court_id
+        WHERE EXISTS(SELECT 1 FROM dbo.session_referees sr WHERE sr.session_id=s.id AND sr.referee_id={actorId})
+         OR EXISTS(SELECT 1 FROM dbo.users u JOIN dbo.roles r ON r.id=u.role_id WHERE u.id={actorId}
+           AND LOWER(r.code)='manager' AND LOWER(u.status)='active' AND u.deleted_at IS NULL AND u.venue_id=c.venue_id)
+        """)
+            : db.Tickets.Where(t=>t.Session.SessionReferees.Any(sr=>sr.RefereeId==actorId));
+        return await scoped.AsNoTracking().Where(t => t.TicketCode == code).Select(t => new CheckInContext(t.Id, t.OrderId,
             t.Session.SessionDate, t.Session.TimeSlot.EndTime, t.Session.Status,
             t.Session.SessionReferees.Any(r => r.RefereeId == actorId), t.Player.User.FullName,
             t.Session.Sport.Name, t.Session.Court.Name ?? "Sân chưa đặt tên", t.Session.TimeSlot.StartTime)).SingleOrDefaultAsync();
+    }
     public Task<bool> HasPendingChangeAsync(long ticketId) => db.TicketChanges.AnyAsync(c=>c.TicketId==ticketId && c.Status=="requested");
     public async Task<IReadOnlyList<TicketFundingSummary>> GetFundingAsync(long ticketId) => await db.TicketFunding.Where(f=>f.TicketId==ticketId && !f.Retired).Select(f=>new TicketFundingSummary(f.PaymentId,f.AmountVnd)).ToListAsync();
     public Task SaveAsync() => db.SaveChangesAsync();
