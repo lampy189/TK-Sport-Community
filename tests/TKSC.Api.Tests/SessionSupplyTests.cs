@@ -17,10 +17,10 @@ namespace TKSC.Api.Tests;
 
 public sealed class SessionSupplyTests
 {
-    private static readonly Account Staff = new(20, "staff@example.test", "Staff One", "Staff", "Active", "sub-20", false);
-    private static readonly Account Manager = new(21, "manager@example.test", "Manager One", "Manager", "Active", "sub-21", false);
+    private static readonly Account Staff = new(20, "staff@example.test", "Staff One", "Staff", "Active", "sub-20", false, VenueId: 1);
+    private static readonly Account Manager = new(21, "manager@example.test", "Manager One", "Manager", "Active", "sub-21", false, VenueId: 1);
     private static readonly Account Player = new(30, "player@example.test", "Player One", "Player", "Active", "sub-30", false);
-    private static readonly Account Referee = new(40, "referee@example.test", "Referee One", "Referee", "Active", "sub-40", false);
+    private static readonly Account Referee = new(40, "referee@example.test", "Referee One", "Referee", "Active", "sub-40", false, VenueId: 1);
 
     [Fact]
     public async Task Supplies_AreHiddenFromPlayers_AndOnlyStaffWrites()

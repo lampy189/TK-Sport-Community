@@ -16,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("Controllers/appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"Controllers/appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 if (builder.Environment.IsDevelopment()) builder.Configuration.AddUserSecrets<Program>(optional: true);
+builder.Configuration.AddJsonFile("Controllers/appsettings.Local.json", optional: true, reloadOnChange: true);
 builder.Configuration.AddEnvironmentVariables().AddCommandLine(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -133,6 +134,7 @@ builder.Services.AddOptions<GoogleOptions>(GoogleDefaults.AuthenticationScheme)
         options.ClientId = string.IsNullOrWhiteSpace(clientId) ? "unconfigured" : clientId;
         options.ClientSecret = string.IsNullOrWhiteSpace(clientSecret) ? "unconfigured" : clientSecret;
     });
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthorization();
 builder.Services.AddRateLimiter(options =>
 {
@@ -168,6 +170,7 @@ app.UseRouting();
 app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication();
+app.UseMiddleware<SportCenterMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

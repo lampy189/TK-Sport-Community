@@ -36,6 +36,15 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
         [FromQuery] DateOnly? toDate,
         CancellationToken cancellationToken)
     {
+        if (fromDate.HasValue && toDate.HasValue && fromDate.Value > toDate.Value)
+        {
+            return BadRequest(new
+            {
+                code = "INVALID_DATE_RANGE",
+                message = "Ngày bắt đầu (fromDate) không được lớn hơn ngày kết thúc (toDate)."
+            });
+        }
+
         var currentUserId = TryGetUserId(out var uid) ? uid : (long?)null;
         var filter = new SessionFilter(sportId, sport, date, timeSlotId, status, fromDate, toDate);
         var sessions = await sessionStore.GetSessionsAsync(filter, currentUserId, cancellationToken);

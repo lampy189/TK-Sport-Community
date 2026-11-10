@@ -1,0 +1,487 @@
+{
+  "demo": true,
+  "timezone": "Asia/Ho_Chi_Minh",
+  "defaultRange": {
+    "from": "2026-10-30",
+    "to": "2026-11-05"
+  },
+  "centers": [
+    {
+      "id": "SC01",
+      "name": "TK Sport · Thủ Đức"
+    },
+    {
+      "id": "SC02",
+      "name": "TK Sport · Bình Thạnh"
+    },
+    {
+      "id": "SC03",
+      "name": "TK Sport · Quận 7"
+    }
+  ],
+  "accounts": [
+    {
+      "id": "owner",
+      "name": "Tổng bộ",
+      "role": "Owner",
+      "centerId": null
+    },
+    {
+      "id": "manager-1",
+      "name": "Quản lý Thủ Đức",
+      "role": "Manager",
+      "centerId": "SC01"
+    },
+    {
+      "id": "staff-2",
+      "name": "Nhân viên Bình Thạnh",
+      "role": "Staff",
+      "centerId": "SC02"
+    },
+    {
+      "id": "manager-3",
+      "name": "Quản lý Quận 7",
+      "role": "Manager",
+      "centerId": "SC03"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "SOC-0-0",
+      "centerId": "SC01",
+      "kind": "social",
+      "amount": 600000,
+      "occurredAt": "2026-10-30T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-0-0",
+      "centerId": "SC01",
+      "kind": "goods",
+      "amount": 150000,
+      "occurredAt": "2026-10-30T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-0-1",
+      "centerId": "SC02",
+      "kind": "social",
+      "amount": 720000,
+      "occurredAt": "2026-10-30T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-0-1",
+      "centerId": "SC02",
+      "kind": "goods",
+      "amount": 185000,
+      "occurredAt": "2026-10-30T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-0-2",
+      "centerId": "SC03",
+      "kind": "social",
+      "amount": 840000,
+      "occurredAt": "2026-10-30T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-0-2",
+      "centerId": "SC03",
+      "kind": "goods",
+      "amount": 220000,
+      "occurredAt": "2026-10-30T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-1-0",
+      "centerId": "SC01",
+      "kind": "social",
+      "amount": 680000,
+      "occurredAt": "2026-10-31T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-1-0",
+      "centerId": "SC01",
+      "kind": "goods",
+      "amount": 170000,
+      "occurredAt": "2026-10-31T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-1-1",
+      "centerId": "SC02",
+      "kind": "social",
+      "amount": 800000,
+      "occurredAt": "2026-10-31T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-1-1",
+      "centerId": "SC02",
+      "kind": "goods",
+      "amount": 205000,
+      "occurredAt": "2026-10-31T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-1-2",
+      "centerId": "SC03",
+      "kind": "social",
+      "amount": 920000,
+      "occurredAt": "2026-10-31T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-1-2",
+      "centerId": "SC03",
+      "kind": "goods",
+      "amount": 240000,
+      "occurredAt": "2026-10-31T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-2-0",
+      "centerId": "SC01",
+      "kind": "social",
+      "amount": 760000,
+      "occurredAt": "2026-11-01T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-2-0",
+      "centerId": "SC01",
+      "kind": "goods",
+      "amount": 190000,
+      "occurredAt": "2026-11-01T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-2-1",
+      "centerId": "SC02",
+      "kind": "social",
+      "amount": 880000,
+      "occurredAt": "2026-11-01T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-2-1",
+      "centerId": "SC02",
+      "kind": "goods",
+      "amount": 225000,
+      "occurredAt": "2026-11-01T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-2-2",
+      "centerId": "SC03",
+      "kind": "social",
+      "amount": 1000000,
+      "occurredAt": "2026-11-01T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-2-2",
+      "centerId": "SC03",
+      "kind": "goods",
+      "amount": 260000,
+      "occurredAt": "2026-11-01T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-3-0",
+      "centerId": "SC01",
+      "kind": "social",
+      "amount": 840000,
+      "occurredAt": "2026-11-02T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-3-0",
+      "centerId": "SC01",
+      "kind": "goods",
+      "amount": 210000,
+      "occurredAt": "2026-11-02T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-3-1",
+      "centerId": "SC02",
+      "kind": "social",
+      "amount": 960000,
+      "occurredAt": "2026-11-02T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-3-1",
+      "centerId": "SC02",
+      "kind": "goods",
+      "amount": 245000,
+      "occurredAt": "2026-11-02T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-3-2",
+      "centerId": "SC03",
+      "kind": "social",
+      "amount": 1080000,
+      "occurredAt": "2026-11-02T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-3-2",
+      "centerId": "SC03",
+      "kind": "goods",
+      "amount": 280000,
+      "occurredAt": "2026-11-02T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-4-0",
+      "centerId": "SC01",
+      "kind": "social",
+      "amount": 920000,
+      "occurredAt": "2026-11-03T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-4-0",
+      "centerId": "SC01",
+      "kind": "goods",
+      "amount": 230000,
+      "occurredAt": "2026-11-03T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-4-1",
+      "centerId": "SC02",
+      "kind": "social",
+      "amount": 1040000,
+      "occurredAt": "2026-11-03T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-4-1",
+      "centerId": "SC02",
+      "kind": "goods",
+      "amount": 265000,
+      "occurredAt": "2026-11-03T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-4-2",
+      "centerId": "SC03",
+      "kind": "social",
+      "amount": 1160000,
+      "occurredAt": "2026-11-03T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-4-2",
+      "centerId": "SC03",
+      "kind": "goods",
+      "amount": 300000,
+      "occurredAt": "2026-11-03T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-5-0",
+      "centerId": "SC01",
+      "kind": "social",
+      "amount": 1000000,
+      "occurredAt": "2026-11-04T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-5-0",
+      "centerId": "SC01",
+      "kind": "goods",
+      "amount": 250000,
+      "occurredAt": "2026-11-04T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-5-1",
+      "centerId": "SC02",
+      "kind": "social",
+      "amount": 1120000,
+      "occurredAt": "2026-11-04T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-5-1",
+      "centerId": "SC02",
+      "kind": "goods",
+      "amount": 285000,
+      "occurredAt": "2026-11-04T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-5-2",
+      "centerId": "SC03",
+      "kind": "social",
+      "amount": 1240000,
+      "occurredAt": "2026-11-04T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-5-2",
+      "centerId": "SC03",
+      "kind": "goods",
+      "amount": 320000,
+      "occurredAt": "2026-11-04T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-6-0",
+      "centerId": "SC01",
+      "kind": "social",
+      "amount": 1080000,
+      "occurredAt": "2026-11-05T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-6-0",
+      "centerId": "SC01",
+      "kind": "goods",
+      "amount": 270000,
+      "occurredAt": "2026-11-05T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-6-1",
+      "centerId": "SC02",
+      "kind": "social",
+      "amount": 1200000,
+      "occurredAt": "2026-11-05T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-6-1",
+      "centerId": "SC02",
+      "kind": "goods",
+      "amount": 305000,
+      "occurredAt": "2026-11-05T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "SOC-6-2",
+      "centerId": "SC03",
+      "kind": "social",
+      "amount": 1320000,
+      "occurredAt": "2026-11-05T18:15:00+07:00",
+      "status": "confirmed",
+      "note": "Thu vé buổi chơi"
+    },
+    {
+      "id": "GOODS-6-2",
+      "centerId": "SC03",
+      "kind": "goods",
+      "amount": 340000,
+      "occurredAt": "2026-11-05T20:30:00+07:00",
+      "status": "confirmed",
+      "note": "Bán cầu, bóng và nước"
+    },
+    {
+      "id": "REF-01",
+      "sourceId": "SOC-0-0",
+      "centerId": "SC01",
+      "kind": "refund",
+      "amount": 80000,
+      "occurredAt": "2026-11-01T10:00:00+07:00",
+      "status": "completed",
+      "note": "Hoàn vé đã thu ngày 30/10"
+    },
+    {
+      "id": "REF-02",
+      "sourceId": "SOC-3-1",
+      "centerId": "SC02",
+      "kind": "refund",
+      "amount": 160000,
+      "occurredAt": "2026-11-04T09:00:00+07:00",
+      "status": "completed",
+      "note": "Hoàn hai vé"
+    },
+    {
+      "id": "CUP-01",
+      "centerId": "SC01",
+      "kind": "social",
+      "amount": 2400000,
+      "occurredAt": "2026-11-03T08:00:00+07:00",
+      "status": "confirmed",
+      "eventId": "CUP-DEMO",
+      "note": "Giải giao hữu liên cơ sở · phần thu Thủ Đức"
+    },
+    {
+      "id": "CUP-02",
+      "centerId": "SC03",
+      "kind": "social",
+      "amount": 1600000,
+      "occurredAt": "2026-11-03T08:05:00+07:00",
+      "status": "confirmed",
+      "eventId": "CUP-DEMO",
+      "note": "Giải giao hữu liên cơ sở · phần thu Quận 7"
+    },
+    {
+      "id": "PENDING-01",
+      "centerId": "SC02",
+      "kind": "social",
+      "amount": 320000,
+      "occurredAt": "2026-11-05T10:00:00+07:00",
+      "status": "pending",
+      "note": "Chưa xác nhận chuyển khoản"
+    },
+    {
+      "id": "REF-PENDING",
+      "sourceId": "SOC-5-2",
+      "centerId": "SC03",
+      "kind": "refund",
+      "amount": 80000,
+      "occurredAt": "2026-11-05T11:00:00+07:00",
+      "status": "requested",
+      "note": "Yêu cầu hoàn tiền, chưa chi"
+    }
+  ]
+}
