@@ -164,6 +164,12 @@ export const api = {
     return res.json();
   },
 
+  async getVenues() {
+    const res = await request('/api/sessions/venues');
+    if (!res.ok) throw new Error(`Failed to load venues: HTTP ${res.status}`);
+    return res.json();
+  },
+
   async getSessions(params = {}) {
     const query = new URLSearchParams();
     if (params.sportId) query.set('sportId', params.sportId);
@@ -173,6 +179,9 @@ export const api = {
     if (params.toDate) query.set('toDate', params.toDate);
     if (params.timeSlotId) query.set('timeSlotId', params.timeSlotId);
     if (params.status) query.set('status', params.status);
+    if (params.venueId) query.set('venueId', params.venueId);
+    if (params.venue) query.set('venue', params.venue);
+    if (params.sessionType) query.set('sessionType', params.sessionType);
 
     const queryString = query.toString();
     const url = '/api/sessions' + (queryString ? `?${queryString}` : '');

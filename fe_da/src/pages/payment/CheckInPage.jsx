@@ -4,6 +4,7 @@ import { Camera, Upload, ScanLine, Ticket, UserRound, MapPin, CalendarDays, Circ
 import SectionLayout from '../../components/layout/SectionLayout';
 import './payment.css';
 import './checkin.css';
+import { LateEntryManagement } from '../late-entry/LateEntrySales';
 
 function SessionConditionBadge({ code }) {
   if (code === 'ready') return <span className="payment-badge confirmed">Sẵn sàng</span>;
@@ -11,7 +12,7 @@ function SessionConditionBadge({ code }) {
   return <span className="payment-badge pending">Chưa phù hợp</span>;
 }
 
-export default function CheckInPage() {
+export default function CheckInPage({ canManageLateEntries = false }) {
   const [code, setCode] = useState('');
   const [ticket, setTicket] = useState(null);
   const [error, setError] = useState('');
@@ -165,6 +166,7 @@ export default function CheckInPage() {
   return (
     <SectionLayout className="checkin-workspace" title="Điểm danh vào sân"
       description="Kiểm tra vé và đối chiếu người chơi trước khi xác nhận vào sân.">
+      {canManageLateEntries && <LateEntryManagement/>}
       <ol className="checkin-steps" aria-label="Quy trình điểm danh">
         {['Kiểm tra vé', 'Đối chiếu người chơi', 'Xác nhận vào sân'].map((label, index) => (
           <li key={label} className={step >= index + 1 ? 'is-active' : ''} aria-current={step === index + 1 ? 'step' : undefined}>
