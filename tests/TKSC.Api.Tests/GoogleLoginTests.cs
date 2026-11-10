@@ -87,6 +87,73 @@ public class GoogleLoginTests
     }
 
     [Fact]
+    public async Task DevelopmentLoginRequiresValidCsrfWithoutCreatingSession()
+    {
+        await using var app = new LoginApp();
+        app.Store.Account = Existing();
+        using var client = app.Client();
+
+        var missingToken = await client.PostAsJsonAsync("/api/auth/dev-login",
+            new { email = app.Store.Account.Email });
+        Assert.Equal(HttpStatusCode.BadRequest, missingToken.StatusCode);
+
+        await client.GetAsync("/api/auth/csrf");
+        using var forgedRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/dev-login")
+        {
+            Content = JsonContent.Create(new { email = app.Store.Account.Email })
+        };
+        forgedRequest.Headers.Add("X-CSRF-TOKEN", "forged-token");
+        var forgedToken = await client.SendAsync(forgedRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, forgedToken.StatusCode);
+        Assert.Equal("invalid_csrf_token", (await forgedToken.Content.ReadFromJsonAsync<JsonElement>())
+            .GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/auth/me")).StatusCode);
+        Assert.Equal(0, app.Store.Created);
+    }
+
+    [Fact]
+    public async Task DevelopmentLoginReturnsNotFoundForUnknownEmailWithoutCreatingSession()
+    {
+        await using var app = new LoginApp();
+        using var client = app.Client();
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/dev-login")
+        {
+            Content = JsonContent.Create(new { email = "missing@example.test" })
+        };
+        var csrf = await client.GetFromJsonAsync<JsonElement>("/api/auth/csrf");
+        request.Headers.Add("X-CSRF-TOKEN", csrf.GetProperty("token").GetString());
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("user_not_found", (await response.Content.ReadFromJsonAsync<JsonElement>())
+            .GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/auth/me")).StatusCode);
+        Assert.Equal(0, app.Store.Created);
+    }
+
+    [Fact]
+    public async Task DevelopmentLoginRejectsInvalidPortalWithoutCreatingSession()
+    {
+        await using var app = new LoginApp();
+        app.Store.Account = Existing();
+        using var client = app.Client();
+        var csrf = await client.GetFromJsonAsync<JsonElement>("/api/auth/csrf");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/dev-login")
+        {
+            Content = JsonContent.Create(new { email = app.Store.Account.Email, portal = "unknown" })
+        };
+        request.Headers.Add("X-CSRF-TOKEN", csrf.GetProperty("token").GetString());
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("invalid_login_portal", (await response.Content.ReadFromJsonAsync<JsonElement>())
+            .GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/auth/me")).StatusCode);
+        Assert.Equal(0, app.Store.Created);
+    }
+
+    [Fact]
     public async Task SwaggerLoginShowsErrorsAndReturnsNavigationOnlyAfterValidCsrf()
     {
         await using var app = new LoginApp { EnvironmentName = "Development" };
