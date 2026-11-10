@@ -1,20 +1,23 @@
 using System.Data;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using TKSC.Domain.Entities;
 using TKSC.Infrastructure.DbContext;
 
-if (!args.Contains("--apply"))
+if (!args.Contains("--apply") && !args.Contains("--check") && !args.Contains("--verify") && !args.Contains("--upgrade-approved") && !args.Contains("--activate-fixtures") && !args.Contains("--upgrade-exception-visibility"))
 {
  Console.WriteLine("PLAN: 11 accounts ductmtest01..11, dedicated venue/court, 6 sessions, 5 synthetic paid tickets and 2 published assessments.");
- Console.WriteLine("No DB connection or writes. To apply: set TKSC_TEST_SQL_CONNECTION; pass --apply --database <exact-test-database-name>.");
+ Console.WriteLine("No DB connection or writes. Use TKSC_TEST_SQL_CONNECTION or Sep490 User Secrets; pass --apply --database <exact-test-database-name>.");
  return;
 }
 var index=Array.IndexOf(args,"--database");
 if(index<0 || index+1>=args.Length)throw new InvalidOperationException("Supply --database with the exact intended test DB name.");
 var connection=Environment.GetEnvironmentVariable("TKSC_TEST_SQL_CONNECTION")
- ?? throw new InvalidOperationException("Set TKSC_TEST_SQL_CONNECTION locally. Never save credentials in Git.");
+ ?? new ConfigurationBuilder().AddUserSecrets("a4c7ff19-4552-4044-a798-23cba8b2021e").Build().GetConnectionString("Sep490")
+ ?? throw new InvalidOperationException("Set TKSC_TEST_SQL_CONNECTION or configure Sep490 User Secrets locally.");
 var target=new SqlConnectionStringBuilder(connection);
 if(target.InitialCatalog!=args[index+1])throw new InvalidOperationException("Connection database does not match --database.");
 await using var db=new Sep490Context(new DbContextOptionsBuilder<Sep490Context>().UseSqlServer(connection).Options);
@@ -22,8 +25,65 @@ await db.Database.OpenConnectionAsync();
 await db.Database.ExecuteSqlRawAsync("EXEC sys.sp_set_session_context @key=N'tksc_role',@value=N'service';");
 try
 {
- await using var tx=await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+ if(args.Contains("--upgrade-approved") || args.Contains("--upgrade-exception-visibility"))
+ {
+  var files=args.Contains("--upgrade-exception-visibility") ? new[]{"014-skill-exception-player-visibility.sql"} : new[]{"007-ticket-support-messages.sql","010-sport-center-accounting.sql",
+   "011-sport-center-security.sql","012-revenue-posting.sql","013-sport-center-catalog.sql"};
+  await using var upgrade=await db.Database.BeginTransactionAsync();
+  db.Database.SetCommandTimeout(120);
+  foreach(var file in files)
+  {
+   var sql=await File.ReadAllTextAsync(Path.Combine("db","upgrades",file));
+   foreach(var batch in Regex.Split(sql,@"^\s*GO\s*$",RegexOptions.Multiline|RegexOptions.IgnoreCase))
+    if(!string.IsNullOrWhiteSpace(batch))await db.Database.ExecuteSqlRawAsync(batch);
+   Console.WriteLine("Applied within transaction: "+file);
+  }
+  await upgrade.CommitAsync();
+  Console.WriteLine("OK: approved upgrade transaction committed.");
+  return;
+ }
  var emails=Enumerable.Range(1,11).Select(i=>$"ductmtest{i:00}@demo.tksc.invalid").ToArray();
+ if(args.Contains("--activate-fixtures"))
+ {
+  var fixtures=await db.Users.Where(u=>emails.Contains(u.Email)).ToListAsync();
+  foreach(var user in fixtures)
+   if(user.Status=="active" && user.Email==user.FullName+"@demo.tksc.invalid")
+   {
+    user.Status="Active";
+    db.AuditLogs.Add(new(){ActorId=user.Id,EntityType="User",EntityId=user.Id,Action="synthetic_fixture_status_fix",OldValue="active",NewValue="Active"});
+   }
+  await db.SaveChangesAsync();
+  Console.WriteLine("Normalized only newly created ductmtest fixture statuses to Active.");
+  return;
+ }
+ if(args.Contains("--check") || args.Contains("--verify"))
+ {
+  Console.WriteLine($"Connected to database: {target.InitialCatalog}");
+  var accounts=await db.Users.Where(u=>emails.Contains(u.Email)).OrderBy(u=>u.Email)
+   .Select(u=>new{u.Id,u.Email,u.FullName,u.Status,Role=u.Role.Code}).ToListAsync();
+  Console.WriteLine(JsonSerializer.Serialize(accounts,new JsonSerializerOptions{WriteIndented=true}));
+  var ticketCount=await db.Tickets.CountAsync(t=>emails.Contains(t.Order.Payer.Email));
+  var assessmentCount=await db.Assessments.CountAsync(a=>emails.Contains(a.PlayerSportProfile.Player.User.Email));
+  Console.WriteLine($"Accounts={accounts.Count}; tickets={ticketCount}; assessments={assessmentCount}");
+  var schema=await db.Database.SqlQueryRaw<string>("""
+   SELECT CAST(v.name + '=' + CASE WHEN OBJECT_ID(v.name) IS NULL THEN 'MISSING' ELSE 'present' END AS nvarchar(500)) AS Value
+   FROM (VALUES ('dbo.ticket_changes'),('dbo.ticket_funding'),('dbo.ticket_support_messages'),('dbo.revenue_entries'),
+    ('dbo.SportCenterIsolation'),('dbo.TR_payments_revenue'),('dbo.TR_refunds_revenue'),('dbo.product_units')) v(name)
+   UNION ALL
+   SELECT CAST(v.t+'.'+v.c+'='+CASE WHEN COL_LENGTH(v.t,v.c) IS NULL THEN 'MISSING' ELSE 'present' END AS nvarchar(500))
+   FROM (VALUES ('dbo.users','venue_id'),('dbo.orders','venue_id'),('dbo.stock_items','venue_id'),
+    ('dbo.shift_reconciliations','venue_id'),('dbo.products','venue_id')) v(t,c)
+   """).ToListAsync();
+  foreach(var item in schema)Console.WriteLine(item);
+  var pendingExceptions=await db.SessionExceptions.CountAsync(e=>emails.Contains(e.Player.User.Email));
+  var pendingAppeals=await db.RatingAppeals.CountAsync(a=>emails.Contains(a.SubmittedByNavigation.Email));
+  var changedTickets=await db.Tickets.CountAsync(t=>emails.Contains(t.Order.Payer.Email) && t.Status!="confirmed");
+  Console.WriteLine($"Manual fixtures: exceptions={pendingExceptions}; appeals={pendingAppeals}; non-confirmed tickets={changedTickets}");
+  if(args.Contains("--verify") && (accounts.Count!=11 || accounts.Any(a=>a.Status!="Active") || ticketCount!=5 || assessmentCount!=2 || pendingExceptions!=0 || pendingAppeals!=0 || changedTickets!=0))
+   throw new InvalidOperationException("Fixture counts do not match expected values.");
+  return;
+ }
+ await using var tx=await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
  if(await db.Users.AnyAsync(u=>emails.Contains(u.Email)))
   throw new InvalidOperationException("Some ductmtest accounts already exist. No data reset. Use the existing manifest or another test database.");
  if(!await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM sys.columns WHERE object_id=OBJECT_ID('dbo.users') AND name='venue_id'").AnyAsync(n=>n==1))
@@ -39,7 +99,7 @@ try
  for(var i=1;i<=11;i++)
  {
   var role=i switch{1=>"manager",2=>"staff",3=>"referee",_=>"player"};
-  var user=new User{Email=emails[i-1],FullName=$"ductmtest{i:00}",RoleId=roles[role].Id,Status="active"};
+  var user=new User{Email=emails[i-1],FullName=$"ductmtest{i:00}",RoleId=roles[role].Id,Status="Active"};
   db.Users.Add(user);await db.SaveChangesAsync();users[i]=user;
   await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE dbo.users SET venue_id={venue.Id} WHERE id={user.Id}");
   if(i<4)continue;
@@ -66,9 +126,11 @@ try
   var code=$"DUCTMTEST-{account:00}-{key}";
   var order=new SocialBookingOrder{OrderCode=code,PayerId=users[account].Id,TotalAmount=100000,Status="paid"};
   order.Tickets.Add(new(){PlayerId=players[account].Id,SessionId=sessions[key].Id,AmountVnd=100000,TicketCode=code,Status="confirmed"});
-  order.Payments.Add(new(){PayerId=users[account].Id,AmountVnd=100000,Method="demo-fixture",ReferenceCode=code,Status="paid",ConfirmedBy=users[2].Id});
+  // Persist tickets before posting paid: the revenue trigger validates the order's venue from its tickets.
   db.SocialBookingOrders.Add(order);await db.SaveChangesAsync();
-  var ticket=order.Tickets.Single();var payment=order.Payments.Single();
+  var payment=new Payment{OrderId=order.Id,PayerId=users[account].Id,AmountVnd=100000,Method="demo-fixture",ReferenceCode=code,Status="paid",ConfirmedBy=users[2].Id};
+  db.Payments.Add(payment);await db.SaveChangesAsync();
+  var ticket=order.Tickets.Single();
   db.TicketFunding.Add(new(){TicketId=ticket.Id,PaymentId=payment.Id,AmountVnd=100000});
   db.AuditLogs.Add(new(){ActorId=users[1].Id,EntityType="SocialBookingOrder",EntityId=order.Id,Action="synthetic_qa_fixture",NewValue="DUCTM TEST: FAKE PAID; no bank transfer; test venue only"});
   await db.SaveChangesAsync();
