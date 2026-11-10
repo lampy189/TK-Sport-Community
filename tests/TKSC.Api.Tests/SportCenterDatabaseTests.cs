@@ -1,6 +1,7 @@
 using be_da.Authorization;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using TKSC.Domain.Entities;
 using TKSC.Infrastructure.DbContext;
 using Xunit;
@@ -19,11 +20,27 @@ public sealed class SportCenterDatabaseTests
         await using var tx = await db.Database.BeginTransactionAsync();
         try
         {
-            var actor = await db.Users.SingleAsync(u => u.Email == "demo-staff-sc01@example.invalid");
-            await db.Database.ExecuteSqlRawAsync("DECLARE @v bigint=(SELECT venue_id FROM dbo.users WHERE email='demo-staff-sc01@example.invalid'); EXEC sys.sp_set_session_context @key=N'tksc_venue',@value=@v;");
-            var order = new Order { OrderCode=$"SC-TEST-{Guid.NewGuid():N}",StaffId=actor.Id,TotalAmount=100,Status="Cart",PaymentState="Unpaid",HandoverState="Pending" };
-            db.Orders.Add(order);await db.SaveChangesAsync();
-            var payment = new Payment { GoodsOrderId=order.Id,AmountVnd=100,Method="cash",Status="pending",ReferenceCode=$"SC-TEST-{Guid.NewGuid():N}",ConfirmedBy=actor.Id };
+            // Create isolated prerequisites inside this rollback transaction, without relying on a seed email.
+            var venue = new Venue { Name = "SQL-ROLLBACK-TEST-" + Guid.NewGuid().ToString("N"), IsActive = true };
+            db.Venues.Add(venue); await db.SaveChangesAsync();
+            var role = await db.Roles.FirstAsync(r => r.Code == "Staff");
+            var actor = new User { Email = $"sql-test-{Guid.NewGuid():N}@example.invalid", FullName = "Rollback test Staff", RoleId = role.Id, Status = "Active" };
+            db.Users.Add(actor); await db.SaveChangesAsync();
+            await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE dbo.users SET venue_id={venue.Id} WHERE id={actor.Id}");
+            await db.Database.ExecuteSqlInterpolatedAsync($"EXEC sys.sp_set_session_context @key=N'tksc_venue',@value={venue.Id}");
+            // Create only the prerequisite order through SQL. The behavior under test remains
+            // EF payment confirmation and its atomic goods-revenue trigger, not optional stock schema.
+            await using var insert = new SqlCommand("""
+                SET NOCOUNT ON;
+                INSERT dbo.orders(order_code,staff_id,total_amount,status,payment_state,handover_state,venue_id)
+                VALUES (@code,@staff,100,'Cart','Unpaid','Pending',@venue);
+                SELECT CONVERT(bigint,SCOPE_IDENTITY());
+                """, (SqlConnection)db.Database.GetDbConnection(), (SqlTransaction)tx.GetDbTransaction());
+            insert.Parameters.AddWithValue("@code", $"SC-TEST-{Guid.NewGuid():N}");
+            insert.Parameters.AddWithValue("@staff", actor.Id);
+            insert.Parameters.AddWithValue("@venue", venue.Id);
+            var orderId = (long)(await insert.ExecuteScalarAsync())!;
+            var payment = new Payment { GoodsOrderId=orderId,AmountVnd=100,Method="cash",Status="pending",ReferenceCode=$"SC-TEST-{Guid.NewGuid():N}",ConfirmedBy=actor.Id };
             db.Payments.Add(payment);await db.SaveChangesAsync();
             payment.Status="paid";await db.SaveChangesAsync();
             var count=await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM dbo.revenue_entries WHERE payment_id={0}",payment.Id).SingleAsync();
