@@ -14,8 +14,6 @@ public class TicketAftercareController(TicketAftercareService service,TicketSupp
   try{await csrf.ValidateRequestAsync(HttpContext);}catch(AntiforgeryValidationException){return BadRequest(new{code="invalid_csrf_token",message="Phiên bảo mật đã thay đổi. Vui lòng thử lại."});}
   return Ok(await action());
  }
- [HttpGet("incidents"),Authorize(Roles="Staff,staff,Manager,manager")]
- public async Task<IActionResult> Incidents()=>Ok(await service.SessionsAsync(true));
  [HttpGet("sessions"),Authorize(Roles="Staff,staff,Manager,manager")]
  public async Task<IActionResult> Sessions()=>Ok(await service.SessionsAsync());
  [HttpPost("sessions/{id:long}/issue"),Authorize(Roles="Staff,staff,Manager,manager")]
@@ -59,9 +57,6 @@ public class TicketAftercareController(TicketAftercareService service,TicketSupp
   Response.Headers["X-Content-Type-Options"]="nosniff";
   return File(image.Bytes,image.Type);
  }
- [HttpPost("tickets/{id:long}/reports"),Authorize(Roles="Player,player"),RequestSizeLimit(3000000)]
- public Task<IActionResult> Report(long id,TicketReportInput input)=>Write(()=>support.Report(id,Actor,input.Category,input.Content,input.ImageBase64));
- public record TicketReportInput(string? Category,string? Content,string? ImageBase64);
  public record TicketSupportInput(string? Content,string? ImageBase64);
  public record IssueRequest(string? Reason,bool Cancel);
  public record ChangeRequest(long SessionId);

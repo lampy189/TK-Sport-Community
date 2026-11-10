@@ -98,7 +98,7 @@ function SupplyDetails({ sessionId, onSummary }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ productId: "", unitName: "", quantity: "", recipientId: "" });
+  const [form, setForm] = useState({ productId: "", quantity: "", recipientId: "" });
   const [closing, setClosing] = useState(null);
 
   useEffect(() => {
@@ -143,9 +143,8 @@ function SupplyDetails({ sessionId, onSummary }) {
           productId: Number(form.productId),
           quantity: Number(form.quantity),
           recipientId: Number(form.recipientId),
-          unitName: form.unitName || null,
         }),
-      `Đã cấp ${number(form.quantity)} ${form.unitName || product?.baseUnit || ""} × ${product?.name ?? "vật tư"} cho buổi chơi.`,
+      `Đã cấp ${number(form.quantity)} × ${product?.name ?? "vật tư"} cho buổi chơi.`,
     );
     if (ok) setForm((f) => ({ ...f, quantity: "" }));
   }
@@ -169,8 +168,6 @@ function SupplyDetails({ sessionId, onSummary }) {
   const { session, recipients, allocations } = details;
   const closed = new Set(allocations.filter((a) => a.isReconciled).map((a) => a.productId));
   const selected = products.find((p) => p.id === Number(form.productId));
-  const selectedUnits = [...(selected?.units ?? [])].sort((a, b) => a.factorToBase - b.factorToBase);
-  const selectedFactor = selectedUnits.find((u) => u.unitName === form.unitName)?.factorToBase ?? 1;
 
   return (
     <div className="supply-details">
@@ -211,7 +208,7 @@ function SupplyDetails({ sessionId, onSummary }) {
                     <strong>{a.name}</strong>
                     <span className="stock-sku">{a.sku}</span>
                   </td>
-                  <td data-label="Đã cấp" className="num">{number(a.issued)} {a.baseUnit}</td>
+                  <td data-label="Đã cấp" className="num">{number(a.issued)}</td>
                   <td data-label="TT báo dùng" className="num">{a.reportedUsed ?? "—"}</td>
                   <td data-label="Trả lại" className="num">{a.isReconciled ? number(a.returned) : "—"}</td>
                   <td data-label="Đã dùng" className="num">{a.used ?? "—"}</td>
@@ -287,7 +284,7 @@ function SupplyDetails({ sessionId, onSummary }) {
             Vật tư
             <select
               value={form.productId}
-              onChange={(e) => setForm({ ...form, productId: e.target.value, unitName: "" })}
+              onChange={(e) => setForm({ ...form, productId: e.target.value })}
               required
             >
               <option value="">Chọn vật tư</option>
@@ -295,24 +292,7 @@ function SupplyDetails({ sessionId, onSummary }) {
                 .filter((p) => !closed.has(p.id))
                 .map((p) => (
                   <option key={p.id} value={p.id} disabled={p.quantityOnHand === 0}>
-                    {p.name} (tồn {number(p.quantityOnHand)} {p.baseUnit})
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label>
-            Đơn vị
-            <select
-              value={form.unitName}
-              disabled={!selected}
-              onChange={(e) => setForm({ ...form, unitName: e.target.value })}
-            >
-              <option value="">{selected?.baseUnit ?? "Chọn vật tư trước"}</option>
-              {selectedUnits
-                .filter((u) => u.factorToBase > 1)
-                .map((u) => (
-                  <option key={u.unitName} value={u.unitName}>
-                    {u.unitName} (= {number(u.factorToBase)} {selected.baseUnit})
+                    {p.name} (tồn {number(p.quantityOnHand)})
                   </option>
                 ))}
             </select>
@@ -323,7 +303,7 @@ function SupplyDetails({ sessionId, onSummary }) {
               type="number"
               inputMode="numeric"
               min="1"
-              max={Math.max(1, Math.floor((selected?.quantityOnHand ?? 1) / selectedFactor))}
+              max={selected?.quantityOnHand || 1}
               value={form.quantity}
               onChange={(e) => setForm({ ...form, quantity: e.target.value })}
               required

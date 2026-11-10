@@ -1,4 +1,3 @@
-import SportCenterBadge from "../revenue/SportCenterBadge";
 import { useEffect, useState } from "react";
 
 import HomeLayout from "../../layouts/HomeLayout";
@@ -19,7 +18,6 @@ export default function HomePage({
 }) {
   const config = roleHomeConfig[role] || roleHomeConfig.guest;
   const [active, setActive] = useState(() =>
-    ["owner", "manager", "staff"].includes(role) && new URLSearchParams(window.location.search).get("view") === "revenue" ? (role === "owner" ? "Kinh doanh" : "Thống kê doanh số") :
     role !== "guest" && new URLSearchParams(window.location.search).get("view") === "messages" ? "Tin nhắn" :
     role === "staff" && new URLSearchParams(window.location.search).has("goodsOrderId") ? "Bán hàng" :
     role === "player" &&
@@ -70,7 +68,6 @@ export default function HomePage({
         url.searchParams.delete(key),
       );
       if (label === "Tin nhắn") url.searchParams.set("view", "messages");
-      if (["Kinh doanh", "Thống kê doanh số"].includes(label)) url.searchParams.set("view", "revenue");
       remember(label, sessionId, url);
     }
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -211,7 +208,6 @@ export default function HomePage({
           : null
       }
     >
-      {!preview && ["owner", "manager", "staff", "referee"].includes(role) && <SportCenterBadge />}
       {active === "overview" ? (
         <HomeOverview config={config} preview={preview} onOpen={open} />
       ) : (
