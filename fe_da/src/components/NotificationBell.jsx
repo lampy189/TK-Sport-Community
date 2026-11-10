@@ -9,7 +9,7 @@ const isMessage = item => ['ticket_staff_reply','ticket_player_message'].include
 function MessageDialog({ item, onClose }) {
  const dialog = useRef(null);
  useEffect(() => { const node=dialog.current; node.showModal(); return () => node.close(); }, []);
- return createPortal(<dialog ref={dialog} className="notification-conversation" aria-label="Lịch sử tin nhắn về vé" onCancel={onClose} onClick={e=>{if(e.target===e.currentTarget)onClose();}}><div className="notification-heading"><strong>Lịch sử tin nhắn</strong><button className="button" onClick={onClose} aria-label="Đóng lịch sử tin nhắn"><X size={20}/></button></div><TicketSupport key={item.referenceId} ticketId={item.referenceId} staff={item.referenceType==='ticket_player_message'} initialOpen/></dialog>, document.body);
+ return createPortal(<dialog ref={dialog} className="notification-conversation" aria-label="Lịch sử thông báo về vé" onCancel={onClose} onClick={e=>{if(e.target===e.currentTarget)onClose();}}><div className="notification-heading"><strong>Chi tiết thông báo</strong><button className="button" onClick={onClose} aria-label="Đóng thông báo"><X size={20}/></button></div><TicketSupport key={item.referenceId} ticketId={item.referenceId} staff={item.referenceType==='ticket_player_message'} initialOpen/></dialog>, document.body);
 }
 export default function NotificationBell({ onTickets }) {
   const [open, setOpen] = useState(false);
@@ -96,13 +96,13 @@ export default function NotificationBell({ onTickets }) {
       <div className="notification-heading"><strong>Thông báo</strong><button disabled={busy || !unread} onClick={() => mark(null)}>Đọc tất cả</button></div>
       <small>{connected ? 'Đang cập nhật trực tiếp' : 'Đang kết nối lại · tự cập nhật định kỳ'}</small>
       {error && <p role="alert">{error}</p>}
-      <div className="notification-heading" aria-label="Lọc thông báo"><button aria-pressed={!messageOnly} onClick={()=>setMessageOnly(false)}>Tất cả</button><button aria-pressed={messageOnly} onClick={()=>setMessageOnly(true)}>Tin nhắn</button></div>
-      {!items.filter(item=>!messageOnly||isMessage(item)).length && <p>{messageOnly?'Chưa có thông báo tin nhắn.':'Chưa có thông báo về vé.'}</p>}
-      <div className="notification-items">{items.filter(item=>!messageOnly||isMessage(item)).map(item => <button disabled={busy} className={`notification-item ${item.status === 'unread' ? 'is-unread' : ''}`} key={item.id} onClick={() => mark(item.id)}><span>{item.title}</span><small>{item.status === 'unread' ? 'Chưa đọc' : 'Đã đọc'}{isMessage(item)?' · Xem lại tin nhắn':onTickets ? ' · Xem vé' : ''}</small></button>)}</div>
-      <a className="notification-inbox-link" href="?view=messages">Mở màn hình Tin nhắn →</a>
+      <div className="notification-heading" aria-label="Lọc thông báo"><button aria-pressed={!messageOnly} onClick={()=>setMessageOnly(false)}>Tất cả</button><button aria-pressed={messageOnly} onClick={()=>setMessageOnly(true)}>Thông báo hỗ trợ</button></div>
+      {!items.filter(item=>!messageOnly||isMessage(item)).length && <p>{messageOnly?'Chưa có thông báo hỗ trợ vé.':'Chưa có thông báo về vé.'}</p>}
+      <div className="notification-items">{items.filter(item=>!messageOnly||isMessage(item)).map(item => <button disabled={busy} className={`notification-item ${item.status === 'unread' ? 'is-unread' : ''}`} key={item.id} onClick={() => mark(item.id)}><span>{item.title}</span><small>{item.status === 'unread' ? 'Chưa đọc' : 'Đã đọc'}{isMessage(item)?' · Xem trao đổi vé':onTickets ? ' · Xem vé' : ''}</small></button>)}</div>
+      <a className="notification-inbox-link" href="?view=notifications">Mở màn hình Thông báo →</a>
       {items.length === 50 && <small>Hiển thị 50 thông báo gần nhất.</small>}
     </section>}
-    {toast && <aside className="notification-toast" role="status"><Bell size={19}/><div><strong>Thông báo vé</strong><p>{toast.title}</p>{(onTickets||isMessage(toast)) && <button onClick={() => mark(toast.id)}>{isMessage(toast)?'Xem tin nhắn':'Xem vé'}</button>}</div><button aria-label="Đóng thông báo" onClick={() => setToast(null)}><X size={18}/></button></aside>}
+    {toast && <aside className="notification-toast" role="status"><Bell size={19}/><div><strong>Thông báo vé</strong><p>{toast.title}</p>{(onTickets||isMessage(toast)) && <button onClick={() => mark(toast.id)}>{isMessage(toast)?'Xem thông báo':'Xem vé'}</button>}</div><button aria-label="Đóng thông báo" onClick={() => setToast(null)}><X size={18}/></button></aside>}
     {conversation&&<MessageDialog item={conversation} onClose={()=>setConversation(null)}/>}
   </div>;
 }

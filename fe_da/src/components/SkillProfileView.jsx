@@ -1,3 +1,4 @@
+import { detailedCriterionPoints, formatCriterionPoints } from "../pages/skill/criterionPoints";
 import {
   DIMENSION_ANCHORS,
   parseSubSkillEvidence,
@@ -77,7 +78,7 @@ function ScoreChange({ current, previous, unit = "điểm" }) {
   return (
     <span className={`sp-score-change ${delta > 0 ? "is-up" : delta < 0 ? "is-down" : "is-same"}`}>
       {delta > 0 ? "↑ Tăng" : delta < 0 ? "↓ Giảm" : "→ Không đổi"}
-      {delta !== 0 && ` ${Math.abs(delta)} ${unit}`}
+      {delta !== 0 && ` ${formatCriterionPoints(Math.abs(delta))} ${unit}`}
     </span>
   );
 }
@@ -1261,13 +1262,10 @@ export default function SkillProfileView({ onBrowseSport }) {
                             Number(scoreRow.score ?? scoreRow.rawScore ?? 0),
                           )
                         : 0;
-                    const weightedPts =
-                      scoreRow != null
-                        ? Number(scoreRow.weightedPoints ?? rawScore * 5)
-                        : rawScore * 5;
+                    const weightedPts = detailedCriterionPoints(scoreRow) ?? 0;
                     const pct = Math.min(
                       100,
-                      Math.max(0, (rawScore / 4) * 100),
+                      Math.max(0, (weightedPts / 20) * 100),
                     );
                     const anchorInfo = getNormalizedDimensionAnchor(
                       dimCode,
@@ -1297,8 +1295,7 @@ export default function SkillProfileView({ onBrowseSport }) {
                           || s.dimensionCode === dimCode)
                       : null;
                     const previousRaw = previousRow?.score ?? previousRow?.rawScore ?? null;
-                    const previousPoints = previousRaw == null ? null
-                      : Number(previousRow.weightedPoints ?? Number(previousRaw) * 5);
+                    const previousPoints = detailedCriterionPoints(previousRow);
                     const previousSub = previousRow
                       ? parseSubSkillEvidence(anchorInfo.code || dimCode, previousRow.evidence, previousRaw)
                       : null;
@@ -1325,12 +1322,12 @@ export default function SkillProfileView({ onBrowseSport }) {
                           </div>
                           <div className="sp-dim-numbers">
                             <span className="sp-dim-raw-badge">
-                              Mức {rawScore} / 4
+                              Điểm chi tiết
                             </span>
-                            <strong>{weightedPts.toFixed(0)} / 20 điểm</strong>
+                            <strong>{formatCriterionPoints(weightedPts)} / 20 điểm</strong>
                             {previousPoints != null && (
                               <>
-                                <span className="sp-previous-value">Lần trước: {previousPoints}/20 · Mức {previousRaw}/4</span>
+                                <span className="sp-previous-value">Lần trước: {formatCriterionPoints(previousPoints)}/20</span>
                                 <ScoreChange current={weightedPts} previous={previousPoints} />
                               </>
                             )}
@@ -1343,31 +1340,15 @@ export default function SkillProfileView({ onBrowseSport }) {
                             className="sp-dim-bar-fill"
                             style={{ width: `${pct}%` }}
                           />
-                          {previousRaw != null && (
+                          {previousPoints != null && (
                             <span className="sp-previous-marker"
-                              style={{ left: `${Math.min(100, Math.max(0, Number(previousRaw) / 4 * 100))}%` }}
-                              title={`Mức cũ: ${previousRaw}/4`}
-                              aria-label={`Mức cũ: ${previousRaw}/4`} />
+                              style={{ left: `${Math.min(100, Math.max(0, previousPoints / 20 * 100))}%` }}
+                              title={`Lần trước: ${formatCriterionPoints(previousPoints)}/20`}
+                              aria-label={`Lần trước: ${formatCriterionPoints(previousPoints)}/20`} />
                           )}
                         </div>
-                        <div className="sp-dim-level-steps">
-                          {[0, 1, 2, 3, 4].map((lv) => (
-                            <span
-                              key={lv}
-                              className={`sp-dim-step ${
-                                lv === rawScore
-                                  ? "is-exact"
-                                  : previousRaw != null && lv === Number(previousRaw)
-                                    ? "is-previous"
-                                  : lv < rawScore
-                                    ? "is-filled"
-                                    : ""
-                              }`}
-                            >
-                              Mức {lv} ({lv * 5}đ)
-                              {previousRaw != null && lv === Number(previousRaw) && lv !== rawScore ? " · Cũ" : ""}
-                            </span>
-                          ))}
+                        <div className="sp-dim-point-scale" aria-hidden="true">
+                          <span>0</span><span>10</span><span>20</span>
                         </div>
 
                         {!canCompareDimensions && previousTotal != null && (
@@ -1393,8 +1374,8 @@ export default function SkillProfileView({ onBrowseSport }) {
                                   : "4 Chỉ số kỹ thuật thành phần quy chiếu (Thang 0 – 10)"}
                               </strong>
                               <span>
-                                Trung bình: <b>{parsedSub.avg10}/10</b> → Quy đổi{" "}
-                                <b>Mức {rawScore}/4 ({weightedPts.toFixed(0)}đ)</b>
+                                Trung bình: <b>{parsedSub.avg10}/10</b> ·{" "}
+                                <b>{formatCriterionPoints(weightedPts)}/20 điểm</b>
                               </span>
                             </div>
                             <div className="sp-subskills-grid">

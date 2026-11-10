@@ -7,9 +7,7 @@ import "./assessment.css";
 import {
   DIMENSION_ANCHORS,
   calculateCriterionFromSubSkills,
-  defaultSliderValueForLevel,
   getSliderTierInfo,
-  getSubSkillTierDescription,
   parseSubSkillEvidence,
   serializeSubSkillEvidence,
 } from "./dimensionAnchors";
@@ -39,13 +37,7 @@ const pilotDescriptions = {
 };
 
 function previewBandFromScore(score) {
-  if (score == null || Number.isNaN(Number(score))) return null;
-  const s = Number(score);
-  if (s < 20) return "B1 (Beginner • 0–19đ)";
-  if (s < 40) return "B2 (Foundation • 20–39đ)";
-  if (s < 60) return "B3 (Developing • 40–59đ)";
-  if (s < 80) return "B4 (Intermediate • 60–79đ)";
-  return "B5 (Advanced Social • 80–100đ)";
+  return score == null ? null : 'B' + Math.min(5, Math.floor(score / 20) + 1);
 }
 
 export default function AssessmentPage() {
@@ -127,23 +119,14 @@ export default function AssessmentPage() {
     });
   }
 
-  function mark(id, key, value) {
-    setForm((current) => ({
-      ...current,
-      marks: current.marks.map((m) =>
-        m.dimensionId === id ? { ...m, [key]: value } : m
-      ),
-    }));
-    setDirty(true);
-    setMessage("");
-    setConfirmed(false);
-  }
-
   async function saveDraft(review = false) {
     const next = await workflowRequest(
       `/api/v1/skill/assessments/${form.id}`,
       "PUT",
-      { revision: form.revision, marks: form.marks }
+      { revision: form.revision, marks: form.marks.map(m => {
+        const c = form.rubric.criteria.find(c => c.id === m.dimensionId);
+        return { ...m, sliderScores: sliderValues(c, m) };
+      }) }
     );
     setForm(next);
     setDirty(false);
@@ -151,7 +134,7 @@ export default function AssessmentPage() {
     if (review) setStage("review");
     setMessage(
       review
-        ? "Đã lưu phiếu. Rà soát điểm và bằng chứng trước khi xác nhận."
+        ? "Đã lưu phiếu. Rà soát điểm trước khi xác nhận."
         : "Đã lưu nháp. Có thể tiếp tục quan sát ở buổi này."
     );
   }
@@ -162,7 +145,7 @@ export default function AssessmentPage() {
       marks: current.marks.map((m) => {
         if (m.dimensionId !== dimensionId) return m;
         if (newScore0to4 == null) {
-          return { ...m, score: null };
+          return { ...m, score: null, sliderScores: null };
         }
         const parsed = parseSubSkillEvidence(criterionCode, m.evidence, newScore0to4);
         const anchor = DIMENSION_ANCHORS[criterionCode];
@@ -170,10 +153,9 @@ export default function AssessmentPage() {
         if (subSkills.length === 0) {
           return { ...m, score: newScore0to4 };
         }
-        const presetVal = defaultSliderValueForLevel(newScore0to4);
         const nextMap = {};
-        subSkills.forEach((sk) => {
-          nextMap[sk.code] = presetVal;
+        subSkills.forEach((sk, i) => {
+          nextMap[sk.code] = i % 2 ? Math.ceil(newScore0to4 * 2.5) : Math.floor(newScore0to4 * 2.5);
         });
         const nextEvidence = serializeSubSkillEvidence(
           criterionCode,
@@ -183,6 +165,7 @@ export default function AssessmentPage() {
         return {
           ...m,
           score: newScore0to4,
+          sliderScores: subSkills.map(sk => nextMap[sk.code]),
           evidence: nextEvidence,
         };
       }),
@@ -215,6 +198,7 @@ export default function AssessmentPage() {
         return {
           ...m,
           score: calc.score0to4,
+          sliderScores: values,
           evidence: nextEvidence,
         };
       }),
@@ -247,26 +231,34 @@ export default function AssessmentPage() {
   }
 
   const published = form?.status === "published";
+  function sliderValues(c, m) {
+    if (m.score == null) return null;
+    if (m.sliderScores?.length === 4) return m.sliderScores;
+    // Recalculate old drafts only when the referee saves; published results remain historical.
+    const parsed = parseSubSkillEvidence(c.code, m.evidence, m.score);
+    return !published && parsed.hasRecordedSliders && parsed.subSkillList.length === 4
+      ? parsed.subSkillList.map(sk => sk.value10) : null;
+  }
+  function criterionPoints(c, m) {
+    if (!m || m.score == null) return null;
+    const values = sliderValues(c, m);
+    return values ? values.reduce((sum, v) => sum + v, 0) / 2 : m.score * c.weightPercent / 4;
+  }
   const scored = form?.marks.filter((m) => m.score != null).length || 0;
-  const missingEvidence =
-    form?.marks.filter(
-      (m) => (m.score === 0 || m.score === 4) && !m.evidence?.trim()
-    ) || [];
   const preview =
     form?.rubric.scoringSupported && scored === form.rubric.criteria.length
-      ? form.marks.reduce((sum, m) => sum + m.score * 5, 0)
+      ? Math.round(form.rubric.criteria.reduce((sum, c) => sum + criterionPoints(c, form.marks.find(m => m.dimensionId === c.id)), 0))
       : null;
   const previewBand =
     preview == null ? null : `B${Math.min(5, Math.floor(preview / 20) + 1)}`;
   const liveBandLabel = previewBandFromScore(preview);
-  const ready = preview != null && missingEvidence.length === 0;
+  const ready = preview != null;
   const player = players.find((p) => p.playerId === form?.playerId);
   const session = sessions.find((s) => String(s.id) === sessionId);
 
   return (
     <SectionLayout
       title="Đánh giá kỹ năng"
-      description="Chấm điểm định lượng bằng thanh trượt kỹ năng thành phần (0–10), lưu phiếu quan sát, kiểm tra kết quả và công bố điểm chính thức."
     >
       <div className="workflow assessment-workspace">
         {error && (
@@ -312,10 +304,6 @@ export default function AssessmentPage() {
             ))}
           </select>
         </label>
-        <p className="assessment-note">
-          Chỉ hiển thị buổi từ hôm nay trở đi theo giờ Việt Nam. Các buổi đã qua
-          ngày được ẩn khỏi danh sách chấm; lịch sử đã lưu vẫn được giữ lại.
-        </p>
         {!sessions.length && !error && (
           <p>Chưa có buổi được phân công còn trong ngày đánh giá hoặc sắp tới.</p>
         )}
@@ -452,7 +440,7 @@ export default function AssessmentPage() {
                 </p>
               </div>
               <div className="assessment-live-summary">
-                <span>Điểm tính trực tiếp (5 tiêu chí × 20đ)</span>
+                <span>Tổng điểm</span>
                 <strong>
                   {preview != null
                     ? `${preview} / 100 điểm · ${liveBandLabel}`
@@ -463,26 +451,6 @@ export default function AssessmentPage() {
 
             {!published && stage === "score" && (
               <section className="assessment-protocol">
-                <h3>Hướng dẫn quan sát trên sân</h3>
-                <ol>
-                  <li>
-                    Kiểm tra đúng người chơi, buổi chơi và bộ tiêu chí của môn.
-                  </li>
-                  <li>
-                    Quan sát kỹ thuật qua nhiều pha thực tế, gồm tình huống
-                    thuận lợi và chịu áp lực. Không suy điểm từ kết quả
-                    thắng/thua.
-                  </li>
-                  <li>
-                    Kéo 4 thanh trượt thành phần (0–10) hoặc đối chiếu mô tả
-                    0–4; chọn “Chưa quan sát” khi thiếu cơ sở. Ghi tình huống,
-                    kỹ thuật và kết quả cụ thể.
-                  </li>
-                  <li>
-                    Lưu nháp khi chưa đủ quan sát; chỉ chuyển rà soát khi chấm
-                    đủ và có bằng chứng bắt buộc.
-                  </li>
-                </ol>
                 <label>
                   Tiến độ chấm: {scored}/{form.rubric.criteria.length}
                   <progress value={scored} max={form.rubric.criteria.length} />
@@ -518,28 +486,12 @@ export default function AssessmentPage() {
 
             {form.rubric.version === "PK-IPTPA-DUPR-V1" && (
               <p className="assessment-rubric-note">
-                Điểm Pickleball nội bộ: 5 tiêu chí, mỗi tiêu chí 0–4, trọng số
-                20%. Tổng điểm 0–100, Band B1–B5; không phải xếp hạng DUPR chính
-                thức.
+                Điểm Pickleball nội bộ, không phải xếp hạng DUPR chính thức.
               </p>
             )}
 
-            <details className="assessment-summary" open={stage === "review"}>
-              <summary>Hướng dẫn tính điểm và Band nội bộ</summary>
-              <h3 id="assessment-summary-title">
-                Cách tính điểm và quy đổi Band
-              </h3>
-              <p>
-                Chọn mức mô tả phù hợp với kỹ thuật thực tế đã quan sát. “Chưa
-                quan sát” khác với 0 điểm và chưa đủ điều kiện tính tổng.
-              </p>
-              {form.rubric.scoringSupported && (
-                <>
-                  <p>
-                    Mỗi tiêu chí đóng góp: điểm chọn ÷ 4 × trọng số. Với 5 tiêu
-                    chí có trọng số 20%, tổng điểm = tổng 5 mức điểm × 5 (tối đa
-                    100).
-                  </p>
+            <details className="assessment-summary">
+              <summary>Điểm và Band</summary>
                   <div
                     className="assessment-bands"
                     aria-label="Ngưỡng điểm Band nội bộ"
@@ -561,10 +513,6 @@ export default function AssessmentPage() {
                       </div>
                     ))}
                   </div>
-                  <p>
-                    Ví dụ: 2 + 3 + 2 + 3 + 2 = 12 → 60/100 → Band B4. Band được
-                    tính từ tổng điểm, không phải một tiêu chí riêng lẻ.
-                  </p>
                   <p className="assessment-preview" role="status">
                     Đã chấm {scored}/{form.rubric.criteria.length} tiêu chí ·{" "}
                     {preview == null
@@ -572,14 +520,6 @@ export default function AssessmentPage() {
                       : `Điểm phiếu hiện tại: ${preview}/100 · ${previewBand}`}
                     {dirty && " · Chưa lưu"}
                   </p>
-                  <p>
-                    Điểm phiếu chưa phải điểm chính thức trên hồ sơ. Đánh giá
-                    định kỳ dùng trung bình hai lần quan sát đầy đủ ở hai buổi
-                    khác nhau, làm tròn 0,5 lên; thay đổi Band đã xác nhận cần
-                    Manager review.
-                  </p>
-                </>
-              )}
               <p>
                 Hồ sơ hiện tại:{" "}
                 {form.currentScore == null
@@ -595,17 +535,7 @@ export default function AssessmentPage() {
                 className="assessment-criteria sp-questions-list"
                 disabled={busy || published}
               >
-                <legend>
-                  Đánh giá từng tiêu chí (Kéo 4 thanh trượt thành phần 0–10 hoặc
-                  chọn nhanh mức quy đổi 0–4)
-                </legend>
-                <p className="assessment-zero-guide">
-                  <strong>Có thể chấm 0 điểm.</strong> Chọn 0 khi đã quan sát
-                  nhưng kỹ năng chưa đạt mô tả; ghi nhận xét để giải thích trước
-                  khi công bố. “Chưa quan sát” dùng khi chưa đủ cơ sở chấm,
-                  không phải điểm 0. Mọi mức điểm đều có thể lưu nháp.
-                </p>
-
+                <legend>Chấm điểm</legend>
                 {form.rubric.criteria.map((c, index) => {
                   const m = form.marks.find((x) => x.dimensionId === c.id) || {
                     dimensionId: c.id,
@@ -644,22 +574,15 @@ export default function AssessmentPage() {
                           <h3 id={`criterion-${c.id}`}>
                             {c.code} — {c.name}
                           </h3>
-                          <p>{anchors?.subtitle || observations[c.code]}</p>
-                          {anchors?.refereeObservation && (
-                            <div className="assessment-referee-guide">
-                              <strong>Thước đo Trọng tài trên sân:</strong>{" "}
-                              {anchors.refereeObservation}
-                            </div>
-                          )}
                         </div>
                         <div className="sp-q-score-pill">
                           <strong>
-                            {m.score == null ? "—" : `${m.score} / 4`}
+                            {m.score == null ? "—" : `${criterionPoints(c, m)} / 20`}
                           </strong>
                           <span>
                             {m.score == null
                               ? "Chưa quan sát"
-                              : `Điểm đã chọn · TB: ${parsed.avg10}/10 (~${parsed.exact20}/20đ)`}
+                              : `Mức ${m.score}/4`}
                           </span>
                         </div>
                       </div>
@@ -668,36 +591,13 @@ export default function AssessmentPage() {
                       {subSkills.length > 0 && (
                         <div className="assessment-subskills-box">
                           <div className="assessment-subskills-header">
-                            <div>
-                              <strong>
-                                1. Chấm bằng Thanh trượt 4 kỹ năng thành phần
-                                (Thang 0 – 10 pha thực hiện chuẩn)
-                              </strong>
-                              <p>
-                                Kéo thanh trượt từng kỹ năng con bên dưới — hệ
-                                thống tự động tính trung bình và quy đổi sang
-                                Mức 0–4 chuẩn xác.
-                              </p>
-                            </div>
-                            {isObserved && (
-                              <span className="assessment-subskills-avg-badge">
-                                Trung bình 4 chỉ số:{" "}
-                                <strong>{parsed.avg10} / 10</strong> → Mức{" "}
-                                <strong>{m.score} / 4</strong> ({m.score * 5}
-                                /20đ)
-                              </span>
-                            )}
+                            <strong>Kỹ năng thành phần (0–10)</strong>
                           </div>
 
                           <div className="assessment-sliders-grid">
                             {subSkills.map((sk, skIdx) => {
                               const currentVal = isObserved ? sk.value10 : 0;
                               const tierInfo = getSliderTierInfo(currentVal);
-                              const tierDesc = getSubSkillTierDescription(
-                                sk,
-                                currentVal
-                              );
-
                               return (
                                 <div
                                   key={sk.code}
@@ -784,11 +684,6 @@ export default function AssessmentPage() {
                                     )}
                                   </div>
 
-                                  <p className="assessment-slider-desc">
-                                    {isObserved
-                                      ? tierDesc
-                                      : "Kéo thanh trượt hoặc bấm một mức từ 0 đến 10 để ghi nhận kết quả quan sát."}
-                                  </p>
                                 </div>
                               );
                             })}
@@ -799,8 +694,7 @@ export default function AssessmentPage() {
                       {/* 2. MỨC QUY ĐỔI TIÊU CHÍ (0 - 4) */}
                       <div className="assessment-level-presets-header">
                         <span>
-                          2. Mức quy đổi tiêu chí (0 – 4) — Tự động đồng bộ từ 4
-                          thanh trượt hoặc bấm chọn nhanh
+                          Mức quy đổi (0–4)
                         </span>
                       </div>
 
@@ -856,66 +750,15 @@ export default function AssessmentPage() {
                         </p>
                       )}
 
-                      <div className="assessment-notes-grid">
-                        <label className="assessment-evidence assessment-custom-note">
-                          Ghi chú tình huống thực tế của Trọng tài trên sân (tùy
-                          chọn)
-                          <textarea
-                            maxLength={800}
-                            placeholder="VD: Set 2 cầu nhanh bị cuốn nhịp, cần chủ động hạ thấp trọng tâm hơn..."
-                            value={parsed.customNote || ""}
-                            onChange={(e) =>
-                              updateCustomCourtNote(
-                                c.code,
-                                c.id,
-                                e.target.value
-                              )
-                            }
-                          />
-                        </label>
-
-                        <label className="assessment-evidence">
-                          Nhận xét kỹ thuật / bằng chứng quan sát
-                          {(m.score === 0 || m.score === 4) &&
-                            " (bắt buộc để công bố)"}
-                          <textarea
-                            maxLength={2000}
-                            aria-describedby={`evidence-help-${c.id}`}
-                            placeholder={`Tình huống quan sát (${c.name}): …\nKỹ thuật thực hiện / điểm mạnh: …\nLỗi cụ thể, độ ổn định và kết quả: …\nHướng cải thiện: …`}
-                            value={m.evidence || ""}
-                            onChange={(e) =>
-                              mark(c.id, "evidence", e.target.value)
-                            }
-                          />
-                        </label>
-                      </div>
-
-                      <p
-                        id={`evidence-help-${c.id}`}
-                        className="assessment-note"
-                      >
-                        Ghi rõ tình huống, động tác, kết quả và điểm cần cải
-                        thiện; chỉ ghi số lần thành công/thử nếu đã quan sát.{" "}
-                        {(m.evidence || "").length}/2000 ký tự.
-                      </p>
-                      {(m.score === 0 || m.score === 4) &&
-                        !m.evidence?.trim() && (
-                          <p className="assessment-required">
-                            Đã chọn {m.score} điểm hợp lệ. Thêm nhận xét quan
-                            sát ở ô trên để công bố; hiện vẫn có thể lưu nháp
-                            hoặc rà soát.
-                          </p>
-                        )}
-                      {form.rubric.scoringSupported && (
-                        <p className="assessment-contribution">
-                          Đóng góp vào tổng:{" "}
-                          {m.score == null
-                            ? "Chưa tính"
-                            : `${m.score} ÷ 4 × ${c.weightPercent} = ${
-                                (m.score * c.weightPercent) / 4
-                              } điểm / ${c.weightPercent}`}
-                        </p>
-                      )}
+                      <label className="assessment-evidence">
+                        Nhận xét
+                        <textarea
+                          maxLength={800}
+                          placeholder="Nhận xét quan sát"
+                          value={parsed.customNote || ""}
+                          onChange={(e) => updateCustomCourtNote(c.code, c.id, e.target.value)}
+                        />
+                      </label>
                     </section>
                   );
                 })}
@@ -941,10 +784,10 @@ export default function AssessmentPage() {
                     <thead>
                       <tr>
                         <th scope="col">Tiêu chí</th>
-                        <th scope="col">Điểm / 4</th>
-                        <th scope="col">Quy đổi</th>
+                        <th scope="col">Điểm / 20</th>
+                        <th scope="col">Mức tham khảo</th>
                         <th scope="col">
-                          Nhận xét kỹ thuật / bằng chứng quan sát
+                          Nhận xét
                         </th>
                       </tr>
                     </thead>
@@ -959,14 +802,14 @@ export default function AssessmentPage() {
                               {c.name}
                               <small>Trọng số {c.weightPercent}%</small>
                             </th>
-                            <td>{m?.score ?? "Chưa quan sát"}</td>
+                            <td>{criterionPoints(c, m) ?? "Chưa quan sát"}</td>
                             <td>
                               {m?.score == null || !form.rubric.scoringSupported
                                 ? "—"
-                                : `${(m.score * c.weightPercent) / 4} điểm`}
+                                : `${m.score}/4`}
                             </td>
                             <td className="assessment-evidence-text">
-                              {m?.evidence?.trim() || "Chưa có ghi chú"}
+                              {parseSubSkillEvidence(c.code, m?.evidence, m?.score).customNote || "—"}
                             </td>
                           </tr>
                         );
@@ -980,10 +823,6 @@ export default function AssessmentPage() {
                       <li>
                         {preview != null ? "✓" : "○"} Đã chấm đầy đủ các tiêu
                         chí
-                      </li>
-                      <li>
-                        {missingEvidence.length === 0 ? "✓" : "○"} Đủ bằng chứng
-                        bắt buộc cho mức 0 và 4
                       </li>
                       <li>{!dirty ? "✓" : "○"} Phiếu đã lưu trên hệ thống</li>
                     </ul>
@@ -1000,8 +839,7 @@ export default function AssessmentPage() {
                         disabled={busy || !ready || dirty}
                         onChange={(e) => setConfirmed(e.target.checked)}
                       />
-                      Tôi đã kiểm tra đúng người chơi, điểm từng tiêu chí và
-                      bằng chứng quan sát; xác nhận gửi công bố kết quả.
+                      Tôi đã kiểm tra người chơi và điểm từng tiêu chí; xác nhận công bố kết quả.
                     </label>
                   </>
                 )}
@@ -1113,12 +951,6 @@ export default function AssessmentPage() {
               <p role="status">
                 Cần chấm đủ {form.rubric.criteria.length} tiêu chí để chuyển
                 sang rà soát. Có thể lưu nháp và tiếp tục quan sát.
-              </p>
-            )}
-            {!published && missingEvidence.length > 0 && (
-              <p role="status">
-                Còn {missingEvidence.length} tiêu chí chọn 0 hoặc 4 chưa có bằng
-                chứng. Bổ sung nhận xét và lưu để công bố.
               </p>
             )}
             {dirty && (

@@ -19,8 +19,8 @@ public sealed class SportCenterDatabaseTests
         await using var tx = await db.Database.BeginTransactionAsync();
         try
         {
-            var actor = await db.Users.SingleAsync(u => u.Email == "demo-staff-sc01@example.invalid");
-            await db.Database.ExecuteSqlRawAsync("DECLARE @v bigint=(SELECT venue_id FROM dbo.users WHERE email='demo-staff-sc01@example.invalid'); EXEC sys.sp_set_session_context @key=N'tksc_venue',@value=@v;");
+            var actor = await db.Users.Where(u => u.Role.Code == "Staff" && u.Status == "Active" && u.DeletedAt == null).OrderBy(u => u.Id).FirstAsync();
+            await db.Database.ExecuteSqlInterpolatedAsync($"DECLARE @v bigint=(SELECT venue_id FROM dbo.users WHERE id={actor.Id}); EXEC sys.sp_set_session_context @key=N'tksc_venue',@value=@v;");
             var order = new Order { OrderCode=$"SC-TEST-{Guid.NewGuid():N}",StaffId=actor.Id,TotalAmount=100,Status="Cart",PaymentState="Unpaid",HandoverState="Pending" };
             db.Orders.Add(order);await db.SaveChangesAsync();
             var payment = new Payment { GoodsOrderId=order.Id,AmountVnd=100,Method="cash",Status="pending",ReferenceCode=$"SC-TEST-{Guid.NewGuid():N}",ConfirmedBy=actor.Id };

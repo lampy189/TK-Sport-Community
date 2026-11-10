@@ -1042,7 +1042,7 @@ export function calculateCriterionFromSubSkills(values10) {
   const exact20 = Math.round(((sum / maxPossible) * 20) * 10) / 10;
   // Quy đổi chuẩn: 0..4/40 -> Mức 0; 5..14/40 -> Mức 1; 15..24/40 -> Mức 2; 25..34/40 -> Mức 3; 35..40/40 -> Mức 4
   const score0to4 = Math.min(4, Math.max(0, Math.round((sum / maxPossible) * 4)));
-  const weighted20 = score0to4 * 5;
+  const weighted20 = exact20;
   return {
     sum40: sum,
     avg10,

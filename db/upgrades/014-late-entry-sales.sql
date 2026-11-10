@@ -2,9 +2,13 @@
 -- No seed accounts, orders, payments or tickets are created by this script.
 SET XACT_ABORT ON;
 IF DB_NAME()<>N'Sep490' THROW 50000,'Select Sep490 before applying this upgrade.',1;
-IF COL_LENGTH('dbo.users','venue_id') IS NULL OR OBJECT_ID('dbo.revenue_entries','U') IS NULL
+-- Legacy single-operator databases need only these two additive tables.
+-- Existing multi-center databases must keep their original security/accounting requirements.
+IF (COL_LENGTH('dbo.users','venue_id') IS NOT NULL
+ OR EXISTS(SELECT 1 FROM sys.security_policies WHERE name='SportCenterIsolation'))
+ AND (COL_LENGTH('dbo.users','venue_id') IS NULL OR OBJECT_ID('dbo.revenue_entries','U') IS NULL
  OR NOT EXISTS(SELECT 1 FROM sys.triggers WHERE object_id=OBJECT_ID('dbo.TR_payments_revenue') AND is_disabled=0)
- OR NOT EXISTS(SELECT 1 FROM sys.security_policies WHERE name='SportCenterIsolation' AND is_enabled=1)
+ OR NOT EXISTS(SELECT 1 FROM sys.security_policies WHERE name='SportCenterIsolation' AND is_enabled=1))
  THROW 50000,'Apply reviewed Sport Center accounting/security/revenue upgrades 010-012 first.',1;
 BEGIN TRANSACTION;
 IF OBJECT_ID('dbo.late_entry_offers','U') IS NULL

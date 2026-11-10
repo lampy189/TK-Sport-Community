@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Building2, Clock3, Users, Zap, ArrowRight, RefreshCw } from 'lucide-react';
+import { MapPin, Clock3, Users, Zap, ArrowRight, RefreshCw } from 'lucide-react';
 import { workflowRequest } from '../workflowClient';
 import './late-entry.css';
 
@@ -8,7 +8,7 @@ const money = n => new Intl.NumberFormat('vi-VN', { style: 'currency', currency:
 const time = value => new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(value));
 const percent = value => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(value);
 function Price({ offer }) {
-  return <strong>{money(offer.priceVnd)}<small>{percent(offer.pricePercent)}% giá gốc {money(offer.basePriceVnd)} · / người / phần còn lại</small></strong>;
+  return <strong>{money(offer.priceVnd)}<small>{percent(offer.pricePercent)}% giá gốc {money(offer.basePriceVnd)}</small></strong>;
 }
 function remainingMinutes(endsAt, now = Date.now()) { return Math.max(0, Math.ceil((new Date(endsAt).getTime() - now) / 60000)); }
 function changed() { window.dispatchEvent(new Event('tksc:late-entry-changed')); }
@@ -33,14 +33,14 @@ function useOffers(path) {
   return { ...state, reload };
 }
 function OfferFacts({ offer }) {
-  return <><p className="le-location"><Building2 size={16}/>{offer.venueName} · {offer.courtName}</p><div className="le-facts"><span><Clock3 size={16}/>Đến {time(offer.endsAt)} · còn {remainingMinutes(offer.endsAt)} phút</span><span><Users size={16}/>{offer.remaining} suất đang rao · {offer.band || 'Theo điều kiện buổi'}</span></div></>;
+  return <><p className="le-location"><MapPin size={16}/>{offer.courtName}</p><div className="le-facts"><span><Clock3 size={16}/>Đến {time(offer.endsAt)} · còn {remainingMinutes(offer.endsAt)} phút</span><span><Users size={16}/>{offer.remaining} suất đang rao · {offer.band || 'Theo điều kiện buổi'}</span></div></>;
 }
-export function LateEntryOffers({ venueId, sport, onSelectSession }) {
-  const query = new URLSearchParams(); if (venueId && venueId !== 'ALL') query.set('venueId', venueId);
-  const { data, loading, error, reload } = useOffers(`${root}?${query}`);
-  const offers = data.filter(o => (!sport || sport === 'ALL' || o.sportName.toLowerCase() === sport.toLowerCase() || (sport === 'BADMINTON' && o.sportName.toLowerCase() === 'badminton') || (sport === 'PICKLEBALL' && o.sportName.toLowerCase() === 'pickleball')) && remainingMinutes(o.endsAt) > 0);
-  if (loading || (!error && !offers.length)) return null;
-  return <section className="le-section" aria-label="Vé phần buổi còn lại"><div className="le-heading"><div><span className="eyebrow">VÀO CHƠI NGAY</span><h2><Zap size={22}/>Chỗ trống trong buổi đang diễn ra</h2><p>Mua phần thời gian còn lại, vé kết thúc cùng buổi chơi.</p></div><button className="button button-secondary" onClick={reload} aria-label="Tải lại vé giờ lẻ"><RefreshCw size={16}/></button></div>{error && <p role="alert" className="payment-error">{error}</p>}<div className="le-grid">{offers.map(o => <article className="le-card" key={o.sessionId}><span className="le-badge">ĐANG RAO · {o.sportName}</span><h3>{o.courtName} · Vé giờ lẻ</h3><OfferFacts offer={o}/><div className="le-actions"><Price offer={o}/><button className="button button-primary" onClick={() => onSelectSession?.(o.sessionId)}>Xem & mua vé <ArrowRight size={16}/></button></div></article>)}</div></section>;
+export function LateEntryOffers({ sport, sessionIds, showEmpty = false, onSelectSession }) {
+  const { data, loading, error, reload } = useOffers(root);
+  const allowedIds = sessionIds == null ? null : new Set(sessionIds.map(String));
+  const offers = data.filter(o => (!sport || sport === 'ALL' || o.sportName.toLowerCase() === sport.toLowerCase()) && (!allowedIds || allowedIds.has(String(o.sessionId))) && remainingMinutes(o.endsAt) > 0);
+  if (!showEmpty && (loading || (!error && !offers.length))) return null;
+  return <section className="le-section" aria-label="Vé giờ lẻ"><div className="le-heading"><div><h2><Zap size={22}/>Vé giờ lẻ</h2></div><button className="button button-secondary" onClick={reload} aria-label="Tải lại vé giờ lẻ"><RefreshCw size={16}/></button></div>{error && <p role="alert" className="payment-error">{error}</p>}{loading && <p role="status">Đang tải vé giờ lẻ…</p>}{!loading && !error && !offers.length && <p>Chưa có vé giờ lẻ phù hợp.</p>}<div className="le-grid">{offers.map(o => <article className="le-card" key={o.sessionId}><span className="le-badge">ĐANG RAO · {o.sportName === 'Badminton' ? 'Cầu lông' : 'Pickleball'}</span><h3>{o.courtName} · Vé giờ lẻ</h3><OfferFacts offer={o}/><div className="le-actions"><Price offer={o}/><button className="button button-primary" onClick={() => onSelectSession?.(o.sessionId)}>Xem & mua vé <ArrowRight size={16}/></button></div></article>)}</div></section>;
 }
 export function LateEntryPurchase({ sessionId, user, onLogin, onPayment }) {
   const { data, error, reload } = useOffers(`${root}?sessionId=${sessionId}`);
@@ -54,7 +54,7 @@ export function LateEntryPurchase({ sessionId, user, onLogin, onPayment }) {
     catch (e) { setFeedback(e.message); reload(); }
     finally { setBusy(false); }
   }
-  return <section className="le-purchase"><span className="le-badge">BUỔI ĐANG DIỄN RA · SUẤT THAM GIA MUỘN</span><h2>Vẫn kịp vào chơi cùng mọi người</h2><OfferFacts offer={offer}/><p>Vé hết hiệu lực lúc <strong>{time(offer.endsAt)}</strong>, kể cả khi bạn check-in muộn. Vẫn kiểm tra trình độ, trùng lịch và chỗ trống.</p><div className="le-actions"><Price offer={offer}/><button className="button button-primary" disabled={busy || !!error} onClick={hold}>{busy ? 'Đang kiểm tra chỗ…' : user ? 'Giữ chỗ & thanh toán' : 'Đăng nhập để mua vé'}<ArrowRight size={17}/></button></div>{(error || feedback) && <p role="alert" className="payment-error">{feedback || error}</p>}</section>;
+  return <section className="le-purchase"><span className="le-badge">BUỔI ĐANG DIỄN RA · SUẤT THAM GIA MUỘN</span><h2>Vé giờ lẻ</h2><OfferFacts offer={offer}/><p>Vé hết hiệu lực lúc <strong>{time(offer.endsAt)}</strong>.</p><div className="le-actions"><Price offer={offer}/><button className="button button-primary" disabled={busy || !!error} onClick={hold}>{busy ? 'Đang kiểm tra chỗ…' : user ? 'Giữ chỗ & thanh toán' : 'Đăng nhập để mua vé'}<ArrowRight size={17}/></button></div>{(error || feedback) && <p role="alert" className="payment-error">{feedback || error}</p>}</section>;
 }
 function AutomaticOffer({ offer }) {
   return <article className="le-card">
@@ -69,20 +69,20 @@ function AutomaticOffer({ offer }) {
     </div>
     <div className="le-actions"><Price offer={offer}/></div>
     <p className="le-hint">Giá giảm theo từng phút đã trôi, tối đa giảm 50%. Vé hết lúc {time(offer.endsAt)}.</p>
-    <p className="le-hint">Tự rao chỗ trống; không bán lại suất của người đã trả tiền nhưng chưa đến.</p>
+
   </article>;
 }
 export function LateEntryManagement() {
   const { data, error, loading, reload } = useOffers(`${root}/manage`);
   return <section className="le-section">
     <div className="le-heading"><div>
-      <span className="eyebrow">VẬN HÀNH THEO CƠ SỞ</span>
+
       <h2>Vé giờ lẻ tự động</h2>
-      <p>Buổi đang diễn ra còn chỗ sẽ tự được rao. Giá giảm theo tỷ lệ thời gian đã trôi, tối đa giảm 50% giá gốc.</p>
+
     </div><button className="button button-secondary" onClick={reload}><RefreshCw size={17}/>Tải lại</button></div>
     {error && <p role="alert" className="payment-error">{error}</p>}
     {loading && <p>Đang tải buổi chơi…</p>}
-    {!loading && !error && !data.length && <p>Chưa có buổi đang diễn ra đủ điều kiện bán vé giờ lẻ tại cơ sở được phân công.</p>}
+    {!loading && !error && !data.length && <p>Chưa có vé giờ lẻ đang mở bán.</p>}
     <div className="le-grid">{data.map(o => <AutomaticOffer key={o.sessionId} offer={o}/>)}</div>
   </section>;
 }
