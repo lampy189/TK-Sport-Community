@@ -9,6 +9,7 @@ import GuestLayout from "../../components/layout/GuestLayout";
 import GuestHome from "./GuestHome";
 import PlayerLayout from "../../components/layout/PlayerLayout";
 import PlayerHome from "./PlayerHome";
+import PlayerChatbot from "../../components/PlayerChatbot";
 
 export default function HomePage({
   role = "guest",
@@ -180,6 +181,7 @@ export default function HomePage({
             />
           </div>
         )}
+        <PlayerChatbot preview={preview} />
       </PlayerLayout>
     );
   }
