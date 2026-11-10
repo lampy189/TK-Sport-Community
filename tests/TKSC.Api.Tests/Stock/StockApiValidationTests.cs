@@ -19,8 +19,8 @@ namespace TKSC.Api.Tests.Stock;
 // Request validation of the stock module's APIs, through the real pipeline with in-memory stores.
 public sealed class StockApiValidationTests
 {
-    private static readonly Account Staff = new(20, "staff@example.test", "Staff One", "Staff", "Active", "sub-20", false);
-    private static readonly Account Referee = new(40, "referee@example.test", "Referee One", "Referee", "Active", "sub-40", false);
+    private static readonly Account Staff = new(20, "staff@example.test", "Staff One", "Staff", "Active", "sub-20", false, VenueId: 1);
+    private static readonly Account Referee = new(40, "referee@example.test", "Referee One", "Referee", "Active", "sub-40", false, VenueId: 1);
     private static readonly Account Player = new(30, "player@example.test", "Player One", "Player", "Active", "sub-30", false);
     private const string StaffLoggedIn = "Staff signed in with a valid CSRF token";
     private static readonly object ValidProduct = new { sku = "CAU-1", name = "Shuttle", category = "Equipment", unitPriceVnd = 1000, reorderLevel = 1, initialQuantity = 0 };
