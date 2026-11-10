@@ -18,5 +18,6 @@
   <ItemGroup>
     <Compile Include="..\UnitTest\AuthControllerTests.cs" Link="UnitTest\AuthControllerTests.cs" />
     <Compile Include="..\UnitTest\AssessmentsControllerTests.cs" Link="UnitTest\AssessmentsControllerTests.cs" />
+    <Compile Include="..\UnitTest\CommunityControllerTests.cs" Link="UnitTest\CommunityControllerTests.cs" />
   </ItemGroup>
 </Project>
