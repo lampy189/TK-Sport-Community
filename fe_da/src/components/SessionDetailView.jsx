@@ -69,6 +69,7 @@ export function SessionDetailView({
   const displayName = user?.fullName || "Khách";
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
     loadSessionDetails();
   }, [sessionId, user]);
 
@@ -279,7 +280,12 @@ export function SessionDetailView({
             ) : isEligible === false ? (
               <>
                 Chưa phù hợp trình độ:{" "}
-                {summary.ineligibilityReason || "Lệch band kỹ năng"}
+                {summary.ineligibilityReason === "chưa làm survey" ||
+                summary.ineligibilityReason === "chưa có hồ sơ môn này"
+                  ? "Chưa hoàn tất khảo sát trình độ môn này"
+                  : summary.ineligibilityReason === "lệch band kỹ năng"
+                    ? `Chưa khớp yêu cầu Band ${summary.band} (Có thể xin ngoại lệ trình độ)`
+                    : summary.ineligibilityReason || "Lệch band kỹ năng"}
               </>
             ) : (
               <>
@@ -438,10 +444,48 @@ export function SessionDetailView({
               Tiếp tục thanh toán qua payOS
             </button>
           )}
-          <ExceptionRequest key={sessionId} sessionId={sessionId} user={user} onLogin={onOpenLogin} onUpdated={() => loadSessionDetails(true)} />
-          <p className="booking-footnote">
-            Ngoại lệ chỉ áp dụng cho buổi chơi được duyệt.
-          </p>
+          <ExceptionRequest
+            key={sessionId}
+            sessionId={sessionId}
+            user={user}
+            onLogin={onOpenLogin}
+            onUpdated={() => loadSessionDetails(true)}
+            canRequest={
+              !isSessionLocked &&
+              Boolean(summary.band) &&
+              (user
+                ? isEligible === false &&
+                  summary.ineligibilityReason === "lệch band kỹ năng"
+                : true)
+            }
+            defaultOpen={
+              registrationFeedback?.type === "SKILL_INELIGIBLE" &&
+              registrationFeedback?.reason === "lệch band kỹ năng"
+            }
+          />
+          {!isSessionLocked &&
+            Boolean(summary.band) &&
+            isEligible === false &&
+            (summary.ineligibilityReason === "chưa làm survey" ||
+              summary.ineligibilityReason === "chưa có hồ sơ môn này") &&
+            !registrationFeedback &&
+            onOpenSkills && (
+              <button
+                type="button"
+                className="button button-secondary booking-action"
+                onClick={onOpenSkills}
+              >
+                Mở hồ sơ kỹ năng &amp; làm khảo sát
+              </button>
+            )}
+          {!isSessionLocked &&
+            Boolean(summary.band) &&
+            isEligible === false &&
+            summary.ineligibilityReason === "lệch band kỹ năng" && (
+              <p className="booking-footnote">
+                Ngoại lệ chỉ áp dụng cho buổi chơi được duyệt.
+              </p>
+            )}
           {registrationFeedback && (
             <div
               className="registration-feedback"
@@ -469,22 +513,27 @@ export function SessionDetailView({
                       : registrationFeedback.reason === "chưa có hồ sơ môn này"
                         ? `Bạn chưa có hồ sơ trình độ cho môn ${summary.sportName === "Badminton" ? "Cầu lông" : "Pickleball"}.`
                         : registrationFeedback.reason === "lệch band kỹ năng"
-                          ? `Trình độ của bạn chưa khớp với yêu cầu Band ${summary.band} của buổi chơi.`
+                          ? `Trình độ hiện tại của bạn chưa khớp với yêu cầu Band ${summary.band} của buổi chơi.`
                           : registrationFeedback.message}
                   </p>
-                  {onOpenSkills && (
-                    <button
-                      type="button"
-                      className="button button-primary booking-action"
-                      onClick={onOpenSkills}
-                    >
-                      Mở hồ sơ kỹ năng &amp; khảo sát
-                    </button>
+                  {onOpenSkills &&
+                    (registrationFeedback.reason === "chưa làm survey" ||
+                      registrationFeedback.reason === "chưa có hồ sơ môn này") && (
+                      <button
+                        type="button"
+                        className="button button-primary booking-action"
+                        onClick={onOpenSkills}
+                      >
+                        Mở hồ sơ kỹ năng &amp; làm khảo sát
+                      </button>
+                    )}
+                  {registrationFeedback.reason === "lệch band kỹ năng" && (
+                    <p style={{ marginTop: "6px" }}>
+                      Nếu vẫn muốn tham gia buổi này, vui lòng điền lý do tại mục{" "}
+                      <strong>“Xin ngoại lệ trình độ”</strong> phía trên để Trọng
+                      tài hoặc Quản lý xem xét phê duyệt.
+                    </p>
                   )}
-                  <p>
-                    Bạn cũng có thể chọn “Xin ngoại lệ trình độ” để tìm hiểu
-                    bước tiếp theo.
-                  </p>
                 </div>
               )}
               {registrationFeedback.type === "SESSION_FULL" && (

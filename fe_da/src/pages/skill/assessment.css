@@ -1,13 +1,85 @@
-.assessment-criteria > legend { margin-bottom: 16px; font-weight: 700; }
-.assessment-criteria .assessment-evidence { margin-top: 18px; }
+.assessment-criteria > legend { margin-bottom: 10px; font-weight: 700; }
+.assessment-criteria .assessment-evidence { margin-top: 12px; }
 .assessment-criteria .sp-level-option { position: relative; align-content: start; font-weight: 400; }
 .assessment-criteria .sp-level-option input[type="radio"] { display: block; width: 18px; height: 18px; margin: 0 0 4px; padding: 0; accent-color: #28764f; }
 .assessment-criteria .sp-level-option:has(input:disabled) { opacity: .6; background: #f1f3f2; }
 .assessment-criteria .sp-level-option:focus-within { outline: 3px solid #28764f; outline-offset: 3px; }
 .assessment-criteria:disabled .sp-level-option, .assessment-criteria .sp-level-option:has(input:disabled) { cursor: default; }
 .assessment-criteria textarea { box-sizing: border-box; }
+.assessment-summary { margin: 4px 0; padding: 16px; border: 1px solid #cadbd1; border-radius: 16px; background: #f6faf7; color: #243a2d; }
+.assessment-summary h3 { margin-top: 0; }
+.assessment-summary p { line-height: 1.65; }
+.assessment-bands { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.assessment-bands > div { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 2px solid #dbe5de; border-radius: 10px; background: white; }
+.assessment-bands > .is-current { border-color: #28764f; background: #e4f3e9; }
+.assessment-preview, .assessment-contribution { font-weight: 700; }
+.assessment-criteria textarea { min-height: 96px; resize: vertical; }
+.assessment-note { color: #536458; font-size: .9375rem; line-height: 1.6; }
+.assessment-required { color: #8a410d; font-weight: 600; }
+.assessment-zero-guide { padding: 14px; background: #eef6ff; border-left: 4px solid #356799; border-radius: 8px; line-height: 1.6; }
+.assessment-player-context { margin-top: 18px; padding: 16px; background: #f6faf7; border-radius: 12px; }
+.assessment-player-context details { margin: 16px 0; }
+.assessment-player-context summary { cursor: pointer; font-weight: 700; }
+.assessment-player-context li { margin: 8px 0; line-height: 1.5; }
 @media (max-width: 560px) {
+  .assessment-summary { padding: 14px; }
+  .assessment-bands { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .assessment-criteria .sp-question-card { padding: 14px; }
   .assessment-criteria .sp-question-head { flex-wrap: wrap; }
   .assessment-criteria .sp-level-options { grid-template-columns: 1fr; }
+}
+
+/* Referee scoring density is independent of the player survey. */
+.assessment-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; list-style: none; padding: 0; margin: 0 0 12px; }
+.assessment-steps li { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 10px; background: #f0f3f1; color: #526158; font-size: 15px; }
+.assessment-steps li > span { display: grid; place-items: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: white; font-weight: 700; }
+.assessment-steps li[aria-current="step"] { background: #225d40; color: white; font-weight: 700; }
+.assessment-steps li[aria-current="step"] > span { color: #225d40; }
+.assessment-steps .is-done { background: #e4f3e9; color: #225d40; }
+.assessment-protocol, .assessment-review { padding: 18px; border: 1px solid #d4ded8; border-radius: 14px; background: white; }
+.assessment-protocol ol { padding-left: 24px; line-height: 1.7; }
+.assessment-protocol progress { display: block; width: 100%; margin-top: 8px; accent-color: #28764f; }
+.assessment-summary summary { cursor: pointer; font-weight: 700; }
+.assessment-table-scroll { overflow-x: auto; }
+.assessment-review-table { width: 100%; border-collapse: collapse; text-align: left; }
+.assessment-review-table th, .assessment-review-table td { padding: 14px 12px; border-bottom: 1px solid #dce5df; vertical-align: top; }
+.assessment-review-table thead { background: #f0f6f2; }
+.assessment-review-table small { display: block; margin-top: 6px; font-weight: 400; color: #536458; }
+.assessment-review-table th:first-child { min-width: 160px; }
+.assessment-review-table td:last-child { min-width: 240px; }
+.assessment-evidence-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.assessment-checklist { padding-left: 0; list-style: none; line-height: 1.8; }
+.assessment-workspace .assessment-confirm { display: flex; align-items: flex-start; gap: 12px; padding: 16px; background: #f0f6f2; border-radius: 10px; line-height: 1.6; }
+.assessment-workspace .assessment-confirm input { flex: 0 0 20px; width: 20px; height: 20px; margin: 3px 0 0; accent-color: #28764f; }
+.assessment-workspace button[aria-pressed="true"] { border-color: #28764f; background: #e4f3e9; color: #225d40; }
+@media (max-width: 760px) {
+  .assessment-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .assessment-protocol, .assessment-review { padding: 12px; }
+}
+.assessment-workspace { max-width: none; min-width: 0; padding: 18px; gap: 14px; font-size: 17px; }
+.assessment-workspace .button { font-size: 16px; }
+.assessment-workspace .workflow-actions:empty { display: none; }
+.assessment-workspace .assessment-criteria { gap: 14px; }
+.assessment-workspace .sp-question-card { padding: 16px; min-width: 0; }
+.assessment-workspace .sp-question-head { margin-bottom: 10px; flex-wrap: wrap; }
+.assessment-workspace .sp-question-head h3 { font-size: 20px; }
+.assessment-workspace .sp-question-head p,
+.assessment-workspace .sp-level-tag,
+.assessment-workspace .sp-level-desc { font-size: 16px; line-height: 1.5; }
+.assessment-workspace .sp-q-index,
+.assessment-workspace .sp-q-score-pill span,
+.assessment-workspace .sp-level-pts { font-size: 14px; }
+.assessment-workspace .sp-level-options { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.assessment-workspace .sp-level-option { padding: 10px 12px; gap: 5px; }
+.assessment-workspace .sp-level-top { flex-wrap: wrap; }
+.assessment-workspace .assessment-summary p + p,
+.assessment-workspace .assessment-bands { margin-top: 8px; }
+.assessment-workspace .assessment-note { margin-top: 6px; }
+@media (max-width: 1150px) {
+  .assessment-workspace .sp-level-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .assessment-workspace { padding: 12px; }
+  .assessment-workspace .sp-question-card { padding: 12px; }
+  .assessment-workspace .sp-level-options { grid-template-columns: minmax(0, 1fr); }
 }

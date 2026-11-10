@@ -10,14 +10,14 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
     public async Task<IReadOnlyList<SportRubricDto>> GetActiveRubricsAsync(long? sportId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         return await LoadActiveRubricsInternalAsync(connection, null, sportId, cancellationToken);
     }
 
     public async Task<PlayerSkillOverviewDto?> GetPlayerSkillOverviewAsync(long userId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         // 1. Resolve User and Ensure Player Record Exists
         const string userPlayerSql = """
@@ -94,7 +94,7 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
                 var pId = reader.GetInt64(0);
                 var spId = reader.GetInt64(1);
                 var score = reader.IsDBNull(2) ? null : (short?)reader.GetInt16(2);
-                var band = reader.IsDBNull(3) ? null : reader.GetString(3);
+                var band = SqlSessionStore.NormalizeBand(reader.IsDBNull(3) ? null : reader.GetString(3), score);
                 var status = reader.IsDBNull(4) ? "Unrated" : reader.GetString(4);
                 rawProfiles[spId] = (pId, score, band, status);
             }
@@ -168,7 +168,7 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
         }
 
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         try

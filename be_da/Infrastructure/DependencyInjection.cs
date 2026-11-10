@@ -14,7 +14,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
-        services.AddDbContext<Sep490Context>(options => options.UseSqlServer(
+        services.AddDbContext<Sep490Context>(options => options.AddInterceptors(new be_da.Authorization.SportCenterConnectionInterceptor()).UseSqlServer(
             config.GetConnectionString("Sep490") ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490.")));
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IPaymentGateway, PayOsGateway>();
