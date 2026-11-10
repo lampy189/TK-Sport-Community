@@ -23,7 +23,7 @@ public sealed record AssessmentDimensionScoreDto(
     string DimensionName,
     short WeightPercent,
     short Score,
-    short WeightedPoints,
+    decimal WeightedPoints,
     string? Evidence = null
 );
 

@@ -6,7 +6,7 @@ export default function SportCenterBadge() {
   useEffect(() => {
     let active = true;
     workflowRequest('/api/v1/sport-centers').then(scope => {
-      if (active) setText(scope.canViewAll ? 'Tổng bộ' : scope.centers.find(c => c.id === scope.assignedVenueId)?.name || 'Chưa được phân công Sport Center');
+      if (active) setText(scope.canViewAll && !scope.selectedVenueId ? 'Tổng bộ' : scope.centers.find(c => c.id === (scope.selectedVenueId || scope.assignedVenueId))?.name || 'Chưa được phân công Sport Center');
     }).catch(() => { if (active) setText('Chưa tải được Sport Center'); });
     return () => { active = false; };
   }, []);

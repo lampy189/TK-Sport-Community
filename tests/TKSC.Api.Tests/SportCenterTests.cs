@@ -42,4 +42,25 @@ public sealed class SportCenterTests
         Assert.False(RevenueController.ValidRange(new(2025,1,1),new(2026,11,1)));
         Assert.False(RevenueController.ValidRange(default,new(2026,11,1)));
     }
+
+    [Theory]
+    [InlineData("Development", false, 200)]
+    [InlineData("Development", true, 403)]
+    [InlineData("Production", false, 403)]
+    public async Task LegacyAssignmentOptOutOnlyWorksInDevelopment(string environmentName, bool requireAssignment, int expectedStatus)
+    {
+        var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder(
+            new Microsoft.AspNetCore.Builder.WebApplicationOptions { EnvironmentName = environmentName });
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(
+            new Dictionary<string, string?> { ["SportCenters:RequireAssignment"] = requireAssignment.ToString() }).Build();
+        var context = new DefaultHttpContext { User = AccountPrincipal.Create(
+            new Account(1, "staff@example.invalid", "Staff", "Staff", "Active", "subject", false)) };
+        context.Request.Path = "/api/skill-assessments";
+        context.Response.Body = new MemoryStream();
+        var called = false;
+        await new SportCenterMiddleware(_ => { called = true; return Task.CompletedTask; })
+            .InvokeAsync(context, configuration, builder.Environment);
+        Assert.Equal(expectedStatus, context.Response.StatusCode);
+        Assert.Equal(expectedStatus == 200, called);
+    }
 }

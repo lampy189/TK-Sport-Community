@@ -337,9 +337,9 @@ export function CommunityView({ user }) {
       {feedback && (
         <div
           style={{
-            padding: '12px 16px',
-            borderRadius: '12px',
-            fontSize: '13.5px',
+            padding: '14px 18px',
+            borderRadius: '14px',
+            fontSize: '15px',
             fontWeight: 600,
             display: 'flex',
             justifyContent: 'space-between',
@@ -355,7 +355,7 @@ export function CommunityView({ user }) {
             onClick={() => setFeedback(null)}
             style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit' }}
           >
-            <X size={15} />
+            <X size={16} />
           </button>
         </div>
       )}
@@ -569,22 +569,22 @@ export function CommunityView({ user }) {
 
       {/* TAB 2: SUGGESTED FRIENDS (PLAYED IN SAME SLOT) */}
       {activeSubTab === 'suggestions' && (
-        <div style={{ background: '#fff', borderRadius: '16px', padding: '22px', border: '1px solid #e1e8e3' }}>
-          <div style={{ marginBottom: '16px' }}>
-            <h3 style={{ margin: '0 0 4px', fontSize: '15.5px', fontWeight: 700, color: '#14261c' }}>
+        <div style={{ background: '#fff', borderRadius: '18px', padding: '26px 30px', border: '1px solid #e1e8e3' }}>
+          <div style={{ marginBottom: '20px' }}>
+            <h3 style={{ margin: '0 0 6px', fontSize: '19px', fontWeight: 700, color: '#14261c' }}>
               Gợi ý kết bạn từ các buổi chơi cùng sân ({suggestions.length})
             </h3>
-            <p style={{ margin: 0, fontSize: '13px', color: '#4d5d53' }}>
+            <p style={{ margin: 0, fontSize: '15px', color: '#4d5d53' }}>
               Những người chơi đã từng đăng ký hoặc đánh cùng khung giờ / buổi chơi (slot) với bạn.
             </p>
           </div>
 
           {loadingData ? (
-            <div style={{ padding: '32px', textAlign: 'center', color: '#55685d', fontWeight: 600 }}>
+            <div style={{ padding: '36px', textAlign: 'center', color: '#55685d', fontWeight: 600, fontSize: '15px' }}>
               Đang tải gợi ý kết bạn...
             </div>
           ) : suggestions.length === 0 ? (
-            <div style={{ color: '#55685d', fontSize: '13.5px', padding: '16px 0' }}>
+            <div style={{ color: '#55685d', fontSize: '15px', padding: '18px 0' }}>
               Chưa có gợi ý kết bạn mới. Khi bạn đăng ký hoặc tham gia các buổi chơi có thành viên khác cùng slot, hệ thống sẽ tự động gợi ý tại đây.
             </div>
           ) : (
@@ -622,11 +622,11 @@ export function CommunityView({ user }) {
                     {sg.latestSharedSessionLabel && (
                       <div
                         style={{
-                          padding: '8px 10px',
-                          borderRadius: '8px',
+                          padding: '10px 14px',
+                          borderRadius: '10px',
                           background: '#f4f9f6',
                           border: '1px solid #d5e8dd',
-                          fontSize: '12px',
+                          fontSize: '14px',
                           color: '#12513a',
                           fontWeight: 500
                         }}
@@ -736,9 +736,9 @@ export function CommunityView({ user }) {
 
       {/* TAB 3: FRIENDS LIST ONLY */}
       {activeSubTab === 'friends' && (
-        <div style={{ background: '#fff', borderRadius: '16px', padding: '22px', border: '1px solid #e1e8e3' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
-            <h3 style={{ margin: 0, fontSize: '15.5px', fontWeight: 700, color: '#14261c' }}>
+        <div style={{ background: '#fff', borderRadius: '18px', padding: '26px 30px', border: '1px solid #e1e8e3' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '14px', flexWrap: 'wrap' }}>
+            <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 700, color: '#14261c' }}>
               Danh sách bạn bè ({friends.length})
             </h3>
             {incomingRequests.length > 0 && (
@@ -747,14 +747,14 @@ export function CommunityView({ user }) {
                 className="comm-btn comm-btn-outline"
                 onClick={() => setActiveSubTab('requests')}
               >
-                <UserCheck size={14} />
+                <UserCheck size={15} />
                 <span>Bạn có {incomingRequests.length} lời mời kết bạn đang chờ</span>
               </button>
             )}
           </div>
 
           {friends.length === 0 ? (
-            <div style={{ color: '#55685d', fontSize: '13.5px', padding: '16px 0' }}>
+            <div style={{ color: '#55685d', fontSize: '15px', padding: '18px 0' }}>
               Bạn chưa có người bạn nào trong danh sách. Hãy chuyển sang tab Thành viên để tìm bạn cùng trình độ.
             </div>
           ) : (
@@ -821,13 +821,13 @@ export function CommunityView({ user }) {
 
       {/* TAB 3: FRIEND REQUESTS (DEDICATED ACCEPT / DECLINE TAB) */}
       {activeSubTab === 'requests' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '22px', border: '1px solid #e1e8e3' }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: '15.5px', fontWeight: 700, color: '#14261c' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ background: '#fff', borderRadius: '18px', padding: '26px 30px', border: '1px solid #e1e8e3' }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '19px', fontWeight: 700, color: '#14261c' }}>
               Lời mời kết bạn nhận được ({incomingRequests.length})
             </h3>
             {incomingRequests.length === 0 ? (
-              <div style={{ color: '#55685d', fontSize: '13.5px' }}>
+              <div style={{ color: '#55685d', fontSize: '15px' }}>
                 Hiện không có lời mời kết bạn nào đang chờ bạn xác nhận.
               </div>
             ) : (
@@ -893,12 +893,12 @@ export function CommunityView({ user }) {
             )}
           </div>
 
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '22px', border: '1px solid #e1e8e3' }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: '15.5px', fontWeight: 700, color: '#14261c' }}>
+          <div style={{ background: '#fff', borderRadius: '18px', padding: '26px 30px', border: '1px solid #e1e8e3' }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '19px', fontWeight: 700, color: '#14261c' }}>
               Lời mời kết bạn đã gửi ({outgoingRequests.length})
             </h3>
             {outgoingRequests.length === 0 ? (
-              <div style={{ color: '#55685d', fontSize: '13.5px' }}>
+              <div style={{ color: '#55685d', fontSize: '15px' }}>
                 Bạn chưa gửi lời mời kết bạn nào đang chờ phản hồi.
               </div>
             ) : (
@@ -1021,10 +1021,10 @@ export function CommunityView({ user }) {
                       )}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700, color: '#14261c', fontSize: '14.5px' }}>
+                      <div style={{ fontWeight: 700, color: '#14261c', fontSize: '16.5px' }}>
                         {activeChatFriend.fullName}
                       </div>
-                      <div style={{ fontSize: '11.5px', color: '#55685d' }}>
+                      <div style={{ fontSize: '13.5px', color: '#55685d' }}>
                         Bấm để xem Hồ sơ công khai
                       </div>
                     </div>

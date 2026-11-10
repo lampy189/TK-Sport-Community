@@ -5,7 +5,7 @@ using be_da.Application.Abstractions;
 
 namespace be_da.Authorization;
 
-public sealed class AccountCookieEvents(IAccountStore accounts, IWebHostEnvironment environment) : CookieAuthenticationEvents
+public sealed class AccountCookieEvents(IAccountStore accounts, IWebHostEnvironment environment, CenterSelection centers) : CookieAuthenticationEvents
 {
     public override async Task ValidatePrincipal(CookieValidatePrincipalContext context)
     {
@@ -24,7 +24,14 @@ public sealed class AccountCookieEvents(IAccountStore accounts, IWebHostEnvironm
             return;
         }
         // Refresh authorization from DB on every request: never retain a stale privileged role.
-        context.ReplacePrincipal(AccountPrincipal.Create(account, developmentLogin));
+        long? selected = long.TryParse(context.Principal?.FindFirstValue(CenterSelection.SelectedClaim), out var selectedId) ? selectedId : null;
+        if (centers.Enabled)
+        {
+            // Refresh personnel assignment from DB; never preserve an obsolete campus privilege.
+            if (CenterSelection.Personnel(account.Role)) selected = account.VenueId;
+            if (selected.HasValue && !(await centers.Choices(account, context.HttpContext.RequestAborted)).Any(v => v.Id == selected)) selected = null;
+        }
+        context.ReplacePrincipal(AccountPrincipal.Create(account, developmentLogin, selected));
     }
 
     public override Task RedirectToLogin(RedirectContext<CookieAuthenticationOptions> context)

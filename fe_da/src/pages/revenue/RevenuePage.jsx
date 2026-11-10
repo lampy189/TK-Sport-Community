@@ -23,7 +23,7 @@ export default function RevenuePage() {
   useEffect(() => {
     const controller = new AbortController();
     load('/api/v1/sport-centers', controller.signal).then(value => {
-      setScope(value); setVenue(value.canViewAll ? '' : String(value.assignedVenueId || ''));
+      setScope(value); setVenue(value.canViewAll ? String(value.selectedVenueId || '') : String(value.assignedVenueId || ''));
     }).catch(error => { if (!controller.signal.aborted) setState({ error: error.message }); });
     return () => controller.abort();
   }, [retry]);

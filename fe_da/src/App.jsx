@@ -5,6 +5,7 @@ import { roleKeys, portalForRole } from './config/loginPortals';
 import { resolveHomeRoute, loginPaths } from './config/homeRoutes';
 import { api } from './api';
 import HomePage from './pages/home/HomePage';
+import { CenterSwitcher } from './components/CenterSelection';
 
 function Redirect({ to }) {
   useEffect(() => {
@@ -34,7 +35,11 @@ function ApplicationApp() {
   const route = !user && window.location.pathname === '/' && new URLSearchParams(window.location.search).has('loginError')
     ? { redirect: '/player/login' } : resolveHomeRoute(window.location.pathname, user?.role);
   if (route.redirect) return <Redirect to={route.redirect} />;
-  if (route.view === 'home') return <HomePage key={user.id + ':' + user.role} role={roleKeys[user.role]} user={user} onLogout={logout} />;
+  if (route.view === 'home') {
+    const showCenter = user.centerSelectionEnabled && user.centerRequired && user.role !== 'SystemAdmin';
+    return <>{showCenter && <CenterSwitcher user={user} onLogout={logout} />}
+      {!user.centerRequired && <HomePage key={user.id + ':' + user.role + ':' + user.selectedVenueId} role={roleKeys[user.role]} user={user} onLogout={logout} />}</>;
+  }
   if (route.view === 'guest') return <HomePage role="guest" onLogin={() => { window.location.assign('/player/login' + window.location.search); }} />;
   if (route.view === 'login') return route.portal === 'player'
     ? <SignInView onLoginSuccess={setUser} onContinueAsGuest={() => window.location.assign('/guest/home')} />

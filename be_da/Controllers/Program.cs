@@ -16,7 +16,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("Controllers/appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"Controllers/appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 if (builder.Environment.IsDevelopment()) builder.Configuration.AddUserSecrets<Program>(optional: true);
-builder.Configuration.AddJsonFile("Controllers/appsettings.Local.json", optional: true, reloadOnChange: true);
+if (builder.Environment.IsDevelopment())
+    builder.Configuration.AddJsonFile("Controllers/appsettings.Local.json", optional: true, reloadOnChange: true);
 builder.Configuration.AddEnvironmentVariables().AddCommandLine(args);
 // Trust forwarded scheme/IP only from deployment-configured proxy addresses.
 var trustedProxies = builder.Configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? [];
@@ -84,6 +85,7 @@ builder.Services.AddScoped<ISessionSupplyStore>(services => new SqlSessionSupply
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
 builder.Services.AddScoped<GoogleSignIn>();
 builder.Services.AddScoped<AccountCookieEvents>();
+builder.Services.AddScoped<CenterSelection>();
 var isDevelopment = builder.Environment.IsDevelopment();
 builder.Services.AddAntiforgery(options =>
 {
@@ -110,11 +112,14 @@ builder.Services.AddAuthentication(AccountPrincipal.Scheme)
         options.SaveTokens = false;
         options.Events.OnRedirectToAuthorizationEndpoint = async context =>
         {
+            // Always let the user choose their Google account; never pin a cached school identity.
+            var authorizationUrl = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(
+                context.RedirectUri, "prompt", "select_account");
             if (context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment()
                 && context.Request.Headers["X-TKSC-Swagger"] == "1")
-                await context.Response.WriteAsJsonAsync(new { authorizationUrl = context.RedirectUri });
+                await context.Response.WriteAsJsonAsync(new { authorizationUrl });
             else
-                context.Response.Redirect(context.RedirectUri);
+                context.Response.Redirect(authorizationUrl);
         };
         options.Events.OnCreatingTicket = async context =>
         {
@@ -126,7 +131,11 @@ builder.Services.AddAuthentication(AccountPrincipal.Scheme)
             var account = await service.ExecuteAsync(context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier),
                 context.Principal?.FindFirstValue(ClaimTypes.Email), context.Principal?.FindFirstValue(ClaimTypes.Name),
                 verified, context.HttpContext.RequestAborted, context.Properties.Items.TryGetValue("login_portal", out var selectedPortal) ? selectedPortal : null);
-            context.Principal = AccountPrincipal.Create(account);
+            var centers = context.HttpContext.RequestServices.GetRequiredService<CenterSelection>();
+            long? requestedCenter = context.Properties.Items.TryGetValue("selected_center", out var centerText)
+                && long.TryParse(centerText, out var centerId) ? centerId : null;
+            var selectedCenter = await centers.Resolve(account, requestedCenter, context.HttpContext.RequestAborted);
+            context.Principal = AccountPrincipal.Create(account, selectedVenueId: selectedCenter);
         };
         options.Events.OnRemoteFailure = async context =>
         {

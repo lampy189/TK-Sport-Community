@@ -1232,6 +1232,14 @@
   gap: 6px;
 }
 
+.sp-dim-point-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  color: var(--text-muted, #64748b);
+  font-size: 12px;
+}
+
 .sp-dim-step {
   text-align: center;
   padding: 5px 6px;

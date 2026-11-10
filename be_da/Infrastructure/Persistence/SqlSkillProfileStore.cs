@@ -463,7 +463,8 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
     private sealed record SavedMarkAuditItem(
         long DimensionId,
         short? Score,
-        string? Evidence
+        string? Evidence,
+        IReadOnlyList<short>? SliderScores = null
     );
 
     private sealed record PublishedAssessmentAuditPayload(
@@ -587,6 +588,7 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
 
         // Load Referee Evidence & Publish Metadata from dbo.audit_logs
         var evidenceByDimId = new Dictionary<long, string>();
+        var pointsByDimId = new Dictionary<long, decimal>();
         DateTimeOffset? evaluatedAt = null;
         string? publishReason = null;
         short? oldScore = null;
@@ -628,6 +630,8 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
                             {
                                 foreach (var m in saved.Marks)
                                 {
+                                    if (m.SliderScores is { Count: 4 } sliders && sliders.All(v => v is >= 0 and <= 10) && m.Score != null)
+                                        pointsByDimId[m.DimensionId] = sliders.Sum(v => (decimal)v) / 2m;
                                     if (!string.IsNullOrWhiteSpace(m.Evidence) && !evidenceByDimId.ContainsKey(m.DimensionId))
                                     {
                                         evidenceByDimId[m.DimensionId] = m.Evidence.Trim();
@@ -684,7 +688,7 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
                     DimensionName: reader.GetString(2),
                     WeightPercent: reader.GetInt16(3),
                     Score: mark,
-                    WeightedPoints: (short)(mark * 5),
+                    WeightedPoints: pointsByDimId.TryGetValue(dimId, out var exactPoints) ? exactPoints : mark * 5m,
                     Evidence: evidence
                 ));
             }

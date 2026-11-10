@@ -53,6 +53,8 @@ public sealed class SqlLateEntryStore(IConfiguration config,TimeProvider clock) 
     public async Task<IReadOnlyList<LateEntryOffer>> List(long? venue,long? session,bool manage,CancellationToken ct)
     {
         await using var c=Connection();await SportCenterConnection.OpenAsync(c,ct);
+        if (manage && venue is null && !await LateEntrySql.IsStandaloneSchema(c, ct))
+            throw new PaymentException(403,"Tài khoản chưa được phân công cơ sở.");
         try{await LateEntrySql.RequireSchema(c,null,ct);}catch(PaymentException e) when(e.StatusCode==503&&!manage){return [];}
         return await Read(c,venue,session,manage,ct);
     }

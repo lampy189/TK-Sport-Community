@@ -1,5 +1,7 @@
 # Vé tham gia phần buổi còn lại
 
+Cập nhật triển khai cuối ngày 10/11/2026: người dùng đã duyệt bật nhiều cơ sở. Sep490 hiện có đầy đủ nền tảng 010–013, vé giờ lẻ dùng phân quyền cơ sở thực tế (`LateEntry:Standalone=false`). Toàn bộ dữ liệu cũ thuộc Vĩnh Phúc; Hà Nội có các ca mẫu mới đang diễn ra để kiểm tra rao vé. Xem `multi-center-login.md`. Phần chế độ standalone bên dưới ghi lại giai đoạn tạm thời trước khi có quyết định này.
+
 Mở rộng theo yêu cầu mới của người dùng: mở bán suất còn trống trong buổi đang diễn ra, mua phần thời gian còn lại đến giờ kết thúc. Liên quan các luồng RP3 UC-08 (đăng ký), UC-11/12 (thanh toán), UC-15 (ngoại lệ kỹ năng), UC-16 (điểm danh), UC-27 (mở/đóng đăng ký) và phần hỗ trợ UC-32. Đây là mở rộng nghiệp vụ mới, chưa coi toàn bộ nội dung bán vé muộn là yêu cầu gốc trong RP3.
 
 ## Hành vi
@@ -7,7 +9,7 @@ Mở rộng theo yêu cầu mới của người dùng: mở bán suất còn tr
 - Buổi đang diễn ra tại cơ sở còn hoạt động sẽ tự rao toàn bộ chỗ trống. Staff/Manager mở mục **Vé giờ lẻ**, hoặc Manager mở màn **Điểm danh** để theo dõi tại Sport Center được phân công; không nhập giá hay bật rao thủ công.
 - Giá = làm tròn lên đến 1 VNĐ của `giá gốc × max(50%, 1 − số phút đã trôi / tổng thời lượng buổi)`. Số phút đã trôi lấy phần nguyên; giá mới được tính lại theo phút, tối đa giảm 50%. Ví dụ buổi 18:00–20:00 giá 80.000: lúc 18:15 là 70.000 (87,5%), 18:30 là 60.000 (75%), từ 19:00 đến trước 20:00 là 40.000 (50%). Tổng thời lượng lấy theo từng buổi, không cố định 2 giờ.
 - Chỉ rao các buổi có giá gốc từ 2.000 đến 100.000.000 VNĐ, để giá sau giảm vẫn đạt mức thanh toán tối thiểu 1.000. Số suất có thể bán đã trừ vé trả tiền chưa tới, người đang chơi và giữ chỗ còn hạn; hết chỗ/hết giờ/hủy hoặc dừng buổi thì tự ngừng rao.
-- Player lọc cơ sở ở **Lịch social**, chọn **Vé giờ lẻ · Phần buổi còn lại**, xem chi tiết và giữ chỗ. Hệ thống kiểm tra lại tài khoản, trình độ/ngoại lệ, trùng lịch và sức chứa ở backend.
+- Player xem lịch của cơ sở đã chọn khi đăng nhập; màn lịch và chi tiết không lặp lại bộ chọn hoặc nhãn cơ sở. Chỉ có một mục **Vé giờ lẻ**, mua phần thời gian còn lại của buổi đang diễn ra, không tách vé 1 giờ thành một loại khác. Các bộ lọc ngày, môn, khung giờ và trình độ cũng áp dụng cho danh sách này. Hệ thống kiểm tra lại tài khoản, trình độ/ngoại lệ, trùng lịch và sức chứa ở backend.
 - Giữ chỗ tối đa 5 phút, không vượt giờ kết thúc buổi. Thử lại cùng người chơi trả về đơn đang giữ còn hạn. Backend tính lại giá dưới khóa buổi; giá đã thay đổi so với báo giá client thì yêu cầu tải lại và xác nhận. Client không được gửi giá để ghi đè.
 - Đơn dùng lại thanh toán payOS, xác minh webhook và review tài chính hiện có. Giá đơn đã tạo không thay đổi khi giá tự động giảm ở phút tiếp theo.
 - Mua lúc 18:35 cho buổi kết thúc 20:00 thì vé hết lúc 20:00. Còn dưới một giờ vẫn được mua; không tự cộng 60 phút kể từ khi check-in.
@@ -23,7 +25,11 @@ Script: `db/upgrades/014-late-entry-sales.sql`. Chỉ tạo mới:
 
 Script chạy trong transaction và có thể chạy lại. Không sửa cột hay xóa bản ghi ở bảng hiện có. Chưa được tự chạy trên database Sep490: phải được người dùng duyệt theo AGENTS.md.
 
-Kiểm tra chỉ đọc ngày 09/11/2026: Sep490 local chưa có `users.venue_id`, bảng `revenue_entries` và hai bảng vé muộn. Vì vậy **014 riêng lẻ chưa đủ**. Phải duyệt và triển khai nền tảng có sẵn `010-sport-center-accounting.sql` (thêm các cột cơ sở nullable ở users/orders/stock_items/shift_reconciliations và bảng doanh thu), `011-sport-center-security.sql` (policy/function phân quyền theo cơ sở), `012-revenue-posting.sql` (trigger ghi nhận thu/hoàn), rồi 014. Không chạy file `010-stock-units-barcode.sql` vì chỉ trùng số, không thuộc gói này. Không tự gán tài khoản hoặc chứng từ lịch sử vào cơ sở. Manager/Staff chưa được gán cơ sở sẽ bị từ chối thao tác. 014 và API kiểm tra điều kiện nền tảng trước khi cho bán vé muộn.
+Cập nhật ngày 10/11/2026: người dùng chọn tạm gác nhiều cơ sở và kích hoạt vé giờ lẻ độc lập. Database cũ chưa có `users.venue_id` và chưa có policy `SportCenterIsolation` chỉ cần script 014 để tạo hai bảng riêng cho vé giờ lẻ. Không thêm cột gán nhân sự, bảng doanh số hoặc trigger hạch toán; thanh toán vẫn dùng luồng social hiện có.
+
+Chế độ local: `LateEntry:Standalone=true` và `SportCenters:RequireAssignment=false` trong `be_da/Controllers/appsettings.Local.json` (không commit). Chỉ Development cho phép Staff/Manager xem màn vận hành không cần gán cơ sở; SQL store kiểm tra lại database chưa triển khai schema/policy nhiều cơ sở. Nếu database đã có cột gán nhân sự hoặc policy nhiều cơ sở, vẫn bắt buộc bộ 010–012 đầy đủ; không tự bỏ qua phân quyền/hạch toán.
+
+Đã sao lưu và xác minh backup trước khi áp dụng 014 lên Sep490 local. Không tạo tài khoản, lịch, vé hoặc thanh toán mẫu. Tại thời điểm kiểm tra chưa có buổi nào từ ngày hiện tại trở đi, nên danh sách vé đang rao có thể rỗng cho tới khi có buổi đang diễn ra đủ điều kiện.
 
 Trước khi áp dụng, xác nhận đúng server/database và có bản sao lưu theo quy trình dự án. Sau khi áp dụng, kiểm tra tồn tại đủ hai bảng và chạy thử bằng tài khoản Player/Staff/Manager ở hai cơ sở khác nhau. Không tự tạo tài khoản, đơn hoặc thanh toán mẫu trên dữ liệu vận hành.
 

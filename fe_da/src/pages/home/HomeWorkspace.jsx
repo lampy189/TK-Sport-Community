@@ -18,7 +18,7 @@ import RefereeSuppliesView from "../stock/RefereeSuppliesView";
 import MyGoodsOrders from "../stock/MyGoodsOrders";
 import StorePage from "../store/StorePage";
 import { Construction, ArrowLeft } from "lucide-react";
-import { LateEntryManagement } from "../late-entry/LateEntrySales";
+import { LateEntryManagement } from '../late-entry/LateEntrySales';
 
 export default function HomeWorkspace({
   role,
@@ -33,10 +33,13 @@ export default function HomeWorkspace({
   initialSport = "ALL",
   onBrowseSport,
 }) {
+  if (preview && import.meta.env.DEV && import.meta.env.VITE_PAYMENT_MODE === 'demo'
+    && role === 'player' && ['Thanh toán', 'Vé của tôi'].includes(active))
+    return <PaymentPage key={active} initialView={active === 'Vé của tôi' ? 'tickets' : 'payment'} />;
   if (!preview && ['staff','manager'].includes(role) && active === 'Vé giờ lẻ') return <LateEntryManagement/>;
   if (!preview && ["owner", "manager", "staff"].includes(role) && ["Kinh doanh", "Thống kê doanh số"].includes(active)) return <RevenuePage />;
   if (!preview && role === "owner" && active === "Phân quyền Sport Center") return <SportCenterPersonnel />;
-  if (active === "Tin nhắn" && role !== "guest") return <MessagesPage preview={preview} />;
+  if ((active === "Thông báo" || active === "Tin nhắn") && role !== "guest") return <MessagesPage preview={preview} />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Ngoại lệ trình độ") return <SkillReviews role={role} kind="exceptions" />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Khiếu nại đánh giá") return <SkillReviews role={role} />;
   if (!preview && role === "referee" && active === "Đánh giá kỹ năng") return <AssessmentPage />;
@@ -47,7 +50,7 @@ export default function HomeWorkspace({
         <GoodsPaymentPage />
       </>
     );
-  if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage canManageLateEntries={role === "manager"} />;
+  if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage canManageLateEntries={role === 'manager'} />;
   if (!preview && role === "referee" && active === "Vật tư buổi chơi") return <RefereeSuppliesView />;
   if (!preview && ["player", "guest"].includes(role)) {
     if (active === "Lịch social")
