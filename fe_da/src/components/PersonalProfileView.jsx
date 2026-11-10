@@ -182,39 +182,11 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    const trimmedName = (editForm.fullName || '').trim();
-    if (trimmedName.length < 2 || trimmedName.length > 100) {
-      setFeedback({
-        type: 'error',
-        text: 'Họ và tên hiển thị phải có từ 2 đến 100 ký tự.'
-      });
-      return;
-    }
-
-    if (editForm.dateOfBirth) {
-      const todayIso = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
-      if (editForm.dateOfBirth > todayIso || editForm.dateOfBirth < '1920-01-01') {
-        setFeedback({
-          type: 'error',
-          text: 'Ngày sinh không hợp lệ (không được vượt quá ngày hiện tại hoặc trước năm 1920).'
-        });
-        return;
-      }
-    }
-
-    if ((editForm.bio || '').trim().length > 500) {
-      setFeedback({
-        type: 'error',
-        text: 'Lời giới thiệu bản thân không được vượt quá 500 ký tự.'
-      });
-      return;
-    }
-
     setSaving(true);
     setFeedback(null);
     try {
       const updated = await api.updateMyProfile({
-        fullName: trimmedName,
+        fullName: editForm.fullName.trim(),
         dateOfBirth: editForm.dateOfBirth || null,
         gender: editForm.gender || null,
         avatarUrl: editForm.avatarUrl || null,
@@ -567,11 +539,9 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
                 <input
                   type="text"
                   required
-                  minLength={2}
-                  maxLength={100}
                   value={editForm.fullName}
                   onChange={(e) => setEditForm((f) => ({ ...f, fullName: e.target.value }))}
-                  placeholder="Nhập họ và tên của bạn (2 – 100 ký tự)"
+                  placeholder="Nhập họ và tên của bạn"
                 />
               </div>
 
@@ -592,20 +562,13 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
                 <label>Ngày sinh</label>
                 <input
                   type="date"
-                  min="1920-01-01"
-                  max={new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10)}
                   value={editForm.dateOfBirth}
                   onChange={(e) => setEditForm((f) => ({ ...f, dateOfBirth: e.target.value }))}
                 />
               </div>
 
               <div className="comm-form-field full">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label>Giới thiệu bản thân</label>
-                  <small style={{ color: '#64748b', fontSize: '12px' }}>
-                    {(editForm.bio || '').length} / 500 ký tự
-                  </small>
-                </div>
+                <label>Giới thiệu bản thân</label>
                 <textarea
                   rows={3}
                   maxLength={500}

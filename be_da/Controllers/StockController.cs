@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using be_da.Application.Abstractions;
 using be_da.Application.Stock;
-using TKSC.Controllers.Middlewares;
 
 namespace be_da.Controllers;
 
@@ -12,7 +11,6 @@ namespace be_da.Controllers;
 [ApiController]
 [Route("api/stock")]
 [Authorize(Roles = "Staff,Manager")]
-[ValidatedRequest]
 public sealed class StockController(IStockStore stockStore, IAntiforgery antiforgery) : ControllerBase
 {
     [HttpGet("categories")]
@@ -29,12 +27,10 @@ public sealed class StockController(IStockStore stockStore, IAntiforgery antifor
     {
         if (category is not null && !StockRules.Categories.Contains(category))
             return BadRequest(new { code = "INVALID_CATEGORY", message = "Nhóm hàng không hợp lệ." });
-        if (StockRules.ValidateSearch(search) is { } searchError)
-            return BadRequest(new { code = "VALIDATION_FAILED", message = searchError });
         return Ok(await stockStore.GetProductsAsync(new StockProductFilter(search, category, includeInactive), cancellationToken));
     }
 
-    [HttpGet("products/{id:long:min(1)}")]
+    [HttpGet("products/{id:long}")]
     [ProducesResponseType(typeof(StockProduct), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProduct(long id, CancellationToken cancellationToken)
@@ -58,7 +54,7 @@ public sealed class StockController(IStockStore stockStore, IAntiforgery antifor
         return CreatedAtAction(nameof(GetProduct), new { id = result.Product!.Id }, result.Product);
     }
 
-    [HttpPut("products/{id:long:min(1)}")]
+    [HttpPut("products/{id:long}")]
     [ProducesResponseType(typeof(StockProduct), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -67,15 +63,13 @@ public sealed class StockController(IStockStore stockStore, IAntiforgery antifor
         if (!await HasValidCsrf()) return BadRequest(new { code = "invalid_csrf_token" });
         if (StockRules.ValidateDetails(request.Name, request.Category, request.UnitPriceVnd, request.ReorderLevel) is { } error)
             return BadRequest(new { code = "VALIDATION_FAILED", message = error });
-        if (request.Units is not null && StockUnitRules.ValidateUnits(request.Units) is { } unitError)
-            return BadRequest(new { code = "VALIDATION_FAILED", message = unitError });
 
         var result = await stockStore.UpdateProductAsync(id, request, cancellationToken);
         return result.Success ? Ok(result.Product) : ToError(result);
     }
 
     // Quantity changes only through posted movements; on-hand is never edited directly.
-    [HttpPost("products/{id:long:min(1)}/movements")]
+    [HttpPost("products/{id:long}/movements")]
     [ProducesResponseType(typeof(StockProduct), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -90,7 +84,7 @@ public sealed class StockController(IStockStore stockStore, IAntiforgery antifor
         return result.Success ? Ok(result.Product) : ToError(result);
     }
 
-    [HttpGet("products/{id:long:min(1)}/movements")]
+    [HttpGet("products/{id:long}/movements")]
     [ProducesResponseType(typeof(IReadOnlyList<StockMovementEntry>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMovements(long id, CancellationToken cancellationToken)
@@ -99,43 +93,10 @@ public sealed class StockController(IStockStore stockStore, IAntiforgery antifor
         return movements is null ? ProductNotFound() : Ok(movements);
     }
 
-    // UC-27, UC-39: scan a barcode (or type a SKU) to find the item and its unit.
-    [HttpGet("lookup")]
-    [ProducesResponseType(typeof(StockCodeLookup), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Lookup([FromQuery] string? code, CancellationToken cancellationToken)
-    {
-        if (!StockUnitRules.IsValidCode(code))
-            return BadRequest(new { code = "VALIDATION_FAILED", message = "Mã vạch hoặc mã hàng không hợp lệ." });
-        var found = await stockStore.LookupCodeAsync(StockUnitRules.NormalizeBarcode(code)!, cancellationToken);
-        return found is null
-            ? NotFound(new { code = "CODE_NOT_FOUND", message = "Không tìm thấy mặt hàng có mã này." })
-            : Ok(found);
-    }
-
-    // UC-27, UC-39: Excel import and the bulk grid both post here.
-    [HttpPost("receipts/batch")]
-    [ProducesResponseType(typeof(BatchReceiptResult), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(BatchReceiptResult), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(BatchReceiptResult), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> PostBatchReceipt([FromBody] BatchReceiptRequest request, CancellationToken cancellationToken)
-    {
-        if (!await HasValidCsrf()) return BadRequest(new { code = "invalid_csrf_token" });
-        if (!TryGetUserId(out var staffUserId)) return Unauthorized();
-        if (StockReceiptRules.ValidateBatch(request) is { } error)
-            return BadRequest(BatchReceiptResult.Fail("VALIDATION_FAILED", error));
-
-        var result = await stockStore.PostBatchReceiptAsync(request, staffUserId, cancellationToken);
-        return result.Success ? Ok(result)
-            : result.Code == "SOURCE_REF_USED" ? Conflict(result)
-            : BadRequest(result);
-    }
-
     private IActionResult ToError(StockResult result) => result.ErrorCode switch
     {
         "PRODUCT_NOT_FOUND" => NotFound(new { code = result.ErrorCode, message = result.Message }),
-        "UNIT_NOT_FOUND" or "QUANTITY_TOO_LARGE" => BadRequest(new { code = result.ErrorCode, message = result.Message }),
-        "SKU_EXISTS" or "BARCODE_EXISTS" or "UNITS_LOCKED" or "PRODUCT_INACTIVE" or "INSUFFICIENT_STOCK" => Conflict(new { code = result.ErrorCode, message = result.Message }),
+        "SKU_EXISTS" or "PRODUCT_INACTIVE" or "INSUFFICIENT_STOCK" => Conflict(new { code = result.ErrorCode, message = result.Message }),
         _ => BadRequest(new { code = result.ErrorCode, message = result.Message })
     };
 
