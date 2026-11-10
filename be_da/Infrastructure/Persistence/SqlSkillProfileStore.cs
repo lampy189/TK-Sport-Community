@@ -1,4 +1,5 @@
 using System.Data;
+using System.Text.Json;
 using Microsoft.Data.SqlClient;
 using be_da.Application.Abstractions;
 using be_da.Application.Skills;
@@ -449,10 +450,68 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             .ToList();
     }
 
+    private static readonly JsonSerializerOptions AuditJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private sealed record SavedAssessmentAuditPayload(
+        DateTimeOffset? At,
+        List<SavedMarkAuditItem>? Marks
+    );
+
+    private sealed record SavedMarkAuditItem(
+        long DimensionId,
+        short? Score,
+        string? Evidence
+    );
+
+    private sealed record PublishedAssessmentAuditPayload(
+        DateTimeOffset? At,
+        short? OldScore,
+        string? OldBand,
+        short? Score,
+        string? Band,
+        string? Reason
+    );
+
     private static async Task<AssessmentResultDto?> LoadLatestAssessmentAsync(
         SqlConnection connection,
         SqlTransaction? transaction,
         long profileId,
+        CancellationToken cancellationToken)
+    {
+        const string latestIdSql = """
+            SELECT TOP 1 a.id
+            FROM dbo.assessments a
+            WHERE a.player_sport_profile_id = @profileId
+              AND LOWER(a.status) IN ('published', 'submitted')
+            ORDER BY CASE WHEN LOWER(REPLACE(a.assessment_type, '_', '')) = 'oncourt' THEN 1 ELSE 0 END DESC, a.id DESC;
+            """;
+
+        long? assessmentId = null;
+        await using (var cmd = new SqlCommand(latestIdSql, connection, transaction))
+        {
+            cmd.Parameters.Add("@profileId", SqlDbType.BigInt).Value = profileId;
+            var scalar = await cmd.ExecuteScalarAsync(cancellationToken);
+            if (scalar is long id)
+            {
+                assessmentId = id;
+            }
+        }
+
+        if (!assessmentId.HasValue)
+        {
+            return null;
+        }
+
+        return await LoadAssessmentByIdAsync(connection, transaction, assessmentId.Value, cancellationToken);
+    }
+
+    private static async Task<AssessmentResultDto?> LoadAssessmentByIdAsync(
+        SqlConnection connection,
+        SqlTransaction? transaction,
+        long assessmentId,
         CancellationToken cancellationToken)
     {
         const string headSql = """
@@ -464,20 +523,25 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
                 ISNULL(a.total_score, 0) AS total_score,
                 ISNULL(a.band_result, 'B1') AS band_result,
                 a.assessor_id, u.full_name AS assessor_name, ro.code AS assessor_role,
-                a.session_id, s.session_date, c.name AS court_name, ts.label AS time_label
+                a.session_id, s.session_date, c.name AS court_name,
+                CASE
+                    WHEN ts.label IS NOT NULL AND LTRIM(RTRIM(ts.label)) <> '' THEN ts.label
+                    WHEN ts.start_time IS NOT NULL AND ts.end_time IS NOT NULL
+                        THEN CONCAT(CONVERT(varchar(5), ts.start_time, 108), ' - ', CONVERT(varchar(5), ts.end_time, 108))
+                    ELSE NULL
+                END AS time_label,
+                v.name AS venue_name
             FROM dbo.assessments a
             JOIN dbo.rubrics r ON r.id = a.rubric_id
             JOIN dbo.users u ON u.id = a.assessor_id
             JOIN dbo.roles ro ON ro.id = u.role_id
             LEFT JOIN dbo.sessions s ON s.id = a.session_id
             LEFT JOIN dbo.courts c ON c.id = s.court_id
+            LEFT JOIN dbo.venues v ON v.id = c.venue_id
             LEFT JOIN dbo.time_slots ts ON ts.id = s.time_slot_id
-            WHERE a.player_sport_profile_id = @profileId
-              AND LOWER(a.status) IN ('published', 'submitted')
-            ORDER BY CASE WHEN LOWER(REPLACE(a.assessment_type, '_', '')) = 'oncourt' THEN 1 ELSE 0 END DESC, a.id DESC;
+            WHERE a.id = @assessmentId;
             """;
 
-        long assessmentId;
         long rubricId;
         string rubricName;
         string rubricVersion;
@@ -492,10 +556,11 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
         DateOnly? sessionDate;
         string? courtName;
         string? timeLabel;
+        string? venueName;
 
         await using (var cmd = new SqlCommand(headSql, connection, transaction))
         {
-            cmd.Parameters.Add("@profileId", SqlDbType.BigInt).Value = profileId;
+            cmd.Parameters.Add("@assessmentId", SqlDbType.BigInt).Value = assessmentId;
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
             if (!await reader.ReadAsync(cancellationToken))
             {
@@ -517,6 +582,81 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             sessionDate = reader.IsDBNull(12) ? null : DateOnly.FromDateTime(reader.GetDateTime(12));
             courtName = reader.IsDBNull(13) ? null : reader.GetString(13);
             timeLabel = reader.IsDBNull(14) ? null : reader.GetString(14);
+            venueName = reader.IsDBNull(15) ? null : reader.GetString(15);
+        }
+
+        // Load Referee Evidence & Publish Metadata from dbo.audit_logs
+        var evidenceByDimId = new Dictionary<long, string>();
+        DateTimeOffset? evaluatedAt = null;
+        string? publishReason = null;
+        short? oldScore = null;
+        string? oldBand = null;
+        short? publishedScore = null;
+        string? publishedBand = null;
+
+        const string auditSql = """
+            SELECT action, new_value
+            FROM dbo.audit_logs
+            WHERE entity_type = 'Assessment'
+              AND entity_id = @assessmentId
+              AND action IN ('assessment_saved', 'assessment_published')
+            ORDER BY id DESC;
+            """;
+
+        bool parsedSaved = false;
+        bool parsedPublished = false;
+
+        await using (var auditCmd = new SqlCommand(auditSql, connection, transaction))
+        {
+            auditCmd.Parameters.Add("@assessmentId", SqlDbType.BigInt).Value = assessmentId;
+            await using var reader = await auditCmd.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var action = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
+                var json = reader.IsDBNull(1) ? null : reader.GetString(1);
+                if (string.IsNullOrWhiteSpace(json)) continue;
+
+                try
+                {
+                    if (!parsedSaved && string.Equals(action, "assessment_saved", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var saved = JsonSerializer.Deserialize<SavedAssessmentAuditPayload>(json, AuditJsonOptions);
+                        if (saved != null)
+                        {
+                            evaluatedAt ??= saved.At;
+                            if (saved.Marks != null)
+                            {
+                                foreach (var m in saved.Marks)
+                                {
+                                    if (!string.IsNullOrWhiteSpace(m.Evidence) && !evidenceByDimId.ContainsKey(m.DimensionId))
+                                    {
+                                        evidenceByDimId[m.DimensionId] = m.Evidence.Trim();
+                                    }
+                                }
+                            }
+                            parsedSaved = true;
+                        }
+                    }
+                    else if (!parsedPublished && string.Equals(action, "assessment_published", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var pub = JsonSerializer.Deserialize<PublishedAssessmentAuditPayload>(json, AuditJsonOptions);
+                        if (pub != null)
+                        {
+                            evaluatedAt = pub.At ?? evaluatedAt;
+                            publishReason = string.IsNullOrWhiteSpace(pub.Reason) ? null : pub.Reason.Trim();
+                            oldScore = pub.OldScore;
+                            oldBand = pub.OldBand;
+                            publishedScore = pub.Score;
+                            publishedBand = pub.Band;
+                            parsedPublished = true;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore malformed audit JSON
+                }
+            }
         }
 
         const string scoresSql = """
@@ -535,14 +675,17 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             await using var reader = await scoreCmd.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
+                var dimId = reader.GetInt64(0);
                 var mark = reader.GetInt16(4);
+                evidenceByDimId.TryGetValue(dimId, out var evidence);
                 scores.Add(new AssessmentDimensionScoreDto(
-                    DimensionId: reader.GetInt64(0),
+                    DimensionId: dimId,
                     DimensionCode: reader.GetString(1),
                     DimensionName: reader.GetString(2),
                     WeightPercent: reader.GetInt16(3),
                     Score: mark,
-                    WeightedPoints: (short)(mark * 5)
+                    WeightedPoints: (short)(mark * 5),
+                    Evidence: evidence
                 ));
             }
         }
@@ -563,7 +706,14 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             SessionDate: sessionDate,
             CourtName: courtName,
             TimeLabel: timeLabel,
-            Scores: scores
+            Scores: scores,
+            VenueName: venueName,
+            PublishReason: publishReason,
+            EvaluatedAt: evaluatedAt,
+            OldScore: oldScore,
+            OldBand: oldBand,
+            PublishedScore: publishedScore,
+            PublishedBand: publishedBand
         );
     }
 
@@ -589,28 +739,41 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             ORDER BY h.id DESC;
             """;
 
-        var items = new List<RatingHistoryItemDto>();
-        await using var cmd = new SqlCommand(sql, connection, transaction);
-        cmd.Parameters.Add("@profileId", SqlDbType.BigInt).Value = profileId;
-
-        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
+        var rawItems = new List<RatingHistoryItemDto>();
+        await using (var cmd = new SqlCommand(sql, connection, transaction))
         {
-            items.Add(new RatingHistoryItemDto(
-                Id: reader.GetInt64(0),
-                OldScore: reader.IsDBNull(1) ? null : reader.GetInt16(1),
-                NewScore: reader.IsDBNull(2) ? null : reader.GetInt16(2),
-                OldBand: reader.IsDBNull(3) ? null : reader.GetString(3),
-                NewBand: reader.IsDBNull(4) ? null : reader.GetString(4),
-                ChangedByUserId: reader.GetInt64(5),
-                ChangedByName: reader.GetString(6),
-                ChangedByRole: reader.GetString(7),
-                AssessmentId: reader.IsDBNull(8) ? null : reader.GetInt64(8),
-                AssessmentType: reader.IsDBNull(9) ? null : reader.GetString(9),
-                SessionId: reader.IsDBNull(10) ? null : reader.GetInt64(10),
-                SessionDate: reader.IsDBNull(11) ? null : DateOnly.FromDateTime(reader.GetDateTime(11)),
-                CourtName: reader.IsDBNull(12) ? null : reader.GetString(12)
-            ));
+            cmd.Parameters.Add("@profileId", SqlDbType.BigInt).Value = profileId;
+
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                rawItems.Add(new RatingHistoryItemDto(
+                    Id: reader.GetInt64(0),
+                    OldScore: reader.IsDBNull(1) ? null : reader.GetInt16(1),
+                    NewScore: reader.IsDBNull(2) ? null : reader.GetInt16(2),
+                    OldBand: reader.IsDBNull(3) ? null : reader.GetString(3),
+                    NewBand: reader.IsDBNull(4) ? null : reader.GetString(4),
+                    ChangedByUserId: reader.GetInt64(5),
+                    ChangedByName: reader.GetString(6),
+                    ChangedByRole: reader.GetString(7),
+                    AssessmentId: reader.IsDBNull(8) ? null : reader.GetInt64(8),
+                    AssessmentType: reader.IsDBNull(9) ? null : reader.GetString(9),
+                    SessionId: reader.IsDBNull(10) ? null : reader.GetInt64(10),
+                    SessionDate: reader.IsDBNull(11) ? null : DateOnly.FromDateTime(reader.GetDateTime(11)),
+                    CourtName: reader.IsDBNull(12) ? null : reader.GetString(12)
+                ));
+            }
+        }
+
+        var items = new List<RatingHistoryItemDto>(rawItems.Count);
+        foreach (var item in rawItems)
+        {
+            AssessmentResultDto? details = null;
+            if (item.AssessmentId.HasValue)
+            {
+                details = await LoadAssessmentByIdAsync(connection, transaction, item.AssessmentId.Value, cancellationToken);
+            }
+            items.Add(item with { AssessmentDetails = details });
         }
 
         return items;
