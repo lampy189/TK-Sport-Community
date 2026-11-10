@@ -10,14 +10,12 @@ export default defineConfig({
       '/api': {
         target: 'https://localhost:7207',
         changeOrigin: true,
-        secure: false,
-        //secure: true,
+        secure: true,
       },
       '/signin-google': {
         target: 'https://localhost:7207',
         changeOrigin: true,
-        secure: false,
-        //secure: true,
+        secure: true,
       }
     }
   }

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using be_da.Application.Abstractions;
 using be_da.Application.Stock;
-using TKSC.Controllers.Middlewares;
 
 namespace be_da.Controllers;
 
@@ -13,7 +12,6 @@ namespace be_da.Controllers;
 [ApiController]
 [Route("api/stock/referee-supplies")]
 [Authorize(Roles = "Referee")]
-[ValidatedRequest]
 public sealed class RefereeSuppliesController(ISessionSupplyStore store, IAntiforgery antiforgery, TimeProvider clock) : ControllerBase
 {
     [HttpGet]
@@ -21,13 +19,11 @@ public sealed class RefereeSuppliesController(ISessionSupplyStore store, IAntifo
     public async Task<IActionResult> GetSessions([FromQuery] DateOnly? date, CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var refereeId)) return Unauthorized();
-        var today = DateOnly.FromDateTime(clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7)).DateTime);
-        var day = date ?? today;
-        if (SupplyRules.ValidateDay(day, today) is { } error) return BadRequest(new { code = "VALIDATION_FAILED", message = error });
+        var day = date ?? DateOnly.FromDateTime(clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7)).DateTime);
         return Ok(await store.GetSessionsAsync(day, refereeId, cancellationToken));
     }
 
-    [HttpGet("{sessionId:long:min(1)}")]
+    [HttpGet("{sessionId:long}")]
     [ProducesResponseType(typeof(SessionSupplyDetails), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDetails(long sessionId, CancellationToken cancellationToken)
@@ -42,7 +38,7 @@ public sealed class RefereeSuppliesController(ISessionSupplyStore store, IAntifo
             : Ok(details);
     }
 
-    [HttpPost("{sessionId:long:min(1)}/products/{productId:long:min(1)}/usage")]
+    [HttpPost("{sessionId:long}/products/{productId:long}/usage")]
     [ProducesResponseType(typeof(SessionSupplyDetails), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

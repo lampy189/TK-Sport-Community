@@ -55,7 +55,6 @@ public sealed class AuthController(IConfiguration configuration, IAntiforgery an
         id = User.FindFirstValue(ClaimTypes.NameIdentifier),
         email = User.FindFirstValue(ClaimTypes.Email),
         fullName = User.FindFirstValue(ClaimTypes.Name),
-        venueId = User.FindFirstValue(SportCenterConnection.VenueClaim),
         role = User.FindFirstValue(ClaimTypes.Role)
     });
 
