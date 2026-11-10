@@ -1,7 +1,8 @@
 import { Buffer } from 'node:buffer';
+import { env } from 'node:process';
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
-const evidence='../docs/evidence/duc-nov-07-10';
+const evidence=env.DUC_EVIDENCE_DIR || '../docs/evidence/duc-nov-07-10';
 const session={id:22,sport:'Cầu lông',court:'Sân 1',venue:'TK Sport',sessionDate:'2026-11-10',startTime:'18:00:00',endTime:'20:00:00',status:'suspended'};
 const exception={id:7,player:'Nguyễn An (fixture)',sport:'Cầu lông',status:'Pending',sessionId:22,sessionDate:'2026-11-10',sessionBand:'B3',currentBand:'B2',reason:'Xin tham gia cùng nhóm bạn'};
 const appeal={...exception,status:'UnderReview',disputedScore:65,disputedBand:'B3',currentScore:65,currentBand:'B3',expectedHistoryId:8};
