@@ -12,10 +12,65 @@ import {
   ArrowRight,
   SlidersHorizontal,
   Ticket,
+  Building2,
+  Zap,
 } from "lucide-react";
 import StatePanel from "./ui/StatePanel";
 import "../styles/sessions.css";
 import { api } from "../api";
+import { LateEntryOffers } from '../pages/late-entry/LateEntrySales';
+
+const DEFAULT_VENUES = [
+  { id: 1, name: "TK Sport Community Center", address: "Hanoi, Vietnam" },
+  { id: 2, name: "TKSC Demo", address: "Địa điểm minh họa tại TP. Hồ Chí Minh" },
+];
+
+function parseTimeToMinutes(rawTime) {
+  if (!rawTime) return null;
+  const clean = String(rawTime).trim().slice(0, 5);
+  const parts = clean.split(":").map((n) => parseInt(n, 10));
+  if (parts.length < 2 || parts.some((n) => Number.isNaN(n))) return null;
+  return parts[0] * 60 + parts[1];
+}
+
+function getDurationMinutes(item) {
+  if (!item) return 120;
+  if (typeof item.durationMinutes === "number" && item.durationMinutes > 0) {
+    return item.durationMinutes;
+  }
+  const startStr =
+    item.startTime ||
+    (item.timeLabel || item.label || "").split("-")[0]?.trim();
+  const endStr =
+    item.endTime ||
+    (item.timeLabel || item.label || "").split("-")[1]?.trim();
+  const sMin = parseTimeToMinutes(startStr);
+  const eMin = parseTimeToMinutes(endStr);
+  if (sMin != null && eMin != null && eMin > sMin) {
+    return eMin - sMin;
+  }
+  return 120;
+}
+
+function isHourlyCourtSession(s) {
+  if (!s) return false;
+  if (s.isHourlyCourt === true) return true;
+  if (
+    String(s.sessionType || "").toLowerCase() === "hourlycourt" ||
+    String(s.sessionType || "").toLowerCase() === "1h"
+  ) {
+    return true;
+  }
+  const mins = getDurationMinutes(s);
+  return mins > 0 && mins <= 60;
+}
+
+function isHourlyTimeSlot(slot) {
+  if (!slot) return false;
+  if (slot.isHourlySlot === true) return true;
+  const mins = getDurationMinutes(slot);
+  return mins > 0 && mins <= 60;
+}
 
 const DEFAULT_TIME_SLOTS = [
   { id: 1, startTime: "08:00:00", endTime: "10:00:00", label: "08:00 - 10:00" },
@@ -143,6 +198,7 @@ export function BrowseSessionsView({
 }) {
   const [sessions, setSessions] = useState([]);
   const [timeSlots, setTimeSlots] = useState(DEFAULT_TIME_SLOTS);
+  const [venues, setVenues] = useState(DEFAULT_VENUES);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -154,11 +210,13 @@ export function BrowseSessionsView({
 
   // Filters state
   const [selectedSport, setSelectedSport] = useState(initialSport);
+  const [selectedVenue, setSelectedVenue] = useState("ALL");
+  const [selectedSessionType, setSelectedSessionType] = useState("ALL");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState("ALL");
   const [filterEligibleOnly, setFilterEligibleOnly] = useState(false);
 
-  // Load venue time_slots from backend once
+  // Load venue time_slots & Sport Center venues from backend once
   useEffect(() => {
     let active = true;
     api
@@ -171,6 +229,18 @@ export function BrowseSessionsView({
       .catch(() => {
         /* Fallback to DEFAULT_TIME_SLOTS when offline */
       });
+
+    api
+      .getVenues()
+      .then((data) => {
+        if (active && Array.isArray(data) && data.length > 0) {
+          setVenues(data);
+        }
+      })
+      .catch(() => {
+        /* Fallback to DEFAULT_VENUES when offline */
+      });
+
     return () => {
       active = false;
     };
@@ -257,6 +327,11 @@ export function BrowseSessionsView({
   }
 
   function getSessionTitle(s) {
+    const isHourly = isHourlyCourtSession(s);
+    const sportVi = s.sportName === "Badminton" ? "Cầu lông" : "Pickleball";
+    if (isHourly) {
+      return `Vé giờ lẻ 1h (Rao sân) · ${sportVi}`;
+    }
     if (s.sportName === "Badminton") {
       if (s.timeLabel?.includes("18:00") && s.band === "B2")
         return "Cầu lông sau giờ làm";
@@ -270,13 +345,83 @@ export function BrowseSessionsView({
     }
   }
 
-  const displayedSessions = useMemo(
-    () =>
-      filterEligibleOnly
-        ? sessions.filter((s) => s.isEligibleSuggestion === true)
-        : sessions,
-    [sessions, filterEligibleOnly],
-  );
+  // Merge configured venues with any distinct venues appearing in sessions
+  const availableVenues = useMemo(() => {
+    const map = new Map();
+    for (const v of venues) {
+      if (v?.name) {
+        map.set(String(v.id ?? v.name), {
+          id: v.id ?? v.name,
+          name: v.name,
+          address: v.address || "",
+        });
+      }
+    }
+    for (const s of sessions) {
+      if (s?.venueName) {
+        const key = String(s.venueId ?? s.venueName);
+        if (!map.has(key)) {
+          map.set(key, {
+            id: s.venueId ?? s.venueName,
+            name: s.venueName,
+            address: s.venueAddress || "",
+          });
+        }
+      }
+    }
+    return Array.from(map.values());
+  }, [venues, sessions]);
+
+  // Apply Sport Center filter & Eligibility filter before SessionType split so counts stay accurate
+  const venueAndEligFilteredSessions = useMemo(() => {
+    return sessions.filter((s) => {
+      if (filterEligibleOnly && s.isEligibleSuggestion !== true) {
+        return false;
+      }
+      if (selectedVenue !== "ALL") {
+        const matchId =
+          s.venueId != null && String(s.venueId) === String(selectedVenue);
+        const matchName =
+          s.venueName &&
+          String(s.venueName).toLowerCase() ===
+            String(selectedVenue).toLowerCase();
+        if (!matchId && !matchName) return false;
+      }
+      return true;
+    });
+  }, [sessions, filterEligibleOnly, selectedVenue]);
+
+  const displayedSessions = useMemo(() => {
+    if (selectedSessionType === "HourlyCourt") {
+      return venueAndEligFilteredSessions.filter((s) =>
+        isHourlyCourtSession(s),
+      );
+    }
+    if (selectedSessionType === "Social") {
+      return venueAndEligFilteredSessions.filter(
+        (s) => !isHourlyCourtSession(s),
+      );
+    }
+    return venueAndEligFilteredSessions;
+  }, [venueAndEligFilteredSessions, selectedSessionType]);
+
+  // Counts for Quick Filter Tabs (open sessions in list mode, or all in timetable mode)
+  const sessionTypeCounts = useMemo(() => {
+    const nowMs = Date.now();
+    const basePool =
+      viewMode === "list"
+        ? venueAndEligFilteredSessions.filter(
+            (s) => !isSessionFull(s) && !isSessionPastStart(s, nowMs),
+          )
+        : venueAndEligFilteredSessions;
+    const hourly = basePool.filter((s) => isHourlyCourtSession(s)).length;
+    const social = basePool.length - hourly;
+    return {
+      all: basePool.length,
+      social,
+      hourly,
+    };
+  }, [venueAndEligFilteredSessions, viewMode]);
 
   // Open sessions for List View: exclude sessions that are already full or past their start time
   const openListSessions = useMemo(() => {
@@ -310,9 +455,19 @@ export function BrowseSessionsView({
 
   // Visible time slots of the venue (all slots from dbo.time_slots, or filtered slot)
   const visibleTimeSlots = useMemo(() => {
-    if (selectedSlot === "ALL") return timeSlots;
-    return timeSlots.filter((ts) => String(ts.id) === String(selectedSlot));
-  }, [timeSlots, selectedSlot]);
+    if (selectedSlot !== "ALL") {
+      return timeSlots.filter((ts) => String(ts.id) === String(selectedSlot));
+    }
+    if (selectedSessionType === "HourlyCourt") {
+      const hourlySlots = timeSlots.filter((ts) => isHourlyTimeSlot(ts));
+      return hourlySlots.length > 0 ? hourlySlots : timeSlots;
+    }
+    if (selectedSessionType === "Social") {
+      const socialSlots = timeSlots.filter((ts) => !isHourlyTimeSlot(ts));
+      return socialSlots.length > 0 ? socialSlots : timeSlots;
+    }
+    return timeSlots;
+  }, [timeSlots, selectedSlot, selectedSessionType]);
 
   // Sessions inside the currently viewed week
   const weekStartIso = weekDays[0].iso;
@@ -377,10 +532,41 @@ export function BrowseSessionsView({
       </section>
       <section className="session-filters" aria-label="Bộ lọc buổi chơi">
         <div className="filter-heading">
-          <SlidersHorizontal size={17} />
-          <strong>Tìm buổi chơi phù hợp</strong>
+          <SlidersHorizontal size={18} />
+          <strong>Tìm lịch Social &amp; Vé giờ lẻ theo Cơ sở Sport Center</strong>
         </div>
         <div className="filter-fields">
+          <div className="filter-field">
+            <label htmlFor="session-venue">Cơ sở Sport Center</label>
+            <select
+              id="session-venue"
+              value={selectedVenue}
+              onChange={(e) => setSelectedVenue(e.target.value)}
+            >
+              <option value="ALL">Tất cả cơ sở Sport Center</option>
+              {availableVenues.map((v) => (
+                <option key={v.id} value={String(v.id)}>
+                  {v.name}
+                  {v.address ? ` (${v.address})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="session-type">Loại lịch / Vé mở bán</label>
+            <select
+              id="session-type"
+              value={selectedSessionType}
+              onChange={(e) => { setSelectedSessionType(e.target.value); if(e.target.value === 'Remaining') setSelectedDate(todayIso); }}
+            >
+              <option value="ALL">Tất cả (Social 2h &amp; Vé lẻ 1h)</option>
+              <option value="Remaining">Vé giờ lẻ · Phần buổi còn lại</option>
+              <option value="Social">Lịch Social định kỳ (2 tiếng)</option>
+              <option value="HourlyCourt">
+                ⚡ Vé giờ lẻ 1h (Rao sân trống)
+              </option>
+            </select>
+          </div>
           <div className="filter-field">
             <label htmlFor="session-sport">Môn thể thao</label>
             <select
@@ -413,10 +599,11 @@ export function BrowseSessionsView({
               {timeSlots.map((slot) => {
                 const range = formatSlotTimeRange(slot);
                 const period = getSlotPeriodTag(slot);
+                const is1h = isHourlyTimeSlot(slot);
                 return (
                   <option key={slot.id} value={String(slot.id)}>
                     {range}
-                    {period ? ` (${period})` : ""}
+                    {is1h ? " · [Vé lẻ 1h - Rao sân]" : period ? ` (${period})` : ""}
                   </option>
                 );
               })}
@@ -426,6 +613,71 @@ export function BrowseSessionsView({
             Tìm buổi chơi <ArrowRight size={16} />
           </button>
         </div>
+
+        {/* Quick Pills for Sport Center & 1h Court Tickets */}
+        <div className="session-quick-pills-row">
+          <div className="session-type-pills" role="group" aria-label="Phân loại vé">
+            <button
+              type="button"
+              className={`session-type-pill ${
+                selectedSessionType === "ALL" ? "is-active" : ""
+              }`}
+              onClick={() => setSelectedSessionType("ALL")}
+            >
+              Tất cả lịch mở ({sessionTypeCounts.all})
+            </button>
+            <button
+              type="button"
+              className={`session-type-pill ${
+                selectedSessionType === "Social" ? "is-active" : ""
+              }`}
+              onClick={() => setSelectedSessionType("Social")}
+            >
+              Lịch Social 2h ({sessionTypeCounts.social})
+            </button>
+            <button
+              type="button"
+              className={`session-type-pill is-hourly-pill ${
+                selectedSessionType === "HourlyCourt" ? "is-active" : ""
+              }`}
+              onClick={() => setSelectedSessionType("HourlyCourt")}
+            >
+              <Zap size={15} />
+              Vé giờ lẻ 1h · Rao sân ({sessionTypeCounts.hourly})
+            </button>
+            <button type="button" className={`session-type-pill ${selectedSessionType === 'Remaining' ? 'is-active' : ''}`} onClick={() => { setSelectedSessionType('Remaining'); setSelectedDate(todayIso); }}>
+              <Zap size={15}/> Vé phần buổi còn lại
+            </button>
+          </div>
+
+          <div className="session-venue-pills" role="group" aria-label="Chọn nhanh Cơ sở Sport Center">
+            <span className="venue-pill-label">
+              <Building2 size={15} /> Cơ sở:
+            </span>
+            <button
+              type="button"
+              className={`session-venue-pill ${
+                selectedVenue === "ALL" ? "is-active" : ""
+              }`}
+              onClick={() => setSelectedVenue("ALL")}
+            >
+              Tất cả cơ sở
+            </button>
+            {availableVenues.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                className={`session-venue-pill ${
+                  String(selectedVenue) === String(v.id) ? "is-active" : ""
+                }`}
+                onClick={() => setSelectedVenue(String(v.id))}
+              >
+                {v.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="filter-footer">
           <label className="eligibility-toggle">
             <input
@@ -433,22 +685,26 @@ export function BrowseSessionsView({
               checked={filterEligibleOnly}
               onChange={() => setFilterEligibleOnly(!filterEligibleOnly)}
             />
-            <span>Chỉ buổi chơi phù hợp với tôi</span>
+            <span>Chỉ buổi chơi phù hợp với trình độ của tôi</span>
           </label>
           <button
             className="text-button"
             onClick={() => {
               setSelectedSport("ALL");
+              setSelectedVenue("ALL");
+              setSelectedSessionType("ALL");
               setSelectedDate("");
               setSelectedSlot("ALL");
               setFilterEligibleOnly(false);
             }}
           >
-            Đặt lại bộ lọc
+            Đặt lại toàn bộ bộ lọc
           </button>
         </div>
       </section>
 
+      {(selectedSessionType === 'ALL' || selectedSessionType === 'Remaining') && (!selectedDate || selectedDate === todayIso) && <LateEntryOffers venueId={selectedVenue} sport={selectedSport} onSelectSession={onSelectSession}/>}
+      {selectedSessionType !== 'Remaining' && <>
       <div className="results-heading">
         <div className="results-heading-left">
           <h2>Lịch social</h2>
@@ -612,6 +868,9 @@ export function BrowseSessionsView({
                   <i className="legend-dot is-pickleball" /> Pickleball
                 </span>
                 <span className="legend-item">
+                  <i className="legend-dot is-hourly" /> Vé giờ lẻ 1h (Rao sân)
+                </span>
+                <span className="legend-item">
                   <i className="legend-dot is-locked" /> Đã khóa (Qua giờ / Đủ chỗ)
                 </span>
               </div>
@@ -692,8 +951,10 @@ export function BrowseSessionsView({
                                     const isLocked = isFull || isPast;
                                     const isBadminton =
                                       s.sportName === "Badminton";
-                                    const bandLabel =
-                                      s.band || "Tự do";
+                                    const isHourly = isHourlyCourtSession(s);
+                                    const bandLabel = isHourly && !s.band
+                                      ? "Rao sân 1h"
+                                      : s.band || "Tự do";
 
                                     return (
                                       <button
@@ -705,9 +966,11 @@ export function BrowseSessionsView({
                                           "timetable-event",
                                           isLocked
                                             ? "is-locked"
-                                            : isBadminton
-                                              ? "is-badminton"
-                                              : "is-pickleball",
+                                            : isHourly
+                                              ? "is-hourly"
+                                              : isBadminton
+                                                ? "is-badminton"
+                                                : "is-pickleball",
                                         ]
                                           .filter(Boolean)
                                           .join(" ")}
@@ -719,9 +982,14 @@ export function BrowseSessionsView({
                                             ? "Buổi chơi đã qua thời điểm bắt đầu (Đã khóa)"
                                             : isFull
                                               ? "Buổi chơi đã đủ người (Đã khóa)"
-                                              : `Xem chi tiết: ${getSessionTitle(s)} (${s.courtName})`
+                                              : `Xem chi tiết: ${getSessionTitle(s)} (${s.venueName} · ${s.courtName})`
                                         }
                                       >
+                                        {isHourly && (
+                                          <div className="timetable-hourly-tag">
+                                            <Zap size={11} /> Vé giờ lẻ 1h (Rao sân)
+                                          </div>
+                                        )}
                                         <div className="timetable-event-title">
                                           <span>
                                             {isBadminton
@@ -732,11 +1000,15 @@ export function BrowseSessionsView({
                                           {!isLocked &&
                                             s.isEligibleSuggestion === true && (
                                               <Sparkles
-                                                size={12}
+                                                size={13}
                                                 className="timetable-eligible-icon"
                                                 aria-label="Phù hợp trình độ"
                                               />
                                             )}
+                                        </div>
+                                        <div className="timetable-event-meta">
+                                          <Building2 size={12} />
+                                          <span>{s.venueName}</span>
                                         </div>
                                         <div className="timetable-event-meta">
                                           <MapPin size={12} />
@@ -778,13 +1050,23 @@ export function BrowseSessionsView({
         </section>
       ) : openListSessions.length === 0 ? (
         <StatePanel
-          title="Chưa tìm thấy buổi chơi đang mở"
-          description="Các buổi chơi đã đủ chỗ hoặc đã qua thời điểm bắt đầu đã được ẩn khỏi danh sách. Hãy chọn ngày khác hoặc chuyển sang Thời gian biểu để xem toàn bộ lịch tuần."
+          title={
+            selectedSessionType === "HourlyCourt"
+              ? "Hiện chưa có Vé giờ lẻ 1h (Rao sân) phù hợp bộ lọc"
+              : "Chưa tìm thấy buổi chơi đang mở"
+          }
+          description={
+            selectedSessionType === "HourlyCourt"
+              ? "Vé giờ lẻ 1 tiếng (vé rao sân trống) sẽ xuất hiện tại đây ngay khi cơ sở Sport Center mở bán các khung giờ trống trong ngày hoặc tuần."
+              : "Các buổi chơi đã đủ chỗ hoặc đã qua thời điểm bắt đầu đã được ẩn khỏi danh sách. Hãy chọn Cơ sở Sport Center / ngày khác hoặc chuyển sang Thời gian biểu để xem toàn bộ lịch tuần."
+          }
           action={
             <button
               className="button button-primary"
               onClick={() => {
                 setSelectedSport("ALL");
+                setSelectedVenue("ALL");
+                setSelectedSessionType("ALL");
                 setSelectedDate("");
                 setSelectedSlot("ALL");
                 setFilterEligibleOnly(false);
@@ -801,67 +1083,103 @@ export function BrowseSessionsView({
             const availableSlots =
               s.availableSlots ?? s.capacity - s.occupiedPlaces;
             const isFull = availableSlots <= 0;
+            const isHourly = isHourlyCourtSession(s);
+            const durationMins = getDurationMinutes(s);
             const bandLabel =
               s.band === "B1"
                 ? "Mới chơi / B1"
                 : s.band === "B2"
                   ? "Trung bình / B2"
-                  : s.band || "Tự do";
+                  : s.band === "B3"
+                    ? "Khá / B3"
+                    : s.band || (isHourly ? "Mọi trình độ (Rao sân 1h)" : "Tự do");
             return (
-              <article className="session-card" key={s.id}>
+              <article
+                className={`session-card ${isHourly ? "is-hourly-card" : ""}`}
+                key={s.id}
+              >
                 <div className="session-card-top">
-                  <span className="sport-label">
-                    <ActivityMark />
-                    {s.sportName === "Badminton" ? "Cầu lông" : "Pickleball"}
-                  </span>
+                  <div className="session-card-badges">
+                    <span className="sport-label">
+                      <ActivityMark />
+                      {s.sportName === "Badminton" ? "Cầu lông" : "Pickleball"}
+                    </span>
+                    {isHourly ? (
+                      <span className="session-hourly-badge">
+                        <Zap size={13} /> Vé giờ lẻ 1h · Rao sân
+                      </span>
+                    ) : (
+                      <span className="session-duration-badge">
+                        Lịch Social · 2h
+                      </span>
+                    )}
+                  </div>
                   <span
                     className={
                       isFull ? "session-status is-full" : "session-status"
                     }
                   >
-                    {isFull ? "Đã hết chỗ" : `Còn ${availableSlots} chỗ`}
+                    {isFull ? "Đã hết chỗ" : `Còn ${availableSlots}/${s.capacity} chỗ`}
                   </span>
                 </div>
                 <h3>{getSessionTitle(s)}</h3>
-                {isEligible === true && (
-                  <span className="session-match">
-                    <Sparkles size={13} /> Phù hợp trình độ của bạn
+                {isHourly ? (
+                  <span className="session-match is-hourly-note">
+                    <Zap size={14} /> Sân trống mở bán 1 tiếng · Đặt chỗ nhanh
                   </span>
+                ) : (
+                  isEligible === true && (
+                    <span className="session-match">
+                      <Sparkles size={14} /> Phù hợp trình độ của bạn
+                    </span>
+                  )
                 )}
                 <ul className="session-meta">
                   <li>
+                    <Building2 size={16} />
+                    <span>
+                      Cơ sở: <strong>{s.venueName}</strong>
+                    </span>
+                  </li>
+                  <li>
                     <MapPin size={16} />
                     <span>
-                      {s.courtName} · {s.venueName}
+                      Sân thi đấu: <strong>{s.courtName}</strong>
                     </span>
                   </li>
                   <li>
                     <CalendarDays size={16} />
-                    <span>{formatSessionDate(s.sessionDate)}</span>
+                    <span>Ngày: {formatSessionDate(s.sessionDate)}</span>
                   </li>
                   <li>
                     <Clock size={16} />
                     <span>
-                      {s.timeLabel || `${s.startTime} - ${s.endTime}`}
+                      {s.timeLabel || `${s.startTime} - ${s.endTime}`}{" "}
+                      <strong>
+                        ({isHourly ? "1 tiếng / 60p" : `${Math.round(durationMins / 60)} tiếng`})
+                      </strong>
                     </span>
                   </li>
                   <li>
                     <Users size={16} />
                     <span>
-                      Trình độ <strong>{bandLabel}</strong>
+                      Trình độ: <strong>{bandLabel}</strong>
                     </span>
                   </li>
                 </ul>
                 <div className="session-card-bottom">
                   <div className="session-price">
                     {formatPrice(s.priceVnd)}
-                    <span>/ người</span>
+                    <span>{isHourly ? "/ vé 1h" : "/ người"}</span>
                   </div>
                   <button
-                    className="button button-accent"
+                    className={`button ${
+                      isHourly ? "button-primary" : "button-accent"
+                    }`}
                     onClick={() => onSelectSession(s.id)}
                   >
-                    Xem buổi chơi <ArrowRight size={16} />
+                    {isHourly ? "Đặt vé giờ lẻ 1h" : "Xem buổi chơi"}{" "}
+                    <ArrowRight size={16} />
                   </button>
                 </div>
               </article>
@@ -869,6 +1187,7 @@ export function BrowseSessionsView({
           })}
         </div>
       )}
+      </>}
       <aside className="tickets-callout">
         <span className="callout-icon">
           <Ticket size={24} />

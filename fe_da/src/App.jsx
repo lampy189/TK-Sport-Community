@@ -42,7 +42,10 @@ function ApplicationApp() {
   return <main className="home-loading"><h1>Không tìm thấy trang</h1><a href="/">Về trang chủ</a></main>;
 }
 const HomePreview = lazy(() => import('./pages/home/HomePreview'));
+const HourlyDesign = lazy(() => import('./pages/hourly-design/HourlyDesign'));
 export default function App() {
+  const showHourlyDesign = import.meta.env.DEV && new URLSearchParams(window.location.search).get('design') === 'hourly';
+  if (showHourlyDesign) return <Suspense fallback={<p>Đang tải bản thiết kế…</p>}><HourlyDesign /></Suspense>;
   const showPreview = import.meta.env.DEV && new URLSearchParams(window.location.search).get('preview') === '1';
   return showPreview ? <Suspense fallback={<p>Đang tải bản mẫu…</p>}><HomePreview /></Suspense> : <ApplicationApp />;
 }

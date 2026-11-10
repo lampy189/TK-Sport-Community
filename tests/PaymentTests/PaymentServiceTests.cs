@@ -7,6 +7,28 @@ using Xunit;
 public class PaymentServiceTests
 {
     [Fact]
+    public async Task LateEntryPaymentFailsClosedUntilRepositoryRevalidatesSavedTicket()
+    {
+        var(service,repo,_)=Setup();var t=repo.Order.Tickets.First();t.TicketCode="LATE-test";
+        await Assert.ThrowsAsync<PaymentException>(()=>service.ProcessAsync(1,7));
+        t.LateEntryEligible=true;t.LateEntryEndsAt=Now.AddMinutes(20);
+        await service.ProcessAsync(1,7);
+        t.LateEntryEligible=false;
+        await service.HandleWebhookAsync("signed");
+        Assert.Equal("review_required",repo.Order.Status);
+        Assert.DoesNotContain(repo.Order.Tickets,x=>x.Status=="confirmed");
+    }
+    [Fact]
+    public async Task ExpiredLateTicketCannotBeCheckedInEvenWhenAlreadyScanned()
+    {
+        var(_,repo,_)=Setup();repo.Order.Status="paid";repo.SessionDate=DateOnly.FromDateTime(Now.UtcDateTime);
+        var t=repo.Order.Tickets.First();t.TicketCode="LATE-test";t.Status="checkedin";t.CheckedInBy=10;
+        t.LateEntryEligible=true;t.LateEntryEndsAt=Now;
+        var service=new TicketCheckInService(repo,new Clock());
+        var error=await Assert.ThrowsAsync<PaymentException>(()=>service.ExecuteAsync(t.TicketCode,10,false,true));
+        Assert.Equal(409,error.StatusCode);Assert.Empty(repo.Audits);
+    }
+    [Fact]
     public async Task SessionRegistrationPendingTicketsCanBePaid()
     {
         var (service, repo, _) = Setup();
