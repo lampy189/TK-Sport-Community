@@ -56,7 +56,9 @@ public sealed class TicketSupportService(Sep490Context db, TimeProvider clock)
   if (staff) db.Notifications.AddRange(TicketNotifications.Create("ticket_staff_reply", id, t.Order.PayerId, t.Player.UserId));
   else
   {
-   var recipients = await db.Users.Where(u => u.DeletedAt == null && u.Status.ToLower() == "active" && (u.Role.Code.ToLower() == "staff" || u.Role.Code.ToLower() == "manager")).Select(u => u.Id).ToListAsync();
+   // Player requests can read across centers; scope notification recipients explicitly.
+   var venueId = await db.Sessions.Where(s => s.Id == t.SessionId).Select(s => s.Court.VenueId).SingleAsync();
+   var recipients = await db.Users.Where(u => u.VenueId == venueId && u.DeletedAt == null && u.Status.ToLower() == "active" && (u.Role.Code.ToLower() == "staff" || u.Role.Code.ToLower() == "manager")).Select(u => u.Id).ToListAsync();
    foreach(var recipient in recipients) db.Notifications.Add(new Notification { UserId = recipient, Channel = "web", ReferenceType = "ticket_player_message", ReferenceId = id, Title = $"Vé #{id} có thông tin mới từ người chơi. Mở Sự cố để xem và phản hồi.", Status = "unread" });
   }
   await db.SaveChangesAsync(); return new { m.Id };

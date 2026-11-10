@@ -1089,6 +1089,8 @@ public static class Sep490ModelConfiguration
         {
             entity.ToTable("users");
 
+            entity.Property(e => e.VenueId).HasColumnName("venue_id");
+
             entity.HasIndex(e => e.Email, "UX_users_email").IsUnique();
 
             entity.HasIndex(e => e.GoogleSubject, "UX_users_google_subject")
