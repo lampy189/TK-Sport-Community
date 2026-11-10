@@ -15,6 +15,7 @@ using Xunit;
 
 namespace TKSC.Api.Tests;
 
+[Collection("SQL Server")]
 public sealed class SqlPlayerChatbotTests
 {
     private static readonly DateTimeOffset Now = new(2026, 11, 9, 18, 0, 0, TimeSpan.Zero);

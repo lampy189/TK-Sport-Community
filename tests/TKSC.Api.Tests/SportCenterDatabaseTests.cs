@@ -7,6 +7,7 @@ using TKSC.Infrastructure.DbContext;
 using Xunit;
 
 namespace TKSC.Api.Tests;
+[Collection("SQL Server")]
 public sealed class SportCenterDatabaseTests
 {
     [DatabaseFact]

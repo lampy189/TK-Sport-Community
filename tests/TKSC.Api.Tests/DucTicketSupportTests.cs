@@ -13,7 +13,7 @@ public sealed class DucTicketSupportTests
   var db=new Sep490Context(new DbContextOptionsBuilder<Sep490Context>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
   var player=new User{Id=1,FullName="Holder",Email="holder@example.test",Status="active",Role=new Role{Id=1,Code="Player",Name="Player"}};
   var payer=new User{Id=2,FullName="Payer",Email="payer@example.test",Status="active",Role=player.Role};
-  var staff=new User{Id=3,FullName="Staff",Email="staff@example.test",Status="active",Role=new Role{Id=2,Code="Staff",Name="Staff"}};
+  var staff=new User{Id=3,VenueId=1,FullName="Staff",Email="staff@example.test",Status="active",Role=new Role{Id=2,Code="Staff",Name="Staff"}};
   db.Users.AddRange(player,payer,staff);
   db.Tickets.Add(new Ticket{Id=41,Status="confirmed",Player=new Player{Id=1,User=player},Order=new SocialBookingOrder{Id=1,Payer=payer,OrderCode="SOCIAL-41",Status="paid"},Session=new Session{Id=22,Status="Open",Court=new Court{Id=1,Name="Court",Venue=new Venue{Id=1,Name="Venue"}},Sport=new Sport{Id=1,Name="Badminton",Code="BM"},TimeSlot=new TimeSlot{Id=1}}});
   await db.SaveChangesAsync();return db;
@@ -42,6 +42,22 @@ public sealed class DucTicketSupportTests
   Assert.Equal(1,message.SenderId);Assert.Equal(41,message.TicketId);Assert.False(message.IsStaff);
   Assert.Equal(TicketSupportRules.Report(category,"Sân không thể chơi"),message.Content);
   Assert.Contains(await db.Notifications.ToListAsync(),n=>n.UserId==3&&n.ReferenceType=="ticket_player_message");
+ }
+ [Theory]
+ [InlineData("Staff")] [InlineData("Manager")] [InlineData("manager")]
+ public async Task PlayerReportNotifiesOnlyActiveStaffOrManagerInTheTicketVenue(string role)
+ {
+  await using var db=await Database();
+  var reviewerRole=new Role{Id=20,Code=role,Name=role};
+  foreach(var (id,venue,status,deleted) in new (long,long?,string,bool)[]{
+   (10,1,"Active",false),(11,2,"Active",false),(12,null,"Active",false),
+   (13,1,"Inactive",false),(14,1,"Active",true)})
+   db.Users.Add(new User{Id=id,VenueId=venue,Email=$"reviewer-{id}@example.test",FullName=$"Reviewer {id}",
+    Status=status,DeletedAt=deleted?DateTimeOffset.UtcNow:null,Role=reviewerRole});
+  await db.SaveChangesAsync();
+  await new TicketSupportService(db,TimeProvider.System).Report(41,1,"court","The court is damaged and cannot be used.",null);
+  var recipients=await db.Notifications.Where(n=>n.ReferenceType=="ticket_player_message").Select(n=>n.UserId).OrderBy(id=>id).ToListAsync();
+  Assert.Equal(new long[]{3,10},recipients);
  }
  [Theory]
  [InlineData("unknown","Mô tả đầy đủ sự cố",1)]

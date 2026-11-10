@@ -7,6 +7,7 @@ using TKSC.Infrastructure.DbContext;
 using TKSC.Infrastructure.Repositories;
 using Xunit;
 namespace TKSC.Api.Tests;
+[Collection("SQL Server")]
 public sealed class LateEntryDatabaseReadTests
 {
     [DatabaseFact]
