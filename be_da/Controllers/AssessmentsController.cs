@@ -28,6 +28,10 @@ public sealed class AssessmentsController(ISkillAssessmentService service, IAnti
     public Task<IActionResult> Open(long sessionId, long playerId, CancellationToken ct) =>
         Execute(() => service.OpenAsync(sessionId, playerId, ActorId, ct), true);
 
+    [HttpGet("sessions/{sessionId:long}/players/{playerId:long}/context")]
+    public Task<IActionResult> PlayerContext(long sessionId, long playerId, CancellationToken ct) =>
+        Execute(() => service.PlayerContextAsync(sessionId, playerId, ActorId, ct));
+
     [HttpGet("assessments/{id:long}")]
     public Task<IActionResult> Read(long id, CancellationToken ct) =>
         Execute(() => service.ReadAsync(id, ActorId, ct));

@@ -12,7 +12,7 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
     public async Task<UserProfileDetails?> GetProfileAsync(long userId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         await using var userCmd = new SqlCommand("""
             SELECT u.id, u.email, u.full_name, r.code, u.status, p.id AS player_id, p.date_of_birth, p.gender, p.avatar_url
@@ -80,7 +80,7 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
         CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         await using var cmd = new SqlCommand("""
             SELECT p.id, u.id AS user_id, u.full_name, p.avatar_url, p.gender, p.date_of_birth
@@ -212,7 +212,7 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
     public async Task<IReadOnlyList<SportProfileItem>?> GetSportProfilesAsync(long userId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         await using var checkCmd = new SqlCommand("SELECT COUNT(*) FROM dbo.users WHERE id=@userId AND deleted_at IS NULL;", connection);
         checkCmd.Parameters.Add("@userId", SqlDbType.BigInt).Value = userId;
@@ -224,7 +224,7 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
     public async Task<UserProfileDetails?> UpdateProfileAsync(long userId, UpdateProfileRequest request, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
 
         try
@@ -327,7 +327,7 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
     public async Task<SportProfileResult> UpdateSportProfileAsync(long userId, string sportCode, UpdateSportProfileRequest request, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
 
         try

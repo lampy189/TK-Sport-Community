@@ -24,6 +24,9 @@ export default function FloatingChatBubble({ onOpenCommunity }) {
   const [publicModalPlayerId, setPublicModalPlayerId] = useState(null);
   const [showPickSessionModal, setShowPickSessionModal] = useState(false);
   const messagesEndRef = useRef(null);
+  useEffect(() => {
+    if (isOpen) window.dispatchEvent(new Event('tksc:close-assistant'));
+  }, [isOpen]);
 
   const loadFriends = useCallback(async () => {
     try {

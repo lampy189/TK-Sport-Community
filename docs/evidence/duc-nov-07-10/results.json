@@ -1,0 +1,2304 @@
+{
+  "backend": [
+    {
+      "name": "duc-api",
+      "counters": {
+        "total": "496",
+        "executed": "493",
+        "passed": "493",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0",
+        "skipped": "3"
+      },
+      "cases": [
+        {
+          "name": "TKSC.Api.Tests.StockTests.CreateProduct_RejectsInvalidFields(sku: \"SKU-1\", name: \"Tên\", category: \"Unknown\", price: 1000)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC040 ResolveUnit [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC018 ResolveLine [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.WrongRolesCannotSubmitReviewOrDecide(role: \"SystemAdmin\", path: \"appeals/1/decision\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC020 ValidateUnitNameInput [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC008 IsValidBarcode [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.PortalChecksRoleBeforeIssuingCookie(portal: \"staff\", role: \"Referee\", allowed: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportRejectsMissingShortOrOversizedDescription(length: 9)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC003 NormalizeSku [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.OccupiesHonorsExpiryAndRetiredTickets(status: \"confirmed\", minutes: 0, expected: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.ReasonRequiresMeaningfulText(reason: \"\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.BandsHaveNoOverlappingBoundaries(score: 40, band: \"B3\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucAftercareAuthorizationTests.OnlyPlayersCanSubmitIncidentReports(role: \"Owner\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.CorrectedScoreRejectsMissingOrOutOfRange(score: 101)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportAcceptsDescriptionBoundaries(length: 100)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC004 POST /api/stock/products [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC035 POST /api/stock/referee-supplies/{id}/products/{pid}/usage [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.CorrectedScoreRejectsMissingOrOutOfRange(score: null)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.MissingOrForgedOAuthStateIsRejectedBeforeStorage",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.TicketAftercareReadTests.ApprovedTablesAndReadModelsQueryRealSqlWithoutWrites",
+          "outcome": "NotExecuted"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.SearchMembers_WithoutAuth_ReturnsUnauthorized",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.GetSessionById_ReturnsCourtTimeCapacityAndPublicParticipants",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucAftercareAuthorizationTests.OtherRolesCannotReadStaffInbox(role: \"Referee\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.BandsHaveNoOverlappingBoundaries(score: 80, band: \"B5\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.SendMessage_WhenNotFriends_ReturnsForbidden",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.RefereeMutationRequiresCsrfEvenWithRequestHeader",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportRejectsMissingShortOrOversizedDescription(length: 0)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.InboxGroupsByTicketAndUsesLastPlayerAsReporter(replies: 0)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucAftercareAuthorizationTests.PlayerReportRequiresCsrfRegardlessOfCategory(category: \"payment\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ReportPersistsActorCategoryAndNotifiesStaff(category: \"court\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.UnverifiedEmailNeverCreatesAccountOrCookie",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC005 ValidateCreate [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC016 IsValidCode [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.CheckTargetRejectsWrongSportSameSessionClosedOrFull(status: \"open\", sport: 1, id: 2, occupied: 7, rejects: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.CorrectedScoreAcceptsInclusiveRange(score: 50)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ReportRejectsInvalidInputOrWrongActorWithoutWrites(category: \"court\", content: \"Mô tả đầy đủ sự cố\", actor: 99)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC034 StockProduct.IsLowStock [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.DevLoginAlsoChecksPortal(portal: \"admin\", role: \"SystemAdmin\", allowed: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.WrongRolesCannotSubmitReviewOrDecide(role: \"Referee\", path: \"sessions/1/exceptions\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC010 StockLines [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.DevLoginAlsoChecksPortal(portal: \"admin\", role: \"Staff\", allowed: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC023 ValidateMovement [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.CorrectedScoreAcceptsInclusiveRange(score: 100)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionSupplyTests.Issue_RejectsMissingFields(productId: 1, quantity: 0, recipientId: 9)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC045 FormatBreakdown [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.Unobserved_IsNotZero_AndCannotProduceAFullResult",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC029 ValidateUnits [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.SplitConservesFundingForCheaperDearerAndZeroPrice(original: 100000, target: 120000, transferred: 100000, refunded: 0)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.PortalChecksRoleBeforeIssuingCookie(portal: \"player\", role: \"SystemAdmin\", allowed: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"currency\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.FutureRespectsVietnamTimeAndSessionState(status: \"Open\", minutesAfterStart: -1, rejected: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.SendKeepsActorAndStaffFlag(actor: 2, staff: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.ReasonRequiresMeaningfulText(reason: null)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC009 ValidateReturn [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC031 MergeLines [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.OtherRolesCannotOpenOrPublishAssessments(role: \"Player\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.ReasonTrimsAndAcceptsBoundaryLengths(length: 100)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SportCenterTests.UnassignedPersonnelCannotReadBusinessData(role: \"Referee\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.AuthorizedMutationsStillRequireCsrf(role: \"Player\", path: \"assessments/1/appeals\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC033 StockProduct.IsLowStock [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.Register_NonPlayerRole_Returns403",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ListHidesOtherTicketsAndMissingTickets(ticket: 999, actor: 99)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.ProfileTests.UpdateSportProfile_WithValidScore_UpdatesTargetSportSeparately",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.BrowseSessions_AuthenticatedPlayer_SuggestsEligibilityCorrectly",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.VenueDecisionRejectsCompletedOrReopeningCancelledSession(current: \"completed\", cancel: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportPreservesCategoryAndTrimsDescription(category: \"other\", label: \"Sự cố khác\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.DevLoginAlsoChecksPortal(portal: \"staff\", role: \"Owner\", allowed: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.SendFriendRequest_ValidTarget_CreatesRequestAndDispatchesNotification",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.AuthorizedMutationsStillRequireCsrf(role: \"Referee\", path: \"appeals/1/review\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.Register_SessionFull_Returns400_SESSION_FULL",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.PortalChecksRoleBeforeIssuingCookie(portal: \"staff\", role: \"SystemAdmin\", allowed: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC042 FormatBreakdown [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"invoiced\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC011 ValidateDetails [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.StaffCannotMutateWithoutCsrf(action: \"payment-instructions\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC012 ValidateDetails [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.FirstGoogleLoginCreatesOnePlayerAndSubsequentLoginReusesIt",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC030 ValidateSearch [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC003 ValidateDeliver [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC009 ValidateCreate [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.InvalidMarksAreRejected(mark: 5)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC027 ValidateMovement [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionSupplyTests.Issue_PassesOperatorAndMapsStoreConflicts",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.WrongRolesCannotSubmitReviewOrDecide(role: \"Owner\", path: \"appeals/1/decision\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucAftercareAuthorizationTests.PlayerReportRequiresCsrfRegardlessOfCategory(category: \"court\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC009 StockLines [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC001 NormalizeSourceRef [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.LimitCapsSocialCourtsAtEight(configured: 16, expected: 8)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.StockTests.CreateProduct_RejectsInvalidFields(sku: \"SKU-1\", name: \" \", category: \"Equipment\", price: 1000)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.PortalChecksRoleBeforeIssuingCookie(portal: \"staff\", role: \"Staff\", allowed: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC012 ValidateBatch [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.FutureRespectsVietnamTimeAndSessionState(status: \"cancelled\", minutesAfterStart: -1, rejected: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC002 NormalizeSku [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.LoginAndLogoutRequireCsrfAndAccountSwitchRequiresLogout",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC020 SupplyAllocation.Outstanding [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC002 POST /api/stock/products [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.OtherRolesCannotReadPrivateRequests(role: \"SystemAdmin\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC002 NormalizeUnitName [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.WrongRolesCannotSubmitReviewOrDecide(role: \"Manager\", path: \"assessments/1/appeals\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.AnonymousCannotReadRubricsRosterEvidenceOrResults(path: \"/api/v1/skill/assessments/1\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionSupplyTests.Referee_SeesOnlyAssignedSessions_AndReportsUseWithoutClosing",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.Report1Example_Produces55AndB3",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC001 ValidateDeliver [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC024 ResolveLine [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DatabaseReadTests.ApprovedGoogleColumnAndAccountQueryWorkWithoutWritingData",
+          "outcome": "NotExecuted"
+        },
+        {
+          "name": "TKSC.Api.Tests.ProfileTests.UpdateProfile_WithValidDataAndBio_UpdatesProfileAndReturnsOk",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC019 ValidateDay [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC022 ResolveLine [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC027 GET /api/v1/commerce/my-goods-orders [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SportCenterTests.ReportRangeIsBounded",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ImageAllowsOnlyPermittedConversationParticipants(actor: 2, staff: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC024 SupplyAllocation.Used [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.PortalChecksRoleBeforeIssuingCookie(portal: \"staff\", role: \"Manager\", allowed: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.ExactVerifiedGoodsPaymentIsAccepted",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.ReasonRejectsAboveLimit",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC030 ValidateUnits [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"cancelled\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.SelfSurveyHistoryDoesNotBlockFirstOfficialPublicationOrAppearAsOfficialResult",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.AnonymousCannotReadRubricsRosterEvidenceOrResults(path: \"/api/v1/skill/sports/1/rubric\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC003 ValidateIssue [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.RestrictedPortalNeverRegistersNewAccount(portal: \"admin\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC026 ValidateMovement [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC028 ValidateSearch [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC047 ValidateUnitChange [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.StockTests.CreateProduct_RejectsInvalidFields(sku: \"SKU-1\", name: \"Tên\", category: \"Equipment\", price: -1)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SportCenterTests.UnassignedPersonnelCannotReadBusinessData(role: \"Staff\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.StaffCannotMutateWithoutCsrf(action: \"confirm-cash\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillProfileTests.SubmitSkillSurvey_ValidAnswers_CalculatesScoreAndBandAndCreatesRatingHistory",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC021 ValidateDetails [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC012 POST /api/stock/products/{id}/movements [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC015 ResolveLine [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.BandsHaveNoOverlappingBoundaries(score: 19, band: \"B1\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC011 ValidateBatch [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.FutureRespectsVietnamTimeAndSessionState(status: \"published\", minutesAfterStart: -1, rejected: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.SwaggerLoginShowsErrorsAndReturnsNavigationOnlyAfterValidCsrf",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.BadCartTotalsAndIntegerOverflowAreRejected(quantity: 32767, price: 2147483647, subtotal: 1, total: 1)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.StockTests.CreateProduct_PostsOpeningBalanceForStaff",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC021 SupplyAllocation.Outstanding [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucAftercareAuthorizationTests.OtherRolesCannotReadCentralVenueIncidents(role: \"Referee\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC021 ResolveLine [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ImageRejectsOtherUserOrMissingImage(ticket: 41, message: 1, actor: 99)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC014 ValidateUse [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.AuthorizedMutationsStillRequireCsrf(role: \"Manager\", path: \"appeals/1/decision\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.VenueDecisionHandlesSuspensionCancellationAndRetry(current: \"Open\", cancel: False, expected: \"suspended\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC025 POST /api/stock/referee-supplies/{id}/products/{pid}/usage [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.BadCartTotalsAndIntegerOverflowAreRejected(quantity: 0, price: 25000, subtotal: 0, total: 0)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionSupplyTests.Issue_RejectsMissingFields(productId: 0, quantity: 1, recipientId: 9)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.FutureRespectsVietnamTimeAndSessionState(status: \"Open\", minutesAfterStart: 1, rejected: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC010 POST /api/stock/products/{id}/movements [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC013 ValidateBatch [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.Register_SkillIneligible_NoProfile_Returns400_SKILL_INELIGIBLE",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC030 MergeLines [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.AuthorizedMutationsStillRequireCsrf(role: \"Referee\", path: \"exceptions/1/decision\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC005 NormalizeBarcode [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.SendRejectsEmptyTextWithoutAttachment(text: \"\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.OtherRolesCannotReadPrivateRequests(role: \"Staff\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC018 POST /api/stock/receipts/batch [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.DisablingAccountRevokesExistingSessionOnNextRequest",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.FutureRespectsVietnamTimeAndSessionState(status: \"suspended\", minutesAfterStart: -1, rejected: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportAcceptsDescriptionBoundaries(length: 10)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC018 ValidateDetails [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.ProfileTests.GetSportProfiles_WhenAuthenticated_ReturnsDistinctSports",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"expired\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"wrongLink\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC003 NormalizeSourceRef [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.SplitKeepsOriginalPaymentSourcesInOrder",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC036 ToBaseQuantity [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportPreservesCategoryAndTrimsDescription(category: \"payment\", label: \"Thanh toán lỗi\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.OccupiesHonorsExpiryAndRetiredTickets(status: \"checkedin\", minutes: 0, expected: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.DisruptedRecognizesOnlyVenueInterruptions(status: \"completed\", expected: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucAftercareAuthorizationTests.PlayerReportRequiresCsrfRegardlessOfCategory(category: \"refund\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.OtherRolesCannotOpenOrPublishAssessments(role: \"Staff\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.BrowseSessions_Anonymous_ReturnsOpenSessions_WithNullEligibility",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC048 ValidateUnitChange [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"gatewayPending\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.PortalChecksRoleBeforeIssuingCookie(portal: \"admin\", role: \"Player\", allowed: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC013 ValidateUse [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.ProfileTests.GetPublicPlayerProfile_WhenPlayerNotFound_ReturnsNotFound",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.WrongRolesCannotSubmitReviewOrDecide(role: \"Referee\", path: \"appeals/1/decision\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.DisabledOrDeletedAccountsAreRejectedAtLogin(status: \"Active\", deleted: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC017 ValidateDetails [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.OtherRolesCannotOpenOrPublishAssessments(role: \"Manager\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC031 POST /api/stock/session-supplies/{id}/issue [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC006 POST /api/stock/products [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.Register_SkillEligible_WithApprovedException_OverridesBandMismatch",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.Register_SkillIneligible_PendingSurvey_Returns400_SKILL_INELIGIBLE",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SportAssessmentScoringTests.WrongSportVersionWeightsAndDuplicateDimensionsAreRejected",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.AnonymousCannotReadRubricsRosterEvidenceOrResults(path: \"/api/v1/skill/sessions/1/attendees\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC012 ValidateUse [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SportCenterDatabaseTests.EfConfirmationPostsReceiptWithinTheSameRollbackTransaction",
+          "outcome": "NotExecuted"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.RegisterFcmToken_WithValidToken_ReturnsNoContent",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC001 POST /api/stock/products [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC016 POST /api/stock/receipts/batch [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportRejectsMissingShortOrOversizedDescription(length: 1801)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC010 ValidateReturn [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.DevelopmentLoginIsUnavailableInProduction",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillProfileTests.GetMySkillProfiles_Unauthenticated_Returns401",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.CorrectedScoreRejectsMissingOrOutOfRange(score: -1)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SportCenterTests.UnassignedPersonnelCannotReadBusinessData(role: \"Manager\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.GetConversation_WhenNotFriends_ReturnsForbidden",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC002 ValidateIssue [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.CheckTargetRejectsAtExactVietnamStartTime",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC027 ResolveLine [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.WrongRolesCannotSubmitReviewOrDecide(role: \"Player\", path: \"appeals/1/decision\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC009 IsValidBarcode [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.ReasonTrimsAndAcceptsBoundaryLengths(length: 1)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.WrongRolesCannotSubmitReviewOrDecide(role: \"Player\", path: \"exceptions/1/decision\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.CheckTargetRejectsWrongSportSameSessionClosedOrFull(status: \"open\", sport: 1, id: 2, occupied: 8, rejects: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.DevelopmentLoginWithoutGoogleSubjectPersistsAndRechecksAccount(environment: \"Development\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC035 MatchesPosted [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC049 ValidateUnitChange [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC026 GET /api/v1/commerce/my-goods-orders [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC003 POST /api/stock/products [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.BrowseSessions_FilterBySportAndDate_ReturnsMatchingSessions",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.MarkMessagesAsRead_WhenCalled_ReturnsNoContent",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.RespondFriendRequest_WhenDecline_UpdatesStatus",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC007 PUT /api/stock/products/{id} [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.DisruptedRecognizesOnlyVenueInterruptions(status: \"CANCELLED\", expected: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.CorrectedScoreAcceptsInclusiveRange(score: 0)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.StockTests.Products_RequireStaffOrManager",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC015 IsValidCode [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.OccupiesHonorsExpiryAndRetiredTickets(status: \"exchanged\", minutes: 1, expected: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC016 ValidateDay [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.Register_Unauthenticated_Returns401",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.EvidenceRejectsMissingShortOrOversizedSettlement(length: 9)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ListAllowsHolderPayerOrStaffBeforeAnyDisruption(actor: 1, staff: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"failed\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC031 StockProduct.IsLowStock [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.CheckTargetRejectsWrongSportSameSessionClosedOrFull(status: \"suspended\", sport: 1, id: 2, occupied: 0, rejects: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"overpaid\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.DisruptedRecognizesOnlyVenueInterruptions(status: \"Open\", expected: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC020 ResolveLine [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC016 ValidateDetails [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ListAllowsHolderPayerOrStaffBeforeAnyDisruption(actor: 2, staff: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.SendRejectsEmptyTextWithoutAttachment(text: null)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.GetConversation_WhenFriends_ReturnsMessages",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucAftercareAuthorizationTests.OtherRolesCannotReadCentralVenueIncidents(role: \"Owner\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC021 GET /api/stock/session-supplies [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC005 ValidateBatch [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.RestrictedPortalNeverRegistersNewAccount(portal: \"staff\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.OccupiesHonorsExpiryAndRetiredTickets(status: \"reserved\", minutes: 0, expected: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC020 ValidateDetails [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC032 ValidateUnits [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.NotifyChatMessage_WhenNotFriends_ReturnsForbidden",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC037 POST /api/v1/commerce/my-goods-orders/{id}/receive [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.OtherRolesCannotOpenOrPublishAssessments(role: \"SystemAdmin\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC002 NormalizeSourceRef [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportPreservesCategoryAndTrimsDescription(category: \"court\", label: \"Sân hỏng\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC013 IsValidCode [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ImageAllowsOnlyPermittedConversationParticipants(actor: 1, staff: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC028 POST /api/v1/commerce/my-goods-orders/{id}/receive [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC006 ValidateBatch [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC032 GET /api/stock/session-supplies [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ImageRejectsOtherUserOrMissingImage(ticket: 999, message: 1, actor: 1)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC008 ValidateCreate [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.BandsHaveNoOverlappingBoundaries(score: 59, band: \"B3\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC001 NormalizeSku [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC004 ValidateDeliver [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.ProfileTests.UpdateSportProfile_WhenConfirmedRatingExists_RejectsOverwrite",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.EvidenceRejectsMissingShortOrOversizedSettlement(length: 0)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC033 ToBaseQuantity [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SwaggerTests.DevelopmentSwaggerIncludesTicketAftercare",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.IncompleteCriterionSetIsRejected",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.SendKeepsActorAndStaffFlag(actor: 1, staff: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC019 POST /api/stock/receipts/batch [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC007 ValidateReceive [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SportCenterTests.SelectedCenterCannotBeForgedByRequestHeader",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.BadCartTotalsAndIntegerOverflowAreRejected(quantity: -1, price: 25000, subtotal: -25000, total: -25000)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC018 ValidateUnitNameInput [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"wrongGoods\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC029 MergeLines [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportPreservesCategoryAndTrimsDescription(category: \"refund\", label: \"Chậm hoàn / thiếu quỹ hoàn\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC008 PUT /api/stock/products/{id} [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.BandsHaveNoOverlappingBoundaries(score: 60, band: \"B4\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.InboxGroupsByTicketAndUsesLastPlayerAsReporter(replies: 1)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.BandsHaveNoOverlappingBoundaries(score: 39, band: \"B2\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC005 POST /api/stock/products [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.OtherRolesCannotOpenOrPublishAssessments(role: \"Owner\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.AuthorizedMutationsStillRequireCsrf(role: \"Player\", path: \"sessions/1/exceptions\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC043 FormatBreakdown [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.NotificationEndpointsRequireAuthentication",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.ManualSwaggerFormRequiresTheTokenFromTheSameBrowser",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.VenueDecisionHandlesSuspensionCancellationAndRetry(current: \"CANCELLED\", cancel: True, expected: \"cancelled\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC001 ValidateIssue [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionSupplyTests.GoodsHandover_RequiresStaff",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC011 POST /api/stock/products/{id}/movements [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ReportPersistsActorCategoryAndNotifiesStaff(category: \"flood\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.PortalChecksRoleBeforeIssuingCookie(portal: \"admin\", role: \"SystemAdmin\", allowed: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC027 ValidateUnits [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ReportRejectsInvalidInputOrWrongActorWithoutWrites(category: \"court\", content: \"short\", actor: 1)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC035 ToBaseQuantity [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC025 ValidateUnits [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.LimitCapsSocialCourtsAtEight(configured: 4, expected: 4)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC010 ValidateCreate [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ListHidesOtherTicketsAndMissingTickets(ticket: 999, actor: 1)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC006 ValidateIssue [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC034 MatchesPosted [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SportAssessmentScoringTests.ClubBadmintonAndLegacyPilotAreSupportedSeparately",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.BadCartTotalsAndIntegerOverflowAreRejected(quantity: 2, price: 25000, subtotal: 50000, total: 50001)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.GetFriendSuggestions_WhenAuthenticated_ReturnsSharedSlotPlayers",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.SplitConservesFundingForCheaperDearerAndZeroPrice(original: 100000, target: 0, transferred: 0, refunded: 100000)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.SendFriendRequest_WithoutCsrf_ReturnsBadRequest",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.StockTests.Movement_RejectsIssueAboveOnHand_AndPostsReceipt",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.SwaggerHeaderDoesNotChangeProductionRedirect",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.VenueDecisionHandlesSuspensionCancellationAndRetry(current: \"suspended\", cancel: True, expected: \"cancelled\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC012 IsValidBarcode [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.BandsHaveNoOverlappingBoundaries(score: 100, band: \"B5\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC036 GET /api/v1/commerce/my-goods-orders [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillProfileTests.SubmitSkillSurvey_WhenProfileAlreadyRefereeRated_Returns409Conflict",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ReportPersistsActorCategoryAndNotifiesStaff(category: \"payment\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.SplitConservesFundingForCheaperDearerAndZeroPrice(original: 0, target: 100000, transferred: 0, refunded: 0)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.WrongRolesCannotSubmitReviewOrDecide(role: \"SystemAdmin\", path: \"exceptions/1/decision\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC029 ValidateSearch [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC014 ValidateBatch [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.ProfileTests.UpdateSportProfile_WithUnknownSport_ReturnsNotFound",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC001 NormalizeUnitName [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.ExistingRoleIsPreservedAndRoleChangesAreReadFromDatabase",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC025 ValidateMovement [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC026 ValidateUnits [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportRejectsUnknownCategory(category: \"\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.EvidenceTrimsAndAcceptsValidBoundaries(length: 10)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.VenueDecisionHandlesSuspensionCancellationAndRetry(current: \"suspended\", cancel: False, expected: \"suspended\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC024 ValidateUnits [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.SendFriendRequest_ToSelf_ReturnsBadRequest",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.StockTests.UnsafeRequests_RequireCsrf",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.BadmintonSchemeCannotLeakIntoPickleballOrAnotherVersion",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.VenueDecisionHandlesSuspensionCancellationAndRetry(current: \"Open\", cancel: True, expected: \"cancelled\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC014 IsValidCode [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.ProfileTests.GetProfile_WithoutAuthentication_ReturnsUnauthorized",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.VenueDecisionRejectsCompletedOrReopeningCancelledSession(current: \"cancelled\", cancel: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"wrongOrder\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.WrongRolesCannotSubmitReviewOrDecide(role: \"Manager\", path: \"appeals/1/review\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucAftercareAuthorizationTests.OnlyPlayersCanSubmitIncidentReports(role: \"Staff\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC007 ValidateIssue [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC028 ValidateUnits [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC037 ToBaseQuantity [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC016 ResolveLine [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC006 ValidateCreate [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC017 ValidateUnitNameInput [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.OtherRolesCannotReadGoodsOrConfirmMoney(role: \"Referee\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC019 ValidateDetails [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.OtherRolesCannotReadPrivateRequests(role: \"Owner\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"social\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC025 SupplyAllocation.Used [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.InboxGroupsByTicketAndUsesLastPlayerAsReporter(replies: 3)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.Register_Success_CreatesPendingOrderAndTicket",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.WrongRolesCannotSubmitReviewOrDecide(role: \"Staff\", path: \"appeals/1/decision\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC009 PUT /api/stock/products/{id} [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC005 ValidateIssue [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionSupplyTests.Supplies_AreHiddenFromPlayers_AndOnlyStaffWrites",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC022 ValidateMovement [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC004 ValidateCreate [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC003 NormalizeUnitName [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.SendKeepsActorAndStaffFlag(actor: 3, staff: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC019 ResolveLine [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC046 ValidateUnitChange [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.OtherRolesCannotReadGoodsOrConfirmMoney(role: \"Player\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.GetTimeSlots_Anonymous_ReturnsConfiguredVenueTimeSlotsOrderedByStartTime",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ReportRejectsInvalidInputOrWrongActorWithoutWrites(category: \"unknown\", content: \"Mô tả đầy đủ sự cố\", actor: 1)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.PortalChecksRoleBeforeIssuingCookie(portal: \"staff\", role: \"Player\", allowed: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.MissingGoogleConfigurationReturnsSetupErrorWithoutDatabaseWrite",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC018 ValidateDay [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC021 ValidateUnits [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.OtherRolesCannotReadGoodsOrConfirmMoney(role: \"Manager\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC017 POST /api/stock/receipts/batch [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportPreservesCategoryAndTrimsDescription(category: \"flood\", label: \"Sân ngập\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC005 ValidateReceive [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.DevLoginAlsoChecksPortal(portal: \"staff\", role: \"SystemAdmin\", allowed: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.ProfileTests.GetProfile_WhenAuthenticated_ReturnsProfileDetails",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.OccupiesHonorsExpiryAndRetiredTickets(status: \"pending\", minutes: -1, expected: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC033 MatchesPosted [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.OtherRolesCannotReadGoodsOrConfirmMoney(role: \"Owner\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC017 ValidateDay [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.CheckTargetRejectsWrongSportSameSessionClosedOrFull(status: \"open\", sport: 2, id: 2, occupied: 0, rejects: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC034 POST /api/stock/session-supplies/{id}/products/{pid}/reconcile [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.StaffCannotMutateWithoutCsrf(action: \"invoice\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC031 ValidateUnits [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportRejectsUnknownCategory(category: null)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC036 MatchesPosted [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.SendFriendRequest_WhenAlreadyPending_ReturnsConflict",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC024 POST /api/stock/referee-supplies/{id}/products/{pid}/usage [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.SendMessage_WhenFriends_ReturnsCreatedAndDispatchesPush",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC023 SupplyAllocation.Used [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.ProfileTests.UpdateProfile_WithoutCsrf_ReturnsBadRequest",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC009 ValidateBatch [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.ProfileTests.GetPublicPlayerProfile_WhenAuthenticated_ReturnsBothSportsAndFriendshipStatus",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.AnonymousCannotReadRubricsRosterEvidenceOrResults(path: \"/api/v1/skill/sessions/1/players/2/context\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.ReasonRequiresMeaningfulText(reason: \"   \")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.LimitCapsSocialCourtsAtEight(configured: 8, expected: 8)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC011 IsValidBarcode [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC022 GET /api/stock/session-supplies [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.FutureRespectsVietnamTimeAndSessionState(status: \"Open\", minutesAfterStart: 0, rejected: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.StockTests.CreateProduct_RejectsInvalidFields(sku: \"A\", name: \"Tên\", category: \"Equipment\", price: 1000)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC025 ResolveLine [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC022 ValidateUnits [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.GetSessionById_NotFound_Returns404",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.ProfileTests.UpdateProfile_WithInvalidAvatarUrl_ReturnsBadRequest",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC030 POST /api/stock/session-supplies/{id}/issue [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportRejectsUnknownCategory(category: \"unknown\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"underpaid\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC013 ValidateDetails [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.RespondFriendRequest_WhenAccept_UpdatesStatusToAccepted",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.CheckTargetRejectsWrongSportSameSessionClosedOrFull(status: \"published\", sport: 1, id: 2, occupied: 0, rejects: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.OccupiesHonorsExpiryAndRetiredTickets(status: \"pending\", minutes: 1, expected: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC028 ResolveLine [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC008 ValidateReturn [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.EvidenceTrimsAndAcceptsValidBoundaries(length: 100)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC015 ValidateDetails [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"changedTotal\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.Register_SkillIneligible_BandMismatch_Returns400_SKILL_INELIGIBLE",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC004 ValidateBatch [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC026 ResolveLine [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC015 GET /api/stock/lookup [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC013 GET /api/stock/lookup [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC017 ResolveLine [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC007 ValidateCreate [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.VenueDecisionRejectsCompletedOrReopeningCancelledSession(current: \"completed\", cancel: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC007 ValidateBatch [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC020 POST /api/stock/session-supplies/{id}/issue [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.SearchMembers_WhenAuthenticated_ReturnsMembers",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.DevelopmentLoginWithoutGoogleSubjectPersistsAndRechecksAccount(environment: \"Testing\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SportCenterTests.AccountPrincipalCarriesCurrentAssignment",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC014 GET /api/stock/lookup [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.BandsHaveNoOverlappingBoundaries(score: 20, band: \"B2\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC002 ValidateDeliver [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionSupplyTests.Reconcile_ComputesUsedFromReturned_AndRequiresCsrf",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC038 ToBaseQuantity [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.ProfileTests.UpdateProfile_WithFutureBirthDate_ReturnsBadRequest",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC033 POST /api/stock/session-supplies/{id}/products/{pid}/reconcile [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ImageAllowsOnlyPermittedConversationParticipants(actor: 3, staff: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"changedLines\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ListAllowsHolderPayerOrStaffBeforeAnyDisruption(actor: 3, staff: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC014 ValidateDetails [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.WrongRolesCannotSubmitReviewOrDecide(role: \"Staff\", path: \"exceptions/1/decision\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.PortalChecksRoleBeforeIssuingCookie(portal: \"staff\", role: \"Owner\", allowed: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.BandsHaveNoOverlappingBoundaries(score: 0, band: \"B1\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.EvidenceRejectsMissingShortOrOversizedSettlement(length: 1001)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC019 ValidateUnitNameInput [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ImageRejectsOtherUserOrMissingImage(ticket: 41, message: 999, actor: 1)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.SplitConservesFundingForCheaperDearerAndZeroPrice(original: 100000, target: 80000, transferred: 80000, refunded: 20000)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.InvalidMarksAreRejected(mark: -1)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC044 FormatBreakdown [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SportAssessmentScoringTests.ApprovedPickleballUsesInternalScale",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC041 ResolveUnit [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.NotifyChatMessage_WhenFriends_DispatchesFcmNotification",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionSupplyTests.Issue_RejectsMissingFields(productId: 1, quantity: 1, recipientId: 0)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC034 ToBaseQuantity [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.CommunityTests.RemoveFriend_WhenFriends_RemovesFriendship",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.PortalChecksRoleBeforeIssuingCookie(portal: \"admin\", role: \"Owner\", allowed: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.ReportAcceptsDescriptionBoundaries(length: 1800)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucAftercareAuthorizationTests.OtherRolesCannotReadStaffInbox(role: \"Player\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucAftercareAuthorizationTests.OtherRolesCannotReadStaffInbox(role: \"Owner\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.CheckTargetRejectsWrongSportSameSessionClosedOrFull(status: \"open\", sport: 1, id: 1, occupied: 0, rejects: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC023 ResolveLine [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC010 IsValidBarcode [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.MatchingEmailDoesNotLinkOrTakeOverExistingAccount",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.ReviewUsesBothObservationsWithExplicitHalfUpRounding",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.AnonymousCannotReadRubricsRosterEvidenceOrResults(path: \"/api/v1/skill/my-results?sportId=1\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillReviewAuthorizationTests.WrongRolesCannotSubmitReviewOrDecide(role: \"Owner\", path: \"exceptions/1/decision\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.DisabledOrDeletedAccountsAreRejectedAtLogin(status: \"Inactive\", deleted: False)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC022 SupplyAllocation.Outstanding [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillAssessmentTests.BandsHaveNoOverlappingBoundaries(score: 79, band: \"B4\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.SendRejectsEmptyTextWithoutAttachment(text: \"   \")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC010 ValidateBatch [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucSkillReviewRuleTests.ReasonTrimsAndAcceptsBoundaryLengths(length: 2000)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SessionTests.BrowseSessions_FilterByDateRange_ReturnsSessionsWithinWeek",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.OtherRolesCannotReadGoodsOrConfirmMoney(role: \"SystemAdmin\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC004 ValidateIssue [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC039 ResolveUnit [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.DisruptedRecognizesOnlyVenueInterruptions(status: \"suspended\", expected: True)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucAftercareAuthorizationTests.OnlyPlayersCanSubmitIncidentReports(role: \"Referee\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC023 POST /api/stock/session-supplies/{id}/products/{pid}/reconcile [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucAftercareAuthorizationTests.OnlyPlayersCanSubmitIncidentReports(role: \"Manager\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoogleLoginTests.CallbackCannotBeReplayedAndReturnUrlCannotEscapeApi",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucAftercareAuthorizationTests.OtherRolesCannotReadCentralVenueIncidents(role: \"Player\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.StaffCannotMutateWithoutCsrf(action: \"confirm-transfer\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC006 NormalizeBarcode [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC008 ValidateBatch [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC008 StockLines [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC015 ValidateUse [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucTicketSupportTests.ListHidesOtherTicketsAndMissingTickets(ticket: 41, actor: 99)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SkillProfileTests.GetRubrics_Anonymous_ReturnsActiveRubricsWithFiveDimensionsPerSport",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC007 IsValidBarcode [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC004 NormalizeBarcode [Normal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC006 ValidateReceive [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.UnverifiedOrChangedPaymentNeverMarksOrderPaid(scenario: \"alreadyPaid\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC029 POST /api/v1/commerce/my-goods-orders/{id}/receive [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.SportAssessmentScoringTests.UnobservedIsNotZeroAndInvalidMarksAreRejected",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC024 ValidateMovement [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC023 ValidateUnits [Abnormal]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.GoodsPaymentTests.BadCartTotalsAndIntegerOverflowAreRejected(quantity: 2, price: 25000, subtotal: 1, total: 1)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC032 StockProduct.IsLowStock [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC032 MergeLines [Boundary]",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.DucWorkflowRuleTests.EvidenceTrimsAndAcceptsValidBoundaries(length: 1000)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TKSC.Api.Tests.ProfileTests.UpdateProfile_WithBlankName_ReturnsBadRequest",
+          "outcome": "Passed"
+        },
+        {
+          "name": "UTC011 ValidateReturn [Boundary]",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "name": "duc-payment",
+      "counters": {
+        "total": "65",
+        "executed": "65",
+        "passed": "65",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0",
+        "skipped": "0"
+      },
+      "cases": [
+        {
+          "name": "PayOsTests.OnlyExactSuccessfulEligibleUnexpiredPaymentGrantsTickets(amount: 120000, success: True, minutes: 1, eligible: True, expected: \"paid\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.InvalidTicketsCannotEnter(orderStatus: \"paid\", ticketStatus: \"invalidated\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.CancelPaidTicketInsideTwelveHoursIsRejected",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketSupportTests.RejectsOversizedAttachment",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketNotificationTests.CommittedTransitionsHaveCorrectMessages(before: \"Pending\", after: \"confirmed\", oldOrder: \"Pending\", newOrder: \"paid\", expected: \"ticket_paid\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.UnknownOrderIsStoredForReview",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketNotificationTests.CommittedTransitionsHaveCorrectMessages(before: \"confirmed\", after: \"cancelled\", oldOrder: \"paid\", newOrder: \"paid\", expected: \"ticket_refund_requested\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketNotificationTests.RepeatedWebhooksAndCheckInDoNotGenerateAnotherEvent(state: \"confirmed\", order: \"paid\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.CancelUnpaidTicketReleasesPlaceAndKeepsRestPayable",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.QrInspectionDoesNotAdmitAndRepeatCheckInIsIdempotent",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.ApiTransferWithWrongLinkRequiresReview",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.SignedCancellationAllowsNewAttemptOnlyAfterServerRefresh",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketAftercareTests.TargetAtEightIsFullEvenIfConfiguredHigher",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PayOsTests.OnlyExactSuccessfulEligibleUnexpiredPaymentGrantsTickets(amount: 120001, success: True, minutes: 1, eligible: True, expected: \"review_required\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketNotificationTests.CommittedTransitionsHaveCorrectMessages(before: \"Pending\", after: \"cancelled\", oldOrder: \"Pending\", newOrder: \"cancelled\", expected: \"ticket_cancelled\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketNotificationTests.PayerAndHolderEachReceiveWebAndEmailWithoutSelfDuplicates",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketNotificationTests.RepeatedWebhooksAndCheckInDoNotGenerateAnotherEvent(state: \"cancelled\", order: \"paid\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.CancellationCannotCreateDuplicateRefundOrCancelOthersTicket",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketSupportTests.RejectsInvalidOrNonRasterAttachments(content: \"PHN2Zz48L3N2Zz4=\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketNotificationTests.CancellationDoesNotAnnounceCompletedRefund",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.InvalidTicketsCannotEnter(orderStatus: \"paid\", ticketStatus: \"cancelled\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.TimeoutRetryReusesSameAttempt",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PayOsTests.CheckoutUsesWholeVndAndStableAttemptCode",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketNotificationTests.CommittedTransitionsHaveCorrectMessages(before: \"confirmed\", after: \"checkedin\", oldOrder: \"paid\", newOrder: \"paid\", expected: \"ticket_checked_in\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PayOsTests.OnlyExactSuccessfulEligibleUnexpiredPaymentGrantsTickets(amount: 12000000, success: True, minutes: 1, eligible: True, expected: \"review_required\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.UnassignedRefereeAndWrongDayCannotCheckIn",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.SuccessConfirmsEachFriendsTicketAndDuplicateDoesNotIssueAgain",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.VerifiedApiTransferConfirmsAndLaterWebhookIsDuplicate",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.LateTransferCannotReactivateExpiredHold",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.AnotherPayerCannotStartOrFlagPayment",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketSupportTests.TextOnlyMessageNeedsNoImage",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.FlaggedPaymentStaysInReviewWhenWebhookArrives",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketAftercareTests.DifferenceNeverCreatesOrLosesOriginalMoney(oldPrice: 100000, newPrice: 0, transfer: 0, refund: 100000)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.ExtraTransferIsRecordedWithoutRevokingPreviouslyConfirmedTickets",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketAftercareTests.MultiplePaymentSourcesRemainTraceableAcrossCheaperExchange",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketSupportTests.RejectsInvalidOrNonRasterAttachments(content: \"not base64\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketNotificationTests.FailedMailRetriesAreBoundedAndSentMailIsNeverRetried",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketAftercareTests.HoldsExpireButPaidAndCheckedInPlacesRemainOccupied",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PayOsTests.OnlyExactSuccessfulEligibleUnexpiredPaymentGrantsTickets(amount: 120000, success: True, minutes: -1, eligible: True, expected: \"review_required\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PayOsTests.VerifiesSignedWebhookAndDoesNotTrustUnsignedEnvelope",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.PartialOrSurplusTransferIsReviewedWithoutTickets(amount: 120001)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketAftercareTests.DifferenceNeverCreatesOrLosesOriginalMoney(oldPrice: 100000, newPrice: 120000, transfer: 100000, refund: 0)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.MismatchedLinkCannotConfirmTicket",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.InvalidTicketsCannotEnter(orderStatus: \"review_required\", ticketStatus: \"confirmed\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.CancelPaidTicketCreatesRefundForPayer",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.PaidApiStatusWithoutTransactionsDoesNotIssueTickets",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.ExpiredHoldCannotBeCancelled",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PayOsTests.MissingDeadlineRequiresReview",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.RemotePaidStatusWithoutBankEventDoesNotGrantTickets",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketAftercareTests.DifferenceNeverCreatesOrLosesOriginalMoney(oldPrice: 100000, newPrice: 80000, transfer: 80000, refund: 20000)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.PartialOrSurplusTransferIsReviewedWithoutTickets(amount: 119999)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PayOsTests.RejectsUnsignedAndTamperedWebhook",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PayOsTests.OnlyExactSuccessfulEligibleUnexpiredPaymentGrantsTickets(amount: 120000, success: False, minutes: 1, eligible: True, expected: \"failed\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketNotificationTests.RepeatedWebhooksAndCheckInDoNotGenerateAnotherEvent(state: \"checkedin\", order: \"paid\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.InvalidTicketsCannotEnter(orderStatus: \"pending\", ticketStatus: \"Pending\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PayOsTests.OnlyExactSuccessfulEligibleUnexpiredPaymentGrantsTickets(amount: 120000, success: True, minutes: 1, eligible: False, expected: \"review_required\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketNotificationTests.CommittedTransitionsHaveCorrectMessages(before: \"reserved\", after: \"reserved\", oldOrder: \"pending\", newOrder: \"review_required\", expected: \"ticket_payment_review\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketSupportTests.RejectsInvalidOrNonRasterAttachments(content: \"aGVsbG8=\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PaymentServiceTests.SessionRegistrationPendingTicketsCanBePaid",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketAftercareTests.DifferenceNeverCreatesOrLosesOriginalMoney(oldPrice: 100000, newPrice: 100000, transfer: 100000, refund: 0)",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PayOsTests.OnlyExactSuccessfulEligibleUnexpiredPaymentGrantsTickets(amount: 120000, success: True, minutes: 0, eligible: True, expected: \"review_required\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PayOsTests.GoodsReturnNeverUsesSocialOrderParameter",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketNotificationTests.RepeatedWebhooksAndCheckInDoNotGenerateAnotherEvent(state: \"reserved\", order: \"review_required\")",
+          "outcome": "Passed"
+        },
+        {
+          "name": "TicketSupportTests.AcceptsPngQrImage",
+          "outcome": "Passed"
+        },
+        {
+          "name": "PayOsTests.OnlyExactSuccessfulEligibleUnexpiredPaymentGrantsTickets(amount: 119999, success: True, minutes: 1, eligible: True, expected: \"review_required\")",
+          "outcome": "Passed"
+        }
+      ]
+    }
+  ],
+  "ui": {
+    "startTime": "2026-11-09T09:22:50.785Z",
+    "duration": 12333.172999999999,
+    "expected": 22,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

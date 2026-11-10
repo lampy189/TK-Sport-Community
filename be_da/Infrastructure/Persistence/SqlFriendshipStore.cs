@@ -12,14 +12,14 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task<long?> GetPlayerIdByUserIdAsync(long userId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         return await EnsurePlayerIdInternalAsync(connection, null, userId, cancellationToken);
     }
 
     public async Task<long?> GetUserIdByPlayerIdAsync(long playerId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var cmd = new SqlCommand("SELECT user_id FROM dbo.players WHERE id = @playerId;", connection);
         cmd.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerId;
         var result = await cmd.ExecuteScalarAsync(cancellationToken);
@@ -48,7 +48,7 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task<IReadOnlyList<MemberSearchResult>> SearchMembersAsync(long currentUserId, string? query, int limit, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         await EnsurePlayerIdInternalAsync(connection, null, currentUserId, cancellationToken);
 
@@ -127,7 +127,7 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task<IReadOnlyList<FriendSuggestionItem>> GetFriendSuggestionsAsync(long currentUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         await EnsurePlayerIdInternalAsync(connection, null, currentUserId, cancellationToken);
 
@@ -240,7 +240,7 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task<IReadOnlyList<FriendItem>> GetFriendsAsync(long currentUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         await EnsurePlayerIdInternalAsync(connection, null, currentUserId, cancellationToken);
 
@@ -330,7 +330,7 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task<IReadOnlyList<PendingFriendRequestItem>> GetPendingRequestsAsync(long currentUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         await EnsurePlayerIdInternalAsync(connection, null, currentUserId, cancellationToken);
 
@@ -390,7 +390,7 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task<FriendshipActionResult> SendFriendRequestAsync(long currentUserId, long targetPlayerId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
 
         try
@@ -487,7 +487,7 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task<FriendshipActionResult> RespondFriendRequestAsync(long currentUserId, long friendshipId, bool accept, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
 
         try
@@ -571,7 +571,7 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task<FriendshipActionResult> RemoveFriendAsync(long currentUserId, long friendPlayerId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         const string sql = """
             DECLARE @mePlayerId BIGINT = (SELECT id FROM dbo.players WHERE user_id = @currentUserId);
@@ -599,7 +599,7 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task<bool> AreFriendsAsync(long currentUserId, long otherPlayerId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         const string sql = """
             DECLARE @mePlayerId BIGINT = (SELECT id FROM dbo.players WHERE user_id = @currentUserId);
@@ -620,7 +620,7 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task SaveFcmTokenAsync(long userId, string fcmToken, string? deviceType, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         const string sql = """
             IF EXISTS (SELECT 1 FROM dbo.user_fcm_tokens WHERE fcm_token = @token)
@@ -648,7 +648,7 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task<IReadOnlyList<string>> GetFcmTokensByUserIdAsync(long userId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         await using var cmd = new SqlCommand("SELECT fcm_token FROM dbo.user_fcm_tokens WHERE user_id = @userId;", connection);
         cmd.Parameters.Add("@userId", SqlDbType.BigInt).Value = userId;
@@ -665,7 +665,7 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task<ChatMessageItem?> SendMessageAsync(long currentUserId, long recipientPlayerId, string content, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         var senderPlayerId = await GetPlayerIdByUserIdAsync(currentUserId, cancellationToken);
         if (!senderPlayerId.HasValue) return null;
@@ -717,7 +717,7 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task<IReadOnlyList<ChatMessageItem>> GetConversationAsync(long currentUserId, long otherPlayerId, int limit, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         var mePlayerId = await GetPlayerIdByUserIdAsync(currentUserId, cancellationToken);
         if (!mePlayerId.HasValue) return Array.Empty<ChatMessageItem>();
@@ -788,7 +788,7 @@ public sealed class SqlFriendshipStore(string connectionString) : IFriendshipSto
     public async Task<bool> MarkMessagesAsReadAsync(long currentUserId, long senderPlayerId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
 
         var senderUserId = await GetUserIdByPlayerIdAsync(senderPlayerId, cancellationToken);
         if (!senderUserId.HasValue) return false;

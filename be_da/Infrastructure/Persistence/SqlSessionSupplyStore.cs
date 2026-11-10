@@ -81,7 +81,7 @@ public sealed class SqlSessionSupplyStore(string connectionString) : ISessionSup
     public async Task<IReadOnlyList<SupplySession>> GetSessionsAsync(DateOnly date, long? refereeId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var command = new SqlCommand(SessionSelect + """
 
             WHERE s.session_date = @date AND s.status <> 'Cancelled'
@@ -100,14 +100,14 @@ public sealed class SqlSessionSupplyStore(string connectionString) : ISessionSup
     public async Task<SessionSupplyDetails?> GetDetailsAsync(long sessionId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         return await LoadDetailsAsync(connection, null, sessionId, cancellationToken);
     }
 
     public async Task<SupplyResult> IssueAsync(long sessionId, IssueSupplyRequest request, long staffUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
         // Status: 0 posted, 1 session missing, 2 session cancelled, 3 recipient not allowed,
         // 4 allocation already closed, 5 product missing, 6 product inactive, 7 insufficient stock,
@@ -189,7 +189,7 @@ public sealed class SqlSessionSupplyStore(string connectionString) : ISessionSup
     public async Task<bool> IsRefereeAssignedAsync(long sessionId, long refereeId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var command = new SqlCommand(
             "SELECT COUNT(*) FROM dbo.session_referees WHERE session_id = @sessionId AND referee_id = @refereeId;", connection);
         command.Parameters.Add("@sessionId", SqlDbType.BigInt).Value = sessionId;
@@ -200,7 +200,7 @@ public sealed class SqlSessionSupplyStore(string connectionString) : ISessionSup
     public async Task<SupplyResult> ReportUseAsync(long sessionId, long productId, ReportSupplyUseRequest request, long refereeId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
         // Status: 0 recorded, 1 not assigned, 2 nothing issued, 3 already closed, 4 use exceeds outstanding.
         const string sql = """
@@ -250,7 +250,7 @@ public sealed class SqlSessionSupplyStore(string connectionString) : ISessionSup
     public async Task<SupplyResult> ReconcileAsync(long sessionId, long productId, ReturnSupplyRequest request, long staffUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
         // Status: 0 closed now, 1 session missing, 2 nothing issued, 3 return exceeds outstanding, 9 already closed.
         const string sql = """

@@ -22,6 +22,16 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
         return Ok(timeSlots);
     }
 
+    // UC-06 / SCR-04: Get active Sport Center venues for filtering
+    [AllowAnonymous]
+    [HttpGet("venues")]
+    [ProducesResponseType(typeof(IReadOnlyList<VenueSummary>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetVenues(CancellationToken cancellationToken)
+    {
+        var venues = await sessionStore.GetVenuesAsync(cancellationToken);
+        return Ok(venues);
+    }
+
     // UC-06: Browse court sessions
     [AllowAnonymous]
     [HttpGet]
@@ -34,6 +44,9 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
         [FromQuery] string? status,
         [FromQuery] DateOnly? fromDate,
         [FromQuery] DateOnly? toDate,
+        [FromQuery] long? venueId,
+        [FromQuery] string? venue,
+        [FromQuery] string? sessionType,
         CancellationToken cancellationToken)
     {
         if (fromDate.HasValue && toDate.HasValue && fromDate.Value > toDate.Value)
@@ -46,7 +59,7 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
         }
 
         var currentUserId = TryGetUserId(out var uid) ? uid : (long?)null;
-        var filter = new SessionFilter(sportId, sport, date, timeSlotId, status, fromDate, toDate);
+        var filter = new SessionFilter(sportId, sport, date, timeSlotId, status, fromDate, toDate, venueId, venue, sessionType);
         var sessions = await sessionStore.GetSessionsAsync(filter, currentUserId, cancellationToken);
         return Ok(sessions);
     }
