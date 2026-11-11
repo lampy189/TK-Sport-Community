@@ -41,14 +41,28 @@ public static class LateEntrySql
         await using var cmd=new SqlCommand("""
           SELECT CASE WHEN OBJECT_ID('dbo.late_entry_offers','U') IS NOT NULL
             AND OBJECT_ID('dbo.late_entry_tickets','U') IS NOT NULL
-            AND COL_LENGTH('dbo.users','venue_id') IS NOT NULL
-            AND OBJECT_ID('dbo.revenue_entries','U') IS NOT NULL
-            AND EXISTS(SELECT 1 FROM sys.triggers WHERE object_id=OBJECT_ID('dbo.TR_payments_revenue') AND is_disabled=0)
-            AND EXISTS(SELECT 1 FROM sys.security_policies WHERE name='SportCenterIsolation' AND is_enabled=1)
+            AND (
+              (COL_LENGTH('dbo.users','venue_id') IS NULL
+                AND NOT EXISTS(SELECT 1 FROM sys.security_policies WHERE name='SportCenterIsolation'))
+              OR (COL_LENGTH('dbo.users','venue_id') IS NOT NULL
+                AND OBJECT_ID('dbo.revenue_entries','U') IS NOT NULL
+                AND EXISTS(SELECT 1 FROM sys.triggers WHERE object_id=OBJECT_ID('dbo.TR_payments_revenue') AND is_disabled=0)
+                AND EXISTS(SELECT 1 FROM sys.security_policies WHERE name='SportCenterIsolation' AND is_enabled=1))
+            )
           THEN 1 ELSE 0 END
           """,c,tx);
         if(Convert.ToInt32(await cmd.ExecuteScalarAsync(ct))!=1)
-            throw new PaymentException(503,"Vé giờ lẻ chưa được kích hoạt. Cần nâng cấp Sport Center 010–012 và 014-late-entry-sales.sql.");
+            throw new PaymentException(503,"Vé giờ lẻ chưa được kích hoạt. Cần nâng cấp 014-late-entry-sales.sql; nếu đã triển khai nhiều cơ sở thì phải hoàn thiện phân quyền và hạch toán cơ sở.");
+    }
+
+    public static async Task<bool> IsStandaloneSchema(SqlConnection c, CancellationToken ct)
+    {
+        await using var command = new SqlCommand("""
+            SELECT CASE WHEN COL_LENGTH('dbo.users','venue_id') IS NULL
+              AND NOT EXISTS(SELECT 1 FROM sys.security_policies WHERE name='SportCenterIsolation')
+            THEN 1 ELSE 0 END;
+            """, c);
+        return Convert.ToInt32(await command.ExecuteScalarAsync(ct)) == 1;
     }
     public static async Task<bool> Eligible(SqlConnection c,SqlTransaction? tx,long session,long player,DateTimeOffset now,CancellationToken ct)
     {

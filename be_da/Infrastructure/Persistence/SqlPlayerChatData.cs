@@ -40,6 +40,7 @@ public sealed class SqlPlayerChatData(IConfiguration configuration, IOptions<Cha
         command.Parameters.Add("@from", SqlDbType.Date).Value = from.ToDateTime(TimeOnly.MinValue);
         command.Parameters.Add("@to", SqlDbType.Date).Value = to.ToDateTime(TimeOnly.MinValue);
         command.Parameters.Add("@now", SqlDbType.DateTimeOffset).Value = now;
+        command.Parameters.Add("@center", SqlDbType.BigInt).Value = (object?)CenterSelection.RestrictedVenue ?? DBNull.Value;
         for (var i = 0; i < codes.Length; i++) command.Parameters.Add("@code" + i, SqlDbType.VarChar, 100).Value = codes[i];
         var documents = new List<KnowledgeArticle>();
         await using var reader = await command.ExecuteReaderAsync(ct);
@@ -92,6 +93,7 @@ public sealed class SqlPlayerChatData(IConfiguration configuration, IOptions<Cha
             WHERE t.session_id=s.id AND (LOWER(t.status) IN ('valid','paid','confirmed','checkedin')
               OR (LOWER(t.status) IN ('pending','reserved') AND o.expires_at>@now))) occ
         WHERE s.status IN ('Open','Published') AND (@sport IS NULL OR sp.code=@sport)
+          AND (@center IS NULL OR c.venue_id=@center)
           AND (@recordId IS NULL OR s.id=@recordId)
           AND ((@recordId IS NOT NULL AND @date IS NULL) OR s.session_date BETWEEN @from AND @to)
         ORDER BY s.session_date,ts.start_time,s.id;

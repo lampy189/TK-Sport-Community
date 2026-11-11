@@ -23,7 +23,7 @@ public sealed class SportCentersController(IConfiguration configuration, IAntifo
         var rows = new List<object>();
         await using var reader = await command.ExecuteReaderAsync(ct);
         while (await reader.ReadAsync(ct)) rows.Add(new { id=reader.GetInt64(0), name=reader.IsDBNull(1)?"Sport Center":reader.GetString(1), active=!reader.IsDBNull(2)&&reader.GetBoolean(2) });
-        return Ok(new { canViewAll=User.IsInRole("Owner")||User.IsInRole("owner"), assignedVenueId=HttpContext.Items["SportCenterId"], centers=rows });
+        return Ok(new { canViewAll=User.IsInRole("Owner")||User.IsInRole("owner"), assignedVenueId=HttpContext.Items["SportCenterId"], selectedVenueId=CenterSelection.CurrentVenue, centers=rows });
     }
 
     [HttpGet("personnel"), Authorize(Roles="Owner,owner")]

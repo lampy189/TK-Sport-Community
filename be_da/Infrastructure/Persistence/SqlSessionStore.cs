@@ -307,7 +307,8 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 FROM dbo.sessions s WITH (UPDLOCK, HOLDLOCK)
                 JOIN dbo.time_slots ts ON ts.id = s.time_slot_id
                 JOIN dbo.courts c ON c.id=s.court_id JOIN dbo.venues v ON v.id=c.venue_id
-                WHERE s.id = @sessionId AND (@late=0 OR v.is_active=1);
+                  WHERE s.id = @sessionId AND (@late=0 OR v.is_active=1)
+                    AND (@selectedCenter IS NULL OR c.venue_id=@selectedCenter);
                 """;
 
             long sportId;
@@ -323,6 +324,7 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
             {
                 sessionCmd.Parameters.Add("@sessionId", SqlDbType.BigInt).Value = sessionId;
                 sessionCmd.Parameters.Add("@late",SqlDbType.Bit).Value=lateRevision.HasValue;
+                  sessionCmd.Parameters.Add("@selectedCenter", SqlDbType.BigInt).Value = (object?)be_da.Authorization.CenterSelection.RestrictedVenue ?? DBNull.Value;
                 await using var reader = await sessionCmd.ExecuteReaderAsync(cancellationToken);
                 if (!await reader.ReadAsync(cancellationToken))
                 {

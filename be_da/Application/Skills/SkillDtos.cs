@@ -23,7 +23,8 @@ public sealed record AssessmentDimensionScoreDto(
     string DimensionName,
     short WeightPercent,
     short Score,
-    short WeightedPoints
+    decimal WeightedPoints,
+    string? Evidence = null
 );
 
 public sealed record AssessmentResultDto(
@@ -42,7 +43,14 @@ public sealed record AssessmentResultDto(
     DateOnly? SessionDate,
     string? CourtName,
     string? TimeLabel,
-    IReadOnlyList<AssessmentDimensionScoreDto> Scores
+    IReadOnlyList<AssessmentDimensionScoreDto> Scores,
+    string? VenueName = null,
+    string? PublishReason = null,
+    DateTimeOffset? EvaluatedAt = null,
+    short? OldScore = null,
+    string? OldBand = null,
+    short? PublishedScore = null,
+    string? PublishedBand = null
 );
 
 public sealed record RatingHistoryItemDto(
@@ -58,7 +66,8 @@ public sealed record RatingHistoryItemDto(
     string? AssessmentType,
     long? SessionId,
     DateOnly? SessionDate,
-    string? CourtName
+    string? CourtName,
+    AssessmentResultDto? AssessmentDetails = null
 );
 
 public sealed record PlayerSportSkillProfileDto(
