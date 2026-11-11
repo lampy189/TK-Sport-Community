@@ -16,10 +16,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("Controllers/appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"Controllers/appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 if (builder.Environment.IsDevelopment()) builder.Configuration.AddUserSecrets<Program>(optional: true);
-<<<<<<< HEAD
+
 builder.Configuration.AddEnvironmentVariables().AddCommandLine(args);
 builder.Services.AddControllers();
-=======
+
 if (builder.Environment.IsDevelopment())
     builder.Configuration.AddJsonFile("Controllers/appsettings.Local.json", optional: true, reloadOnChange: true);
 builder.Configuration.AddEnvironmentVariables().AddCommandLine(args);
@@ -43,7 +43,6 @@ builder.Services.AddHttpClient<be_da.Application.Chatbot.IChatIntentInterpreter,
     client => client.Timeout = TimeSpan.FromSeconds(20));
 builder.Services.AddHttpClient<be_da.Application.Chatbot.IChatAnswerGenerator, be_da.Infrastructure.Services.OpenAiChatAnswerGenerator>(
     client => client.Timeout = TimeSpan.FromSeconds(40));
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => options.OperationFilter<be_da.Swagger.AuthDocumentationFilter>());
 builder.Services.AddProblemDetails();
@@ -92,10 +91,8 @@ builder.Services.AddScoped<ISessionSupplyStore>(services => new SqlSessionSupply
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables.")));
 builder.Services.AddScoped<GoogleSignIn>();
 builder.Services.AddScoped<AccountCookieEvents>();
-<<<<<<< HEAD
-=======
+
 builder.Services.AddScoped<CenterSelection>();
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 var isDevelopment = builder.Environment.IsDevelopment();
 builder.Services.AddAntiforgery(options =>
 {
@@ -122,13 +119,12 @@ builder.Services.AddAuthentication(AccountPrincipal.Scheme)
         options.SaveTokens = false;
         options.Events.OnRedirectToAuthorizationEndpoint = async context =>
         {
-<<<<<<< HEAD
             if (context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment()
                 && context.Request.Headers["X-TKSC-Swagger"] == "1")
                 await context.Response.WriteAsJsonAsync(new { authorizationUrl = context.RedirectUri });
             else
                 context.Response.Redirect(context.RedirectUri);
-=======
+
             // Always let the user choose their Google account; never pin a cached school identity.
             var authorizationUrl = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(
                 context.RedirectUri, "prompt", "select_account");
@@ -137,7 +133,6 @@ builder.Services.AddAuthentication(AccountPrincipal.Scheme)
                 await context.Response.WriteAsJsonAsync(new { authorizationUrl });
             else
                 context.Response.Redirect(authorizationUrl);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         };
         options.Events.OnCreatingTicket = async context =>
         {
@@ -149,15 +144,11 @@ builder.Services.AddAuthentication(AccountPrincipal.Scheme)
             var account = await service.ExecuteAsync(context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier),
                 context.Principal?.FindFirstValue(ClaimTypes.Email), context.Principal?.FindFirstValue(ClaimTypes.Name),
                 verified, context.HttpContext.RequestAborted, context.Properties.Items.TryGetValue("login_portal", out var selectedPortal) ? selectedPortal : null);
-<<<<<<< HEAD
-            context.Principal = AccountPrincipal.Create(account);
-=======
             var centers = context.HttpContext.RequestServices.GetRequiredService<CenterSelection>();
             long? requestedCenter = context.Properties.Items.TryGetValue("selected_center", out var centerText)
                 && long.TryParse(centerText, out var centerId) ? centerId : null;
             var selectedCenter = await centers.Resolve(account, requestedCenter, context.HttpContext.RequestAborted);
             context.Principal = AccountPrincipal.Create(account, selectedVenueId: selectedCenter);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         };
         options.Events.OnRemoteFailure = async context =>
         {
@@ -182,30 +173,21 @@ builder.Services.AddOptions<GoogleOptions>(GoogleDefaults.AuthenticationScheme)
         options.ClientId = string.IsNullOrWhiteSpace(clientId) ? "unconfigured" : clientId;
         options.ClientSecret = string.IsNullOrWhiteSpace(clientSecret) ? "unconfigured" : clientSecret;
     });
-<<<<<<< HEAD
-=======
 builder.Services.AddHttpContextAccessor();
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 builder.Services.AddAuthorization();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-<<<<<<< HEAD
-=======
     options.AddPolicy("player-chatbot", context => RateLimitPartition.GetFixedWindowLimiter(
         context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
         { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
 
 var app = builder.Build();
-<<<<<<< HEAD
-=======
 if (trustedProxies.Length > 0) app.UseForwardedHeaders();
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 app.UseExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
@@ -221,12 +203,9 @@ if (app.Environment.IsDevelopment())
         "text/javascript; charset=utf-8")).ExcludeFromDescription();
 }
 app.UseHttpsRedirection();
-<<<<<<< HEAD
-=======
 // The deployment image bundles the React build; local Vite development remains supported.
 app.UseDefaultFiles();
 app.UseStaticFiles();
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/api/auth") || context.Request.Path == "/signin-google")
@@ -235,12 +214,6 @@ app.Use(async (context, next) =>
 });
 app.UseRouting();
 app.UseCors();
-<<<<<<< HEAD
-app.UseRateLimiter();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
-=======
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseMiddleware<SportCenterMiddleware>();
@@ -260,7 +233,6 @@ app.MapFallback(async context =>
     context.Response.Headers.CacheControl = "no-cache";
     await context.Response.SendFileAsync(index, context.RequestAborted);
 });
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 app.Run();
 
 public partial class Program { }

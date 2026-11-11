@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import React, { useState } from 'react';
-=======
-npimport React, { useState } from 'react';
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 import { Ticket, Calendar, Clock, MapPin, CheckCircle2, ArrowRight, Shield, QrCode } from 'lucide-react';
 
 export function MyTicketsView({ user, onNavigate }) {

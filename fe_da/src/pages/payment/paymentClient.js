@@ -1,14 +1,5 @@
 import { request as authenticatedRequest } from "../../api";
 // Real checkout is the default. Simulation must be enabled explicitly.
-<<<<<<< HEAD
-export const demoMode = import.meta.env.VITE_PAYMENT_MODE === "demo";
-const storageKey = "tksc-payment-demo-v1";
-export function newDemoOrder() {
-  return {
-    id: 1, orderCode: "SOC-DEMO-001", totalAmount: 120000, status: "pending",
-    expiresAt: new Date(Date.now() + 15 * 60000).toISOString(), payments: [],
-    tickets: [{ id: 1, orderId: 1, playerId: 1, sessionId: 1, amountVnd: 120000, status: "reserved" }],
-=======
 export const demoMode = import.meta.env.DEV && import.meta.env.VITE_PAYMENT_MODE === "demo";
 const storageKey = "tksc-payment-demo-v1";
 export function newDemoOrder() {
@@ -20,7 +11,6 @@ export function newDemoOrder() {
       sportName: 'Badminton', courtName: 'Sân cầu lông · Demo', venueName: 'TKSC Vĩnh Phúc · Demo',
       holderName: 'Hyune (demo)', sessionDate, startTime: '18:00:00', endTime: '20:00:00',
       timeLabel: '18:00 - 20:00', canManage: true }],
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   };
 }
 function readDemo() {

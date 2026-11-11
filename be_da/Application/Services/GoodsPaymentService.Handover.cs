@@ -15,13 +15,8 @@ public sealed partial class GoodsPaymentService
     {
         var order = await LoadAsync(id, ct);
         if (order.HandoverState is Delivered or Received) return await ViewAsync(order, ct);
-<<<<<<< HEAD
-        if (order.Status != "Invoiced" || order.PaymentState != "Paid" || await InvoiceRecordAsync(id, ct) == null)
-            throw Error(409, "Chỉ giao hàng cho đơn đã thanh toán và đã xuất hóa đơn.");
-=======
         if (GoodsHandoverRules.ValidateDeliver(order.Status, order.PaymentState, await InvoiceRecordAsync(id, ct) != null) is { } error)
             throw Error(409, error);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         order.HandoverState = Delivered;
         Audit(id, actorId, "goods_delivered", new { at = clock.GetUtcNow() });
         await db.SaveChangesAsync(ct);
@@ -31,10 +26,6 @@ public sealed partial class GoodsPaymentService
     public Task<GoodsOrderView> ReceiveAsync(long id, long actorId, CancellationToken ct) => TransactionAsync(async () =>
     {
         var order = await LoadAsync(id, ct);
-<<<<<<< HEAD
-        if (order.HandoverState == Received) return await ViewAsync(order, ct);
-        if (order.HandoverState != Delivered) throw Error(409, "Đơn chưa được giao. Cần bấm Giao hàng trước khi xác nhận nhận hàng.");
-=======
         await ConfirmReceiptAsync(order, actorId, ct);
         return await ViewAsync(order, ct);
     }, null, ct);
@@ -66,7 +57,6 @@ public sealed partial class GoodsPaymentService
         var id = order.Id;
         if (order.HandoverState == Received) return;
         if (GoodsHandoverRules.ValidateReceive(order.HandoverState) is { } stateError) throw Error(409, stateError);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         var invoice = await InvoiceRecordAsync(id, ct) ?? throw Error(409, "Thiếu hóa đơn của đơn hàng. Cần đối soát.");
         if (!Lines(order).SequenceEqual(invoice.Lines))
             throw Error(409, "Dòng hàng khác với hóa đơn. Cần đối soát trước khi trừ kho.");
@@ -76,12 +66,8 @@ public sealed partial class GoodsPaymentService
             && m.MovementType == SaleOut, ct);
         if (!posted)
         {
-<<<<<<< HEAD
-            foreach (var line in invoice.Lines.GroupBy(l => l.ProductId)
-                .Select(g => new { ProductId = g.Key, g.First().Name, Quantity = g.Sum(l => l.Quantity) }))
-=======
+
             foreach (var line in GoodsHandoverRules.StockLines(invoice.Lines))
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             {
                 var stockItemId = await db.StockItems.Where(s => s.ProductId == line.ProductId)
                     .Select(s => (long?)s.Id).SingleOrDefaultAsync(ct)
@@ -99,10 +85,6 @@ public sealed partial class GoodsPaymentService
         order.Status = "Completed";
         Audit(id, actorId, "goods_received", new { at = clock.GetUtcNow() });
         await db.SaveChangesAsync(ct);
-<<<<<<< HEAD
-        return await ViewAsync(order, ct);
-    }, null, ct);
-=======
     }
 }
 
@@ -126,5 +108,4 @@ public static class GoodsHandoverRules
         .GroupBy(l => l.ProductId)
         .Select(g => new GoodsStockLine(g.Key, g.First().Name, g.Sum(l => l.Quantity)))
         .ToList();
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 }

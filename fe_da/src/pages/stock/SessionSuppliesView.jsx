@@ -98,11 +98,7 @@ function SupplyDetails({ sessionId, onSummary }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-<<<<<<< HEAD
-  const [form, setForm] = useState({ productId: "", quantity: "", recipientId: "" });
-=======
   const [form, setForm] = useState({ productId: "", unitName: "", quantity: "", recipientId: "" });
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   const [closing, setClosing] = useState(null);
 
   useEffect(() => {
@@ -147,14 +143,9 @@ function SupplyDetails({ sessionId, onSummary }) {
           productId: Number(form.productId),
           quantity: Number(form.quantity),
           recipientId: Number(form.recipientId),
-<<<<<<< HEAD
-        }),
-      `Đã cấp ${number(form.quantity)} × ${product?.name ?? "vật tư"} cho buổi chơi.`,
-=======
           unitName: form.unitName || null,
         }),
       `Đã cấp ${number(form.quantity)} ${form.unitName || product?.baseUnit || ""} × ${product?.name ?? "vật tư"} cho buổi chơi.`,
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     );
     if (ok) setForm((f) => ({ ...f, quantity: "" }));
   }
@@ -178,11 +169,8 @@ function SupplyDetails({ sessionId, onSummary }) {
   const { session, recipients, allocations } = details;
   const closed = new Set(allocations.filter((a) => a.isReconciled).map((a) => a.productId));
   const selected = products.find((p) => p.id === Number(form.productId));
-<<<<<<< HEAD
-=======
   const selectedUnits = [...(selected?.units ?? [])].sort((a, b) => a.factorToBase - b.factorToBase);
   const selectedFactor = selectedUnits.find((u) => u.unitName === form.unitName)?.factorToBase ?? 1;
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
   return (
     <div className="supply-details">
@@ -223,11 +211,7 @@ function SupplyDetails({ sessionId, onSummary }) {
                     <strong>{a.name}</strong>
                     <span className="stock-sku">{a.sku}</span>
                   </td>
-<<<<<<< HEAD
-                  <td data-label="Đã cấp" className="num">{number(a.issued)}</td>
-=======
                   <td data-label="Đã cấp" className="num">{number(a.issued)} {a.baseUnit}</td>
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                   <td data-label="TT báo dùng" className="num">{a.reportedUsed ?? "—"}</td>
                   <td data-label="Trả lại" className="num">{a.isReconciled ? number(a.returned) : "—"}</td>
                   <td data-label="Đã dùng" className="num">{a.used ?? "—"}</td>
@@ -303,11 +287,7 @@ function SupplyDetails({ sessionId, onSummary }) {
             Vật tư
             <select
               value={form.productId}
-<<<<<<< HEAD
-              onChange={(e) => setForm({ ...form, productId: e.target.value })}
-=======
               onChange={(e) => setForm({ ...form, productId: e.target.value, unitName: "" })}
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
               required
             >
               <option value="">Chọn vật tư</option>
@@ -315,9 +295,6 @@ function SupplyDetails({ sessionId, onSummary }) {
                 .filter((p) => !closed.has(p.id))
                 .map((p) => (
                   <option key={p.id} value={p.id} disabled={p.quantityOnHand === 0}>
-<<<<<<< HEAD
-                    {p.name} (tồn {number(p.quantityOnHand)})
-=======
                     {p.name} (tồn {number(p.quantityOnHand)} {p.baseUnit})
                   </option>
                 ))}
@@ -336,7 +313,6 @@ function SupplyDetails({ sessionId, onSummary }) {
                 .map((u) => (
                   <option key={u.unitName} value={u.unitName}>
                     {u.unitName} (= {number(u.factorToBase)} {selected.baseUnit})
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                   </option>
                 ))}
             </select>
@@ -347,11 +323,7 @@ function SupplyDetails({ sessionId, onSummary }) {
               type="number"
               inputMode="numeric"
               min="1"
-<<<<<<< HEAD
-              max={selected?.quantityOnHand || 1}
-=======
               max={Math.max(1, Math.floor((selected?.quantityOnHand ?? 1) / selectedFactor))}
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
               value={form.quantity}
               onChange={(e) => setForm({ ...form, quantity: e.target.value })}
               required

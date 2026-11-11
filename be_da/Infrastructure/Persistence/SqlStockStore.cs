@@ -9,13 +9,9 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
 {
     private const string ProductSelect = """
         SELECT p.id, p.sku, p.name, p.category, p.unit_price_vnd, ISNULL(p.is_active, 0) AS is_active,
-<<<<<<< HEAD
-               ISNULL(si.quantity_on_hand, 0) AS quantity_on_hand, ISNULL(si.reorder_level, 0) AS reorder_level
-=======
                ISNULL(si.quantity_on_hand, 0) AS quantity_on_hand, ISNULL(si.reorder_level, 0) AS reorder_level,
                CAST(CASE WHEN ISNULL(si.quantity_on_hand, 0) > 0 OR EXISTS (
                    SELECT 1 FROM dbo.stock_movements m WHERE m.stock_item_id = si.id) THEN 1 ELSE 0 END AS bit) AS units_locked
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         FROM dbo.products p
         LEFT JOIN dbo.stock_items si ON si.product_id = p.id
         """;
@@ -26,11 +22,7 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
     public async Task<IReadOnlyList<StockProduct>> GetProductsAsync(StockProductFilter filter, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-<<<<<<< HEAD
-        await connection.OpenAsync(cancellationToken);
-=======
         await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         var sql = ProductSelect + """
 
             WHERE (@search IS NULL OR p.sku LIKE @search OR p.name LIKE @search)
@@ -46,39 +38,25 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
         command.Parameters.Add("@includeInactive", SqlDbType.Bit).Value = filter.IncludeInactive;
 
         var products = new List<StockProduct>();
-<<<<<<< HEAD
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken)) products.Add(ReadProduct(reader));
-        return products;
-=======
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
         {
             while (await reader.ReadAsync(cancellationToken)) products.Add(ReadProduct(reader));
         }
         var units = await LoadUnitsAsync(connection, null, null, cancellationToken);
         return products.Select(p => WithUnits(p, units)).ToList();
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     }
 
     public async Task<StockProduct?> GetProductAsync(long productId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-<<<<<<< HEAD
-        await connection.OpenAsync(cancellationToken);
-=======
         await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         return await LoadProductAsync(connection, null, productId, cancellationToken);
     }
 
     public async Task<StockResult> CreateProductAsync(CreateProductRequest request, long staffUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-<<<<<<< HEAD
-        await connection.OpenAsync(cancellationToken);
-=======
         await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
         try
         {
@@ -104,11 +82,8 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
             command.Parameters.Add("@movementType", SqlDbType.VarChar, 100).Value = StockRules.OpeningBalance;
             command.Parameters.Add("@staffUserId", SqlDbType.BigInt).Value = staffUserId;
             var productId = Convert.ToInt64(await command.ExecuteScalarAsync(cancellationToken));
-<<<<<<< HEAD
-=======
             await ReplaceUnitsAsync(connection, transaction, productId,
                 request.Units ?? [new ProductUnitInput(StockUnitRules.DefaultBaseUnit, 1)], cancellationToken);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             var product = await LoadProductAsync(connection, transaction, productId, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return StockResult.Ok(product!);
@@ -116,23 +91,15 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
         catch (SqlException ex) when (ex.Number is 2601 or 2627)
         {
             await transaction.RollbackAsync(CancellationToken.None);
-<<<<<<< HEAD
-            return StockResult.Fail("SKU_EXISTS", "Mã hàng (SKU) đã tồn tại.");
-=======
             return ex.Message.Contains("UX_product_units_barcode")
                 ? StockResult.Fail("BARCODE_EXISTS", "Mã vạch đã được dùng cho mặt hàng khác.")
                 : StockResult.Fail("SKU_EXISTS", "Mã hàng (SKU) đã tồn tại.");
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         }
     }
 
     public async Task<StockResult> UpdateProductAsync(long productId, UpdateProductRequest request, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-<<<<<<< HEAD
-        await connection.OpenAsync(cancellationToken);
-        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
-=======
         await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
         if (request.Units is not null)
@@ -149,7 +116,6 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
                 return StockResult.Fail("UNITS_LOCKED", lockError);
             }
         }
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         const string sql = """
             UPDATE dbo.products
             SET name = @name, category = @category, unit_price_vnd = @price, is_active = @active
@@ -173,8 +139,6 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
             await transaction.RollbackAsync(cancellationToken);
             return StockResult.Fail("PRODUCT_NOT_FOUND", "Không tìm thấy mặt hàng.");
         }
-<<<<<<< HEAD
-=======
         try
         {
             // Nothing references product_units.id: movements keep the unit name they were entered in.
@@ -185,7 +149,6 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
             await transaction.RollbackAsync(CancellationToken.None);
             return StockResult.Fail("BARCODE_EXISTS", "Mã vạch đã được dùng cho mặt hàng khác.");
         }
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         var product = await LoadProductAsync(connection, transaction, productId, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return StockResult.Ok(product!);
@@ -194,22 +157,14 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
     public async Task<StockResult> RecordMovementAsync(long productId, StockMovementRequest request, long staffUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-<<<<<<< HEAD
-        await connection.OpenAsync(cancellationToken);
-        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
-        // Status: 0 posted, 1 product missing, 2 inactive, 3 insufficient stock.
-=======
         await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
         // Status: 0 posted, 1 product missing, 2 inactive, 3 insufficient stock, 4 unknown unit, 5 too large to post.
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         const string sql = """
             DECLARE @active bit;
             SELECT @active = ISNULL(is_active, 0) FROM dbo.products WITH (UPDLOCK, HOLDLOCK) WHERE id = @productId;
             IF @@ROWCOUNT = 0 BEGIN SELECT 1; RETURN; END;
             IF @active = 0 BEGIN SELECT 2; RETURN; END;
-<<<<<<< HEAD
-=======
             IF NOT EXISTS (SELECT 1 FROM dbo.product_units WHERE product_id = @productId AND factor_to_base = 1)
                 INSERT dbo.product_units (product_id, unit_name, factor_to_base) VALUES (@productId, N'Cái', 1);
             DECLARE @factor int, @unit nvarchar(50);
@@ -219,7 +174,6 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
             DECLARE @baseQuantity bigint = CAST(@quantity AS bigint) * @factor;
             IF @baseQuantity > @maxBase BEGIN SELECT 5; RETURN; END;
             DECLARE @delta int = @sign * CAST(@baseQuantity AS int);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             IF NOT EXISTS (SELECT 1 FROM dbo.stock_items WITH (UPDLOCK, HOLDLOCK) WHERE product_id = @productId)
                 INSERT dbo.stock_items (product_id, quantity_on_hand, reorder_level) VALUES (@productId, 0, 0);
             DECLARE @posted TABLE (id bigint);
@@ -228,26 +182,17 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
             OUTPUT inserted.id INTO @posted
             WHERE product_id = @productId AND quantity_on_hand + @delta >= 0;
             IF NOT EXISTS (SELECT 1 FROM @posted) BEGIN SELECT 3; RETURN; END;
-<<<<<<< HEAD
-            INSERT dbo.stock_movements (stock_item_id, movement_type, quantity, reference_type, reference_id, created_by)
-            SELECT id, @movementType, @delta, @referenceType, NULL, @staffUserId FROM @posted;
-=======
             INSERT dbo.stock_movements (stock_item_id, movement_type, quantity, reference_type, reference_id, created_by, entered_unit, entered_quantity)
             SELECT id, @movementType, @delta, @referenceType, NULL, @staffUserId, @unit, @quantity FROM @posted;
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             SELECT 0;
             """;
         await using var command = new SqlCommand(sql, connection, transaction);
         command.Parameters.Add("@productId", SqlDbType.BigInt).Value = productId;
-<<<<<<< HEAD
-        command.Parameters.Add("@delta", SqlDbType.Int).Value = request.Type == StockRules.Issue ? -request.Quantity : request.Quantity;
-=======
         var unitName = StockUnitRules.NormalizeUnitName(request.UnitName);
         command.Parameters.Add("@unitName", SqlDbType.NVarChar, 50).Value = unitName.Length == 0 ? DBNull.Value : unitName;
         command.Parameters.Add("@quantity", SqlDbType.Int).Value = request.Quantity;
         command.Parameters.Add("@sign", SqlDbType.Int).Value = request.Type == StockRules.Issue ? -1 : 1;
         command.Parameters.Add("@maxBase", SqlDbType.BigInt).Value = StockUnitRules.MaxBaseQuantity;
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         command.Parameters.Add("@movementType", SqlDbType.VarChar, 100).Value = request.Type;
         command.Parameters.Add("@referenceType", SqlDbType.VarChar, 100).Value = StaffEntry;
         command.Parameters.Add("@staffUserId", SqlDbType.BigInt).Value = staffUserId;
@@ -259,11 +204,8 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
             {
                 1 => StockResult.Fail("PRODUCT_NOT_FOUND", "Không tìm thấy mặt hàng."),
                 2 => StockResult.Fail("PRODUCT_INACTIVE", "Mặt hàng đã ngừng kinh doanh, không thể nhập/xuất."),
-<<<<<<< HEAD
-=======
                 4 => StockResult.Fail("UNIT_NOT_FOUND", "Mặt hàng không có đơn vị này."),
                 5 => StockResult.Fail("QUANTITY_TOO_LARGE", "Số lượng quy đổi vượt giới hạn cho phép."),
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                 _ => StockResult.Fail("INSUFFICIENT_STOCK", "Số lượng xuất vượt quá tồn kho hiện có.")
             };
         }
@@ -275,29 +217,18 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
     public async Task<IReadOnlyList<StockMovementEntry>?> GetMovementsAsync(long productId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-<<<<<<< HEAD
-        await connection.OpenAsync(cancellationToken);
-=======
         await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         await using (var exists = new SqlCommand("SELECT COUNT(*) FROM dbo.products WHERE id = @productId;", connection))
         {
             exists.Parameters.Add("@productId", SqlDbType.BigInt).Value = productId;
             if (Convert.ToInt32(await exists.ExecuteScalarAsync(cancellationToken)) == 0) return null;
         }
 
-<<<<<<< HEAD
-        // stock_movements has no timestamp column; id order is the posting order.
-        const string sql = """
-            SELECT TOP (200) m.id, ISNULL(m.movement_type, '') AS movement_type, m.quantity,
-                   m.reference_type, m.reference_id, m.created_by, u.full_name
-=======
         // Movements older than upgrade 010 have no timestamp; id order is the posting order.
         const string sql = """
             SELECT TOP (200) m.id, ISNULL(m.movement_type, '') AS movement_type, m.quantity,
                    m.reference_type, m.reference_id, m.created_by, u.full_name,
                    m.created_at, m.entered_unit, m.entered_quantity, m.source_ref
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             FROM dbo.stock_movements m
             JOIN dbo.stock_items si ON si.id = m.stock_item_id
             LEFT JOIN dbo.users u ON u.id = m.created_by
@@ -315,21 +246,15 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
                 reader.IsDBNull(3) ? null : reader.GetString(3),
                 reader.IsDBNull(4) ? null : reader.GetInt64(4),
                 reader.IsDBNull(5) ? null : reader.GetInt64(5),
-<<<<<<< HEAD
-                reader.IsDBNull(6) ? null : reader.GetString(6)));
-=======
                 reader.IsDBNull(6) ? null : reader.GetString(6),
                 reader.IsDBNull(7) ? null : reader.GetDateTimeOffset(7),
                 reader.IsDBNull(8) ? null : reader.GetString(8),
                 reader.IsDBNull(9) ? null : reader.GetInt32(9),
                 reader.IsDBNull(10) ? null : reader.GetString(10)));
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         }
         return movements;
     }
 
-<<<<<<< HEAD
-=======
     public async Task<StockCodeLookup?> LookupCodeAsync(string code, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
@@ -500,32 +425,22 @@ public sealed class SqlStockStore(string connectionString) : IStockStore
         return product with { Units = list, BaseUnit = list.FirstOrDefault(u => u.IsBase)?.UnitName ?? StockUnitRules.DefaultBaseUnit };
     }
 
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     private static async Task<StockProduct?> LoadProductAsync(SqlConnection connection, SqlTransaction? transaction, long productId, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand(ProductSelect + "\nWHERE p.id = @productId;", connection, transaction);
         command.Parameters.Add("@productId", SqlDbType.BigInt).Value = productId;
-<<<<<<< HEAD
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        return await reader.ReadAsync(cancellationToken) ? ReadProduct(reader) : null;
-=======
         StockProduct? product;
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
         {
             product = await reader.ReadAsync(cancellationToken) ? ReadProduct(reader) : null;
         }
         return product is null ? null : WithUnits(product, await LoadUnitsAsync(connection, transaction, productId, cancellationToken));
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     }
 
     private static StockProduct ReadProduct(SqlDataReader reader) => new(
         reader.GetInt64(0), reader.GetString(1), reader.GetString(2),
         reader.IsDBNull(3) ? null : reader.GetString(3),
-<<<<<<< HEAD
-        reader.GetInt32(4), reader.GetBoolean(5), reader.GetInt32(6), reader.GetInt32(7));
-=======
         reader.GetInt32(4), reader.GetBoolean(5), reader.GetInt32(6), reader.GetInt32(7), UnitsLocked: reader.GetBoolean(8));
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
     private static string EscapeLike(string value) =>
         value.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]");

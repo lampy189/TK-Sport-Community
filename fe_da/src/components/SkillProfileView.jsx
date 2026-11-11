@@ -1,12 +1,8 @@
-<<<<<<< HEAD
-import { DIMENSION_ANCHORS } from "../pages/skill/dimensionAnchors";
-=======
 import { detailedCriterionPoints, formatCriterionPoints } from "../pages/skill/criterionPoints";
 import {
   DIMENSION_ANCHORS,
   parseSubSkillEvidence,
 } from "../pages/skill/dimensionAnchors";
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 import { useEffect, useMemo, useState } from "react";
 import SkillReviews from "../pages/skill/SkillReviews";
 import {
@@ -39,8 +35,6 @@ DIMENSION_ANCHORS.D3 = DIMENSION_ANCHORS.BM_SMASH_DEFENSE;
 DIMENSION_ANCHORS.D4 = DIMENSION_ANCHORS.BM_FOOTWORK;
 DIMENSION_ANCHORS.D5 = DIMENSION_ANCHORS.BM_DOUBLES;
 
-<<<<<<< HEAD
-=======
 const SCORE_LEVEL_META = {
   0: {
     tag: "Mức 0/4 · Chưa ổn định (0đ)",
@@ -169,7 +163,6 @@ function getNormalizedDimensionAnchor(dimCode, sportId = 1, index = 0) {
   };
 }
 
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 const BAND_METADATA = {
   1: {
     standardLabel: "Thang trình độ Cầu lông CLB",
@@ -229,10 +222,6 @@ function getProfileLockState(prof, officialList = []) {
     };
   }
   const hasOnCourt =
-<<<<<<< HEAD
-    prof.latestAssessment?.assessmentType === "OnCourt" ||
-    (prof.ratingHistory || []).some((h) => h.assessmentType === "OnCourt") ||
-=======
     isOnCourtType(
       prof.latestAssessment?.assessmentType,
       prof.latestAssessment?.assessorRole,
@@ -240,7 +229,6 @@ function getProfileLockState(prof, officialList = []) {
     (prof.ratingHistory || []).some((h) =>
       isOnCourtType(h.assessmentType, h.changedByRole),
     ) ||
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     (Array.isArray(officialList) && officialList.length > 0);
   const isRefereeRated =
     prof.ratingStatus === "Rated" ||
@@ -285,16 +273,10 @@ function getProfileLockState(prof, officialList = []) {
 function formatSessionInfo(item) {
   if (!item) return null;
   const parts = [];
-<<<<<<< HEAD
-  if (item.courtName) parts.push(item.courtName);
-  if (item.sessionDate) parts.push(item.sessionDate);
-  if (item.timeLabel) parts.push(item.timeLabel);
-=======
   if (item.venueName) parts.push(item.venueName);
   if (item.courtName) parts.push(item.courtName);
   if (item.sessionDate) parts.push(`Ngày ${item.sessionDate}`);
   if (item.timeLabel) parts.push(`Ca ${item.timeLabel}`);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
@@ -317,11 +299,8 @@ export default function SkillProfileView({ onBrowseSport }) {
   const [frequencyText, setFrequencyText] = useState("2 - 3 buổi / tuần");
   const [submitting, setSubmitting] = useState(false);
   const [submitBanner, setSubmitBanner] = useState(null);
-<<<<<<< HEAD
-=======
   const [selectedAssessmentId, setSelectedAssessmentId] = useState(null);
   const [expandedDimIds, setExpandedDimIds] = useState({});
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
   useEffect(() => {
     loadData();
@@ -393,13 +372,10 @@ export default function SkillProfileView({ onBrowseSport }) {
   }, [activeProfile, rubrics, selectedSportId]);
 
   useEffect(() => {
-<<<<<<< HEAD
-=======
     setSelectedAssessmentId(null);
   }, [selectedSportId]);
 
   useEffect(() => {
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     if (!activeRubric?.dimensions) return;
     const initial = {};
     const existingScores = activeProfile?.latestAssessment?.scores || [];
@@ -507,8 +483,6 @@ export default function SkillProfileView({ onBrowseSport }) {
   const sportMeta = BAND_METADATA[selectedSportId] || BAND_METADATA[1];
   const latestAssessment = activeProfile?.latestAssessment || null;
   const ratingHistory = activeProfile?.ratingHistory || [];
-<<<<<<< HEAD
-=======
 
   // Build selectable assessments from latestAssessment + ratingHistory.assessmentDetails
   const availableAssessments = (() => {
@@ -555,7 +529,6 @@ export default function SkillProfileView({ onBrowseSport }) {
   const canCompareDimensions = Boolean(previousAssessment && displayedAssessment
     && Number(previousAssessment.rubricId) === Number(displayedAssessment.rubricId));
 
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   const isPickleball = selectedSportId === 2;
   const activeSportNameVi = getSportNameVi(
     selectedSportId,
@@ -710,27 +683,18 @@ export default function SkillProfileView({ onBrowseSport }) {
 
               <div className="sp-card-meta">
                 <span>
-<<<<<<< HEAD
-                  <Calendar size={14} /> Nguồn gần nhất:{" "}
-                  {latestType === "OnCourt"
-=======
                   <Calendar size={15} /> Nguồn gần nhất:{" "}
                   {isOnCourtType(
                     latestType,
                     prof.latestAssessment?.assessorRole,
                   )
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                     ? `Trọng tài chấm (${prof.latestAssessment?.assessorName || "Trọng tài"})`
                     : latestType === "SelfSurvey"
                       ? "Tự khảo sát ban đầu (Điểm tạm thời)"
                       : "Chưa có bản đánh giá"}
                 </span>
                 <span>
-<<<<<<< HEAD
-                  <History size={14} /> {prof.ratingHistory?.length || 0} lần
-=======
                   <History size={15} /> {prof.ratingHistory?.length || 0} lần
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                   cập nhật
                 </span>
               </div>
@@ -964,22 +928,11 @@ export default function SkillProfileView({ onBrowseSport }) {
                   {activeRubric.dimensions.map((dim, idx) => {
                     const dimId = dim.id ?? dim.dimensionId;
                     const dimCode = dim.code ?? dim.dimensionCode;
-<<<<<<< HEAD
-                    const anchorInfo = DIMENSION_ANCHORS[dimCode] || {
-                      subtitle: "",
-                      levels: [0, 1, 2, 3, 4].map((s) => ({
-                        score: s,
-                        tag: `Lựa chọn ${s + 1}`,
-                        desc: "Mô tả cảm nhận kỹ năng trên sân.",
-                      })),
-                    };
-=======
                     const anchorInfo = getNormalizedDimensionAnchor(
                       dimCode,
                       selectedSportId,
                       idx,
                     );
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                     const selectedVal = Number(surveyAnswers[dimId] ?? 2);
 
                     return (
@@ -1018,11 +971,7 @@ export default function SkillProfileView({ onBrowseSport }) {
                                 />
                                 <div className="sp-level-top">
                                   <span className="sp-level-tag">
-<<<<<<< HEAD
-                                    {lvl.tag}
-=======
                                     {lvl.surveyTag || lvl.tag}
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                                   </span>
                                 </div>
                                 <p className="sp-level-desc">{lvl.desc}</p>
@@ -1083,14 +1032,6 @@ export default function SkillProfileView({ onBrowseSport }) {
         >
           <div className="sp-panel-head">
             <div>
-<<<<<<< HEAD
-              <span className="sp-eyebrow-sm">CHI TIẾT ĐÁNH GIÁ KỸ NĂNG</span>
-              <h2>Bảng điểm 5 Tiêu chí · {activeSportNameVi}</h2>
-            </div>
-          </div>
-
-          {!latestAssessment ? (
-=======
               <span className="sp-eyebrow-sm">
                 KẾT QUẢ &amp; TIẾN BỘ KỸ NĂNG
               </span>
@@ -1138,7 +1079,6 @@ export default function SkillProfileView({ onBrowseSport }) {
           )}
 
           {!displayedAssessment ? (
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             <div className="sp-empty-box">
               <ClipboardCheck size={32} />
               <h3>
@@ -1158,111 +1098,6 @@ export default function SkillProfileView({ onBrowseSport }) {
             </div>
           ) : (
             <>
-<<<<<<< HEAD
-              {/* Latest Assessment Summary Banner */}
-              <div className="sp-assessment-meta-card">
-                <div className="sp-assessor-info">
-                  <span
-                    className={`sp-source-chip ${
-                      latestAssessment.assessmentType === "OnCourt"
-                        ? "is-oncourt"
-                        : "is-survey"
-                    }`}
-                  >
-                    {latestAssessment.assessmentType === "OnCourt" ? (
-                      <>
-                        <ShieldCheck size={15} /> Trọng tài chấm trên sân
-                      </>
-                    ) : (
-                      <>
-                        <ClipboardCheck size={15} /> Tự khảo sát ban đầu (Điểm
-                        tạm thời)
-                      </>
-                    )}
-                  </span>
-                  <h4>
-                    Người đánh giá:{" "}
-                    <strong>{latestAssessment.assessorName}</strong>
-                  </h4>
-                  {formatSessionInfo(latestAssessment) && (
-                    <p>
-                      Buổi chơi:{" "}
-                      <strong>{formatSessionInfo(latestAssessment)}</strong>
-                    </p>
-                  )}
-                </div>
-                <div className="sp-assessment-total">
-                  <span>Kết quả kỳ này</span>
-                  <strong>
-                    {latestAssessment.bandResult || latestAssessment.resultBand}{" "}
-                    · {Number(latestAssessment.totalScore || 0).toFixed(0)}đ
-                  </strong>
-                  <small>
-                    {
-                      getBandInfo(
-                        selectedSportId,
-                        latestAssessment.bandResult ||
-                          latestAssessment.resultBand,
-                      ).title
-                    }
-                  </small>
-                </div>
-              </div>
-
-              {/* 5 Dimensions Progress Breakdown */}
-              <div className="sp-dimensions-list">
-                {(activeRubric?.dimensions || []).map((dim, idx) => {
-                  const dimId = dim.id ?? dim.dimensionId;
-                  const dimCode = dim.code ?? dim.dimensionCode;
-                  const scoreRow = (latestAssessment.scores || []).find(
-                    (s) =>
-                      s.dimensionId === dimId || s.dimensionCode === dimCode,
-                  );
-                  const rawScore =
-                    scoreRow != null
-                      ? Number(scoreRow.score ?? scoreRow.rawScore ?? 0)
-                      : 0;
-                  const weightedPts =
-                    scoreRow != null
-                      ? Number(scoreRow.weightedPoints ?? rawScore * 5)
-                      : rawScore * 5;
-                  const pct = Math.min(100, Math.max(0, (rawScore / 4) * 100));
-                  const anchorInfo = DIMENSION_ANCHORS[dimCode];
-                  const achievedAnchor = anchorInfo?.levels?.find(
-                    (l) => l.score === Math.round(rawScore),
-                  );
-
-                  return (
-                    <div key={dimId} className="sp-dimension-item">
-                      <div className="sp-dim-header">
-                        <div>
-                          <span className="sp-dim-code">
-                            Tiêu chí {idx + 1}
-                          </span>
-                          <h4>{dim.name}</h4>
-                        </div>
-                        <div className="sp-dim-numbers">
-                          <strong>{weightedPts.toFixed(0)} / 20 điểm</strong>
-                        </div>
-                      </div>
-
-                      <div className="sp-dim-bar">
-                        <div
-                          className="sp-dim-bar-fill"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-
-                      {achievedAnchor && (
-                        <p className="sp-dim-achieved">
-                          <strong>{achievedAnchor.tag}:</strong>{" "}
-                          {achievedAnchor.desc}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-=======
               {/* Displayed Assessment Summary Banner */}
               {(() => {
                 const isRef = isOnCourtType(
@@ -1718,7 +1553,6 @@ export default function SkillProfileView({ onBrowseSport }) {
                     );
                   });
                 })()}
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
               </div>
             </>
           )}
@@ -1772,17 +1606,10 @@ export default function SkillProfileView({ onBrowseSport }) {
           ) : (
             <div className="sp-history-timeline">
               {ratingHistory.map((item, idx) => {
-<<<<<<< HEAD
-                const isReferee =
-                  item.assessmentType === "OnCourt" ||
-                  (item.changedByRole &&
-                    item.changedByRole.toLowerCase().includes("referee"));
-=======
                 const isReferee = isOnCourtType(
                   item.assessmentType,
                   item.changedByRole,
                 );
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                 const hasOld = item.oldScore != null;
                 const delta = hasOld
                   ? Number(item.newScore || 0) - Number(item.oldScore || 0)
@@ -1790,29 +1617,17 @@ export default function SkillProfileView({ onBrowseSport }) {
                 const isUp = delta != null && delta > 0;
                 const isDown = delta != null && delta < 0;
                 const sessLabel = formatSessionInfo(item);
-<<<<<<< HEAD
-=======
                 const itemAssId =
                   item.assessmentId ?? item.assessmentDetails?.id ?? null;
                 const isViewingThis =
                   itemAssId != null &&
                   Number(displayedAssessment?.id) === Number(itemAssId);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
                 return (
                   <article
                     key={item.id || idx}
                     className={`sp-history-item ${
                       isReferee ? "is-referee" : "is-survey"
-<<<<<<< HEAD
-                    }`}
-                  >
-                    <div className="sp-history-marker">
-                      {isReferee ? (
-                        <UserCheck size={16} />
-                      ) : (
-                        <ClipboardCheck size={16} />
-=======
                     } ${isViewingThis ? "is-selected-history" : ""}`}
                   >
                     <div className="sp-history-marker">
@@ -1820,7 +1635,6 @@ export default function SkillProfileView({ onBrowseSport }) {
                         <UserCheck size={17} />
                       ) : (
                         <ClipboardCheck size={17} />
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                       )}
                     </div>
                     <div className="sp-history-body">
@@ -1888,8 +1702,6 @@ export default function SkillProfileView({ onBrowseSport }) {
                           </span>
                         )}
                       </div>
-<<<<<<< HEAD
-=======
 
                       {itemAssId != null && (
                         <div className="sp-history-actions">
@@ -1906,7 +1718,6 @@ export default function SkillProfileView({ onBrowseSport }) {
                           </button>
                         </div>
                       )}
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                     </div>
                   </article>
                 );

@@ -1,7 +1,5 @@
 # TK Sport Community — Project Context
 
-<<<<<<< HEAD
-=======
 ## Precise slider scoring (10 Nov 2026)
 
 The user requested retaining detailed slider points rather than rounding each criterion to 0–4 first. For new saves, each of four integer 0–10 observations contributes 0.5 points to its 20-point criterion. Sum all five precise criterion contributions and round once at the final 0–100 total (half up) to match existing integer profile storage. Level 0–4 is descriptive only. Save structured SliderScores in the existing assessment audit payload and validate/recalculate them at the server; player result contributions use those same values. Existing published assessments without structured slider data retain their original level-based calculations and history. No schema change is needed. Old drafts with recorded sliders adopt the precise calculation when explicitly saved.
@@ -26,7 +24,6 @@ The user prefers short functional labels and minimal copy. Use "Chọn cơ sở"
 
 The user approved multi-center login and then clarified that ALL pre-existing business data belongs to Vinh Phuc. Venue 2 is TKSC Vĩnh Phúc; all nine legacy courts, 129 legacy sessions, old goods/stock/orders and existing operational personnel belong there. Venue 1 is the new TKSC Hà Nội branch, populated with explicitly requested demo courts/sessions/catalog/stock and three passwordless Development-only personnel accounts. Owners retain global authority. Players choose a browsing center per signed session and may change it; profiles, friends and personal ticket/order histories remain global and ownership-protected. New bookings/products are restricted to the selected center at the server; existing orders retain their original center. See docs/multi-center-login.md, upgrades 015/016 and db/seed-hanoi-demo.sql. This supersedes the earlier temporary standalone late-entry mode and one-venue assumption below.
 
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 ## Approved assessment update (3 Nov 2026)
 
 The user approved referee scoring for Pickleball using the existing Profile internal scale: `PK-IPTPA-DUPR-V1`, five sport-specific criteria at 0–4 and 20% each, total 0–100 and internal B1–B5 bands. These are not official DUPR ratings. This explicitly supersedes the earlier restriction against this internal scale for Pickleball. New badminton forms use `BM-CLB-V1`; deactivate the old pilot rubric for new forms while retaining all existing forms and history. Upgrade 009 records the approved active-flag changes. Legacy pilot forms remain readable and scoreable under their original rubric.

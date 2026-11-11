@@ -3,8 +3,6 @@ using TKSC.Application.DTOs;
 namespace TKSC.Application.Services;
 public static class TicketAftercareRules
 {
-<<<<<<< HEAD
-=======
  public static string Evidence(string? text)
  {
   text = text?.Trim();
@@ -20,7 +18,6 @@ public static class TicketAftercareRules
    throw new PaymentException(409,"Buổi đã hủy không chuyển về tạm ngưng.");
   return cancel ? "cancelled" : "suspended";
  }
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
  public static bool Disrupted(string status) => status.ToLowerInvariant() is "suspended" or "cancelled";
  public static bool Occupies(string status, DateTimeOffset? expires, DateTimeOffset now) =>
   status.ToLowerInvariant() is "confirmed" or "checkedin" or "paid" or "valid"

@@ -4,10 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using be_da.Application.Abstractions;
 using be_da.Application.Stock;
-<<<<<<< HEAD
-=======
+
 using TKSC.Controllers.Middlewares;
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
 namespace be_da.Controllers;
 
@@ -16,10 +14,8 @@ namespace be_da.Controllers;
 [ApiController]
 [Route("api/stock/referee-supplies")]
 [Authorize(Roles = "Referee")]
-<<<<<<< HEAD
-=======
+
 [ValidatedRequest]
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 public sealed class RefereeSuppliesController(ISessionSupplyStore store, IAntiforgery antiforgery, TimeProvider clock) : ControllerBase
 {
     [HttpGet]
@@ -27,13 +23,6 @@ public sealed class RefereeSuppliesController(ISessionSupplyStore store, IAntifo
     public async Task<IActionResult> GetSessions([FromQuery] DateOnly? date, CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var refereeId)) return Unauthorized();
-<<<<<<< HEAD
-        var day = date ?? DateOnly.FromDateTime(clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7)).DateTime);
-        return Ok(await store.GetSessionsAsync(day, refereeId, cancellationToken));
-    }
-
-    [HttpGet("{sessionId:long}")]
-=======
         var today = DateOnly.FromDateTime(clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7)).DateTime);
         var day = date ?? today;
         if (SupplyRules.ValidateDay(day, today) is { } error) return BadRequest(new { code = "VALIDATION_FAILED", message = error });
@@ -41,7 +30,6 @@ public sealed class RefereeSuppliesController(ISessionSupplyStore store, IAntifo
     }
 
     [HttpGet("{sessionId:long:min(1)}")]
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     [ProducesResponseType(typeof(SessionSupplyDetails), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDetails(long sessionId, CancellationToken cancellationToken)
@@ -56,11 +44,8 @@ public sealed class RefereeSuppliesController(ISessionSupplyStore store, IAntifo
             : Ok(details);
     }
 
-<<<<<<< HEAD
-    [HttpPost("{sessionId:long}/products/{productId:long}/usage")]
-=======
+
     [HttpPost("{sessionId:long:min(1)}/products/{productId:long:min(1)}/usage")]
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     [ProducesResponseType(typeof(SessionSupplyDetails), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

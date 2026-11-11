@@ -11,12 +11,6 @@ namespace TKSC.Application.Services;
 
 public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
 {
-<<<<<<< HEAD
-    public async Task<object> SessionsAsync(long actorId, CancellationToken ct) => await db.Sessions.AsNoTracking()
-        .Where(s => s.SessionReferees.Any(r => r.RefereeId == actorId) && s.Status != "cancelled")
-        .OrderByDescending(s => s.SessionDate).ThenByDescending(s => s.TimeSlot.StartTime).Take(100)
-        .Select(s => new { s.Id, s.SessionDate, s.Sport.Name, Court = s.Court.Name, s.TimeSlot.StartTime }).ToListAsync(ct);
-=======
     public async Task<object> SessionsAsync(long actorId, CancellationToken ct)
     {
         var today = DateOnly.FromDateTime(clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7)).DateTime);
@@ -50,7 +44,6 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
                 SessionDate = h.Assessment!.Session!.SessionDate, Rubric = h.Assessment.Rubric.Name }).ToListAsync(ct);
         return new { attendee.PlayerId, attendee.Name, Profile = profile, Participation = participation, Ratings = ratings };
     }
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
     private IQueryable<Rubric> Rubrics => db.Rubrics.Include(r => r.Sport).Include(r => r.RubricDimensions);
     private IQueryable<Assessment> Assessments => db.Assessments
@@ -163,20 +156,12 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
             if (!SportAssessmentScoring.Supports(a.Rubric) && request.Marks.Any(m => m.Score != null))
                 throw Error(409, "Chưa có quy tắc thang điểm cho rubric này; có thể lưu ghi chú với điểm null.");
             if (request.Marks.Any(m => m.Score is < 0 or > 4)) throw Error(400, "Điểm mỗi tiêu chí phải từ 0 đến 4.");
-<<<<<<< HEAD
-            foreach (var mark in request.Marks)
-                a.AssessmentScores.Single(s => s.DimensionId == mark.DimensionId).Score = mark.Score;
-            a.TotalScore = SportAssessmentScoring.Supports(a.Rubric) ? SportAssessmentScoring.Calculate(request.Marks.Select(m => m.Score)) : null;
-            a.BandResult = a.TotalScore is short total ? SportAssessmentScoring.Band(total) : null;
-            Audit(a, "assessment_saved", new AssessmentEvidence(clock.GetUtcNow(), request.Marks));
-=======
             var marks = request.Marks.Select(NormalizeMark).ToArray();
             foreach (var mark in marks)
                 a.AssessmentScores.Single(s => s.DimensionId == mark.DimensionId).Score = mark.Score;
             a.TotalScore = SportAssessmentScoring.Supports(a.Rubric) ? CalculateTotal(marks) : null;
             a.BandResult = a.TotalScore is short total ? SportAssessmentScoring.Band(total) : null;
             Audit(a, "assessment_saved", new AssessmentEvidence(clock.GetUtcNow(), marks));
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             await db.SaveChangesAsync(ct);
             return await ViewAsync(a, ct);
         }, ct);
@@ -190,17 +175,9 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
             await EditableAsync(a, request.Revision, ct);
             await CheckAttendanceAsync(a.SessionId!.Value, a.PlayerSportProfile, actorId, ct);
             if (!SportAssessmentScoring.Supports(a.Rubric)) throw Error(409, "Rubric chưa có quy tắc công bố điểm.");
-<<<<<<< HEAD
-            var total = SportAssessmentScoring.Calculate(a.AssessmentScores.Select(s => s.Score))
-                ?? throw Error(409, "Phải quan sát đủ các tiêu chí trước khi công bố.");
-            var evidence = await EvidenceAsync(a.Id, ct);
-            if (a.AssessmentScores.Any(s => (s.Score == 0 || s.Score == 4)
-                && string.IsNullOrWhiteSpace(evidence.FirstOrDefault(m => m.DimensionId == s.DimensionId)?.Evidence)))
-                throw Error(409, "Điểm 0 hoặc 4 cần ghi chú bằng chứng quan sát.");
-=======
+
             var total = CalculateTotal(await MarksAsync(a, ct))
                 ?? throw Error(409, "Phải quan sát đủ các tiêu chí trước khi công bố.");
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             var profile = a.PlayerSportProfile;
             if (profile.CurrentScore != request.ExpectedScore || profile.CurrentBand != request.ExpectedBand)
                 throw Error(409, "Hồ sơ đã thay đổi. Tải lại trước khi công bố.");
@@ -244,11 +221,8 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
             profile.RatingStatus = "Rated";
             a.Status = "published";
             // Keep the raw observation on Assessment; the smoothed published value lives in history/profile.
-<<<<<<< HEAD
-            a.TotalScore = SportAssessmentScoring.Calculate(a.AssessmentScores.Select(s => s.Score));
-=======
+
             a.TotalScore = CalculateTotal(await MarksAsync(a, ct));
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             a.BandResult = SportAssessmentScoring.Band(a.TotalScore!.Value);
             if (!string.Equals(oldBand, band, StringComparison.OrdinalIgnoreCase))
                 await CheckFutureTicketsAsync(profile, actorId, ct);
@@ -305,17 +279,6 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
         return json is null ? Array.Empty<MarkInput>() : JsonSerializer.Deserialize<AssessmentEvidence>(json)!.Marks;
     }
 
-<<<<<<< HEAD
-    private async Task<AssessmentView> ViewAsync(Assessment a, CancellationToken ct)
-    {
-        var evidence = await EvidenceAsync(a.Id, ct);
-        return new(a.Id, a.SessionId!.Value, a.PlayerSportProfile.PlayerId, a.Status!, await RevisionAsync(a.Id, ct),
-            Map(a.Rubric), a.AssessmentScores.OrderBy(s => s.DimensionId).Select(s => new MarkInput(s.DimensionId, s.Score,
-                evidence.FirstOrDefault(m => m.DimensionId == s.DimensionId)?.Evidence)).ToList(),
-            a.TotalScore, a.BandResult, a.PlayerSportProfile.CurrentScore, a.PlayerSportProfile.CurrentBand);
-    }
-
-=======
     private static MarkInput NormalizeMark(MarkInput mark)
     {
         try { _ = SportAssessmentScoring.CriterionPoints(mark.Score, mark.SliderScores); }
@@ -340,7 +303,6 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
             Map(a.Rubric), await MarksAsync(a, ct),
             a.TotalScore, a.BandResult, a.PlayerSportProfile.CurrentScore, a.PlayerSportProfile.CurrentBand);
 
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     private static RubricView Map(Rubric r) => new(r.Id, r.SportId, r.Version, r.Name, SportAssessmentScoring.Supports(r),
         r.RubricDimensions.OrderBy(d => d.Code).Select(d => new CriterionView(d.Id, d.Code, d.Name, d.WeightPercent)).ToList());
 

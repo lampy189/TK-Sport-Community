@@ -92,12 +92,6 @@ public sealed class ProfileController(IProfileStore profileStore, IAntiforgery a
         if (!TryGetUserId(out var userId)) return Unauthorized();
 
         if (string.IsNullOrWhiteSpace(request.FullName))
-<<<<<<< HEAD
-            return BadRequest(new { code = "invalid_full_name", message = "Full name cannot be blank." });
-
-        if (request.DateOfBirth.HasValue && request.DateOfBirth.Value > DateOnly.FromDateTime(DateTime.UtcNow))
-            return BadRequest(new { code = "invalid_date_of_birth", message = "Date of birth cannot be in the future." });
-=======
             return BadRequest(new { code = "invalid_full_name", message = "Họ và tên không được để trống." });
 
         var trimmedName = request.FullName.Trim();
@@ -125,7 +119,7 @@ public sealed class ProfileController(IProfileStore profileStore, IAntiforgery a
 
         if (request.Bio is not null && request.Bio.Trim().Length > 500)
             return BadRequest(new { code = "invalid_bio", message = "Giới thiệu bản thân không được vượt quá 500 ký tự." });
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
+
 
         var normalizedRequest = request;
         if (!string.IsNullOrWhiteSpace(request.AvatarUrl))

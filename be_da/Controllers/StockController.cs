@@ -4,10 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using be_da.Application.Abstractions;
 using be_da.Application.Stock;
-<<<<<<< HEAD
-=======
 using TKSC.Controllers.Middlewares;
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
 namespace be_da.Controllers;
 
@@ -15,10 +12,8 @@ namespace be_da.Controllers;
 [ApiController]
 [Route("api/stock")]
 [Authorize(Roles = "Staff,Manager")]
-<<<<<<< HEAD
-=======
+
 [ValidatedRequest]
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 public sealed class StockController(IStockStore stockStore, IAntiforgery antiforgery) : ControllerBase
 {
     [HttpGet("categories")]
@@ -35,19 +30,13 @@ public sealed class StockController(IStockStore stockStore, IAntiforgery antifor
     {
         if (category is not null && !StockRules.Categories.Contains(category))
             return BadRequest(new { code = "INVALID_CATEGORY", message = "Nhóm hàng không hợp lệ." });
-<<<<<<< HEAD
-        return Ok(await stockStore.GetProductsAsync(new StockProductFilter(search, category, includeInactive), cancellationToken));
-    }
 
-    [HttpGet("products/{id:long}")]
-=======
         if (StockRules.ValidateSearch(search) is { } searchError)
             return BadRequest(new { code = "VALIDATION_FAILED", message = searchError });
         return Ok(await stockStore.GetProductsAsync(new StockProductFilter(search, category, includeInactive), cancellationToken));
     }
 
     [HttpGet("products/{id:long:min(1)}")]
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     [ProducesResponseType(typeof(StockProduct), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProduct(long id, CancellationToken cancellationToken)
@@ -71,11 +60,8 @@ public sealed class StockController(IStockStore stockStore, IAntiforgery antifor
         return CreatedAtAction(nameof(GetProduct), new { id = result.Product!.Id }, result.Product);
     }
 
-<<<<<<< HEAD
-    [HttpPut("products/{id:long}")]
-=======
+
     [HttpPut("products/{id:long:min(1)}")]
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     [ProducesResponseType(typeof(StockProduct), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -84,22 +70,16 @@ public sealed class StockController(IStockStore stockStore, IAntiforgery antifor
         if (!await HasValidCsrf()) return BadRequest(new { code = "invalid_csrf_token" });
         if (StockRules.ValidateDetails(request.Name, request.Category, request.UnitPriceVnd, request.ReorderLevel) is { } error)
             return BadRequest(new { code = "VALIDATION_FAILED", message = error });
-<<<<<<< HEAD
-=======
+
         if (request.Units is not null && StockUnitRules.ValidateUnits(request.Units) is { } unitError)
             return BadRequest(new { code = "VALIDATION_FAILED", message = unitError });
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
         var result = await stockStore.UpdateProductAsync(id, request, cancellationToken);
         return result.Success ? Ok(result.Product) : ToError(result);
     }
 
     // Quantity changes only through posted movements; on-hand is never edited directly.
-<<<<<<< HEAD
-    [HttpPost("products/{id:long}/movements")]
-=======
     [HttpPost("products/{id:long:min(1)}/movements")]
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     [ProducesResponseType(typeof(StockProduct), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -114,11 +94,8 @@ public sealed class StockController(IStockStore stockStore, IAntiforgery antifor
         return result.Success ? Ok(result.Product) : ToError(result);
     }
 
-<<<<<<< HEAD
-    [HttpGet("products/{id:long}/movements")]
-=======
+
     [HttpGet("products/{id:long:min(1)}/movements")]
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     [ProducesResponseType(typeof(IReadOnlyList<StockMovementEntry>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMovements(long id, CancellationToken cancellationToken)
@@ -127,12 +104,6 @@ public sealed class StockController(IStockStore stockStore, IAntiforgery antifor
         return movements is null ? ProductNotFound() : Ok(movements);
     }
 
-<<<<<<< HEAD
-    private IActionResult ToError(StockResult result) => result.ErrorCode switch
-    {
-        "PRODUCT_NOT_FOUND" => NotFound(new { code = result.ErrorCode, message = result.Message }),
-        "SKU_EXISTS" or "PRODUCT_INACTIVE" or "INSUFFICIENT_STOCK" => Conflict(new { code = result.ErrorCode, message = result.Message }),
-=======
     // UC-27, UC-39: scan a barcode (or type a SKU) to find the item and its unit.
     [HttpGet("lookup")]
     [ProducesResponseType(typeof(StockCodeLookup), StatusCodes.Status200OK)]
@@ -170,7 +141,6 @@ public sealed class StockController(IStockStore stockStore, IAntiforgery antifor
         "PRODUCT_NOT_FOUND" => NotFound(new { code = result.ErrorCode, message = result.Message }),
         "UNIT_NOT_FOUND" or "QUANTITY_TOO_LARGE" => BadRequest(new { code = result.ErrorCode, message = result.Message }),
         "SKU_EXISTS" or "BARCODE_EXISTS" or "UNITS_LOCKED" or "PRODUCT_INACTIVE" or "INSUFFICIENT_STOCK" => Conflict(new { code = result.ErrorCode, message = result.Message }),
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         _ => BadRequest(new { code = result.ErrorCode, message = result.Message })
     };
 

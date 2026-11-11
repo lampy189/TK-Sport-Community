@@ -22,8 +22,6 @@
 .skill-reviews .exception-result-reason { padding-top: 12px; border-top: 1px solid currentColor; }
 .skill-reviews .exception-result-reason > span { display: block; margin-bottom: 4px; font-size: 12px; font-weight: 700; }
 .skill-reviews .exception-result-reason p { white-space: pre-wrap; }
-<<<<<<< HEAD
-=======
 
 /* Operational review screens: readable text and compact cards. */
 .workflow-page.skill-reviews { font-size:16px; gap:12px; }
@@ -40,4 +38,3 @@
  .workflow-page.skill-reviews .detail-card { padding:12px; }
  .workflow-page.skill-reviews .workflow-actions .button { flex:1; }
 }
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c

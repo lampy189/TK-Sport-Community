@@ -22,8 +22,6 @@ public static class SportAssessmentScoring
 
     // Identical arithmetic is explicitly approved; skill dimensions and profiles stay sport-specific.
     public static short? Calculate(IEnumerable<short?> marks) => BadmintonScoring.Calculate(marks);
-<<<<<<< HEAD
-=======
     // Preserve all four observations; the 0–4 level is a descriptor, not the calculation input.
     public static decimal? CriterionPoints(short? level, IReadOnlyList<short>? sliders)
     {
@@ -42,7 +40,6 @@ public static class SportAssessmentScoring
         return values.Any(v => v is null) ? null
             : (short)Math.Round(values.Sum(v => v!.Value), MidpointRounding.AwayFromZero);
     }
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     public static string Band(short score) => BadmintonScoring.Band(score);
     public static short ReviewScore(short latest, short previous) => BadmintonScoring.ReviewScore(latest, previous);
 }

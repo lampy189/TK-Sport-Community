@@ -5,11 +5,7 @@ public record TicketSummary(long Id, long OrderId, long PlayerId, long SessionId
     string Status, string? TicketCode, bool Valid, DateOnly? SessionDate, TimeOnly? StartTime, TimeOnly? EndTime,
     string OrderStatus, DateTimeOffset? ExpiresAt, string? PaymentStatus,
     string? SportName, string? CourtName, string? VenueName, string? HolderName, bool CheckedIn,
-<<<<<<< HEAD
-    string? RefundStatus, int? RefundAmountVnd) { public bool CanManage { get; init; } = true; public string? SessionStatus { get; init; } public string? VenueIssue { get; init; } public long? PendingChangeId { get; init; } public bool CanResolveIssue { get; init; } }
-=======
     string? RefundStatus, int? RefundAmountVnd) { public bool CanManage { get; init; } = true; public string? SessionStatus { get; init; } public string? VenueIssue { get; init; } public long? PendingChangeId { get; init; } public bool CanResolveIssue { get; init; } public string TicketKind { get; init; } = "social"; public DateTimeOffset? ValidUntil { get; init; } }
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 public record TicketCancelContext(long OrderId, DateOnly SessionDate, TimeOnly StartTime);
 public record TicketCancelResult(long TicketId, string Status, int RefundAmountVnd);
 public record OrderSummary(long Id, string OrderCode, int TotalAmount, string Status,

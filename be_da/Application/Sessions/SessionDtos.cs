@@ -9,14 +9,10 @@ public sealed record SessionFilter(
     long? TimeSlotId = null,
     string? Status = null,
     DateOnly? FromDate = null,
-<<<<<<< HEAD
-    DateOnly? ToDate = null
-=======
     DateOnly? ToDate = null,
     long? VenueId = null,
     string? Venue = null,
     string? SessionType = null
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 );
 
 public sealed record RegisterSessionResult(

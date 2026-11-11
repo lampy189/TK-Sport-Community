@@ -22,8 +22,6 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
         return Ok(timeSlots);
     }
 
-<<<<<<< HEAD
-=======
     // UC-06 / SCR-04: Get active Sport Center venues for filtering
     [AllowAnonymous]
     [HttpGet("venues")]
@@ -35,8 +33,6 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
             venues = venues.Where(v => v.Id == selected).ToList();
         return Ok(venues);
     }
-
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     // UC-06: Browse court sessions
     [AllowAnonymous]
     [HttpGet]
@@ -49,12 +45,6 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
         [FromQuery] string? status,
         [FromQuery] DateOnly? fromDate,
         [FromQuery] DateOnly? toDate,
-<<<<<<< HEAD
-        CancellationToken cancellationToken)
-    {
-        var currentUserId = TryGetUserId(out var uid) ? uid : (long?)null;
-        var filter = new SessionFilter(sportId, sport, date, timeSlotId, status, fromDate, toDate);
-=======
         [FromQuery] long? venueId,
         [FromQuery] string? venue,
         [FromQuery] string? sessionType,
@@ -74,7 +64,7 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
         if (restricted.HasValue && venueId.HasValue && restricted != venueId) return Forbid();
         if (restricted.HasValue) { venueId = restricted; venue = null; }
         var filter = new SessionFilter(sportId, sport, date, timeSlotId, status, fromDate, toDate, venueId, venue, sessionType);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
+
         var sessions = await sessionStore.GetSessionsAsync(filter, currentUserId, cancellationToken);
         return Ok(sessions);
     }
@@ -89,11 +79,10 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
         var currentUserId = TryGetUserId(out var uid) ? uid : (long?)null;
         var session = await sessionStore.GetSessionByIdAsync(id, currentUserId, cancellationToken);
         if (session == null) return NotFound(new { code = "SESSION_NOT_FOUND", message = "Session not found." });
-<<<<<<< HEAD
-=======
+
         if (be_da.Authorization.CenterSelection.RestrictedVenue is long center && session.Summary.VenueId != center)
             return NotFound(new { code = "SESSION_NOT_FOUND", message = "Không tìm thấy buổi tại cơ sở đang chọn." });
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
+
         return Ok(session);
     }
 
@@ -111,15 +100,13 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
         if (!await HasValidCsrf()) return BadRequest(new { code = "invalid_csrf_token" });
         if (!TryGetUserId(out var playerUserId)) return Unauthorized();
 
-<<<<<<< HEAD
-=======
+
         if (be_da.Authorization.CenterSelection.RestrictedVenue is long center)
         {
             var target = await sessionStore.GetSessionByIdAsync(id, playerUserId, cancellationToken);
             if (target is null || target.Summary.VenueId != center) return NotFound(new { code = "SESSION_NOT_FOUND" });
         }
 
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         var result = await sessionStore.RegisterSessionAsync(playerUserId, id, cancellationToken);
         if (!result.Success)
         {

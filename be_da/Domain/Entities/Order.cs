@@ -21,11 +21,8 @@ public partial class Order
 
     public string? HandoverState { get; set; }
 
-<<<<<<< HEAD
-=======
     public long? BuyerId { get; set; }
 
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();

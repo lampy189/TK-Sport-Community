@@ -5,11 +5,7 @@ using be_da.Application.Abstractions;
 
 namespace be_da.Authorization;
 
-<<<<<<< HEAD
-public sealed class AccountCookieEvents(IAccountStore accounts, IWebHostEnvironment environment) : CookieAuthenticationEvents
-=======
 public sealed class AccountCookieEvents(IAccountStore accounts, IWebHostEnvironment environment, CenterSelection centers) : CookieAuthenticationEvents
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 {
     public override async Task ValidatePrincipal(CookieValidatePrincipalContext context)
     {
@@ -28,9 +24,6 @@ public sealed class AccountCookieEvents(IAccountStore accounts, IWebHostEnvironm
             return;
         }
         // Refresh authorization from DB on every request: never retain a stale privileged role.
-<<<<<<< HEAD
-        context.ReplacePrincipal(AccountPrincipal.Create(account, developmentLogin));
-=======
         long? selected = long.TryParse(context.Principal?.FindFirstValue(CenterSelection.SelectedClaim), out var selectedId) ? selectedId : null;
         if (centers.Enabled)
         {
@@ -39,7 +32,6 @@ public sealed class AccountCookieEvents(IAccountStore accounts, IWebHostEnvironm
             if (selected.HasValue && !(await centers.Choices(account, context.HttpContext.RequestAborted)).Any(v => v.Id == selected)) selected = null;
         }
         context.ReplacePrincipal(AccountPrincipal.Create(account, developmentLogin, selected));
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     }
 
     public override Task RedirectToLogin(RedirectContext<CookieAuthenticationOptions> context)

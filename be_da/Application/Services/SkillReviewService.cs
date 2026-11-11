@@ -19,12 +19,7 @@ public sealed record ReviewEvent(string Status, string Reason, DateTimeOffset At
 public sealed class SkillReviewService(Sep490Context db, TimeProvider clock, SkillAssessmentService assessments)
 {
     private static AssessmentException Error(int status, string message) => new(status, message);
-<<<<<<< HEAD
-    private static string Reason(string? value) => !string.IsNullOrWhiteSpace(value) && value.Trim().Length <= 2000
-        ? value.Trim() : throw Error(400, "Nhập lý do từ 1 đến 2000 ký tự.");
-=======
     private static string Reason(string? value) => SkillReviewRules.Reason(value);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     private void Record(string type, long id, long actor, string action, string status, string reason) =>
         db.AuditLogs.Add(new AuditLog { EntityType = type, EntityId = id, ActorId = actor, Action = action,
             NewValue = JsonSerializer.Serialize(new ReviewEvent(status, reason, clock.GetUtcNow(), actor)) });
@@ -53,17 +48,7 @@ public sealed class SkillReviewService(Sep490Context db, TimeProvider clock, Ski
         catch (SqlException e) when (e.Number is 1205 or 51000)
         { throw Error(409, "Dữ liệu đang được cập nhật. Vui lòng tải lại và thử lại."); }
     }
-<<<<<<< HEAD
-    private void Future(Session session)
-    {
-        var now = clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7)).DateTime;
-        if (!(string.Equals(session.Status, "published", StringComparison.OrdinalIgnoreCase) || string.Equals(session.Status, "open", StringComparison.OrdinalIgnoreCase))
-            || session.SessionDate.ToDateTime(session.TimeSlot.StartTime) <= now)
-            throw Error(409, "Chỉ xử lý ngoại lệ cho buổi đã công bố và chưa bắt đầu.");
-    }
-=======
     private void Future(Session session) => SkillReviewRules.Future(session, clock.GetUtcNow());
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     public Task<object> RequestException(long sessionId, long actor, ReviewInput input, CancellationToken ct) => Write<object>(async () =>
     {
         var reason = Reason(input.Reason);
@@ -190,13 +175,8 @@ public sealed class SkillReviewService(Sep490Context db, TimeProvider clock, Ski
                 throw Error(409, "Đã có kết quả mới hơn. Tải lại và xem xét kết quả hiện hành.");
             if (row.Assessment == null || !SportAssessmentScoring.Supports(row.Assessment.Rubric))
                 throw Error(409, "Môn/rubric này chưa có quy tắc điều chỉnh điểm được cấu hình.");
-<<<<<<< HEAD
-            if (input.Score is null or < 0 or > 100) throw Error(400, "Điểm điều chỉnh phải từ 0 đến 100.");
-            var band = SportAssessmentScoring.Band(input.Score.Value);
-=======
             var correctedScore = SkillReviewRules.CorrectedScore(input.Score);
             var band = SportAssessmentScoring.Band(correctedScore);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             db.PlayerRatingHistories.Add(new PlayerRatingHistory { PlayerSportProfileId = profile.Id, AssessmentId = row.AssessmentId,
                 ChangedBy = actor, OldScore = profile.CurrentScore, NewScore = input.Score, OldBand = profile.CurrentBand, NewBand = band });
             profile.CurrentScore = input.Score;

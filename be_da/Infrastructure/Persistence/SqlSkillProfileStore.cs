@@ -1,8 +1,5 @@
 using System.Data;
-<<<<<<< HEAD
-=======
 using System.Text.Json;
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 using Microsoft.Data.SqlClient;
 using be_da.Application.Abstractions;
 using be_da.Application.Skills;
@@ -14,22 +11,14 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
     public async Task<IReadOnlyList<SportRubricDto>> GetActiveRubricsAsync(long? sportId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-<<<<<<< HEAD
-        await connection.OpenAsync(cancellationToken);
-=======
         await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         return await LoadActiveRubricsInternalAsync(connection, null, sportId, cancellationToken);
     }
 
     public async Task<PlayerSkillOverviewDto?> GetPlayerSkillOverviewAsync(long userId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-<<<<<<< HEAD
-        await connection.OpenAsync(cancellationToken);
-=======
         await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
         // 1. Resolve User and Ensure Player Record Exists
         const string userPlayerSql = """
@@ -106,11 +95,7 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
                 var pId = reader.GetInt64(0);
                 var spId = reader.GetInt64(1);
                 var score = reader.IsDBNull(2) ? null : (short?)reader.GetInt16(2);
-<<<<<<< HEAD
-                var band = reader.IsDBNull(3) ? null : reader.GetString(3);
-=======
                 var band = SqlSessionStore.NormalizeBand(reader.IsDBNull(3) ? null : reader.GetString(3), score);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                 var status = reader.IsDBNull(4) ? "Unrated" : reader.GetString(4);
                 rawProfiles[spId] = (pId, score, band, status);
             }
@@ -184,11 +169,7 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
         }
 
         await using var connection = new SqlConnection(connectionString);
-<<<<<<< HEAD
-        await connection.OpenAsync(cancellationToken);
-=======
         await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         try
@@ -469,8 +450,6 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             .ToList();
     }
 
-<<<<<<< HEAD
-=======
     private static readonly JsonSerializerOptions AuditJsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -496,16 +475,12 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
         string? Band,
         string? Reason
     );
-
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     private static async Task<AssessmentResultDto?> LoadLatestAssessmentAsync(
         SqlConnection connection,
         SqlTransaction? transaction,
         long profileId,
         CancellationToken cancellationToken)
     {
-<<<<<<< HEAD
-=======
         const string latestIdSql = """
             SELECT TOP 1 a.id
             FROM dbo.assessments a
@@ -539,7 +514,6 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
         long assessmentId,
         CancellationToken cancellationToken)
     {
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         const string headSql = """
             SELECT TOP 1
                 a.id, a.rubric_id, r.name AS rubric_name, r.version AS rubric_version,
@@ -549,9 +523,6 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
                 ISNULL(a.total_score, 0) AS total_score,
                 ISNULL(a.band_result, 'B1') AS band_result,
                 a.assessor_id, u.full_name AS assessor_name, ro.code AS assessor_role,
-<<<<<<< HEAD
-                a.session_id, s.session_date, c.name AS court_name, ts.label AS time_label
-=======
                 a.session_id, s.session_date, c.name AS court_name,
                 CASE
                     WHEN ts.label IS NOT NULL AND LTRIM(RTRIM(ts.label)) <> '' THEN ts.label
@@ -560,28 +531,16 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
                     ELSE NULL
                 END AS time_label,
                 v.name AS venue_name
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             FROM dbo.assessments a
             JOIN dbo.rubrics r ON r.id = a.rubric_id
             JOIN dbo.users u ON u.id = a.assessor_id
             JOIN dbo.roles ro ON ro.id = u.role_id
             LEFT JOIN dbo.sessions s ON s.id = a.session_id
             LEFT JOIN dbo.courts c ON c.id = s.court_id
-<<<<<<< HEAD
-            LEFT JOIN dbo.time_slots ts ON ts.id = s.time_slot_id
-            WHERE a.player_sport_profile_id = @profileId
-              AND LOWER(a.status) IN ('published', 'submitted')
-            ORDER BY CASE WHEN LOWER(REPLACE(a.assessment_type, '_', '')) = 'oncourt' THEN 1 ELSE 0 END DESC, a.id DESC;
-            """;
-
-        long assessmentId;
-=======
             LEFT JOIN dbo.venues v ON v.id = c.venue_id
             LEFT JOIN dbo.time_slots ts ON ts.id = s.time_slot_id
             WHERE a.id = @assessmentId;
             """;
-
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         long rubricId;
         string rubricName;
         string rubricVersion;
@@ -596,18 +555,11 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
         DateOnly? sessionDate;
         string? courtName;
         string? timeLabel;
-<<<<<<< HEAD
-
-        await using (var cmd = new SqlCommand(headSql, connection, transaction))
-        {
-            cmd.Parameters.Add("@profileId", SqlDbType.BigInt).Value = profileId;
-=======
         string? venueName;
 
         await using (var cmd = new SqlCommand(headSql, connection, transaction))
         {
             cmd.Parameters.Add("@assessmentId", SqlDbType.BigInt).Value = assessmentId;
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
             if (!await reader.ReadAsync(cancellationToken))
             {
@@ -629,8 +581,6 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             sessionDate = reader.IsDBNull(12) ? null : DateOnly.FromDateTime(reader.GetDateTime(12));
             courtName = reader.IsDBNull(13) ? null : reader.GetString(13);
             timeLabel = reader.IsDBNull(14) ? null : reader.GetString(14);
-<<<<<<< HEAD
-=======
             venueName = reader.IsDBNull(15) ? null : reader.GetString(15);
         }
 
@@ -709,7 +659,6 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
                     // Ignore malformed audit JSON
                 }
             }
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         }
 
         const string scoresSql = """
@@ -728,27 +677,17 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             await using var reader = await scoreCmd.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
-<<<<<<< HEAD
-                var mark = reader.GetInt16(4);
-                scores.Add(new AssessmentDimensionScoreDto(
-                    DimensionId: reader.GetInt64(0),
-=======
                 var dimId = reader.GetInt64(0);
                 var mark = reader.GetInt16(4);
                 evidenceByDimId.TryGetValue(dimId, out var evidence);
                 scores.Add(new AssessmentDimensionScoreDto(
                     DimensionId: dimId,
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                     DimensionCode: reader.GetString(1),
                     DimensionName: reader.GetString(2),
                     WeightPercent: reader.GetInt16(3),
                     Score: mark,
-<<<<<<< HEAD
-                    WeightedPoints: (short)(mark * 5)
-=======
                     WeightedPoints: pointsByDimId.TryGetValue(dimId, out var exactPoints) ? exactPoints : mark * 5m,
                     Evidence: evidence
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                 ));
             }
         }
@@ -769,9 +708,6 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             SessionDate: sessionDate,
             CourtName: courtName,
             TimeLabel: timeLabel,
-<<<<<<< HEAD
-            Scores: scores
-=======
             Scores: scores,
             VenueName: venueName,
             PublishReason: publishReason,
@@ -780,7 +716,6 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             OldBand: oldBand,
             PublishedScore: publishedScore,
             PublishedBand: publishedBand
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         );
     }
 
@@ -806,30 +741,6 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
             ORDER BY h.id DESC;
             """;
 
-<<<<<<< HEAD
-        var items = new List<RatingHistoryItemDto>();
-        await using var cmd = new SqlCommand(sql, connection, transaction);
-        cmd.Parameters.Add("@profileId", SqlDbType.BigInt).Value = profileId;
-
-        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
-        {
-            items.Add(new RatingHistoryItemDto(
-                Id: reader.GetInt64(0),
-                OldScore: reader.IsDBNull(1) ? null : reader.GetInt16(1),
-                NewScore: reader.IsDBNull(2) ? null : reader.GetInt16(2),
-                OldBand: reader.IsDBNull(3) ? null : reader.GetString(3),
-                NewBand: reader.IsDBNull(4) ? null : reader.GetString(4),
-                ChangedByUserId: reader.GetInt64(5),
-                ChangedByName: reader.GetString(6),
-                ChangedByRole: reader.GetString(7),
-                AssessmentId: reader.IsDBNull(8) ? null : reader.GetInt64(8),
-                AssessmentType: reader.IsDBNull(9) ? null : reader.GetString(9),
-                SessionId: reader.IsDBNull(10) ? null : reader.GetInt64(10),
-                SessionDate: reader.IsDBNull(11) ? null : DateOnly.FromDateTime(reader.GetDateTime(11)),
-                CourtName: reader.IsDBNull(12) ? null : reader.GetString(12)
-            ));
-=======
         var rawItems = new List<RatingHistoryItemDto>();
         await using (var cmd = new SqlCommand(sql, connection, transaction))
         {
@@ -865,7 +776,6 @@ public sealed class SqlSkillProfileStore(string connectionString) : ISkillProfil
                 details = await LoadAssessmentByIdAsync(connection, transaction, item.AssessmentId.Value, cancellationToken);
             }
             items.Add(item with { AssessmentDetails = details });
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         }
 
         return items;

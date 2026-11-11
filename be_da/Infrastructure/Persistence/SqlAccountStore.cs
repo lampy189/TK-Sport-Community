@@ -9,17 +9,6 @@ namespace be_da.Infrastructure.Persistence;
 public sealed class SqlAccountStore(string connectionString) : IAccountStore
 {
     private const string AccountSelect = """
-<<<<<<< HEAD
-        SELECT u.id, u.email, u.full_name, r.code, u.status, u.google_subject, u.deleted_at
-        FROM dbo.users u JOIN dbo.roles r ON r.id=u.role_id
-        """;
-
-    public async Task<Account?> FindByGoogleSubjectAsync(string subject, CancellationToken cancellationToken)
-    {
-        await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
-        await using var command = new SqlCommand(AccountSelect + " WHERE u.google_subject=@subject;", connection);
-=======
         SELECT u.id, u.email, u.full_name, r.code, u.status, u.google_subject, u.deleted_at, u.venue_id
         FROM dbo.users u JOIN dbo.roles r ON r.id=u.role_id
         """;
@@ -40,7 +29,6 @@ public sealed class SqlAccountStore(string connectionString) : IAccountStore
         await using var connection = new SqlConnection(connectionString);
         await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var command = new SqlCommand(await AccountSelectAsync(connection, cancellationToken) + " WHERE u.google_subject=@subject;", connection);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         command.Parameters.Add("@subject", SqlDbType.VarChar, 255).Value = subject;
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         return await reader.ReadAsync(cancellationToken) ? Read(reader) : null;
@@ -48,13 +36,8 @@ public sealed class SqlAccountStore(string connectionString) : IAccountStore
     public async Task<Account?> FindByIdAsync(long id, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-<<<<<<< HEAD
-        await connection.OpenAsync(cancellationToken);
-        await using var command = new SqlCommand(AccountSelect + " WHERE u.id=@id;", connection);
-=======
         await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var command = new SqlCommand(await AccountSelectAsync(connection, cancellationToken) + " WHERE u.id=@id;", connection);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         command.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         return await reader.ReadAsync(cancellationToken) ? Read(reader) : null;
@@ -63,13 +46,8 @@ public sealed class SqlAccountStore(string connectionString) : IAccountStore
     public async Task<Account?> FindByEmailAsync(string email, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-<<<<<<< HEAD
-        await connection.OpenAsync(cancellationToken);
-        await using var command = new SqlCommand(AccountSelect + " WHERE u.email=@email;", connection);
-=======
         await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         await using var command = new SqlCommand(await AccountSelectAsync(connection, cancellationToken) + " WHERE u.email=@email;", connection);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         command.Parameters.Add("@email", SqlDbType.NVarChar, 320).Value = email;
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         return await reader.ReadAsync(cancellationToken) ? Read(reader) : null;
@@ -79,18 +57,6 @@ public sealed class SqlAccountStore(string connectionString) : IAccountStore
         CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-<<<<<<< HEAD
-        await connection.OpenAsync(cancellationToken);
-        // Serialize first registration across requests. Unique indexes are the final safety net.
-        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-        try
-        {
-            await using var find = new SqlCommand("""
-                SELECT u.id, u.email, u.full_name, r.code, u.status, u.google_subject, u.deleted_at
-                FROM dbo.users u WITH (UPDLOCK, HOLDLOCK) JOIN dbo.roles r ON r.id=u.role_id
-                WHERE u.google_subject=@subject;
-                """, connection, transaction);
-=======
         await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
         // Serialize first registration across requests. Unique indexes are the final safety net.
         var accountSelect = await AccountSelectAsync(connection, cancellationToken);
@@ -100,7 +66,6 @@ public sealed class SqlAccountStore(string connectionString) : IAccountStore
             await using var find = new SqlCommand(
                 accountSelect.Replace("dbo.users u JOIN", "dbo.users u WITH (UPDLOCK, HOLDLOCK) JOIN")
                 + " WHERE u.google_subject=@subject;", connection, transaction);
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             find.Parameters.Add("@subject", SqlDbType.VarChar, 255).Value = subject;
             Account? existing;
             await using (var reader = await find.ExecuteReaderAsync(cancellationToken))
@@ -143,9 +108,5 @@ public sealed class SqlAccountStore(string connectionString) : IAccountStore
 
     private static Account Read(SqlDataReader reader) => new(reader.GetInt64(0), reader.GetString(1),
         reader.GetString(2), reader.GetString(3), reader.GetString(4),
-<<<<<<< HEAD
-        reader.IsDBNull(5) ? "" : reader.GetString(5), !reader.IsDBNull(6));
-=======
         reader.IsDBNull(5) ? "" : reader.GetString(5), !reader.IsDBNull(6), reader.IsDBNull(7) ? null : reader.GetInt64(7));
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 }

@@ -5,11 +5,8 @@ async function call(path, body) {
  return response.json();
 }
 export const aftercare={
-<<<<<<< HEAD
-=======
  report:(id,category,content,imageBase64)=>call(`tickets/${id}/reports`,{category,content,imageBase64}),
  incidents:()=>call('incidents'),
->>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
  inbox:()=>call('inbox'),
  messages:id=>call(`tickets/${id}/messages`),
  sendMessage:(id,content,imageBase64)=>call(`tickets/${id}/messages`,{content,imageBase64}),
