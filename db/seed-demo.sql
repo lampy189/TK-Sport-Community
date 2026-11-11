@@ -118,6 +118,11 @@ BEGIN TRY
     SELECT p.id, 0, 10 FROM dbo.products p
     WHERE p.sku IN ('DEMO-WATER', 'DEMO-SHUTTLE', 'DEMO-PICKLEBALL')
       AND NOT EXISTS (SELECT 1 FROM dbo.stock_items x WHERE x.product_id = p.id);
+    INSERT dbo.product_units (product_id, unit_name, factor_to_base)
+    SELECT p.id, v.unit_name, 1
+    FROM (VALUES ('DEMO-WATER', N'Chai'), ('DEMO-SHUTTLE', N'Quả'), ('DEMO-PICKLEBALL', N'Quả')) v(sku, unit_name)
+    JOIN dbo.products p ON p.sku = v.sku
+    WHERE NOT EXISTS (SELECT 1 FROM dbo.product_units x WHERE x.product_id = p.id AND x.factor_to_base = 1);
 
     COMMIT TRANSACTION;
     SELECT N'Seed completed' AS result, @today AS vietnam_date;

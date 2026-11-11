@@ -18,6 +18,7 @@ be_da/*.suo
 
 # Environment
 .env
+deploy/runtime.env
 *.env.local
 
 # OS
@@ -34,3 +35,15 @@ Thumbs.db
 !.env.example
 **/appsettings.Local.json
 .claude/launch.json
+be_da/Controllers/appsettings.Development.json
+
+# Browser test artifacts
+fe_da/test-results/
+
+# Local DucTM lab fixtures and generated evidence
+/docs/testing/duc/RUN.md
+/docs/testing/duc/ductm-test-manifest.json
+/docs/testing/duc/api-verification.json
+/docs/testing/duc/sql-verification.json
+/docs/testing/duc/round1/*
+!/docs/testing/duc/round1/README.md

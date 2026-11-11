@@ -72,6 +72,18 @@ export async function request(path, options = {}) {
 
 // Auth API
 export const api = {
+  async getCenterOptions() {
+    const res = await request('/api/auth/centers');
+    if (!res.ok) throw new Error('Không tải được danh sách cơ sở.');
+    return res.json();
+  },
+  async selectCenter(venueId) {
+    const res = await request('/api/auth/center', { method: 'POST', body: JSON.stringify({ venueId }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Không thể chuyển cơ sở.');
+    clearCsrfToken();
+    return data;
+  },
   async getMe() {
     const res = await request('/api/auth/me');
     if (!res.ok) return null;
@@ -83,10 +95,10 @@ export const api = {
     }
   },
 
-  async devLogin(email, portal) {
+  async devLogin(email, portal, venueId) {
     const res = await request('/api/auth/dev-login', {
       method: 'POST',
-      body: JSON.stringify({ email, portal }),
+      body: JSON.stringify({ email, portal, venueId: venueId ? Number(venueId) : null }),
     });
     const text = await res.text();
     let data;
@@ -125,7 +137,7 @@ export const api = {
     return res.ok;
   },
 
-  async googleLogin(portal) {
+  async googleLogin(portal, venueId) {
     try {
       const csrf = await getCsrfToken();
       if (!csrf) {
@@ -134,6 +146,7 @@ export const api = {
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = '/api/auth/google' + (portal ? '?portal=' + encodeURIComponent(portal) : '');
+      if (venueId) form.action += (portal ? '&' : '?') + 'venueId=' + encodeURIComponent(venueId);
       
       const inputCsrf = document.createElement('input');
       inputCsrf.type = 'hidden';
@@ -164,6 +177,14 @@ export const api = {
     return res.json();
   },
 
+  async getVenues() {
+    const res = await request('/api/sessions/venues');
+    if (!res.ok) {
+      throw new Error(`Failed to load venues: HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+
   async getSessions(params = {}) {
     const query = new URLSearchParams();
     if (params.sportId) query.set('sportId', params.sportId);
@@ -173,6 +194,9 @@ export const api = {
     if (params.toDate) query.set('toDate', params.toDate);
     if (params.timeSlotId) query.set('timeSlotId', params.timeSlotId);
     if (params.status) query.set('status', params.status);
+    if (params.venueId) query.set('venueId', params.venueId);
+    if (params.venue) query.set('venue', params.venue);
+    if (params.sessionType) query.set('sessionType', params.sessionType);
 
     const queryString = query.toString();
     const url = '/api/sessions' + (queryString ? `?${queryString}` : '');

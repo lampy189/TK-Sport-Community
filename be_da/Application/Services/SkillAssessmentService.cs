@@ -11,10 +11,39 @@ namespace TKSC.Application.Services;
 
 public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
 {
-    public async Task<object> SessionsAsync(long actorId, CancellationToken ct) => await db.Sessions.AsNoTracking()
-        .Where(s => s.SessionReferees.Any(r => r.RefereeId == actorId) && s.Status != "cancelled")
-        .OrderByDescending(s => s.SessionDate).ThenByDescending(s => s.TimeSlot.StartTime).Take(100)
-        .Select(s => new { s.Id, s.SessionDate, s.Sport.Name, Court = s.Court.Name, s.TimeSlot.StartTime }).ToListAsync(ct);
+    public async Task<object> SessionsAsync(long actorId, CancellationToken ct)
+    {
+        var today = DateOnly.FromDateTime(clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7)).DateTime);
+        return await db.Sessions.AsNoTracking()
+            .Where(s => s.SessionReferees.Any(r => r.RefereeId == actorId) && s.Status != "cancelled" && s.SessionDate >= today)
+            .OrderBy(s => s.SessionDate).ThenBy(s => s.TimeSlot.StartTime).Take(100)
+            .Select(s => new { s.Id, s.SessionDate, s.Sport.Name, Court = s.Court.Name, s.TimeSlot.StartTime }).ToListAsync(ct);
+    }
+
+    public async Task<object> PlayerContextAsync(long sessionId, long playerId, long actorId, CancellationToken ct)
+    {
+        var session = await AssignedSessionAsync(sessionId, actorId, ct);
+        // Only expose context for an eligible attendee of the referee's assigned session.
+        var attendee = (await GetAttendeesAsync(sessionId, actorId, ct)).SingleOrDefault(p => p.PlayerId == playerId)
+            ?? throw Error(403, "Chỉ xem hồ sơ người chơi đã điểm danh trong buổi được phân công.");
+        var venueId = await db.Courts.Where(c => c.Id == session.CourtId).Select(c => c.VenueId).SingleAsync(ct);
+        var profile = await db.PlayerSportProfiles.AsNoTracking()
+            .Where(p => p.PlayerId == playerId && p.SportId == session.SportId)
+            .Select(p => new { p.CurrentScore, p.CurrentBand, p.RatingStatus, Sport = p.Sport.Name }).SingleOrDefaultAsync(ct);
+        var participation = await db.Tickets.AsNoTracking()
+            .Where(t => t.PlayerId == playerId && t.Session.SportId == session.SportId && t.Session.Court.VenueId == venueId
+                && t.Status == "checkedin" && t.CheckedInBy != null && t.Order.Status == "paid" && t.SessionId != sessionId
+                && t.Session.SessionDate <= session.SessionDate)
+            .Select(t => new { t.SessionId, t.Session.SessionDate, t.Session.TimeSlot.StartTime, Court = t.Session.Court.Name })
+            .Distinct().OrderByDescending(t => t.SessionDate).ThenByDescending(t => t.StartTime).Take(20).ToListAsync(ct);
+        var ratings = await db.PlayerRatingHistories.AsNoTracking().Where(RatingPublicationRules.OfficialHistory)
+            .Where(h => h.PlayerSportProfile.PlayerId == playerId && h.PlayerSportProfile.SportId == session.SportId
+                && h.Assessment != null && h.Assessment.Session != null && h.Assessment.Session.Court.VenueId == venueId)
+            .OrderByDescending(h => h.Id).Take(20)
+            .Select(h => new { h.Id, h.NewScore, h.NewBand, h.OldScore, h.OldBand,
+                SessionDate = h.Assessment!.Session!.SessionDate, Rubric = h.Assessment.Rubric.Name }).ToListAsync(ct);
+        return new { attendee.PlayerId, attendee.Name, Profile = profile, Participation = participation, Ratings = ratings };
+    }
 
     private IQueryable<Rubric> Rubrics => db.Rubrics.Include(r => r.Sport).Include(r => r.RubricDimensions);
     private IQueryable<Assessment> Assessments => db.Assessments
@@ -127,11 +156,12 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
             if (!SportAssessmentScoring.Supports(a.Rubric) && request.Marks.Any(m => m.Score != null))
                 throw Error(409, "Chưa có quy tắc thang điểm cho rubric này; có thể lưu ghi chú với điểm null.");
             if (request.Marks.Any(m => m.Score is < 0 or > 4)) throw Error(400, "Điểm mỗi tiêu chí phải từ 0 đến 4.");
-            foreach (var mark in request.Marks)
+            var marks = request.Marks.Select(NormalizeMark).ToArray();
+            foreach (var mark in marks)
                 a.AssessmentScores.Single(s => s.DimensionId == mark.DimensionId).Score = mark.Score;
-            a.TotalScore = SportAssessmentScoring.Supports(a.Rubric) ? SportAssessmentScoring.Calculate(request.Marks.Select(m => m.Score)) : null;
+            a.TotalScore = SportAssessmentScoring.Supports(a.Rubric) ? CalculateTotal(marks) : null;
             a.BandResult = a.TotalScore is short total ? SportAssessmentScoring.Band(total) : null;
-            Audit(a, "assessment_saved", new AssessmentEvidence(clock.GetUtcNow(), request.Marks));
+            Audit(a, "assessment_saved", new AssessmentEvidence(clock.GetUtcNow(), marks));
             await db.SaveChangesAsync(ct);
             return await ViewAsync(a, ct);
         }, ct);
@@ -145,12 +175,8 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
             await EditableAsync(a, request.Revision, ct);
             await CheckAttendanceAsync(a.SessionId!.Value, a.PlayerSportProfile, actorId, ct);
             if (!SportAssessmentScoring.Supports(a.Rubric)) throw Error(409, "Rubric chưa có quy tắc công bố điểm.");
-            var total = SportAssessmentScoring.Calculate(a.AssessmentScores.Select(s => s.Score))
+            var total = CalculateTotal(await MarksAsync(a, ct))
                 ?? throw Error(409, "Phải quan sát đủ các tiêu chí trước khi công bố.");
-            var evidence = await EvidenceAsync(a.Id, ct);
-            if (a.AssessmentScores.Any(s => (s.Score == 0 || s.Score == 4)
-                && string.IsNullOrWhiteSpace(evidence.FirstOrDefault(m => m.DimensionId == s.DimensionId)?.Evidence)))
-                throw Error(409, "Điểm 0 hoặc 4 cần ghi chú bằng chứng quan sát.");
             var profile = a.PlayerSportProfile;
             if (profile.CurrentScore != request.ExpectedScore || profile.CurrentBand != request.ExpectedBand)
                 throw Error(409, "Hồ sơ đã thay đổi. Tải lại trước khi công bố.");
@@ -194,7 +220,7 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
             profile.RatingStatus = "Rated";
             a.Status = "published";
             // Keep the raw observation on Assessment; the smoothed published value lives in history/profile.
-            a.TotalScore = SportAssessmentScoring.Calculate(a.AssessmentScores.Select(s => s.Score));
+            a.TotalScore = CalculateTotal(await MarksAsync(a, ct));
             a.BandResult = SportAssessmentScoring.Band(a.TotalScore!.Value);
             if (!string.Equals(oldBand, band, StringComparison.OrdinalIgnoreCase))
                 await CheckFutureTicketsAsync(profile, actorId, ct);
@@ -251,14 +277,29 @@ public sealed class SkillAssessmentService(Sep490Context db, TimeProvider clock)
         return json is null ? Array.Empty<MarkInput>() : JsonSerializer.Deserialize<AssessmentEvidence>(json)!.Marks;
     }
 
-    private async Task<AssessmentView> ViewAsync(Assessment a, CancellationToken ct)
+    private static MarkInput NormalizeMark(MarkInput mark)
+    {
+        try { _ = SportAssessmentScoring.CriterionPoints(mark.Score, mark.SliderScores); }
+        catch (ArgumentException e) { throw Error(400, e.Message); }
+        return mark.SliderScores is null ? mark : mark with
+        { Score = (short)Math.Round(mark.SliderScores.Sum(v => (decimal)v) / 10m, MidpointRounding.AwayFromZero) };
+    }
+
+    private static short? CalculateTotal(IEnumerable<MarkInput> marks) =>
+        SportAssessmentScoring.CalculatePoints(marks.Select(m => SportAssessmentScoring.CriterionPoints(m.Score, m.SliderScores)));
+
+    private async Task<IReadOnlyList<MarkInput>> MarksAsync(Assessment a, CancellationToken ct)
     {
         var evidence = await EvidenceAsync(a.Id, ct);
-        return new(a.Id, a.SessionId!.Value, a.PlayerSportProfile.PlayerId, a.Status!, await RevisionAsync(a.Id, ct),
-            Map(a.Rubric), a.AssessmentScores.OrderBy(s => s.DimensionId).Select(s => new MarkInput(s.DimensionId, s.Score,
-                evidence.FirstOrDefault(m => m.DimensionId == s.DimensionId)?.Evidence)).ToList(),
-            a.TotalScore, a.BandResult, a.PlayerSportProfile.CurrentScore, a.PlayerSportProfile.CurrentBand);
+        return a.AssessmentScores.OrderBy(s => s.DimensionId).Select(s => new MarkInput(s.DimensionId, s.Score,
+            evidence.FirstOrDefault(m => m.DimensionId == s.DimensionId)?.Evidence,
+            evidence.FirstOrDefault(m => m.DimensionId == s.DimensionId)?.SliderScores)).ToList();
     }
+
+    private async Task<AssessmentView> ViewAsync(Assessment a, CancellationToken ct) =>
+        new(a.Id, a.SessionId!.Value, a.PlayerSportProfile.PlayerId, a.Status!, await RevisionAsync(a.Id, ct),
+            Map(a.Rubric), await MarksAsync(a, ct),
+            a.TotalScore, a.BandResult, a.PlayerSportProfile.CurrentScore, a.PlayerSportProfile.CurrentBand);
 
     private static RubricView Map(Rubric r) => new(r.Id, r.SportId, r.Version, r.Name, SportAssessmentScoring.Supports(r),
         r.RubricDimensions.OrderBy(d => d.Code).Select(d => new CriterionView(d.Id, d.Code, d.Name, d.WeightPercent)).ToList());

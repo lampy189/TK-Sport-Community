@@ -22,6 +22,18 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
         return Ok(timeSlots);
     }
 
+    // UC-06 / SCR-04: Get active Sport Center venues for filtering
+    [AllowAnonymous]
+    [HttpGet("venues")]
+    [ProducesResponseType(typeof(IReadOnlyList<VenueSummary>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetVenues(CancellationToken cancellationToken)
+    {
+        var venues = await sessionStore.GetVenuesAsync(cancellationToken);
+        if (be_da.Authorization.CenterSelection.CurrentVenue is long selected)
+            venues = venues.Where(v => v.Id == selected).ToList();
+        return Ok(venues);
+    }
+
     // UC-06: Browse court sessions
     [AllowAnonymous]
     [HttpGet]
@@ -34,10 +46,25 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
         [FromQuery] string? status,
         [FromQuery] DateOnly? fromDate,
         [FromQuery] DateOnly? toDate,
+        [FromQuery] long? venueId,
+        [FromQuery] string? venue,
+        [FromQuery] string? sessionType,
         CancellationToken cancellationToken)
     {
+        if (fromDate.HasValue && toDate.HasValue && fromDate.Value > toDate.Value)
+        {
+            return BadRequest(new
+            {
+                code = "INVALID_DATE_RANGE",
+                message = "Ngày bắt đầu (fromDate) không được lớn hơn ngày kết thúc (toDate)."
+            });
+        }
+
         var currentUserId = TryGetUserId(out var uid) ? uid : (long?)null;
-        var filter = new SessionFilter(sportId, sport, date, timeSlotId, status, fromDate, toDate);
+        var restricted = be_da.Authorization.CenterSelection.CurrentVenue;
+        if (restricted.HasValue && venueId.HasValue && restricted != venueId) return Forbid();
+        if (restricted.HasValue) { venueId = restricted; venue = null; }
+        var filter = new SessionFilter(sportId, sport, date, timeSlotId, status, fromDate, toDate, venueId, venue, sessionType);
         var sessions = await sessionStore.GetSessionsAsync(filter, currentUserId, cancellationToken);
         return Ok(sessions);
     }
@@ -52,6 +79,8 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
         var currentUserId = TryGetUserId(out var uid) ? uid : (long?)null;
         var session = await sessionStore.GetSessionByIdAsync(id, currentUserId, cancellationToken);
         if (session == null) return NotFound(new { code = "SESSION_NOT_FOUND", message = "Session not found." });
+        if (be_da.Authorization.CenterSelection.RestrictedVenue is long center && session.Summary.VenueId != center)
+            return NotFound(new { code = "SESSION_NOT_FOUND", message = "Không tìm thấy buổi tại cơ sở đang chọn." });
         return Ok(session);
     }
 
@@ -68,6 +97,12 @@ public sealed class SessionController(ISessionStore sessionStore, IAntiforgery a
     {
         if (!await HasValidCsrf()) return BadRequest(new { code = "invalid_csrf_token" });
         if (!TryGetUserId(out var playerUserId)) return Unauthorized();
+
+        if (be_da.Authorization.CenterSelection.RestrictedVenue is long center)
+        {
+            var target = await sessionStore.GetSessionByIdAsync(id, playerUserId, cancellationToken);
+            if (target is null || target.Summary.VenueId != center) return NotFound(new { code = "SESSION_NOT_FOUND" });
+        }
 
         var result = await sessionStore.RegisterSessionAsync(playerUserId, id, cancellationToken);
         if (!result.Success)

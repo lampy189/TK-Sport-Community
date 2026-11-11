@@ -182,11 +182,39 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const trimmedName = (editForm.fullName || '').trim();
+    if (trimmedName.length < 2 || trimmedName.length > 100) {
+      setFeedback({
+        type: 'error',
+        text: 'Họ và tên hiển thị phải có từ 2 đến 100 ký tự.'
+      });
+      return;
+    }
+
+    if (editForm.dateOfBirth) {
+      const todayIso = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+      if (editForm.dateOfBirth > todayIso || editForm.dateOfBirth < '1920-01-01') {
+        setFeedback({
+          type: 'error',
+          text: 'Ngày sinh không hợp lệ (không được vượt quá ngày hiện tại hoặc trước năm 1920).'
+        });
+        return;
+      }
+    }
+
+    if ((editForm.bio || '').trim().length > 500) {
+      setFeedback({
+        type: 'error',
+        text: 'Lời giới thiệu bản thân không được vượt quá 500 ký tự.'
+      });
+      return;
+    }
+
     setSaving(true);
     setFeedback(null);
     try {
       const updated = await api.updateMyProfile({
-        fullName: editForm.fullName.trim(),
+        fullName: trimmedName,
         dateOfBirth: editForm.dateOfBirth || null,
         gender: editForm.gender || null,
         avatarUrl: editForm.avatarUrl || null,
@@ -245,12 +273,12 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
               <span>{myProfile?.fullName || user?.fullName || 'Người chơi TKSC'}</span>
               <span
                 style={{
-                  fontSize: '11px',
+                  fontSize: '13px',
                   fontWeight: 700,
                   background: '#f0f9f4',
                   color: '#1b6f50',
                   border: '1px solid #cce8d8',
-                  padding: '3px 9px',
+                  padding: '4px 12px',
                   borderRadius: '999px'
                 }}
               >
@@ -259,13 +287,13 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
             </h2>
             <div className="comm-my-meta">
               <span>
-                <Mail size={13} /> {myProfile?.email || user?.email}
+                <Mail size={15} /> {myProfile?.email || user?.email}
               </span>
               <span>
-                <UserIcon size={13} /> Giới tính: <strong>{formatGenderLabel(myProfile?.gender)}</strong>
+                <UserIcon size={15} /> Giới tính: <strong>{formatGenderLabel(myProfile?.gender)}</strong>
               </span>
               <span>
-                <Calendar size={13} /> Ngày sinh: <strong>{myProfile?.dateOfBirth || 'Chưa cập nhật'}</strong>
+                <Calendar size={15} /> Ngày sinh: <strong>{myProfile?.dateOfBirth || 'Chưa cập nhật'}</strong>
               </span>
             </div>
             <p className="comm-my-bio">
@@ -275,14 +303,14 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
           {!isEditing && (
             <button
               type="button"
               className="comm-btn comm-btn-primary"
               onClick={handleOpenEdit}
             >
-              <Pencil size={14} />
+              <Pencil size={15} />
               <span>Sửa hồ sơ</span>
             </button>
           )}
@@ -292,7 +320,7 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
               className="comm-btn comm-btn-outline"
               onClick={onNavigateSkill}
             >
-              <Award size={14} />
+              <Award size={15} />
               <span>Hồ sơ kỹ năng</span>
             </button>
           )}
@@ -302,9 +330,9 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
       {feedback && (
         <div
           style={{
-            padding: '12px 16px',
-            borderRadius: '12px',
-            fontSize: '13.5px',
+            padding: '14px 18px',
+            borderRadius: '14px',
+            fontSize: '15px',
             fontWeight: 600,
             display: 'flex',
             justifyContent: 'space-between',
@@ -320,7 +348,7 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
             onClick={() => setFeedback(null)}
             style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit' }}
           >
-            <X size={15} />
+            <X size={16} />
           </button>
         </div>
       )}
@@ -330,24 +358,24 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-            gap: '20px'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
+            gap: '26px'
           }}
         >
           {/* Card 1: Thông tin cá nhân */}
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '18px',
+              borderRadius: '20px',
               border: '1px solid #e1e8e3',
-              padding: '24px',
+              padding: '28px 32px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '16px'
+              gap: '18px'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#14261c' }}>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#14261c' }}>
                 Thông tin cá nhân
               </h3>
               <button
@@ -355,15 +383,15 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
                 className="comm-btn comm-btn-ghost"
                 onClick={handleOpenEdit}
               >
-                <Pencil size={13} />
+                <Pencil size={15} />
                 <span>Chỉnh sửa</span>
               </button>
             </div>
 
             {loading ? (
-              <div style={{ color: '#55685d', fontSize: '13.5px' }}>Đang tải thông tin...</div>
+              <div style={{ color: '#55685d', fontSize: '15px' }}>Đang tải thông tin...</div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {[
                   { icon: UserIcon, label: 'Họ và tên', value: myProfile?.fullName || user?.fullName },
                   { icon: Mail, label: 'Email đăng nhập', value: myProfile?.email || user?.email },
@@ -376,31 +404,31 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '11px 14px',
-                      borderRadius: '11px',
+                      padding: '14px 18px',
+                      borderRadius: '13px',
                       background: '#f7faf8',
                       border: '1px solid #e8efe9'
                     }}
                   >
-                    <span style={{ fontSize: '13px', color: '#55685d', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Icon size={14} /> {label}
+                    <span style={{ fontSize: '15px', color: '#55685d', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Icon size={16} /> {label}
                     </span>
-                    <strong style={{ fontSize: '13.5px', color: '#14261c' }}>{value}</strong>
+                    <strong style={{ fontSize: '15.5px', color: '#14261c' }}>{value}</strong>
                   </div>
                 ))}
 
                 <div
                   style={{
-                    padding: '12px 14px',
-                    borderRadius: '11px',
+                    padding: '16px 18px',
+                    borderRadius: '13px',
                     background: '#f7faf8',
                     border: '1px solid #e8efe9'
                   }}
                 >
-                  <div style={{ fontSize: '13px', color: '#55685d', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <FileText size={14} /> Giới thiệu bản thân
+                  <div style={{ fontSize: '15px', color: '#55685d', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                    <FileText size={16} /> Giới thiệu bản thân
                   </div>
-                  <div style={{ fontSize: '13.5px', color: '#14261c', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: '15.5px', color: '#14261c', lineHeight: 1.6 }}>
                     {myProfile?.bio || 'Chưa cập nhật lời giới thiệu.'}
                   </div>
                 </div>
@@ -412,16 +440,16 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '18px',
+              borderRadius: '20px',
               border: '1px solid #e1e8e3',
-              padding: '24px',
+              padding: '28px 32px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '16px'
+              gap: '18px'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#14261c' }}>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#14261c' }}>
                 Mức Band &amp; Điểm Kỹ năng
               </h3>
               {onNavigateSkill && (
@@ -431,12 +459,12 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
                   onClick={onNavigateSkill}
                 >
                   <span>Chi tiết 5 tiêu chí</span>
-                  <ArrowUpRight size={14} />
+                  <ArrowUpRight size={15} />
                 </button>
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {[
                 { isPickleball: false, title: 'Cầu lông (Badminton)', data: myBadminton },
                 { isPickleball: true, title: 'Pickleball', data: myPickleball }
@@ -444,23 +472,23 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
                 <div
                   key={data.sportCode}
                   style={{
-                    padding: '16px 18px',
-                    borderRadius: '14px',
+                    padding: '20px 22px',
+                    borderRadius: '16px',
                     background: isPickleball ? '#f8faff' : '#f7faf8',
                     border: `1px solid ${isPickleball ? '#e6eefc' : '#e8efe9'}`,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px'
+                    gap: '10px'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <strong
                       style={{
-                        fontSize: '14px',
+                        fontSize: '16.5px',
                         color: '#14261c',
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '8px'
+                        gap: '10px'
                       }}
                     >
                       <span className={`comm-dot ${isPickleball ? 'is-pickleball' : ''}`} />
@@ -471,14 +499,14 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: '4px' }}>
                     <div>
-                      <div style={{ fontSize: '11px', color: '#55685d', fontWeight: 600 }}>
+                      <div style={{ fontSize: '13px', color: '#55685d', fontWeight: 600 }}>
                         Band hiện tại
                       </div>
                       <div
                         style={{
-                          fontSize: '23px',
+                          fontSize: '28px',
                           fontWeight: 800,
                           color: isPickleball ? '#1d4ed8' : '#1b6f50'
                         }}
@@ -487,16 +515,16 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '11px', color: '#55685d', fontWeight: 600 }}>
+                      <div style={{ fontSize: '13px', color: '#55685d', fontWeight: 600 }}>
                         Điểm kỹ năng
                       </div>
-                      <div style={{ fontSize: '19px', fontWeight: 800, color: '#14261c' }}>
+                      <div style={{ fontSize: '23px', fontWeight: 800, color: '#14261c' }}>
                         {data.currentScore !== null && data.currentScore !== undefined ? `${data.currentScore} / 100` : '— / 100'}
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ fontSize: '12px', color: '#55685d' }}>
+                  <div style={{ fontSize: '14px', color: '#55685d' }}>
                     Nguồn: <strong>{formatStatusVi(data.ratingStatus)}</strong>
                   </div>
                 </div>
@@ -509,17 +537,17 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '18px',
+            borderRadius: '20px',
             border: '1px solid #e1e8e3',
-            padding: '24px 28px'
+            padding: '28px 34px'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
             <div>
-              <h3 style={{ margin: '0 0 4px', fontSize: '17px', fontWeight: 700, color: '#14261c' }}>
+              <h3 style={{ margin: '0 0 6px', fontSize: '20px', fontWeight: 700, color: '#14261c' }}>
                 Chỉnh sửa Hồ sơ cá nhân
               </h3>
-              <p style={{ margin: 0, fontSize: '13px', color: '#55685d' }}>
+              <p style={{ margin: 0, fontSize: '14.5px', color: '#55685d' }}>
                 Để đổi ảnh đại diện, đưa chuột vào vòng tròn ảnh phía trên và bấm chọn file ảnh từ máy tính.
               </p>
             </div>
@@ -528,7 +556,7 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
               className="comm-btn comm-btn-outline"
               onClick={() => setIsEditing(false)}
             >
-              <X size={14} /> Đóng
+              <X size={15} /> Đóng
             </button>
           </div>
 
@@ -539,9 +567,11 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
                 <input
                   type="text"
                   required
+                  minLength={2}
+                  maxLength={100}
                   value={editForm.fullName}
                   onChange={(e) => setEditForm((f) => ({ ...f, fullName: e.target.value }))}
-                  placeholder="Nhập họ và tên của bạn"
+                  placeholder="Nhập họ và tên của bạn (2 – 100 ký tự)"
                 />
               </div>
 
@@ -562,13 +592,20 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
                 <label>Ngày sinh</label>
                 <input
                   type="date"
+                  min="1920-01-01"
+                  max={new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10)}
                   value={editForm.dateOfBirth}
                   onChange={(e) => setEditForm((f) => ({ ...f, dateOfBirth: e.target.value }))}
                 />
               </div>
 
               <div className="comm-form-field full">
-                <label>Giới thiệu bản thân</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label>Giới thiệu bản thân</label>
+                  <small style={{ color: '#64748b', fontSize: '12px' }}>
+                    {(editForm.bio || '').length} / 500 ký tự
+                  </small>
+                </div>
                 <textarea
                   rows={3}
                   maxLength={500}
