@@ -15,7 +15,11 @@ Chỉ Staff; cần `X-TKSC-Request: 1` và `X-CSRF-TOKEN` như API của Lâm. D
 
 Cần chốt với nhóm:
 
+<<<<<<< HEAD
 - Đơn Online: `orders` chưa có cột người mua, nên hiện chỉ Staff xác nhận nhận hàng thay khách. Player tự bấm Nhận hàng cần thêm cột liên kết người chơi (Quân cũng cần cho đơn Online) — phải duyệt schema.
+=======
+- Đơn Online: Player tự bấm Nhận hàng ở mục "Đơn hàng của tôi" (upgrade 010 thêm `orders.buyer_id`). Player tự thanh toán online vẫn cần Lâm mở; trước mắt Staff thu tiền thay.
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 - RP3 UC-38 trừ kho ngay khi Staff bàn giao; file chia task trừ khi khách nhận. Code theo file chia task.
 - Chưa có giữ hàng khi tạo Cart (xem ghi chú của Lâm). Nếu kho hết trước khi nhận hàng, đơn phải đối soát.
 

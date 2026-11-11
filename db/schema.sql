@@ -810,3 +810,166 @@ END;
 COMMIT;
 
 GO
+<<<<<<< HEAD
+=======
+
+-- =============================================================================
+-- ADDITIVE SCHEMA UPGRADES (Chat, FCM Tokens & PayOS)
+-- =============================================================================
+IF OBJECT_ID(N'dbo.[user_fcm_tokens]', N'U') IS NULL
+CREATE TABLE dbo.[user_fcm_tokens] (
+    [id] BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_user_fcm_tokens] PRIMARY KEY,
+    [user_id] BIGINT NOT NULL,
+    [fcm_token] NVARCHAR(512) NOT NULL,
+    [device_type] VARCHAR(50) NULL,
+    [updated_at] DATETIMEOFFSET(0) NOT NULL CONSTRAINT [DF_user_fcm_tokens_updated_at] DEFAULT (SYSDATETIMEOFFSET()),
+    CONSTRAINT [FK_user_fcm_tokens_user] FOREIGN KEY ([user_id]) REFERENCES dbo.[users]([id])
+);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_user_fcm_tokens_token' AND object_id = OBJECT_ID(N'dbo.[user_fcm_tokens]'))
+    CREATE UNIQUE INDEX [UX_user_fcm_tokens_token] ON dbo.[user_fcm_tokens]([fcm_token]);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_user_fcm_tokens_user_id' AND object_id = OBJECT_ID(N'dbo.[user_fcm_tokens]'))
+    CREATE INDEX [IX_user_fcm_tokens_user_id] ON dbo.[user_fcm_tokens]([user_id]);
+GO
+IF COL_LENGTH('dbo.friendships', 'created_at') IS NULL
+    ALTER TABLE dbo.[friendships] ADD [created_at] DATETIMEOFFSET(0) NOT NULL CONSTRAINT [DF_friendships_created_at] DEFAULT (SYSDATETIMEOFFSET());
+GO
+IF COL_LENGTH('dbo.friendships', 'responded_at') IS NULL
+    ALTER TABLE dbo.[friendships] ADD [responded_at] DATETIMEOFFSET(0) NULL;
+GO
+IF COL_LENGTH('dbo.friendships', 'player_low_id') IS NULL
+    ALTER TABLE dbo.[friendships] ADD [player_low_id] AS (CASE WHEN [requester_id] < [addressee_id] THEN [requester_id] ELSE [addressee_id] END) PERSISTED;
+GO
+IF COL_LENGTH('dbo.friendships', 'player_high_id') IS NULL
+    ALTER TABLE dbo.[friendships] ADD [player_high_id] AS (CASE WHEN [requester_id] < [addressee_id] THEN [addressee_id] ELSE [requester_id] END) PERSISTED;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_friendships_requester' AND object_id = OBJECT_ID(N'dbo.[friendships]'))
+    CREATE INDEX [IX_friendships_requester] ON dbo.[friendships]([requester_id]);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_friendships_addressee' AND object_id = OBJECT_ID(N'dbo.[friendships]'))
+    CREATE INDEX [IX_friendships_addressee] ON dbo.[friendships]([addressee_id]);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_friendships_active_pair' AND object_id = OBJECT_ID(N'dbo.[friendships]'))
+    CREATE UNIQUE INDEX [UX_friendships_active_pair] ON dbo.[friendships]([player_low_id], [player_high_id]) WHERE ([status] IN ('Pending', 'Accepted'));
+GO
+IF COL_LENGTH('dbo.messages', 'created_at') IS NULL
+    ALTER TABLE dbo.[messages] ADD [created_at] DATETIMEOFFSET(0) NOT NULL CONSTRAINT [DF_messages_created_at] DEFAULT (SYSDATETIMEOFFSET());
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_messages_conversation' AND object_id = OBJECT_ID(N'dbo.[messages]'))
+    CREATE INDEX [IX_messages_conversation] ON dbo.[messages]([sender_id], [recipient_id], [id]);
+GO
+IF COL_LENGTH('dbo.payments', 'gateway_payment_link_id') IS NULL
+    ALTER TABLE dbo.[payments] ADD [gateway_payment_link_id] VARCHAR(100) NULL;
+GO
+IF COL_LENGTH('dbo.payments', 'checkout_url') IS NULL
+    ALTER TABLE dbo.[payments] ADD [checkout_url] NVARCHAR(2048) NULL;
+GO
+IF COL_LENGTH('dbo.bank_transactions', 'raw_payload') IS NULL
+    ALTER TABLE dbo.[bank_transactions] ADD [raw_payload] NVARCHAR(MAX) NULL;
+GO
+IF OBJECT_ID('dbo.ticket_changes', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.[ticket_changes] (
+        [id] BIGINT IDENTITY PRIMARY KEY,
+        [ticket_id] BIGINT NOT NULL REFERENCES dbo.[tickets]([id]),
+        [target_session_id] BIGINT NOT NULL REFERENCES dbo.[sessions]([id]),
+        [old_price_vnd] INT NOT NULL CHECK([old_price_vnd] >= 0),
+        [new_price_vnd] INT NOT NULL CHECK([new_price_vnd] >= 0),
+        [status] VARCHAR(30) NOT NULL,
+        [requested_by] BIGINT NOT NULL REFERENCES dbo.[users]([id]),
+        [processed_by] BIGINT NULL REFERENCES dbo.[users]([id]),
+        [new_ticket_id] BIGINT NULL REFERENCES dbo.[tickets]([id]),
+        [created_at] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+        [completed_at] DATETIMEOFFSET NULL,
+        CONSTRAINT [CK_ticket_changes_status] CHECK([status] IN ('requested', 'completed', 'cancelled'))
+    );
+    CREATE UNIQUE INDEX [UX_ticket_changes_pending] ON dbo.[ticket_changes]([ticket_id]) WHERE [status] = 'requested';
+END;
+GO
+IF OBJECT_ID('dbo.ticket_funding', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.[ticket_funding] (
+        [id] BIGINT IDENTITY PRIMARY KEY,
+        [ticket_id] BIGINT NOT NULL REFERENCES dbo.[tickets]([id]),
+        [payment_id] BIGINT NOT NULL REFERENCES dbo.[payments]([id]),
+        [amount_vnd] INT NOT NULL CHECK([amount_vnd] > 0),
+        [retired] BIT NOT NULL DEFAULT 0,
+        CONSTRAINT [UX_ticket_funding] UNIQUE([ticket_id], [payment_id])
+    );
+END;
+GO
+IF OBJECT_ID('dbo.ticket_support_messages', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.[ticket_support_messages] (
+        [id] BIGINT IDENTITY PRIMARY KEY,
+        [ticket_id] BIGINT NOT NULL REFERENCES dbo.[tickets]([id]),
+        [sender_id] BIGINT NOT NULL REFERENCES dbo.[users]([id]),
+        [is_staff] BIT NOT NULL,
+        [content] NVARCHAR(2000) NOT NULL,
+        [image_data] VARBINARY(MAX) NULL,
+        [image_type] VARCHAR(20) NULL,
+        [created_at] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+        CONSTRAINT [CK_ticket_support_image] CHECK (([image_data] IS NULL AND [image_type] IS NULL) OR ([image_data] IS NOT NULL AND DATALENGTH([image_data]) BETWEEN 1 AND 2097152 AND [image_type] IN ('image/png', 'image/jpeg')))
+    );
+    CREATE INDEX [IX_ticket_support_ticket] ON dbo.[ticket_support_messages]([ticket_id], [id]);
+END;
+GO
+GO
+
+-- Stock units, barcode, receipt source, order buyer (upgrade 010, approved 2026-11-06)
+SET XACT_ABORT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET NUMERIC_ROUNDABORT OFF;
+BEGIN TRANSACTION;
+
+-- The row with factor_to_base = 1 is the product's base unit; every stock quantity is counted in it.
+IF OBJECT_ID(N'dbo.product_units', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.product_units (
+        id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_product_units PRIMARY KEY,
+        product_id BIGINT NOT NULL CONSTRAINT FK_product_units_product_id REFERENCES dbo.products(id),
+        unit_name NVARCHAR(50) NOT NULL,
+        factor_to_base INT NOT NULL CONSTRAINT CK_product_units_factor CHECK (factor_to_base >= 1),
+        barcode VARCHAR(64) NULL
+    );
+    CREATE UNIQUE INDEX UX_product_units_product_unit ON dbo.product_units(product_id, unit_name);
+    CREATE UNIQUE INDEX UX_product_units_one_base ON dbo.product_units(product_id) WHERE factor_to_base = 1;
+    CREATE UNIQUE INDEX UX_product_units_barcode ON dbo.product_units(barcode) WHERE barcode IS NOT NULL;
+END;
+
+INSERT dbo.product_units (product_id, unit_name, factor_to_base)
+SELECT p.id, N'Cái', 1
+FROM dbo.products p
+WHERE NOT EXISTS (SELECT 1 FROM dbo.product_units u WHERE u.product_id = p.id AND u.factor_to_base = 1);
+
+-- Existing movements keep NULL here: their real posting time and source are unknown.
+IF COL_LENGTH(N'dbo.stock_movements', N'created_at') IS NULL
+    ALTER TABLE dbo.stock_movements ADD created_at DATETIMEOFFSET(0) NULL
+        CONSTRAINT DF_stock_movements_created_at DEFAULT SYSDATETIMEOFFSET();
+IF COL_LENGTH(N'dbo.stock_movements', N'entered_unit') IS NULL
+    ALTER TABLE dbo.stock_movements ADD entered_unit NVARCHAR(50) NULL;
+IF COL_LENGTH(N'dbo.stock_movements', N'entered_quantity') IS NULL
+    ALTER TABLE dbo.stock_movements ADD entered_quantity INT NULL;
+IF COL_LENGTH(N'dbo.stock_movements', N'source_ref') IS NULL
+    ALTER TABLE dbo.stock_movements ADD source_ref VARCHAR(100) NULL;
+
+IF COL_LENGTH(N'dbo.orders', N'buyer_id') IS NULL
+BEGIN
+    ALTER TABLE dbo.orders ADD buyer_id BIGINT NULL;
+    ALTER TABLE dbo.orders ADD CONSTRAINT FK_orders_buyer_id FOREIGN KEY (buyer_id) REFERENCES dbo.users(id);
+END;
+COMMIT;
+GO
+-- Separate batch: the column must exist before the index that references it is compiled.
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_stock_movements_source_ref' AND object_id = OBJECT_ID(N'dbo.stock_movements'))
+    CREATE UNIQUE INDEX UX_stock_movements_source_ref ON dbo.stock_movements(stock_item_id, source_ref) WHERE source_ref IS NOT NULL;
+GO
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c

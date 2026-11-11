@@ -349,6 +349,10 @@ public static class Sep490ModelConfiguration
                 .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("handover_state");
+<<<<<<< HEAD
+=======
+            entity.Property(e => e.BuyerId).HasColumnName("buyer_id");
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             entity.Property(e => e.OrderCode)
                 .HasMaxLength(100)
                 .IsUnicode(false)
@@ -427,7 +431,11 @@ public static class Sep490ModelConfiguration
         {
             entity.Property(e => e.GatewayPaymentLinkId).HasMaxLength(100).HasColumnName("gateway_payment_link_id");
             entity.Property(e => e.CheckoutUrl).HasMaxLength(2048).HasColumnName("checkout_url");
+<<<<<<< HEAD
             entity.ToTable("payments");
+=======
+            entity.ToTable("payments", t => t.HasTrigger("TR_payments_revenue"));
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
             entity.HasIndex(e => e.ReferenceCode, "UX_payments_reference_code").IsUnique();
 
@@ -661,7 +669,11 @@ public static class Sep490ModelConfiguration
 
         modelBuilder.Entity<Refund>(entity =>
         {
+<<<<<<< HEAD
             entity.ToTable("refunds");
+=======
+            entity.ToTable("refunds", t => t.HasTrigger("TR_refunds_revenue"));
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.AmountVnd).HasColumnName("amount_vnd");
@@ -1088,6 +1100,11 @@ public static class Sep490ModelConfiguration
         {
             entity.ToTable("users");
 
+<<<<<<< HEAD
+=======
+            entity.Property(e => e.VenueId).HasColumnName("venue_id");
+
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             entity.HasIndex(e => e.Email, "UX_users_email").IsUnique();
 
             entity.HasIndex(e => e.GoogleSubject, "UX_users_google_subject")

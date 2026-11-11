@@ -320,6 +320,12 @@ public class GoogleLoginTests
         Assert.Equal("accounts.google.com", challenge.Headers.Location!.Host);
         var query = QueryHelpers.ParseQuery(challenge.Headers.Location.Query);
         Assert.True(query.ContainsKey("code_challenge"));
+<<<<<<< HEAD
+=======
+        Assert.Equal("select_account", query["prompt"].ToString());
+        Assert.False(query.ContainsKey("login_hint"));
+        Assert.False(query.ContainsKey("authuser"));
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         return await client.GetAsync("/signin-google?code=test-code&state=" + Uri.EscapeDataString(query["state"].ToString()));
     }
 
@@ -345,6 +351,11 @@ internal sealed class LoginApp : WebApplicationFactory<Program>
         builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Email:Enabled"] = "false",
+<<<<<<< HEAD
+=======
+            ["SportCenters:Enabled"] = "false",
+            ["Chatbot:ApiKey"] = null,
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             ["Authentication:Google:ClientId"] = Configured ? "test-client" : null,
             ["Authentication:Google:ClientSecret"] = Configured ? "test-secret-not-real" : null,
             ["Payments:PayOS:ClientId"] = null,

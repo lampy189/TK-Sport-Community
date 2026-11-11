@@ -5,7 +5,11 @@ public sealed record RubricView(long Id, long SportId, string Version, string Na
     bool ScoringSupported, IReadOnlyList<CriterionView> Criteria);
 public sealed record AttendeeView(long PlayerId, string Name, long? ProfileId, string? Band,
     string? RatingStatus, long? AssessmentId);
+<<<<<<< HEAD
 public sealed record MarkInput(long DimensionId, short? Score, string? Evidence);
+=======
+public sealed record MarkInput(long DimensionId, short? Score, string? Evidence, IReadOnlyList<short>? SliderScores = null);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 public sealed record SaveAssessmentRequest(long Revision, IReadOnlyList<MarkInput> Marks);
 public sealed record PublishAssessmentRequest(long Revision, short? ExpectedScore, string? ExpectedBand);
 public sealed record AssessmentView(long Id, long SessionId, long PlayerId, string Status,

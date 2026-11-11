@@ -1,5 +1,9 @@
 using System.Data;
 using Microsoft.EntityFrameworkCore;
+<<<<<<< HEAD
+=======
+using Microsoft.EntityFrameworkCore.Storage;
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 using TKSC.Application.DTOs;
 using TKSC.Application.Notifications;
 using TKSC.Domain.Entities;
@@ -10,7 +14,11 @@ public sealed class TicketAftercareService(Sep490Context db, TimeProvider clock)
 {
  private DateTimeOffset Now => clock.GetUtcNow();
  private static void Require(bool ok,string message,int code=409) { if(!ok) throw new PaymentException(code,message); }
+<<<<<<< HEAD
  private static string Evidence(string? text) { text=text?.Trim(); Require(text is {Length:>=10 and <=1000},"Nhập nội dung/bằng chứng từ 10 đến 1000 ký tự.",400); return text!; }
+=======
+ private static string Evidence(string? text) => TicketAftercareRules.Evidence(text);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
  private static bool Paid(string status)=>status.Equals("paid",StringComparison.OrdinalIgnoreCase);
  private void Audit(long actor,string action,string entity,long id,string? old,string value)=>db.AuditLogs.Add(new AuditLog{ActorId=actor,Action=action,EntityType=entity,EntityId=id,OldValue=old,NewValue=$"{Now:O} | {value}"});
  private void Notify(Ticket t,string kind)=>db.Notifications.AddRange(TicketNotifications.Create(kind,t.Id,t.Player.UserId,t.Order.PayerId));
@@ -79,19 +87,32 @@ public sealed class TicketAftercareService(Sep490Context db, TimeProvider clock)
   Require(amount>0 && already+amount<=p.AmountVnd,"Số tiền hoàn vượt khoản đã thanh toán.");
   db.Refunds.Add(new Refund{TicketId=t.Id,PaymentId=paymentId,RecipientId=t.Order.PayerId,AmountVnd=amount,Status="requested",InitiatedBy=actor});
  }
+<<<<<<< HEAD
  public async Task<object> SessionsAsync()
  {
   var today=DateOnly.FromDateTime(Now.ToOffset(TimeSpan.FromHours(7)).DateTime);
   return await db.Sessions.AsNoTracking().Where(s=>s.SessionDate>=today.AddDays(-1)).OrderBy(s=>s.SessionDate).ThenBy(s=>s.TimeSlot.StartTime).Take(200)
    .Select(s=>new{s.Id,s.SessionDate,s.Status,s.TimeSlot.StartTime,s.TimeSlot.EndTime,Sport=s.Sport.Name,Court=s.Court.Name,Venue=s.Court.Venue.Name}).ToListAsync();
+=======
+ public async Task<object> SessionsAsync(bool issuesOnly = false)
+ {
+  var today=DateOnly.FromDateTime(Now.ToOffset(TimeSpan.FromHours(7)).DateTime);
+  return await db.Sessions.AsNoTracking().Where(s=>issuesOnly ? s.Status.ToLower()=="suspended" || s.Status.ToLower()=="cancelled" : s.SessionDate>=today.AddDays(-1)).OrderBy(s=>s.SessionDate).ThenBy(s=>s.TimeSlot.StartTime)
+   .Select(s=>new{s.Id,s.SessionDate,s.Status,s.TimeSlot.StartTime,s.TimeSlot.EndTime,Sport=s.Sport.Name,Court=s.Court.Name,Venue=s.Court.Venue.Name,Reason=db.AuditLogs.Where(a=>a.EntityType=="Session" && a.EntityId==s.Id && a.Action=="venue_condition_issue").OrderByDescending(a=>a.Id).Select(a=>a.NewValue).FirstOrDefault()}).ToListAsync();
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
  }
  public Task<object> ReportAsync(long id,long actor,string? reason,bool cancel) => Transaction<object>(async()=>
  {
   var note=Evidence(reason);var s=await Session(id);
+<<<<<<< HEAD
   Require(s.Status.ToLowerInvariant()!="completed","Buổi đã kết thúc không thể báo dừng.");
   var status=cancel?"cancelled":"suspended";
   if(s.Status.ToLowerInvariant()==status) return new{status=s.Status};
   Require(s.Status.ToLowerInvariant()!="cancelled","Buổi đã hủy không chuyển về tạm ngưng.");
+=======
+  var status=TicketAftercareRules.VenueDecision(s.Status,cancel);
+  if(s.Status.ToLowerInvariant()==status) return new{status=s.Status};
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   var old=s.Status;s.Status=status;
   Audit(actor,"venue_condition_issue","Session",id,old,note);
   var tickets=await db.Tickets.Include(t=>t.Player).Include(t=>t.Order).Where(t=>t.SessionId==id && (t.Status.ToLower()=="confirmed" || t.Status.ToLower()=="pending" || t.Status.ToLower()=="reserved")).ToListAsync();
@@ -199,9 +220,25 @@ public sealed class TicketAftercareService(Sep490Context db, TimeProvider clock)
   Require(tickets.Count>0 && tickets.All(t=>t.Status.ToLower() is "pending" or "reserved") && tickets.Sum(t=>t.AmountVnd)==order.TotalAmount,"Vé không còn đủ điều kiện kích hoạt.");
   foreach(var group in tickets.GroupBy(t=>t.SessionId).OrderBy(g=>g.Key))
   {
+<<<<<<< HEAD
    var session=await Session(group.Key);Require(session.Status.ToLower() is "open" or "published","Buổi chơi đang dừng hoặc chưa mở.");Require(new DateTimeOffset(session.SessionDate.ToDateTime(session.TimeSlot.StartTime),TimeSpan.FromHours(7))>Now,"Buổi chơi đã bắt đầu.");
    var other=await Occupied(session.Id).Where(t=>t.OrderId!=order.Id).CountAsync();Require(other+group.Count()<=TicketAftercareRules.Limit(session.Capacity),"Buổi chơi không còn đủ chỗ.");
    foreach(var t in group){await Eligibility(t.PlayerId,session,t.Id);t.Order=order;}
+=======
+   var session=await Session(group.Key);Require(session.Status.ToLower() is "open" or "published" or "ongoing","Buổi chơi đang dừng hoặc chưa mở.");
+   if(group.Any(t=>!TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode)))Require(new DateTimeOffset(session.SessionDate.ToDateTime(session.TimeSlot.StartTime),TimeSpan.FromHours(7))>Now,"Buổi chơi đã bắt đầu.");
+   var other=await Occupied(session.Id).Where(t=>t.OrderId!=order.Id).CountAsync();Require(other+group.Count()<=TicketAftercareRules.Limit(session.Capacity),"Buổi chơi không còn đủ chỗ.");
+   foreach(var t in group)
+   {
+    if(TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode))
+    {
+     await be_da.Infrastructure.Persistence.LateEntrySql.ValidatePayment((Microsoft.Data.SqlClient.SqlConnection)db.Database.GetDbConnection(),(Microsoft.Data.SqlClient.SqlTransaction)db.Database.CurrentTransaction!.GetDbTransaction(),t,Now);
+     Require(t.LateEntryEligible,"Vé giờ lẻ đã hết hiệu lực hoặc không còn đủ điều kiện kích hoạt.");
+    }
+    else await Eligibility(t.PlayerId,session,t.Id);
+    t.Order=order;
+   }
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   }
   payment.Status="paid";payment.ConfirmedBy=actor;order.Status="paid";bank!.MatchStatus="matched";
   foreach(var t in tickets){t.Status="confirmed";t.TicketCode??=$"TK-{Guid.NewGuid():N}";Notify(t,"ticket_paid");}

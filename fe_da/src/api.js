@@ -72,6 +72,21 @@ export async function request(path, options = {}) {
 
 // Auth API
 export const api = {
+<<<<<<< HEAD
+=======
+  async getCenterOptions() {
+    const res = await request('/api/auth/centers');
+    if (!res.ok) throw new Error('Không tải được danh sách cơ sở.');
+    return res.json();
+  },
+  async selectCenter(venueId) {
+    const res = await request('/api/auth/center', { method: 'POST', body: JSON.stringify({ venueId }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'Không thể chuyển cơ sở.');
+    clearCsrfToken();
+    return data;
+  },
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   async getMe() {
     const res = await request('/api/auth/me');
     if (!res.ok) return null;
@@ -83,10 +98,17 @@ export const api = {
     }
   },
 
+<<<<<<< HEAD
   async devLogin(email, portal) {
     const res = await request('/api/auth/dev-login', {
       method: 'POST',
       body: JSON.stringify({ email, portal }),
+=======
+  async devLogin(email, portal, venueId) {
+    const res = await request('/api/auth/dev-login', {
+      method: 'POST',
+      body: JSON.stringify({ email, portal, venueId: venueId ? Number(venueId) : null }),
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     });
     const text = await res.text();
     let data;
@@ -125,7 +147,11 @@ export const api = {
     return res.ok;
   },
 
+<<<<<<< HEAD
   async googleLogin(portal) {
+=======
+  async googleLogin(portal, venueId) {
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     try {
       const csrf = await getCsrfToken();
       if (!csrf) {
@@ -134,6 +160,10 @@ export const api = {
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = '/api/auth/google' + (portal ? '?portal=' + encodeURIComponent(portal) : '');
+<<<<<<< HEAD
+=======
+      if (venueId) form.action += (portal ? '&' : '?') + 'venueId=' + encodeURIComponent(venueId);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
       
       const inputCsrf = document.createElement('input');
       inputCsrf.type = 'hidden';
@@ -164,6 +194,17 @@ export const api = {
     return res.json();
   },
 
+<<<<<<< HEAD
+=======
+  async getVenues() {
+    const res = await request('/api/sessions/venues');
+    if (!res.ok) {
+      throw new Error(`Failed to load venues: HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   async getSessions(params = {}) {
     const query = new URLSearchParams();
     if (params.sportId) query.set('sportId', params.sportId);
@@ -173,6 +214,12 @@ export const api = {
     if (params.toDate) query.set('toDate', params.toDate);
     if (params.timeSlotId) query.set('timeSlotId', params.timeSlotId);
     if (params.status) query.set('status', params.status);
+<<<<<<< HEAD
+=======
+    if (params.venueId) query.set('venueId', params.venueId);
+    if (params.venue) query.set('venue', params.venue);
+    if (params.sessionType) query.set('sessionType', params.sessionType);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
     const queryString = query.toString();
     const url = '/api/sessions' + (queryString ? `?${queryString}` : '');

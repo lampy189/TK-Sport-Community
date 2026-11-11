@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import TicketSupport from './TicketSupport';
 import { useEffect, useState } from 'react';
 import { aftercare } from './aftercareClient';
@@ -20,4 +21,39 @@ export default function TicketOperations({initialTab='reviews'}){
  useEffect(()=>{let active=true;aftercare[tab]().then(data=>{if(active)setItems(data);}).catch(e=>{if(active)setError(e.message);}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[tab]);
  async function run(action){if(busy)return;setBusy(true);setError('');setNotice('');try{await action();setItems(await aftercare[tab]());setNotice('Đã xử lý thành công. Thông báo được gửi tới người liên quan.');}catch(e){setError(e.message);}finally{setBusy(false);}}
  return <section className="payment-workspace"><div className="payment-heading"><h1>Xử lý vé & sự cố sân</h1><button className="button button-secondary" disabled={busy} onClick={()=>run(async()=>{})}>Tải lại</button></div><nav className="ticket-filters">{[['reviews','Thanh toán bị gắn cờ'],['sessions','Sự cố sân'],['changes','Yêu cầu đổi vé'],['refunds','Hoàn tiền'],['inbox','Trao đổi với người chơi']].map(([id,label])=><button key={id} className="button" disabled={busy} aria-pressed={tab===id} onClick={()=>{if(id===tab)return;setTab(id);setItems([]);setLoading(true);setError('');setNotice('');}}>{label}</button>)}</nav>{error&&<p className="payment-error" role="alert">{error}</p>}{notice&&<p className="payment-notice" role="status">{notice}</p>}{loading?<p>Đang tải…</p>:!items.length?<p>Không có mục cần xử lý.</p>:items.map(item=>tab==='inbox'?<article className="payment-card" key={item.id}><h4>Vé #{item.ticketId} · {item.holder}</h4><p>{({cancelled:'Vé đã hủy',exchanged:'Đã đổi vé',confirmed:'Vé đã xác nhận'})[item.status]||item.status}{item.refundStatus&&' · '+({requested:'Chờ hoàn tiền',processing:'Đang hoàn tiền',completed:'Khoản hoàn gần nhất đã hoàn thành'})[item.refundStatus]}</p><TicketSupport ticketId={item.ticketId} staff/></article>:tab==='reviews'?<Review key={item.id} item={item} busy={busy} run={run}/>:tab==='sessions'?<VenueIssue key={item.id} item={item} busy={busy} run={run}/>:tab==='changes'?<article className="payment-card" key={item.id}><h4>Đổi vé #{item.ticketId} · {item.holder}</h4><p>{item.court} · {item.sessionDate} · {item.startTime.slice(0,5)}–{item.endTime.slice(0,5)}</p><p>Giá cũ {money(item.oldPriceVnd)} → Giá mới {money(item.newPriceVnd)}</p><p>{item.newPriceVnd>item.oldPriceVnd?`Cần thu thêm ${money(item.newPriceVnd-item.oldPriceVnd)} từ ${item.payer}.`:item.newPriceVnd<item.oldPriceVnd?`Tạo khoản hoàn chênh lệch ${money(item.oldPriceVnd-item.newPriceVnd)} về ${item.payer}.`:'Không chênh lệch giá.'}</p><TicketSupport ticketId={item.ticketId} staff/><Settlement label="Xác nhận đổi và cấp QR mới" bankRequired={item.newPriceVnd>item.oldPriceVnd} busy={busy} warning={item.newPriceVnd>item.oldPriceVnd?'Tôi đã nhận và đối chiếu đủ tiền chênh lệch.':'Tôi đã kiểm tra yêu cầu đổi và thông báo khoản hoàn chênh lệch nếu có.'} onSubmit={(note,ref)=>run(()=>aftercare.completeChange(item.id,note,ref))}/></article>:<article className="payment-card" key={item.id}><h4>Hoàn tiền vé #{item.ticketId}</h4><p>{money(item.amountVnd)} → {item.recipient} ({item.email})</p><p>Giao dịch gốc: {item.referenceCode}</p><TicketSupport ticketId={item.ticketId} staff/><Settlement label="Xác nhận đã hoàn tiền" bankRequired busy={busy} warning="Tôi đã chuyển đủ số tiền trên về đúng người thanh toán và kiểm tra bằng chứng giao dịch." onSubmit={(note,ref)=>run(()=>aftercare.completeRefund(item.id,note,ref))}/></article>)}</section>;
+=======
+import { useEffect, useState } from 'react';
+import { aftercare } from './aftercareClient';
+import { OperationItem } from './TicketOperationCards';
+import IssueHub from './IssueHub';
+import './payment.css';
+
+export default function TicketOperations({initialTab='reviews'}) {
+ const [tab,setTab]=useState(initialTab),[items,setItems]=useState([]),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState('');
+ useEffect(()=>{
+  if(tab==='issues')return;
+  let active=true;
+  aftercare[tab]().then(data=>{if(active)setItems(data);})
+   .catch(e=>{if(active)setError(e.message);}).finally(()=>{if(active)setLoading(false);});
+  return()=>{active=false;};
+ },[tab]);
+ async function run(action){
+  if(busy)return;
+  setBusy(true);setError('');setNotice('');
+  try{await action();setItems(await aftercare[tab]());setNotice('Đã xử lý thành công. Thông báo được gửi tới người liên quan.');}
+  catch(e){setError(e.message);}finally{setBusy(false);}
+ }
+ return <section className="payment-workspace ticket-operations">
+  <div className="payment-heading"><h1>{tab==='issues'?'Sự cố':'Xử lý vé & thanh toán'}</h1>{tab!=='issues'&&<button className="button button-secondary" disabled={busy} onClick={()=>run(async()=>{})}>Tải lại</button>}</div>
+  <nav className="ticket-filters" aria-label="Chức năng xử lý vé">
+   {[['issues','Sự cố'],['reviews','Thanh toán cần kiểm tra'],['sessions','Báo sự cố sân'],['changes','Yêu cầu đổi vé'],['refunds','Hoàn tiền']].map(([id,label])=>
+    <button key={id} className="button" disabled={busy} aria-pressed={tab===id} onClick={()=>{if(id===tab)return;setTab(id);setItems([]);setLoading(true);setError('');setNotice('');}}>{label}</button>)}
+  </nav>
+  {tab==='issues'?<IssueHub/>:<>
+   {error&&<p className="payment-error" role="alert">{error}</p>}
+   {notice&&<p className="payment-notice" role="status">{notice}</p>}
+   {loading?<p role="status">Đang tải…</p>:!items.length?<p>Không có mục cần xử lý.</p>:items.map(item=><OperationItem key={item.id} tab={tab} item={item} busy={busy} run={run}/>)}
+  </>}
+ </section>;
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 }

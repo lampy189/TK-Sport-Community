@@ -1,0 +1,13 @@
+.issue-hub-layout { display:grid; grid-template-columns:minmax(260px, .85fr) minmax(0, 1.4fr); gap:16px; align-items:start; }
+.issue-hub-list { display:grid; gap:8px; max-height:75vh; overflow:auto; padding:2px; }
+.issue-row { display:grid; gap:6px; padding:14px; border:1px solid #cbd8ce; border-radius:10px; text-align:left; background:#fff; overflow-wrap:anywhere; }
+.issue-row[aria-pressed=true] { border-color:#28704c; background:#edf7ef; outline:2px solid #28704c; }
+.issue-row:focus-visible { outline:3px solid #28704c; outline-offset:2px; }
+.issue-hub-detail { min-width:0; padding:16px; background:#f8faf6; border:1px solid #cbd8ce; border-radius:12px; }
+.issue-hub-detail > h2 { overflow-wrap:anywhere; }
+.issue-hub .payment-heading { gap:12px; }
+.issue-hub .payment-heading p { flex:1; }
+@media(max-width:800px) {
+ .issue-hub-layout { grid-template-columns:minmax(0,1fr); }
+ .issue-hub-list { max-height:42vh; }
+}

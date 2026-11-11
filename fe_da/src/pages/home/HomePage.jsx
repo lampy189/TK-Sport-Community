@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import SportCenterBadge from "../revenue/SportCenterBadge";
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 import { useEffect, useState } from "react";
 
 import HomeLayout from "../../layouts/HomeLayout";
@@ -8,6 +12,10 @@ import GuestLayout from "../../components/layout/GuestLayout";
 import GuestHome from "./GuestHome";
 import PlayerLayout from "../../components/layout/PlayerLayout";
 import PlayerHome from "./PlayerHome";
+<<<<<<< HEAD
+=======
+import PlayerChatbot from "../../components/PlayerChatbot";
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
 export default function HomePage({
   role = "guest",
@@ -18,7 +26,12 @@ export default function HomePage({
 }) {
   const config = roleHomeConfig[role] || roleHomeConfig.guest;
   const [active, setActive] = useState(() =>
+<<<<<<< HEAD
     role !== "guest" && new URLSearchParams(window.location.search).get("view") === "messages" ? "Tin nhắn" :
+=======
+    ["owner", "manager", "staff"].includes(role) && new URLSearchParams(window.location.search).get("view") === "revenue" ? (role === "owner" ? "Kinh doanh" : "Thống kê doanh số") :
+    role !== "guest" && ["messages", "notifications"].includes(new URLSearchParams(window.location.search).get("view")) ? "Thông báo" :
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     role === "staff" && new URLSearchParams(window.location.search).has("goodsOrderId") ? "Bán hàng" :
     role === "player" &&
     new URLSearchParams(window.location.search).has("orderId")
@@ -30,7 +43,11 @@ export default function HomePage({
   const navigation = [
     { id: "overview", label: "Trang chủ" },
     ...config.modules.map((label) => ({ id: label, label })),
+<<<<<<< HEAD
     ...(role !== "guest" ? [{ id: "Tin nhắn", label: "Tin nhắn" }] : []),
+=======
+    ...(role !== "guest" ? [{ id: "Thông báo", label: "Thông báo" }] : []),
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   ];
   useEffect(() => {
     // Keep every visited workspace with its detail and filter context.
@@ -50,11 +67,20 @@ export default function HomePage({
     if (next === active && nextSession === sessionId && String(url) === window.location.href) return;
     window.history.pushState({ tkscHome: { role, active: next, sessionId: nextSession, browseSport } }, "", url);
   }
+<<<<<<< HEAD
   function open(label) {
     if (
       label !== "overview" &&
       label !== "Chi tiết buổi chơi" &&
       label !== "Tin nhắn" &&
+=======
+  function open(rawLabel) {
+    const label = rawLabel === "Tin nhắn" ? "Thông báo" : rawLabel;
+    if (
+      label !== "overview" &&
+      label !== "Chi tiết buổi chơi" &&
+      label !== "Thông báo" &&
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
       label !== "Hồ sơ cá nhân" &&
       label !== "Hồ sơ kỹ năng" &&
       !config.modules.includes(label)
@@ -67,7 +93,12 @@ export default function HomePage({
       ["orderId", "code", "id", "cancel", "status", "view"].forEach((key) =>
         url.searchParams.delete(key),
       );
+<<<<<<< HEAD
       if (label === "Tin nhắn") url.searchParams.set("view", "messages");
+=======
+      if (label === "Thông báo" || label === "Tin nhắn") url.searchParams.set("view", "messages");
+      if (["Kinh doanh", "Thống kê doanh số"].includes(label)) url.searchParams.set("view", "revenue");
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
       remember(label, sessionId, url);
     }
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -132,6 +163,10 @@ export default function HomePage({
             onBrowseSport={browse}
           />
         )}
+<<<<<<< HEAD
+=======
+        <PlayerChatbot guest preview={preview} />
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
       </GuestLayout>
     );
   }
@@ -177,6 +212,10 @@ export default function HomePage({
             />
           </div>
         )}
+<<<<<<< HEAD
+=======
+        <PlayerChatbot preview={preview} />
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
       </PlayerLayout>
     );
   }
@@ -208,6 +247,10 @@ export default function HomePage({
           : null
       }
     >
+<<<<<<< HEAD
+=======
+      {!preview && ["owner", "manager", "staff", "referee"].includes(role) && <SportCenterBadge />}
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
       {active === "overview" ? (
         <HomeOverview config={config} preview={preview} onOpen={open} />
       ) : (

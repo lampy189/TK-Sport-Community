@@ -4,6 +4,10 @@ using TKSC.Infrastructure.Repositories;
 using TKSC.Application.Services;
 using Xunit;
 namespace TKSC.Api.Tests;
+<<<<<<< HEAD
+=======
+[Collection("SQL Server")]
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 public class TicketAftercareReadTests
 {
  [DatabaseFact]

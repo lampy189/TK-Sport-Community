@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+import RevenuePage from "../revenue/RevenuePage";
+import SportCenterPersonnel from "../revenue/SportCenterPersonnel";
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 import MessagesPage from "../messages/MessagesPage";
 import SkillReviews from "../skill/SkillReviews";
 import TicketOperations from "../payment/TicketOperations";
@@ -13,8 +18,15 @@ import { CommunityView } from "../../components/CommunityView";
 import PaymentPage from "../payment/PaymentPage";
 import StockPage from "../stock/StockPage";
 import RefereeSuppliesView from "../stock/RefereeSuppliesView";
+<<<<<<< HEAD
 import StorePage from "../store/StorePage";
 import { Construction, ArrowLeft } from "lucide-react";
+=======
+import MyGoodsOrders from "../stock/MyGoodsOrders";
+import StorePage from "../store/StorePage";
+import { Construction, ArrowLeft } from "lucide-react";
+import { LateEntryManagement } from '../late-entry/LateEntrySales';
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
 export default function HomeWorkspace({
   role,
@@ -29,7 +41,17 @@ export default function HomeWorkspace({
   initialSport = "ALL",
   onBrowseSport,
 }) {
+<<<<<<< HEAD
   if (active === "Tin nhắn" && role !== "guest") return <MessagesPage preview={preview} />;
+=======
+  if (preview && import.meta.env.DEV && import.meta.env.VITE_PAYMENT_MODE === 'demo'
+    && role === 'player' && ['Thanh toán', 'Vé của tôi'].includes(active))
+    return <PaymentPage key={active} initialView={active === 'Vé của tôi' ? 'tickets' : 'payment'} />;
+  if (!preview && ['staff','manager'].includes(role) && active === 'Vé giờ lẻ') return <LateEntryManagement/>;
+  if (!preview && ["owner", "manager", "staff"].includes(role) && ["Kinh doanh", "Thống kê doanh số"].includes(active)) return <RevenuePage />;
+  if (!preview && role === "owner" && active === "Phân quyền Sport Center") return <SportCenterPersonnel />;
+  if ((active === "Thông báo" || active === "Tin nhắn") && role !== "guest") return <MessagesPage preview={preview} />;
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   if (!preview && ["referee", "manager"].includes(role) && active === "Ngoại lệ trình độ") return <SkillReviews role={role} kind="exceptions" />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Khiếu nại đánh giá") return <SkillReviews role={role} />;
   if (!preview && role === "referee" && active === "Đánh giá kỹ năng") return <AssessmentPage />;
@@ -40,7 +62,11 @@ export default function HomeWorkspace({
         <GoodsPaymentPage />
       </>
     );
+<<<<<<< HEAD
   if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage />;
+=======
+  if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage canManageLateEntries={role === 'manager'} />;
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   if (!preview && role === "referee" && active === "Vật tư buổi chơi") return <RefereeSuppliesView />;
   if (!preview && ["player", "guest"].includes(role)) {
     if (active === "Lịch social")
@@ -88,7 +114,16 @@ export default function HomeWorkspace({
         />
       );
     if (role === "player" && active === "Cửa hàng")
+<<<<<<< HEAD
       return <StorePage role="player" user={user} />;
+=======
+      return (
+        <>
+          <StorePage role="player" user={user} />
+          <MyGoodsOrders />
+        </>
+      );
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     if (role === "player" && active === "Hồ sơ kỹ năng")
       return (
         <SkillProfileView
@@ -119,9 +154,15 @@ export default function HomeWorkspace({
   if (
     !preview &&
     ["staff", "manager"].includes(role) &&
+<<<<<<< HEAD
     ["Thanh toán", "Sự cố sân", "Đổi & hoàn vé"].includes(active)
   )
     return <TicketOperations key={active} initialTab={active === "Sự cố sân" ? "sessions" : active === "Đổi & hoàn vé" ? "changes" : "reviews"} />;
+=======
+    ["Thanh toán", "Sự cố", "Sự cố sân", "Đổi & hoàn vé"].includes(active)
+  )
+    return <TicketOperations key={active} initialTab={["Sự cố", "Sự cố sân"].includes(active) ? "issues" : active === "Đổi & hoàn vé" ? "changes" : "reviews"} />;
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   if (!preview && role === "staff" && active === "Kho & vật tư")
     return <StockPage />;
   return (

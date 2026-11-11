@@ -43,7 +43,11 @@ export const roleHomeConfig = {
       "Không gian làm việc cho bán hàng tại quầy, kho, kiểm tra thanh toán và đối soát ca.",
     action: "Mở công việc trong ca",
     section: "Công việc trong ca",
+<<<<<<< HEAD
     modules: ["Bán hàng", "Kho & vật tư", "Thanh toán", "Sự cố sân", "Đổi & hoàn vé", "Đối soát ca"],
+=======
+    modules: ["Thống kê doanh số", "Bán hàng", "Kho & vật tư", "Vé giờ lẻ", "Thanh toán", "Sự cố", "Đổi & hoàn vé", "Đối soát ca"],
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     stats: [
       ["08", "Đơn trong ca"],
       ["03", "Thanh toán cần kiểm tra"],
@@ -64,13 +68,23 @@ export const roleHomeConfig = {
     action: "Xem lịch vận hành",
     section: "Tổng quan vận hành",
     modules: [
+<<<<<<< HEAD
       "Quản lý buổi chơi",
+=======
+      "Thống kê doanh số",
+      "Quản lý buổi chơi",
+      "Vé giờ lẻ",
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
       "Phân công nhân sự",
       "Điểm danh",
       "Khiếu nại đánh giá",
       "Ngoại lệ trình độ",
       "Ngoại lệ vận hành",
+<<<<<<< HEAD
       "Sự cố sân",
+=======
+      "Sự cố",
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
       "Đổi & hoàn vé",
       "Thanh toán",
     ],
@@ -95,6 +109,10 @@ export const roleHomeConfig = {
     section: "Tổng quan chủ sân",
     modules: [
       "Kinh doanh",
+<<<<<<< HEAD
+=======
+      "Phân quyền Sport Center",
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
       "Chính sách & giá",
       "Bổ nhiệm quản lý",
       "Phê duyệt",

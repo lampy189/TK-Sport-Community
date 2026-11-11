@@ -7,17 +7,32 @@
     "dev": "node --use-system-ca ./node_modules/vite/bin/vite.js",
     "build": "vite build",
     "lint": "eslint .",
+<<<<<<< HEAD
     "preview": "vite preview"
+=======
+    "preview": "vite preview",
+    "test:duc": "node --test tests/duc/*.test.js",
+    "test:duc:ui": "playwright test --config tests/duc/playwright.config.js"
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   },
   "dependencies": {
     "@zxing/browser": "^0.2.1",
     "lucide-react": "^1.60.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
+<<<<<<< HEAD
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+=======
+    "react-dom": "^19.2.8",
+    "read-excel-file": "^9.3.14"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",

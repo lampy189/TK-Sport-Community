@@ -6,6 +6,38 @@ namespace TKSC.Api.Tests;
 
 public sealed class SportAssessmentScoringTests
 {
+<<<<<<< HEAD
+=======
+    [Fact]
+    public void DetailedSlidersRetainHalfPointsInsteadOfRoundingEachCriterion()
+    {
+        Assert.Equal(14.5m, SportAssessmentScoring.CriterionPoints(3, new short[] { 7, 8, 6, 8 }));
+        Assert.Equal(14m, SportAssessmentScoring.CriterionPoints(3, new short[] { 7, 7, 6, 8 }));
+        Assert.Equal((short)63, SportAssessmentScoring.CalculatePoints(new decimal?[] { 14.5m, 12m, 11.5m, 13m, 12m }));
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(10, 20)]
+    public void DetailedZeroAndMaximumAreValid(short value, decimal expected)
+        => Assert.Equal(expected, SportAssessmentScoring.CriterionPoints(value == 0 ? (short)0 : (short)4, new short[] { value, value, value, value }));
+
+    [Fact]
+    public void RoundOnlyFinalTotalAndKeepLegacyLevelsAndUnobserved()
+    {
+        Assert.Equal((short)61, SportAssessmentScoring.CalculatePoints(new decimal?[] { 12.5m, 12m, 12m, 12m, 12m }));
+        Assert.Equal(15m, SportAssessmentScoring.CriterionPoints(3, null));
+        Assert.Null(SportAssessmentScoring.CalculatePoints(new decimal?[] { 12m, 12m, null, 12m, 12m }));
+    }
+
+    [Fact]
+    public void DetailedSlidersRejectMissingOutOfRangeAndUnobservedPayloads()
+    {
+        Assert.Throws<ArgumentException>(() => SportAssessmentScoring.CriterionPoints(2, new short[] { 5, 5, 5 }));
+        Assert.Throws<ArgumentException>(() => SportAssessmentScoring.CriterionPoints(2, new short[] { 5, 5, 5, 11 }));
+        Assert.Throws<ArgumentException>(() => SportAssessmentScoring.CriterionPoints(null, new short[] { 5, 5, 5, 5 }));
+    }
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     private static Rubric Pickleball() => new() {
         Sport = new Sport { Code = "pickleball" }, Version = "PK-IPTPA-DUPR-V1",
         RubricDimensions = new[] { "PK_SERVE_RETURN", "PK_THIRD_SHOT", "PK_DINK_NVZ", "PK_VOLLEY_RESET", "PK_DOUBLES_STRATEGY" }

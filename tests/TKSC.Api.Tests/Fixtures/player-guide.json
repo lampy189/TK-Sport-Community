@@ -1,0 +1,42 @@
+[
+  {
+    "id": "booking", "title": "Đăng ký buổi chơi social", "reference": "RP3 · UC-08 · BR-03–06, BR-08",
+    "keywords": "đặt lịch đăng ký đặt sân booking tham gia social hết chỗ trùng giờ giữ chỗ",
+    "content": "Để tham gia buổi chơi, Player cần đăng nhập và có hồ sơ đúng môn. Mở Lịch social, xem môn, giờ, sân, trình độ, giá và chỗ còn lại rồi chọn đăng ký. Hệ thống kiểm tra trình độ hoặc ngoại lệ được duyệt, trùng giờ và sức chứa. Đăng ký hợp lệ chỉ giữ chỗ có thời hạn; phải thanh toán được xác nhận mới có vé hợp lệ. Buổi đầy hoặc trùng lịch sẽ không tạo chỗ giữ mới. Xem thời hạn và giá cụ thể trên buổi chơi; hướng dẫn này không chứa lịch, giá hay số chỗ thời gian thực."
+  },
+  {
+    "id": "invitations", "title": "Mời bạn bè tham gia", "reference": "RP3 · UC-09–10 · BR-05, BR-07–08",
+    "keywords": "mời bạn lời mời bạn bè nhóm chấp nhận từ chối trả hộ",
+    "content": "Bạn có thể mời bạn bè đã kết bạn và phù hợp điều kiện buổi chơi. Người mời chọn trả hộ hoặc mỗi người tự trả. Mỗi người nhận phải tự chấp nhận; hệ thống kiểm tra lại môn, trình độ, lịch trùng và chỗ còn lại khi chấp nhận. Gửi lời mời chưa giữ chỗ và chưa tạo vé. Chấp nhận mới tạo chỗ giữ có thời hạn, chưa chứng minh đã trả tiền. Lời mời hết hạn, bị từ chối hoặc không còn đủ điều kiện không làm mất vé hợp lệ của những người khác."
+  },
+  {
+    "id": "payment", "title": "Thanh toán và xác nhận vé", "reference": "RP3 · UC-11–12 · BR-09, BR-12–14",
+    "keywords": "thanh toán chuyển khoản trả tiền mã QR tiền vé chưa xác nhận payment",
+    "content": "Chỉ thanh toán cho các đăng ký đã chấp nhận và còn hạn giữ chỗ. Kiểm tra danh sách người chơi, số tiền, tài khoản nhận, mã tham chiếu và hạn thanh toán trên đơn. Chuyển khoản đúng hướng dẫn rồi theo dõi trạng thái trong hệ thống. Ảnh chụp giao dịch hoặc nút báo đã trả không tự xác nhận vé. Vé chỉ được xác nhận khi giao dịch được kiểm tra và phân bổ hợp lệ. Sai số tiền, thiếu mã hoặc chỗ giữ hết hạn có thể cần nhân viên xem xét; không mặc định chuyển khoản lại. Đơn hàng hóa và đơn tham gia social là hai luồng riêng. Chatbot không xem được trạng thái thanh toán cá nhân."
+  },
+  {
+    "id": "survey", "title": "Hồ sơ và khảo sát kỹ năng theo môn", "reference": "RP3 · UC-04 · BR-01–02, BR-10",
+    "keywords": "khảo sát trình độ kỹ năng hồ sơ cầu lông pickleball xếp hạng mới chơi survey",
+    "content": "Trong Hồ sơ kỹ năng, chọn cầu lông hoặc pickleball và hoàn thành khảo sát theo môn. Kết quả khảo sát là trình độ tạm thời để tìm buổi phù hợp, không phải kết quả xác nhận trên sân. Hai môn có hồ sơ riêng và không quy đổi điểm cho nhau. Khảo sát mới không thay thế kết quả đã được xác nhận. Câu trả lời thiếu không tạo đánh giá xác nhận."
+  },
+  {
+    "id": "assessment", "title": "Đánh giá trên sân và điểm nội bộ", "reference": "RP3 · UC-17–18; quyết định dự án 03/11/2026",
+    "keywords": "trọng tài đánh giá chấm điểm DUPR IPTPA B1 B5 kết quả kỹ năng",
+    "content": "Trọng tài ghi nhận kỹ năng trên sân và công bố kết quả có bằng chứng cho đúng môn. Kết quả mới giữ lại lịch sử đánh giá và có thể dẫn tới kiểm tra điều kiện của vé tương lai. Pickleball dùng thang nội bộ PK-IPTPA-DUPR-V1 với năm tiêu chí 0–4, mỗi tiêu chí 20%, tổng 0–100 và nhóm B1–B5; đây không phải điểm DUPR chính thức. Phiếu cầu lông mới dùng BM-CLB-V1. Phiếu cũ giữ nguyên thang đã dùng. Chatbot không tự chấm điểm hay thay đổi hồ sơ."
+  },
+  {
+    "id": "review", "title": "Yêu cầu xem xét kết quả kỹ năng", "reference": "RP3 · UC-20 · BF-05",
+    "keywords": "khiếu nại phúc khảo xem xét đánh giá sai điểm trình độ yêu cầu review",
+    "content": "Nếu cần xem xét kết quả kỹ năng, Player gửi yêu cầu và lý do hoặc bằng chứng liên quan. Trọng tài cung cấp thông tin đánh giá; Manager quyết định kết quả xem xét và lưu lý do cùng lịch sử. System Admin không quyết định điểm kỹ năng. Một thay đổi trình độ chỉ dẫn tới kiểm tra vé tương lai bị ảnh hưởng, không sửa giá đã thanh toán trong quá khứ. Chatbot chỉ hướng dẫn, không gửi yêu cầu hay quyết định thay Manager."
+  },
+  {
+    "id": "refund", "title": "Hoàn tiền vé không còn đủ điều kiện", "reference": "RP3 · UC-21 · BF-05",
+    "keywords": "hoàn tiền hoàn vé refund thay đổi trình độ vé tương lai trả lại tiền",
+    "content": "Khi thay đổi trình độ làm vé đã trả tiền của buổi tương lai không còn đủ điều kiện, hệ thống đưa vé bị ảnh hưởng vào xử lý hoàn tiền. Nhân viên xử lý hoàn trả theo quyền hạn và bằng chứng; tiền hoàn hướng tới người thanh toán ban đầu. Vé của bạn bè còn hợp lệ và đơn hàng hóa riêng không bị thay đổi. Xác nhận tiền vào không chứng minh đã hoàn tiền ra. Theo dõi trạng thái hoàn trên hệ thống; chatbot không xác nhận tiền đã về và không hứa thời gian hoàn tiền. Quy tắc này không có nghĩa mọi yêu cầu hủy tự nguyện đều được hoàn."
+  },
+  {
+    "id": "limits", "title": "Thông tin chatbot có thể hỗ trợ", "reference": "Phạm vi chatbot Player · yêu cầu 09/11/2026",
+    "keywords": "chatbot hỗ trợ thông tin giúp hướng dẫn giá lịch hôm nay dữ liệu cá nhân tài khoản",
+    "content": "Trợ lý cung cấp hướng dẫn sử dụng TKSC cho Player từ kho kiến thức đi kèm ứng dụng. Trợ lý không truy cập hồ sơ cá nhân, số dư, giao dịch, tin nhắn, lịch sân hoặc giá thời gian thực; hãy kiểm tra các màn hình chức năng tương ứng. Trợ lý không đặt chỗ, chuyển tiền, hủy vé hay sửa điểm. Không nhập mật khẩu, mã OTP, thông tin thẻ hoặc dữ liệu nhạy cảm vào câu hỏi. Câu hỏi và các đoạn hướng dẫn phù hợp được gửi tới OpenAI để tạo câu trả lời khi dịch vụ AI được cấu hình."
+  }
+]

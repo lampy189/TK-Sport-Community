@@ -12,7 +12,11 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
     public async Task<UserProfileDetails?> GetProfileAsync(long userId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
+<<<<<<< HEAD
         await connection.OpenAsync(cancellationToken);
+=======
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
         await using var userCmd = new SqlCommand("""
             SELECT u.id, u.email, u.full_name, r.code, u.status, p.id AS player_id, p.date_of_birth, p.gender, p.avatar_url
@@ -80,7 +84,11 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
         CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
+<<<<<<< HEAD
         await connection.OpenAsync(cancellationToken);
+=======
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
         await using var cmd = new SqlCommand("""
             SELECT p.id, u.id AS user_id, u.full_name, p.avatar_url, p.gender, p.date_of_birth
@@ -212,7 +220,11 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
     public async Task<IReadOnlyList<SportProfileItem>?> GetSportProfilesAsync(long userId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
+<<<<<<< HEAD
         await connection.OpenAsync(cancellationToken);
+=======
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
         await using var checkCmd = new SqlCommand("SELECT COUNT(*) FROM dbo.users WHERE id=@userId AND deleted_at IS NULL;", connection);
         checkCmd.Parameters.Add("@userId", SqlDbType.BigInt).Value = userId;
@@ -224,7 +236,11 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
     public async Task<UserProfileDetails?> UpdateProfileAsync(long userId, UpdateProfileRequest request, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
+<<<<<<< HEAD
         await connection.OpenAsync(cancellationToken);
+=======
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
 
         try
@@ -327,7 +343,11 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
     public async Task<SportProfileResult> UpdateSportProfileAsync(long userId, string sportCode, UpdateSportProfileRequest request, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
+<<<<<<< HEAD
         await connection.OpenAsync(cancellationToken);
+=======
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
 
         try
@@ -391,9 +411,13 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
             }
 
             var score = request.Score!.Value;
+<<<<<<< HEAD
             var band = !string.IsNullOrWhiteSpace(request.Band)
                 ? request.Band.Trim()
                 : ComputeBandFromScore(score);
+=======
+            var band = SqlSessionStore.NormalizeBand(request.Band, score) ?? ComputeBandFromScore(score);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
             const string newStatus = "Provisional";
 
@@ -485,10 +509,17 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
 
     private static string ComputeBandFromScore(short score) => score switch
     {
+<<<<<<< HEAD
         <= 20 => "B1",
         <= 40 => "B2",
         <= 60 => "B3",
         <= 80 => "B4",
+=======
+        < 20 => "B1",
+        < 40 => "B2",
+        < 60 => "B3",
+        < 80 => "B4",
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         _ => "B5"
     };
 
@@ -525,7 +556,12 @@ public sealed class SqlProfileStore(string connectionString) : IProfileStore
             var code = reader.GetString(1);
             var name = reader.GetString(2);
             short? score = reader.IsDBNull(3) ? null : reader.GetInt16(3);
+<<<<<<< HEAD
             var band = reader.IsDBNull(4) ? "Unrated" : reader.GetString(4);
+=======
+            var rawBand = reader.IsDBNull(4) ? null : reader.GetString(4);
+            var band = SqlSessionStore.NormalizeBand(rawBand, score) ?? "Unrated";
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             var status = reader.IsDBNull(5) ? "Unrated" : reader.GetString(5);
 
             sports.Add(new SportProfileItem(code, name, score, band, status, sportId));

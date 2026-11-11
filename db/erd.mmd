@@ -210,6 +210,10 @@ account_audit_logs {
 		VARCHAR status  ""  
 		VARCHAR payment_state  ""  
 		VARCHAR handover_state  ""  
+<<<<<<< HEAD
+=======
+		BIGINT buyer_id FK ""  
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 	}
 
 	payments {
@@ -277,6 +281,21 @@ account_audit_logs {
 		VARCHAR reference_type  ""  
 		BIGINT reference_id  ""  
 		BIGINT created_by FK ""  
+<<<<<<< HEAD
+=======
+		DATETIMEOFFSET created_at  ""  
+		NVARCHAR entered_unit  ""  
+		INT entered_quantity  ""  
+		VARCHAR source_ref  ""  
+	}
+
+	product_units {
+		BIGINT id PK ""  
+		BIGINT product_id FK ""  
+		NVARCHAR unit_name  ""  
+		INT factor_to_base  ""  
+		VARCHAR barcode UK ""  
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 	}
 
 	stock_counts {
@@ -409,6 +428,11 @@ account_audit_logs {
 	orders||--o{order_items:"has"
 	products||--o{order_items:"sold_as"
 	products||--o|stock_items:"stocked"
+<<<<<<< HEAD
+=======
+	products||--|{product_units:"sold_or_received_in"
+	users||--o{orders:"buys"
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 	stock_items||--o{stock_movements:"moves"
 	stock_items||--o{stock_counts:"counted"
 	shift_reconciliations||--o{reconciliation_items:"has"

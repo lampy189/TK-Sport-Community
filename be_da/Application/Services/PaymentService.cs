@@ -246,6 +246,10 @@ public sealed class PaymentService(IPaymentRepository repository, IPaymentGatewa
         order.Tickets.Where(t => !string.Equals(t.Status, "cancelled", StringComparison.OrdinalIgnoreCase));
     private static bool Eligible(SocialBookingOrder order) => Active(order).Any()
         && Active(order).All(t => (t.Status.Equals("reserved", StringComparison.OrdinalIgnoreCase) || t.Status.Equals("pending", StringComparison.OrdinalIgnoreCase))
+<<<<<<< HEAD
+=======
+            && (!LateEntryRules.IsLate(t.TicketCode) || t.LateEntryEligible)
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             && (t.Session == null || !TicketAftercareRules.Disrupted(t.Session.Status)))
         && Active(order).Sum(t => (long)t.AmountVnd) == order.TotalAmount;
     private void Flag(SocialBookingOrder order, Payment payment, string action, string detail, long? actor = null)

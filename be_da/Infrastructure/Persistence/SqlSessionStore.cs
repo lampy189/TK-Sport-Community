@@ -11,7 +11,11 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
     public async Task<IReadOnlyList<TimeSlotSummary>> GetTimeSlotsAsync(CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
+<<<<<<< HEAD
         await connection.OpenAsync(cancellationToken);
+=======
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
         const string sql = """
             SELECT id, start_time, end_time, label
@@ -34,10 +38,44 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
         return slots;
     }
 
+<<<<<<< HEAD
     public async Task<IReadOnlyList<SessionSummary>> GetSessionsAsync(SessionFilter filter, long? currentUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
+=======
+    public async Task<IReadOnlyList<VenueSummary>> GetVenuesAsync(CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
+
+        const string sql = """
+            SELECT id, name, address
+            FROM dbo.venues
+            WHERE is_active = 1
+            ORDER BY id ASC;
+            """;
+
+        await using var command = new SqlCommand(sql, connection);
+        var venues = new List<VenueSummary>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            venues.Add(new VenueSummary(
+                Id: reader.GetInt64(0),
+                Name: reader.GetString(1),
+                Address: reader.IsDBNull(2) ? null : reader.GetString(2)
+            ));
+        }
+
+        return venues;
+    }
+
+    public async Task<IReadOnlyList<SessionSummary>> GetSessionsAsync(SessionFilter filter, long? currentUserId, CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
         const string sql = """
             SELECT 
@@ -45,7 +83,12 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 s.court_id, c.name AS court_name, v.name AS venue_name,
                 s.time_slot_id, ts.start_time, ts.end_time, ts.label AS time_label,
                 s.session_date, s.band, s.capacity, s.price_vnd, s.status, s.created_by,
+<<<<<<< HEAD
                 ISNULL(occ.occupied_count, 0) AS occupied_places
+=======
+                ISNULL(occ.occupied_count, 0) AS occupied_places,
+                v.id AS venue_id, v.address AS venue_address
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             FROM dbo.sessions s
             JOIN dbo.sports sp ON sp.id = s.sport_id
             JOIN dbo.courts c ON c.id = s.court_id
@@ -68,6 +111,16 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
               AND (@fromDate IS NULL OR s.session_date >= @fromDate)
               AND (@toDate IS NULL OR s.session_date <= @toDate)
               AND (@timeSlotId IS NULL OR s.time_slot_id = @timeSlotId)
+<<<<<<< HEAD
+=======
+              AND (@venueId IS NULL OR c.venue_id = @venueId)
+              AND (@venue IS NULL OR v.name = @venue)
+              AND (
+                  @sessionType IS NULL
+                  OR (LOWER(@sessionType) IN ('hourlycourt', 'hourly', '1h') AND DATEDIFF(MINUTE, ts.start_time, ts.end_time) <= 60)
+                  OR (LOWER(@sessionType) IN ('social', '2h') AND DATEDIFF(MINUTE, ts.start_time, ts.end_time) > 60)
+              )
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             ORDER BY s.session_date ASC, ts.start_time ASC;
             """;
 
@@ -82,6 +135,12 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
         command.Parameters.Add("@toDate", SqlDbType.Date).Value = filter.ToDate.HasValue
             ? filter.ToDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value;
         command.Parameters.Add("@timeSlotId", SqlDbType.BigInt).Value = (object?)filter.TimeSlotId ?? DBNull.Value;
+<<<<<<< HEAD
+=======
+        command.Parameters.Add("@venueId", SqlDbType.BigInt).Value = (object?)filter.VenueId ?? DBNull.Value;
+        command.Parameters.Add("@venue", SqlDbType.NVarChar, 255).Value = (object?)filter.Venue ?? DBNull.Value;
+        command.Parameters.Add("@sessionType", SqlDbType.VarChar, 50).Value = (object?)filter.SessionType ?? DBNull.Value;
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
         var rawSessions = new List<SessionSummary>();
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -112,7 +171,11 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
     public async Task<SessionDetails?> GetSessionByIdAsync(long id, long? currentUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
+<<<<<<< HEAD
         await connection.OpenAsync(cancellationToken);
+=======
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
         const string sessionSql = """
             SELECT 
@@ -120,7 +183,12 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 s.court_id, c.name AS court_name, v.name AS venue_name,
                 s.time_slot_id, ts.start_time, ts.end_time, ts.label AS time_label,
                 s.session_date, s.band, s.capacity, s.price_vnd, s.status, s.created_by,
+<<<<<<< HEAD
                 ISNULL(occ.occupied_count, 0) AS occupied_places
+=======
+                ISNULL(occ.occupied_count, 0) AS occupied_places,
+                v.id AS venue_id, v.address AS venue_address
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             FROM dbo.sessions s
             JOIN dbo.sports sp ON sp.id = s.sport_id
             JOIN dbo.courts c ON c.id = s.court_id
@@ -133,7 +201,11 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 WHERE t.session_id = s.id
                   AND (
                       LOWER(t.status) IN ('valid', 'paid', 'confirmed', 'checkedin')
+<<<<<<< HEAD
                       OR (LOWER(t.status) = 'pending' AND o.expires_at > SYSUTCDATETIME())
+=======
+                      OR (LOWER(t.status) IN ('pending','reserved') AND o.expires_at > SYSUTCDATETIME())
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                   )
             ) occ
             WHERE s.id = @id;
@@ -160,7 +232,19 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 u.full_name,
                 p.avatar_url,
                 psp.current_band,
+<<<<<<< HEAD
                 t.status AS ticket_status
+=======
+                t.status AS ticket_status,
+                psp.current_score,
+                t.ticket_code,
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM dbo.session_exceptions se
+                    WHERE se.session_id = t.session_id
+                      AND se.player_id = p.id
+                      AND se.approved_by IS NOT NULL
+                ) THEN 1 ELSE 0 END AS has_approved_exception
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             FROM dbo.tickets t
             JOIN dbo.players p ON p.id = t.player_id
             JOIN dbo.users u ON u.id = p.user_id
@@ -182,12 +266,44 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
+<<<<<<< HEAD
+=======
+                var rawBand = reader.IsDBNull(4) ? null : reader.GetString(4);
+                short? rawScore = reader.IsDBNull(6) ? null : reader.GetInt16(6);
+                var ticketCode = reader.IsDBNull(7) ? null : reader.GetString(7);
+                var hasApprovedException = !reader.IsDBNull(8) && reader.GetInt32(8) == 1;
+
+                var normalizedBand = NormalizeBand(rawBand, rawScore);
+                var displayBand = normalizedBand;
+                if (!string.IsNullOrWhiteSpace(summary.Band))
+                {
+                    var sessionBandTrimmed = summary.Band.Trim();
+                    var isSeedDemoTicket = !string.IsNullOrWhiteSpace(ticketCode) &&
+                        (ticketCode.StartsWith("TKT-W4", StringComparison.OrdinalIgnoreCase) ||
+                         ticketCode.StartsWith("SEED-", StringComparison.OrdinalIgnoreCase));
+
+                    if (isSeedDemoTicket && !hasApprovedException)
+                    {
+                        displayBand = sessionBandTrimmed;
+                    }
+                    else if (hasApprovedException && !string.IsNullOrWhiteSpace(normalizedBand) &&
+                             !string.Equals(normalizedBand, sessionBandTrimmed, StringComparison.OrdinalIgnoreCase))
+                    {
+                        displayBand = $"{normalizedBand} · Ngoại lệ";
+                    }
+                }
+
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                 participants.Add(new SessionParticipant(
                     TicketId: reader.GetInt64(0),
                     PlayerId: reader.GetInt64(1),
                     FullName: reader.GetString(2),
                     AvatarUrl: reader.IsDBNull(3) ? null : reader.GetString(3),
+<<<<<<< HEAD
                     CurrentBand: reader.IsDBNull(4) ? null : reader.GetString(4),
+=======
+                    CurrentBand: displayBand,
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                     TicketStatus: reader.GetString(5)
                 ));
             }
@@ -203,10 +319,21 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
         return new SessionDetails(summary, participants);
     }
 
+<<<<<<< HEAD
     public async Task<RegisterSessionResult> RegisterSessionAsync(long userId, long sessionId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
+=======
+    public Task<RegisterSessionResult> RegisterSessionAsync(long userId, long sessionId, CancellationToken cancellationToken)
+        => RegisterCoreAsync(userId,sessionId,null,cancellationToken);
+    public Task<RegisterSessionResult> RegisterLateEntryAsync(long userId,long sessionId,long expectedRevision,CancellationToken cancellationToken)
+        => RegisterCoreAsync(userId,sessionId,expectedRevision,cancellationToken);
+    private async Task<RegisterSessionResult> RegisterCoreAsync(long userId, long sessionId,long? lateRevision, CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await be_da.Authorization.SportCenterConnection.OpenAsync(connection, cancellationToken);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         try
@@ -227,9 +354,18 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
 
             // Lock and inspect session
             const string sessionLockSql = """
+<<<<<<< HEAD
                 SELECT id, sport_id, band, capacity, price_vnd, status
                 FROM dbo.sessions WITH (UPDLOCK, HOLDLOCK)
                 WHERE id = @sessionId;
+=======
+                SELECT s.id, s.sport_id, s.band, s.capacity, s.price_vnd, s.status, s.session_date, ts.start_time, ts.end_time
+                FROM dbo.sessions s WITH (UPDLOCK, HOLDLOCK)
+                JOIN dbo.time_slots ts ON ts.id = s.time_slot_id
+                JOIN dbo.courts c ON c.id=s.court_id JOIN dbo.venues v ON v.id=c.venue_id
+                  WHERE s.id = @sessionId AND (@late=0 OR v.is_active=1)
+                    AND (@selectedCenter IS NULL OR c.venue_id=@selectedCenter);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                 """;
 
             long sportId;
@@ -237,10 +373,21 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
             short capacity;
             int priceVnd;
             string sessionStatus;
+<<<<<<< HEAD
+=======
+            DateOnly sessionDate;
+            TimeSpan startTime;
+            TimeSpan endTime;
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
             await using (var sessionCmd = new SqlCommand(sessionLockSql, connection, transaction))
             {
                 sessionCmd.Parameters.Add("@sessionId", SqlDbType.BigInt).Value = sessionId;
+<<<<<<< HEAD
+=======
+                sessionCmd.Parameters.Add("@late",SqlDbType.Bit).Value=lateRevision.HasValue;
+                  sessionCmd.Parameters.Add("@selectedCenter", SqlDbType.BigInt).Value = (object?)be_da.Authorization.CenterSelection.RestrictedVenue ?? DBNull.Value;
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                 await using var reader = await sessionCmd.ExecuteReaderAsync(cancellationToken);
                 if (!await reader.ReadAsync(cancellationToken))
                 {
@@ -253,15 +400,84 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 capacity = reader.GetInt16(3);
                 priceVnd = reader.GetInt32(4);
                 sessionStatus = reader.GetString(5);
+<<<<<<< HEAD
             }
 
             if (!string.Equals(sessionStatus, "Open", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(sessionStatus, "Published", StringComparison.OrdinalIgnoreCase))
+=======
+                sessionDate = DateOnly.FromDateTime(reader.GetDateTime(6));
+                startTime = reader.GetTimeSpan(7);
+                endTime = reader.GetTimeSpan(8);
+            }
+
+            var durationMinutes = (endTime - startTime).TotalMinutes;
+            var isHourlyCourt = durationMinutes > 0 && durationMinutes <= 60;
+
+            if (!string.Equals(sessionStatus, "Open", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(sessionStatus, "Published", StringComparison.OrdinalIgnoreCase) &&
+                !(lateRevision.HasValue && string.Equals(sessionStatus,"ongoing",StringComparison.OrdinalIgnoreCase)))
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             {
                 await transaction.RollbackAsync(cancellationToken);
                 return new RegisterSessionResult(false, "SESSION_NOT_OPEN", "Buổi chơi chưa mở hoặc đã kết thúc đăng ký.");
             }
 
+<<<<<<< HEAD
+=======
+            var nowVn = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)).DateTime;
+            var sessionStartVn = sessionDate.ToDateTime(TimeOnly.FromTimeSpan(startTime));
+            var now=DateTimeOffset.UtcNow;
+            var endsAt=TKSC.Domain.Payments.LateEntryRules.End(sessionDate,TimeOnly.FromTimeSpan(endTime));
+            if (lateRevision.HasValue)
+            {
+                await LateEntrySql.RequireSchema(connection,transaction,cancellationToken);
+                if(!TKSC.Domain.Payments.LateEntryRules.Running(TKSC.Domain.Payments.LateEntryRules.End(sessionDate,TimeOnly.FromTimeSpan(startTime)),endsAt,sessionStatus,now))
+                    return new(false,"LATE_ENTRY_ENDED","Buổi chưa bắt đầu hoặc đã kết thúc, không thể mua suất giờ lẻ.");
+                await using(var retry=new SqlCommand("""
+                    SELECT TOP(1) o.id,o.order_code,t.id,t.ticket_code,t.amount_vnd,o.expires_at
+                    FROM dbo.tickets t JOIN dbo.late_entry_tickets lt ON lt.ticket_id=t.id
+                    JOIN dbo.social_booking_orders o ON o.id=t.order_id
+                    WHERE t.session_id=@session AND t.player_id=@player AND o.payer_id=@user
+                      AND LOWER(t.status) IN ('pending','reserved') AND LOWER(o.status)='pending' AND o.expires_at>@now
+                    ORDER BY t.id DESC
+                    """,connection,transaction))
+                {
+                    retry.Parameters.AddWithValue("@session",sessionId);retry.Parameters.AddWithValue("@player",playerId);
+                    retry.Parameters.AddWithValue("@user",userId);retry.Parameters.AddWithValue("@now",now);
+                    await using var previous=await retry.ExecuteReaderAsync(cancellationToken);
+                    if(await previous.ReadAsync(cancellationToken))return new(true,null,"Tiếp tục thanh toán chỗ đang giữ.",null,previous.GetInt64(0),previous.GetString(1),previous.GetInt64(2),previous.GetString(3),previous.GetInt32(4),previous.GetFieldValue<DateTimeOffset>(5));
+                }
+                var quote=TKSC.Domain.Payments.LateEntryRules.Quote(
+                    TKSC.Domain.Payments.LateEntryRules.End(sessionDate,TimeOnly.FromTimeSpan(startTime)),endsAt,sessionStatus,now,priceVnd);
+                if(quote is null)return new(false,"LATE_ENTRY_CLOSED","Buổi không còn đủ điều kiện bán vé giờ lẻ.");
+                if(quote.Revision!=lateRevision.Value)return new(false,"LATE_ENTRY_CHANGED","Giá theo thời gian vừa thay đổi. Tải lại và xác nhận giá mới.");
+                priceVnd=quote.PriceVnd;
+                // A read never writes an offer. Materialize its automatic quote atomically
+                // with the first hold, under the session lock, for the ticket's FK/history.
+                await using(var offerCmd=new SqlCommand("""
+                    IF EXISTS(SELECT 1 FROM dbo.late_entry_offers WHERE session_id=@session)
+                      UPDATE dbo.late_entry_offers SET max_tickets=@capacity,price_vnd=@price,is_open=1,
+                        revision=@revision,updated_by=@actor,updated_at=@now WHERE session_id=@session;
+                    ELSE INSERT dbo.late_entry_offers(session_id,max_tickets,price_vnd,is_open,revision,updated_by,updated_at)
+                      VALUES(@session,@capacity,@price,1,@revision,@actor,@now);
+                    """,connection,transaction))
+                {
+                    offerCmd.Parameters.AddWithValue("@session",sessionId);offerCmd.Parameters.AddWithValue("@capacity",Math.Min((int)capacity,8));
+                    offerCmd.Parameters.AddWithValue("@price",priceVnd);offerCmd.Parameters.AddWithValue("@revision",quote.Revision);
+                    offerCmd.Parameters.AddWithValue("@actor",userId);offerCmd.Parameters.AddWithValue("@now",now);
+                    await offerCmd.ExecuteNonQueryAsync(cancellationToken);
+                }
+                if(!await LateEntrySql.Eligible(connection,transaction,sessionId,playerId,now,cancellationToken))
+                    return new(false,"SKILL_INELIGIBLE","Chưa đủ điều kiện trình độ/tài khoản hoặc trùng lịch với vé khác.");
+            }
+            if (!lateRevision.HasValue && sessionStartVn <= nowVn)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return new RegisterSessionResult(false, "SESSION_PAST_START", "Buổi chơi đã qua thời điểm bắt đầu và đã khóa đăng ký.");
+            }
+
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             // Bước A: Check Sport-Specific Skill Eligibility
             bool hasApprovedException = false;
             await using (var excCmd = new SqlCommand("""
@@ -274,7 +490,11 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 hasApprovedException = Convert.ToInt32(await excCmd.ExecuteScalarAsync(cancellationToken)) > 0;
             }
 
+<<<<<<< HEAD
             if (!hasApprovedException && !string.IsNullOrWhiteSpace(sessionBand))
+=======
+            if (!hasApprovedException && (!isHourlyCourt || lateRevision.HasValue) && !string.IsNullOrWhiteSpace(sessionBand))
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             {
                 // Must have sport profile matching required band
                 string? playerBand = null;
@@ -295,7 +515,11 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                     {
                         profileFound = true;
                         currentScore = reader.IsDBNull(0) ? null : reader.GetInt16(0);
+<<<<<<< HEAD
                         playerBand = reader.IsDBNull(1) ? null : reader.GetString(1);
+=======
+                        playerBand = NormalizeBand(reader.IsDBNull(1) ? null : reader.GetString(1), currentScore);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                         ratingStatus = reader.IsDBNull(2) ? null : reader.GetString(2);
                     }
                 }
@@ -329,7 +553,11 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 WHERE t.session_id = @sessionId AND t.player_id = @playerId
                   AND (
                       LOWER(t.status) IN ('valid', 'paid', 'confirmed', 'checkedin')
+<<<<<<< HEAD
                       OR (LOWER(t.status) = 'pending' AND o.expires_at > SYSUTCDATETIME())
+=======
+                      OR (LOWER(t.status) IN ('pending','reserved') AND o.expires_at > SYSUTCDATETIME())
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                   );
                 """, connection, transaction))
             {
@@ -366,7 +594,11 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
             }
 
             // Bước C: Record Pending Registration (Timed place hold)
+<<<<<<< HEAD
             var expiresAt = DateTimeOffset.UtcNow.AddMinutes(15);
+=======
+            var expiresAt = lateRevision.HasValue ? TKSC.Domain.Payments.LateEntryRules.HoldExpiry(now,endsAt) : DateTimeOffset.UtcNow.AddMinutes(15);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             var orderCode = $"SBO-{DateTimeOffset.UtcNow:yyMMddHHmmss}-{Random.Shared.Next(1000, 9999)}";
 
             long orderId;
@@ -385,7 +617,11 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 orderId = (long)(await insertOrderCmd.ExecuteScalarAsync(cancellationToken))!;
             }
 
+<<<<<<< HEAD
             var ticketCode = $"TKT-{orderId}-{DateTimeOffset.UtcNow:yyMMddHHmmss}-{Random.Shared.Next(100, 999)}";
+=======
+            var ticketCode = lateRevision.HasValue ? $"LATE-{Guid.NewGuid():N}" : $"TKT-{orderId}-{DateTimeOffset.UtcNow:yyMMddHHmmss}-{Random.Shared.Next(100, 999)}";
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             long ticketId;
             const string insertTicketSql = """
                 INSERT INTO dbo.tickets (order_id, session_id, player_id, ticket_code, status, amount_vnd)
@@ -403,6 +639,16 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
                 ticketId = (long)(await insertTicketCmd.ExecuteScalarAsync(cancellationToken))!;
             }
 
+<<<<<<< HEAD
+=======
+            if(lateRevision.HasValue)
+            {
+                await using var late=new SqlCommand("INSERT dbo.late_entry_tickets(ticket_id,session_id,offer_revision,starts_at,ends_at,purchased_at) VALUES(@ticket,@session,@revision,@start,@end,@now)",connection,transaction);
+                late.Parameters.AddWithValue("@ticket",ticketId);late.Parameters.AddWithValue("@session",sessionId);late.Parameters.AddWithValue("@revision",lateRevision.Value);
+                late.Parameters.AddWithValue("@start",TKSC.Domain.Payments.LateEntryRules.End(sessionDate,TimeOnly.FromTimeSpan(startTime)));
+                late.Parameters.AddWithValue("@end",endsAt);late.Parameters.AddWithValue("@now",now);await late.ExecuteNonQueryAsync(cancellationToken);
+            }
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             // Durable web/email events commit atomically with the held ticket.
             await using (var notify = new SqlCommand("""
                 INSERT INTO dbo.notifications (user_id, channel, title, reference_type, reference_id, status)
@@ -447,6 +693,11 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
         var startTime = reader.GetTimeSpan(8);
         var endTime = reader.GetTimeSpan(9);
         var date = DateOnly.FromDateTime(reader.GetDateTime(11));
+<<<<<<< HEAD
+=======
+        var venueId = reader.FieldCount > 18 && !reader.IsDBNull(18) ? reader.GetInt64(18) : 1L;
+        var venueAddress = reader.FieldCount > 19 && !reader.IsDBNull(19) ? reader.GetString(19) : null;
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
         return new SessionSummary(
             Id: reader.GetInt64(0),
@@ -466,7 +717,13 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
             PriceVnd: reader.GetInt32(14),
             Status: reader.GetString(15),
             CreatedBy: reader.GetInt64(16),
+<<<<<<< HEAD
             OccupiedPlaces: Convert.ToInt16(reader.GetInt32(17))
+=======
+            OccupiedPlaces: Convert.ToInt16(reader.GetInt32(17)),
+            VenueId: venueId,
+            VenueAddress: venueAddress
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         );
     }
 
@@ -495,8 +752,14 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
         while (await reader.ReadAsync(cancellationToken))
         {
             var sportId = reader.GetInt64(0);
+<<<<<<< HEAD
             var band = reader.IsDBNull(1) ? null : reader.GetString(1);
             var score = reader.IsDBNull(2) ? null : (short?)reader.GetInt16(2);
+=======
+            var rawBand = reader.IsDBNull(1) ? null : reader.GetString(1);
+            var score = reader.IsDBNull(2) ? null : (short?)reader.GetInt16(2);
+            var band = NormalizeBand(rawBand, score);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             var status = reader.IsDBNull(3) ? null : reader.GetString(3);
             var playerId = reader.GetInt64(4);
             profiles[sportId] = new PlayerSportProfileInfo(playerId, sportId, band, score, status);
@@ -513,6 +776,36 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
         return (profiles, exceptions);
     }
 
+<<<<<<< HEAD
+=======
+    internal static string? NormalizeBand(string? band, short? score)
+    {
+        var trimmed = band?.Trim();
+        if (!string.IsNullOrWhiteSpace(trimmed))
+        {
+            var upper = trimmed.ToUpperInvariant();
+            if (upper is "B1" or "B2" or "B3" or "B4" or "B5")
+            {
+                return upper;
+            }
+        }
+
+        if (score.HasValue)
+        {
+            return score.Value switch
+            {
+                < 20 => "B1",
+                < 40 => "B2",
+                < 60 => "B3",
+                < 80 => "B4",
+                _ => "B5"
+            };
+        }
+
+        return null;
+    }
+
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     private static (bool IsEligible, string? Reason) CheckEligibility(
         SessionSummary session,
         Dictionary<long, PlayerSportProfileInfo> profiles,
@@ -523,7 +816,11 @@ public sealed class SqlSessionStore(string connectionString) : ISessionStore
             return (true, null);
         }
 
+<<<<<<< HEAD
         if (string.IsNullOrWhiteSpace(session.Band))
+=======
+        if (session.IsHourlyCourt || string.IsNullOrWhiteSpace(session.Band))
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         {
             return (true, null);
         }

@@ -92,6 +92,10 @@ public sealed class SkillAssessmentTests
     [Theory]
     [InlineData("/api/v1/skill/sports/1/rubric")]
     [InlineData("/api/v1/skill/sessions/1/attendees")]
+<<<<<<< HEAD
+=======
+    [InlineData("/api/v1/skill/sessions/1/players/2/context")]
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     [InlineData("/api/v1/skill/assessments/1")]
     [InlineData("/api/v1/skill/my-results?sportId=1")]
     public async Task AnonymousCannotReadRubricsRosterEvidenceOrResults(string path)
@@ -112,6 +116,10 @@ public sealed class SkillAssessmentTests
         await using var app = new SkillAuthorizationApp();
         using var client = app.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
         client.DefaultRequestHeaders.Add("Test-Role", role);
+<<<<<<< HEAD
+=======
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/v1/skill/sessions/1/players/2/context")).StatusCode);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsync("/api/v1/skill/sessions/1/players/2/assessment", null)).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync("/api/v1/skill/assessments/1/publish",
             new { revision = 1, expectedScore = 50, expectedBand = "B3" })).StatusCode);
@@ -151,6 +159,10 @@ internal sealed class SkillTestAuth(IOptionsMonitor<AuthenticationSchemeOptions>
     protected override Task<AuthenticateResult> HandleAuthenticateAsync() => Task.FromResult(AuthenticateResult.Success(
         new AuthenticationTicket(new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
+<<<<<<< HEAD
+=======
+            new Claim(be_da.Authorization.SportCenterConnection.VenueClaim, "1"),
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             new Claim(ClaimTypes.NameIdentifier, "10"), new Claim(ClaimTypes.Role, Request.Headers["Test-Role"].ToString())
         }, Scheme.Name)), Scheme.Name)));
 }

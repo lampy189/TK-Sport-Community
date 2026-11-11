@@ -318,6 +318,10 @@ export default function PaymentPage({
                     <li key={t.id ?? i}>
                       <span>
                         <strong>{t.sportName || 'Vé'} · {t.courtName || 'Buổi chơi'}</strong>
+<<<<<<< HEAD
+=======
+                        {t.ticketKind === 'remaining' && <small className="checkout-item-meta">Vé phần buổi còn lại · hết hiệu lực {t.validUntil ? new Date(t.validUntil).toLocaleTimeString('vi-VN', { hour:'2-digit', minute:'2-digit', timeZone:'Asia/Ho_Chi_Minh' }) : t.endTime?.slice(0,5)}. Không cộng thêm một giờ.</small>}
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
                         <small className="checkout-item-meta">{t.venueName}</small>
                         <small className="checkout-item-meta">{formatDate(t.sessionDate)} · {t.startTime?.slice(0,5)} – {t.endTime?.slice(0,5)}</small>
                         <small className="checkout-item-meta">{t.holderName}</small>

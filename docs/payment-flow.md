@@ -60,7 +60,20 @@ Không phát sinh giao dịch ngân hàng; dữ liệu localStorage không có g
 
 1. Dùng database SQL Server hiện có, chạy `be_da/Infrastructure/Migrations/20261020-payos.sql` để thêm
    cột mã/link payOS và raw payload cho Bank Transaction. Script không xóa dữ liệu.
+<<<<<<< HEAD
 2. Cấu hình qua biến môi trường hoặc user-secrets:
+=======
+2. Sao chép `be_da/Controllers/appsettings.Payment.example.json` thành
+   `be_da/Controllers/appsettings.Local.json`, điền đủ năm trường `Payments:PayOS`
+   và kiểm tra connection string. Backend tự nạp file Local ở mọi môi trường.
+   File Local chứa khóa bí mật và được bỏ qua bởi Git. Khi chuyển máy, gửi riêng
+   file này qua kênh riêng tư, đặt đúng đường dẫn trên máy đích và khởi động lại backend.
+   Chỉ pull Git sẽ không có khóa payOS. ReturnUrl/CancelUrl phải trỏ tới frontend máy đích.
+   File Local được sao chép vào output/publish; giữ riêng gói publish chứa khóa.
+   Thứ tự ưu tiên từ thấp đến cao: appsettings → appsettings theo môi trường →
+   User Secrets (Development) → appsettings.Local.json → biến môi trường → command line.
+   Ngoài ra có thể cấu hình qua biến môi trường:
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
    `ConnectionStrings__Sep490`, `Payments__PayOS__ClientId`,
    `Payments__PayOS__ApiKey`, `Payments__PayOS__ChecksumKey`,
    `Payments__PayOS__ReturnUrl`, `Payments__PayOS__CancelUrl`.

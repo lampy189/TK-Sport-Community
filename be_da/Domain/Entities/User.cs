@@ -9,6 +9,11 @@ public partial class User
 
     public long RoleId { get; set; }
 
+<<<<<<< HEAD
+=======
+    public long? VenueId { get; set; }
+
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     public string Email { get; set; } = null!;
 
     public string FullName { get; set; } = null!;

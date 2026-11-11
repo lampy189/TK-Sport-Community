@@ -56,6 +56,16 @@ public sealed class TicketCheckInService(IPaymentRepository repository, TimeProv
                     || string.Equals(ticket.Status, "checkedin", StringComparison.OrdinalIgnoreCase)))
                 throw new PaymentException(409, "Vé chưa thanh toán, đã hủy hoặc không còn hiệu lực. Không thể vào sân.");
             var already = ticket.CheckedInBy is not null || string.Equals(ticket.Status, "checkedin", StringComparison.OrdinalIgnoreCase);
+<<<<<<< HEAD
+=======
+            if (TKSC.Domain.Payments.LateEntryRules.IsLate(code))
+            {
+                if(ticket.LateEntryEndsAt is null || ticket.LateEntryEndsAt<=clock.GetUtcNow())
+                    throw new PaymentException(409,"Vé phần buổi còn lại đã hết hiệu lực.");
+                if(!already&&!ticket.LateEntryEligible)
+                    throw new PaymentException(409,"Vé không còn đủ điều kiện giờ chơi, trình độ hoặc sức chứa. Liên hệ Staff xử lý.");
+            }
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             if (!already)
             {
                 var localNow = clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7));

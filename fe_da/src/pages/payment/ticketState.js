@@ -12,6 +12,10 @@ export function paymentState(orderStatus, paymentStatus, expiresAt, now) {
 export function ticketState(ticket, now) {
   const status = norm(ticket.status);
   if (['cancelled', 'expired', 'invalidated', 'exchanged'].includes(status)) return status;
+<<<<<<< HEAD
+=======
+  if (ticket.ticketKind === 'remaining' && ticket.validUntil && Date.parse(ticket.validUntil) <= now) return 'completed';
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
   if (ticket.checkedIn || status === 'checkedin') return 'checkedin';
   if (['suspended','cancelled'].includes(norm(ticket.sessionStatus))) return 'venue_issue';
   const payment = paymentState(ticket.orderStatus, ticket.paymentStatus, ticket.expiresAt, now);

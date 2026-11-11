@@ -14,7 +14,12 @@ namespace be_da.Controllers;
 [ApiController]
 [Route("api/auth")]
 [EnableRateLimiting("auth")]
+<<<<<<< HEAD
 public sealed class AuthController(IConfiguration configuration, IAntiforgery antiforgery, IWebHostEnvironment environment) : ControllerBase
+=======
+public sealed class AuthController(IConfiguration configuration, IAntiforgery antiforgery, IWebHostEnvironment environment,
+    CenterSelection centers, IAccountStore accounts) : ControllerBase
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 {
     [AllowAnonymous]
     [HttpGet("csrf")]
@@ -28,7 +33,11 @@ public sealed class AuthController(IConfiguration configuration, IAntiforgery an
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+<<<<<<< HEAD
     public async Task<IActionResult> Google([FromQuery] string? portal = null)
+=======
+    public async Task<IActionResult> Google([FromQuery] string? portal = null, [FromQuery] long? venueId = null)
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     {
         if (!await HasValidCsrf()) return BadRequest(new { code = "invalid_csrf_token" });
         if (User.Identity?.IsAuthenticated == true)
@@ -45,6 +54,14 @@ public sealed class AuthController(IConfiguration configuration, IAntiforgery an
             destination = (environment.IsDevelopment() ? "http://localhost:5173" : "") + LoginPortal.Path(portal);
         var properties = new AuthenticationProperties { RedirectUri = destination };
         if (portal is not null) properties.Items["login_portal"] = portal;
+<<<<<<< HEAD
+=======
+        if (venueId.HasValue)
+        {
+            if (venueId <= 0) return BadRequest(new { code = "center_unavailable" });
+            properties.Items["selected_center"] = venueId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
@@ -55,9 +72,49 @@ public sealed class AuthController(IConfiguration configuration, IAntiforgery an
         id = User.FindFirstValue(ClaimTypes.NameIdentifier),
         email = User.FindFirstValue(ClaimTypes.Email),
         fullName = User.FindFirstValue(ClaimTypes.Name),
+<<<<<<< HEAD
         role = User.FindFirstValue(ClaimTypes.Role)
     });
 
+=======
+        venueId = User.FindFirstValue(SportCenterConnection.VenueClaim),
+        selectedVenueId = User.FindFirstValue(CenterSelection.SelectedClaim),
+        centerSelectionEnabled = centers.Enabled,
+        centerRequired = centers.Enabled && !User.IsInRole("Owner") && !User.IsInRole("SystemAdmin")
+            && string.IsNullOrWhiteSpace(User.FindFirstValue(CenterSelection.SelectedClaim)),
+        role = User.FindFirstValue(ClaimTypes.Role)
+    });
+
+    [AllowAnonymous, HttpGet("centers")]
+    public async Task<IActionResult> Centers(CancellationToken ct)
+    {
+        var account = long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id)
+            ? await accounts.FindByIdAsync(id, ct) : null;
+        return Ok(new { enabled = centers.Enabled, centers = await centers.Choices(account, ct) });
+    }
+
+    public sealed record SelectCenterRequest(long? VenueId);
+    [Authorize, HttpPost("center")]
+    public async Task<IActionResult> SelectCenter(SelectCenterRequest request, CancellationToken ct)
+    {
+        if (!await HasValidCsrf()) return BadRequest(new { code = "invalid_csrf_token" });
+        if (!centers.Enabled) return Conflict(new { code = "centers_not_enabled", message = "Chức năng nhiều cơ sở chưa được kích hoạt." });
+        var account = await accounts.FindByIdAsync(long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), ct);
+        if (account is null || !account.CanSignIn) return Unauthorized();
+        if (request.VenueId is null && account.Role != "Owner")
+            return BadRequest(new { code = "center_required", message = "Vui lòng chọn cơ sở." });
+        try
+        {
+            var selected = await centers.Resolve(account, request.VenueId, ct);
+            var dev = User.FindFirstValue(AccountPrincipal.LoginMethod) == "development";
+            await HttpContext.SignInAsync(AccountPrincipal.Scheme, AccountPrincipal.Create(account, dev, selected));
+            return Ok(new { selectedVenueId = selected });
+        }
+        catch (SignInRejectedException ex)
+        { return StatusCode(403, new { code = ex.Code, message = "Cơ sở không hoạt động hoặc không thuộc quyền truy cập của tài khoản." }); }
+    }
+
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
     [Authorize]
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -70,7 +127,11 @@ public sealed class AuthController(IConfiguration configuration, IAntiforgery an
         return NoContent();
     }
 
+<<<<<<< HEAD
     public sealed record DevLoginRequest(string Email, string? Portal = null);
+=======
+    public sealed record DevLoginRequest(string Email, string? Portal = null, long? VenueId = null);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
 
     [AllowAnonymous]
     [HttpPost("dev-login")]
@@ -90,7 +151,15 @@ public sealed class AuthController(IConfiguration configuration, IAntiforgery an
         if (!LoginPortal.Allows(request.Portal, account.Role))
             return StatusCode(403, new { code = "portal_access_denied", message = "Tài khoản không thuộc cổng đăng nhập này." });
 
+<<<<<<< HEAD
         var principal = AccountPrincipal.Create(account, developmentLogin: true);
+=======
+        long? selected;
+        try { selected = await centers.Resolve(account, request.VenueId, cancellationToken); }
+        catch (SignInRejectedException ex)
+        { return StatusCode(403, new { code = ex.Code, message = "Cơ sở không hoạt động hoặc tài khoản chưa được phân công đúng cơ sở." }); }
+        var principal = AccountPrincipal.Create(account, developmentLogin: true, selectedVenueId: selected);
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
         await HttpContext.SignInAsync(AccountPrincipal.Scheme, principal);
         return Ok(new
         {
@@ -98,6 +167,13 @@ public sealed class AuthController(IConfiguration configuration, IAntiforgery an
             email = account.Email,
             fullName = account.FullName,
             role = account.Role,
+<<<<<<< HEAD
+=======
+            venueId = account.VenueId,
+            selectedVenueId = selected,
+            centerSelectionEnabled = centers.Enabled,
+            centerRequired = centers.Enabled && account.Role is not ("Owner" or "SystemAdmin") && selected is null,
+>>>>>>> 0d40ca35efaf07c5d4887d6f8febc66c57f5578c
             status = account.Status
         });
     }
