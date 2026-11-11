@@ -22,7 +22,7 @@ export default function TicketList({tickets,now,busy,onRefresh,onPay,onCancel,on
         <div className="ticket-meta">{t.venueName&&<span>{t.venueName}</span>}{t.sessionDate&&<span>{new Date(t.sessionDate+'T00:00:00+07:00').toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})}</span>}{t.startTime&&<span>{t.startTime.slice(0,5)} – {t.endTime?.slice(0,5)}</span>}{t.holderName&&<span>Người chơi: {t.holderName}</span>}</div>
         {t.ticketKind==='remaining'&&<p className="ticket-refund"><strong>Vé phần buổi còn lại</strong> · Hết hiệu lực {t.validUntil ? new Date(t.validUntil).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Ho_Chi_Minh'}) : t.endTime?.slice(0,5)}. Check-in muộn không kéo dài giờ chơi.</p>}
         {status==='venue_issue'&&<TicketIssueActions ticket={t} onRefresh={onRefresh}/>}
-        {(status==='venue_issue'||t.pendingChangeId||t.refundStatus||status==='exchanged')&&<TicketSupport ticketId={t.id}/>}
+        <TicketSupport ticketId={t.id}/>
         <strong className="ticket-price">{money(t.amountVnd)}</strong>
         {t.refundStatus&&<p className="ticket-refund">{({requested:'Đã yêu cầu hoàn tiền',processing:'Đang xử lý hoàn tiền',completed:'Đã hoàn tiền',failed:'Hoàn tiền chưa thành công'})[t.refundStatus]||'Đang kiểm tra hoàn tiền'} · {money(t.refundAmountVnd||0)}<br/><small>Hoàn về người thanh toán ban đầu.</small></p>}
         <div className="payment-actions"><button className="button button-secondary" aria-expanded={open} onClick={()=>setDetail(open?null:t.id)}>{open?'Thu gọn':'Chi tiết vé'}</button>{canCancel&&<button className="button ticket-cancel" disabled={busy} onClick={()=>setCancelId(t.id)}>Hủy vé</button>}</div>

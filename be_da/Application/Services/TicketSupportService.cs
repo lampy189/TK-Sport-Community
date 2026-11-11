@@ -12,9 +12,6 @@ public sealed class TicketSupportService(Sep490Context db, TimeProvider clock)
   var ticket = await db.Tickets.AsNoTracking().Include(t => t.Order).Include(t => t.Player).Include(t => t.Session)
    .SingleOrDefaultAsync(t => t.Id == id && (staff || t.Order.PayerId == actor || t.Player.UserId == actor));
   if (ticket == null) throw new PaymentException(404, "Không tìm thấy vé.");
-  if (!TicketAftercareRules.Disrupted(ticket.Session.Status) && !await db.TicketChanges.AnyAsync(c => c.TicketId == id)
-      && !await db.Refunds.AnyAsync(r => r.TicketId == id))
-   throw new PaymentException(409, "Vé chưa có yêu cầu đổi/hoàn hoặc sự cố cần trao đổi.");
   return ticket;
  }
  public async Task<object> Inbox()
@@ -22,8 +19,11 @@ public sealed class TicketSupportService(Sep490Context db, TimeProvider clock)
   return await db.Tickets.AsNoTracking().Where(t => db.TicketSupportMessages.Any(m => m.TicketId == t.Id))
    .OrderByDescending(t => db.TicketSupportMessages.Where(m => m.TicketId == t.Id).Max(m => m.Id))
    .Select(t => new { t.Id, TicketId = t.Id, Holder = t.Player.User.FullName, t.Status,
+    LastMessage = db.TicketSupportMessages.Where(m => m.TicketId == t.Id).OrderByDescending(m => m.Id).Select(m => m.Content).FirstOrDefault(),
+    LastIsStaff = db.TicketSupportMessages.Where(m => m.TicketId == t.Id).OrderByDescending(m => m.Id).Select(m => m.IsStaff).FirstOrDefault(),
+    LastSender = (from m in db.TicketSupportMessages join u in db.Users on m.SenderId equals u.Id where m.TicketId == t.Id && !m.IsStaff orderby m.Id descending select u.FullName).FirstOrDefault(),
     RefundStatus = db.Refunds.Where(r => r.TicketId == t.Id).OrderByDescending(r => r.Id).Select(r => r.Status).FirstOrDefault() })
-   .Take(200).ToListAsync();
+   .ToListAsync();
  }
  public async Task<object> List(long id, long actor, bool staff)
  {
@@ -43,6 +43,8 @@ public sealed class TicketSupportService(Sep490Context db, TimeProvider clock)
   if (bytes.Length >= 4 && bytes[0] == 255 && bytes[1] == 216 && bytes[2] == 255 && bytes[^2] == 255 && bytes[^1] == 217) return (bytes, "image/jpeg");
   throw new PaymentException(400, "Chỉ nhận ảnh PNG hoặc JPG. Không nhận SVG hoặc tệp khác.");
  }
+ public Task<object> Report(long id, long actor, string? category, string? content, string? image)
+  => Send(id, actor, false, TicketSupportRules.Report(category, content), image);
  public async Task<object> Send(long id, long actor, bool staff, string? content, string? image)
  {
   var t = await Access(id, actor, staff);
@@ -54,8 +56,10 @@ public sealed class TicketSupportService(Sep490Context db, TimeProvider clock)
   if (staff) db.Notifications.AddRange(TicketNotifications.Create("ticket_staff_reply", id, t.Order.PayerId, t.Player.UserId));
   else
   {
-   var recipients = await db.Users.Where(u => u.DeletedAt == null && u.Status.ToLower() == "active" && (u.Role.Code.ToLower() == "staff" || u.Role.Code.ToLower() == "manager")).Select(u => u.Id).ToListAsync();
-   foreach(var recipient in recipients) db.Notifications.Add(new Notification { UserId = recipient, Channel = "web", ReferenceType = "ticket_player_message", ReferenceId = id, Title = $"Vé #{id} có thông tin mới từ người chơi. Mở Đổi & hoàn vé để xem.", Status = "unread" });
+   // Player requests can read across centers; scope notification recipients explicitly.
+   var venueId = await db.Sessions.Where(s => s.Id == t.SessionId).Select(s => s.Court.VenueId).SingleAsync();
+   var recipients = await db.Users.Where(u => u.VenueId == venueId && u.DeletedAt == null && u.Status.ToLower() == "active" && (u.Role.Code.ToLower() == "staff" || u.Role.Code.ToLower() == "manager")).Select(u => u.Id).ToListAsync();
+   foreach(var recipient in recipients) db.Notifications.Add(new Notification { UserId = recipient, Channel = "web", ReferenceType = "ticket_player_message", ReferenceId = id, Title = $"Vé #{id} có thông tin mới từ người chơi. Mở Sự cố để xem và phản hồi.", Status = "unread" });
   }
   await db.SaveChangesAsync(); return new { m.Id };
  }

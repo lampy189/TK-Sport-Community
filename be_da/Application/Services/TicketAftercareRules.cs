@@ -3,6 +3,21 @@ using TKSC.Application.DTOs;
 namespace TKSC.Application.Services;
 public static class TicketAftercareRules
 {
+ public static string Evidence(string? text)
+ {
+  text = text?.Trim();
+  if (text is not { Length: >= 10 and <= 1000 })
+   throw new PaymentException(400,"Nhập nội dung/bằng chứng từ 10 đến 1000 ký tự.");
+  return text;
+ }
+ public static string VenueDecision(string current, bool cancel)
+ {
+  if (current.Equals("completed",StringComparison.OrdinalIgnoreCase))
+   throw new PaymentException(409,"Buổi đã kết thúc không thể báo dừng.");
+  if (current.Equals("cancelled",StringComparison.OrdinalIgnoreCase) && !cancel)
+   throw new PaymentException(409,"Buổi đã hủy không chuyển về tạm ngưng.");
+  return cancel ? "cancelled" : "suspended";
+ }
  public static bool Disrupted(string status) => status.ToLowerInvariant() is "suspended" or "cancelled";
  public static bool Occupies(string status, DateTimeOffset? expires, DateTimeOffset now) =>
   status.ToLowerInvariant() is "confirmed" or "checkedin" or "paid" or "valid"
