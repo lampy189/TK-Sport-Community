@@ -9,7 +9,7 @@ namespace TKSC.Controllers;
 [ApiController]
 [Authorize(Roles = "referee,Referee,manager,Manager")]
 [Route("api/v1/commerce/payment/check-in")]
-public class TicketCheckInController(TicketCheckInService service, IAntiforgery antiforgery) : ControllerBase
+public class TicketCheckInController(ITicketCheckInService service, IAntiforgery antiforgery) : ControllerBase
 {
     [HttpPost("inspect")]
     public Task<IActionResult> Inspect(CheckInRequest request) => Execute(request, false);

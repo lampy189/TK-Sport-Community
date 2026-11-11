@@ -6,7 +6,7 @@ using TKSC.Application.Services;
 namespace TKSC.Controllers;
 [ApiController,Authorize]
 [Route("api/ticket-aftercare")]
-public class TicketAftercareController(TicketAftercareService service,TicketSupportService support,IAntiforgery csrf):ControllerBase
+public class TicketAftercareController(ITicketAftercareService service,ITicketSupportService support,IAntiforgery csrf):ControllerBase
 {
  private long Actor=>long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier),out var id)?id:-1;
  private async Task<IActionResult> Write(Func<Task<object>> action)

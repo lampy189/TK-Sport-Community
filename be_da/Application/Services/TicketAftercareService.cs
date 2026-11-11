@@ -7,7 +7,7 @@ using TKSC.Domain.Entities;
 using TKSC.Infrastructure.DbContext;
 
 namespace TKSC.Application.Services;
-public sealed class TicketAftercareService(Sep490Context db, TimeProvider clock)
+public sealed class TicketAftercareService(Sep490Context db, TimeProvider clock) : ITicketAftercareService
 {
  private DateTimeOffset Now => clock.GetUtcNow();
  private static void Require(bool ok,string message,int code=409) { if(!ok) throw new PaymentException(code,message); }

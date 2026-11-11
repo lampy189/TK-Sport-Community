@@ -11,7 +11,7 @@ namespace TKSC.Controllers;
 [Authorize(Roles = "player,Player")]
 [Route("api/v1/commerce/my-goods-orders")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class PlayerGoodsOrdersController(GoodsPaymentService service, IAntiforgery antiforgery) : ControllerBase
+public sealed class PlayerGoodsOrdersController(IGoodsPaymentsService service, IAntiforgery antiforgery) : ControllerBase
 {
     private long ActorId => long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
 

@@ -11,7 +11,7 @@ namespace TKSC.Controllers;
 
 [ApiController]
 [Route("api/v1/commerce/payment")]
-public class PaymentsController(IPaymentService service, IAntiforgery antiforgery, GoodsPaymentService goods) : ControllerBase
+public class PaymentsController(IPaymentService service, IAntiforgery antiforgery, IGoodsPaymentsService goods) : ControllerBase
 {
     private long UserId => long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : -1;
     private async Task<bool> HasValidAppRequest()

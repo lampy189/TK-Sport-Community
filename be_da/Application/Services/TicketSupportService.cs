@@ -5,7 +5,7 @@ using TKSC.Domain.Entities;
 using TKSC.Infrastructure.DbContext;
 namespace TKSC.Application.Services;
 
-public sealed class TicketSupportService(Sep490Context db, TimeProvider clock)
+public sealed class TicketSupportService(Sep490Context db, TimeProvider clock) : ITicketSupportService
 {
  private async Task<Ticket> Access(long id, long actor, bool staff)
  {

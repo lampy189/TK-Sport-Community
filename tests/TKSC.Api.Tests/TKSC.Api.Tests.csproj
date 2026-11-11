@@ -21,5 +21,22 @@
     <Compile Include="..\UnitTest\AuthControllerTests.cs" Link="UnitTest\AuthControllerTests.cs" />
     <Compile Include="..\UnitTest\AssessmentsControllerTests.cs" Link="UnitTest\AssessmentsControllerTests.cs" />
     <Compile Include="..\UnitTest\CommunityControllerTests.cs" Link="UnitTest\CommunityControllerTests.cs" />
+    <Compile Include="..\UnitTest\GoodsPaymentsControllerTests.cs" Link="UnitTest\GoodsPaymentsControllerTests.cs" />
+    <Compile Include="..\UnitTest\LateEntryControllerTests.cs" Link="UnitTest\LateEntryControllerTests.cs" />
+    <Compile Include="..\UnitTest\NotificationsControllerTests.cs" Link="UnitTest\NotificationsControllerTests.cs" />
+    <Compile Include="..\UnitTest\PaymentsControllerTests.cs" Link="UnitTest\PaymentsControllerTests.cs" />
+    <Compile Include="..\UnitTest\PlayerGoodsOrdersControllerTests.cs" Link="UnitTest\PlayerGoodsOrdersControllerTests.cs" />
+    <Compile Include="..\UnitTest\PlayerSkillResultsControllerTests.cs" Link="UnitTest\PlayerSkillResultsControllerTests.cs" />
+    <Compile Include="..\UnitTest\ProfileControllerTests.cs" Link="UnitTest\ProfileControllerTests.cs" />
+    <Compile Include="..\UnitTest\RefereeSessionsControllerTests.cs" Link="UnitTest\RefereeSessionsControllerTests.cs" />
+    <Compile Include="..\UnitTest\RefereeSuppliesControllerTests.cs" Link="UnitTest\RefereeSuppliesControllerTests.cs" />
+    <Compile Include="..\UnitTest\RevenueControllerTests.cs" Link="UnitTest\RevenueControllerTests.cs" />
+    <Compile Include="..\UnitTest\SkillProfileControllerTests.cs" Link="UnitTest\SkillProfileControllerTests.cs" />
+    <Compile Include="..\UnitTest\SkillReviewsControllerTests.cs" Link="UnitTest\SkillReviewsControllerTests.cs" />
+    <Compile Include="..\UnitTest\SessionControllerTests.cs" Link="UnitTest\SessionControllerTests.cs" />
+    <Compile Include="..\UnitTest\SessionSuppliesControllerTests.cs" Link="UnitTest\SessionSuppliesControllerTests.cs" />
+    <Compile Include="..\UnitTest\SportCentersControllerTests.cs" Link="UnitTest\SportCentersControllerTests.cs" />
+    <Compile Include="..\UnitTest\TicketAftercareControllerTests.cs" Link="UnitTest\TicketAftercareControllerTests.cs" />
+    <Compile Include="..\UnitTest\TicketCheckInControllerTests.cs" Link="UnitTest\TicketCheckInControllerTests.cs" />
   </ItemGroup>
 </Project>

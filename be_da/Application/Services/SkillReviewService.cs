@@ -17,6 +17,7 @@ public sealed record ReviewEvent(string Status, string Reason, DateTimeOffset At
 // The baseline has no request metadata columns. Append-only AuditLogs retain reasons,
 // referee discussion and decision times without rewriting the original request/evidence.
 public sealed class SkillReviewService(Sep490Context db, TimeProvider clock, SkillAssessmentService assessments)
+    : ISkillReviewService
 {
     private static AssessmentException Error(int status, string message) => new(status, message);
     private static string Reason(string? value) => SkillReviewRules.Reason(value);

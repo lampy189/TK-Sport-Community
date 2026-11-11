@@ -5,6 +5,7 @@ using TKSC.Domain.Entities;
 namespace TKSC.Application.Services;
 
 public sealed class TicketCheckInService(IPaymentRepository repository, TimeProvider clock)
+    : IRefereeSessionsService, ITicketCheckInService
 {
     public async Task<IReadOnlyList<AssignedSessionSummary>> GetAssignedSessionsAsync(long actorId)
     {

@@ -120,7 +120,7 @@ public sealed class ProfileController(IProfileStore profileStore, IAntiforgery a
         if (request.Bio is not null && request.Bio.Trim().Length > 500)
             return BadRequest(new { code = "invalid_bio", message = "Giới thiệu bản thân không được vượt quá 500 ký tự." });
 
-        var normalizedRequest = request;
+        var normalizedRequest = request with { FullName = trimmedName };
         if (!string.IsNullOrWhiteSpace(request.AvatarUrl))
         {
             var rawAvatar = request.AvatarUrl.Trim();
@@ -131,11 +131,11 @@ public sealed class ProfileController(IProfileStore profileStore, IAntiforgery a
                 {
                     return BadRequest(new { code = "invalid_avatar_url", message = "Ảnh đại diện tải lên không hợp lệ." });
                 }
-                normalizedRequest = request with { AvatarUrl = savedUrl };
+                normalizedRequest = normalizedRequest with { AvatarUrl = savedUrl };
             }
             else if (rawAvatar.StartsWith("/api/profile/avatars/", StringComparison.OrdinalIgnoreCase))
             {
-                normalizedRequest = request with { AvatarUrl = rawAvatar };
+                normalizedRequest = normalizedRequest with { AvatarUrl = rawAvatar };
             }
             else if (!Uri.TryCreate(rawAvatar, UriKind.Absolute, out var uri)
                      || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))

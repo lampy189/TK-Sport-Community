@@ -8,7 +8,7 @@ namespace TKSC.Controllers;
 [ApiController]
 [Authorize(Roles = "referee,Referee,manager,Manager")]
 [Route("api/v1/referee")]
-public class RefereeSessionsController(TicketCheckInService service) : ControllerBase
+public class RefereeSessionsController(IRefereeSessionsService service) : ControllerBase
 {
     [HttpGet("sessions")]
     public async Task<IActionResult> GetAssignedSessions()

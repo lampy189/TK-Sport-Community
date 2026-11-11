@@ -11,7 +11,7 @@ namespace TKSC.Controllers;
 [Authorize(Roles = "player,Player,referee,Referee,manager,Manager")]
 [Route("api/v1/skill-reviews")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class SkillReviewsController(SkillReviewService service, IAntiforgery antiforgery) : ControllerBase
+public sealed class SkillReviewsController(ISkillReviewService service, IAntiforgery antiforgery) : ControllerBase
 {
     private long Actor => long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
     private string Role => User.FindFirstValue(ClaimTypes.Role)?.ToLowerInvariant() ?? "";
