@@ -349,6 +349,7 @@ internal sealed class LoginApp : WebApplicationFactory<Program>
         {
             ["Email:Enabled"] = "false",
             ["SportCenters:Enabled"] = "false",
+            ["Chatbot:ApiKey"] = null,
             ["Authentication:Google:ClientId"] = Configured ? "test-client" : null,
             ["Authentication:Google:ClientSecret"] = Configured ? "test-secret-not-real" : null,
             ["Payments:PayOS:ClientId"] = null,

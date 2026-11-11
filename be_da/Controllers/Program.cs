@@ -35,6 +35,8 @@ builder.Services.AddOptions<be_da.Application.Chatbot.ChatbotOptions>()
     .Bind(builder.Configuration.GetSection("Chatbot"));
 builder.Services.AddScoped<be_da.Application.Chatbot.IPlayerChatData, be_da.Infrastructure.Persistence.SqlPlayerChatData>();
 builder.Services.AddScoped<be_da.Application.Chatbot.PlayerChatbot>();
+builder.Services.AddHttpClient<be_da.Application.Chatbot.IChatIntentInterpreter, be_da.Infrastructure.Services.OpenAiChatIntentInterpreter>(
+    client => client.Timeout = TimeSpan.FromSeconds(20));
 builder.Services.AddHttpClient<be_da.Application.Chatbot.IChatAnswerGenerator, be_da.Infrastructure.Services.OpenAiChatAnswerGenerator>(
     client => client.Timeout = TimeSpan.FromSeconds(40));
 builder.Services.AddEndpointsApiExplorer();

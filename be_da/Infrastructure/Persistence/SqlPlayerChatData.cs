@@ -11,7 +11,8 @@ public sealed class SqlPlayerChatData(IConfiguration configuration, IOptions<Cha
 {
     public async Task<ChatData> ReadAsync(ChatLookup lookup, long userId, CancellationToken ct)
     {
-        if (userId <= 0) throw new ArgumentOutOfRangeException(nameof(userId));
+        if (userId < 0 || (userId == 0 && lookup.Scope is not ("sessions" or "policies")))
+            throw new ArgumentOutOfRangeException(nameof(userId));
         var now = clock.GetUtcNow();
         var today = DateOnly.FromDateTime(now.ToOffset(TimeSpan.FromHours(7)).DateTime);
         var from = lookup.OnDate ?? today;
@@ -41,6 +42,8 @@ public sealed class SqlPlayerChatData(IConfiguration configuration, IOptions<Cha
         command.Parameters.Add("@to", SqlDbType.Date).Value = to.ToDateTime(TimeOnly.MinValue);
         command.Parameters.Add("@now", SqlDbType.DateTimeOffset).Value = now;
         command.Parameters.Add("@center", SqlDbType.BigInt).Value = (object?)CenterSelection.RestrictedVenue ?? DBNull.Value;
+        command.Parameters.Add("@after", SqlDbType.Time).Value = lookup.StartFrom.HasValue ? lookup.StartFrom.Value.ToTimeSpan() : DBNull.Value;
+        command.Parameters.Add("@before", SqlDbType.Time).Value = lookup.StartBefore.HasValue ? lookup.StartBefore.Value.ToTimeSpan() : DBNull.Value;
         for (var i = 0; i < codes.Length; i++) command.Parameters.Add("@code" + i, SqlDbType.VarChar, 100).Value = codes[i];
         var documents = new List<KnowledgeArticle>();
         await using var reader = await command.ExecuteReaderAsync(ct);
@@ -77,6 +80,8 @@ public sealed class SqlPlayerChatData(IConfiguration configuration, IOptions<Cha
         };
         if (lookup.Scope != "sessions" && lookup.OnDate.HasValue) description += $" Ngày buổi chơi: {lookup.OnDate:dd/MM/yyyy}.";
         if (lookup.Sport is not null) description += $" Môn: {lookup.Sport}.";
+        if (lookup.StartFrom.HasValue) description += $" Giờ bắt đầu từ {lookup.StartFrom:HH:mm}.";
+        if (lookup.StartBefore.HasValue) description += $" Giờ bắt đầu trước {lookup.StartBefore:HH:mm}.";
         return new(documents, lookup.Scope != "policies" && rowCount > 20, clock.GetUtcNow(), description);
     }
 
@@ -94,6 +99,7 @@ public sealed class SqlPlayerChatData(IConfiguration configuration, IOptions<Cha
               OR (LOWER(t.status) IN ('pending','reserved') AND o.expires_at>@now))) occ
         WHERE s.status IN ('Open','Published') AND (@sport IS NULL OR sp.code=@sport)
           AND (@center IS NULL OR c.venue_id=@center)
+          AND (@after IS NULL OR ts.start_time>=@after) AND (@before IS NULL OR ts.start_time<@before)
           AND (@recordId IS NULL OR s.id=@recordId)
           AND ((@recordId IS NOT NULL AND @date IS NULL) OR s.session_date BETWEEN @from AND @to)
         ORDER BY s.session_date,ts.start_time,s.id;

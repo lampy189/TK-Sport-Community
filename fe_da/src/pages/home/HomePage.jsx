@@ -137,6 +137,7 @@ export default function HomePage({
             onBrowseSport={browse}
           />
         )}
+        <PlayerChatbot guest preview={preview} />
       </GuestLayout>
     );
   }
