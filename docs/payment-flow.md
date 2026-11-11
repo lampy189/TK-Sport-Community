@@ -58,10 +58,10 @@ Không phát sinh giao dịch ngân hàng; dữ liệu localStorage không có g
 
 ## Kết nối dữ liệu thật
 
-1. Dùng database SQL Server hiện có, chạy `be_da/Infrastructure/Migrations/20261020-payos.sql` để thêm
+1. Dùng database SQL Server hiện có, chạy `be_da/Infrastructure/Persistence/Migrations/20261020-payos.sql` để thêm
    cột mã/link payOS và raw payload cho Bank Transaction. Script không xóa dữ liệu.
-2. Sao chép `be_da/Controllers/appsettings.Payment.example.json` thành
-   `be_da/Controllers/appsettings.Local.json`, điền đủ năm trường `Payments:PayOS`
+2. Sao chép `be_da/appsettings.Payment.example.json` thành
+   `be_da/appsettings.Local.json`, điền đủ năm trường `Payments:PayOS`
    và kiểm tra connection string. Backend tự nạp file Local ở mọi môi trường.
    File Local chứa khóa bí mật và được bỏ qua bởi Git. Khi chuyển máy, gửi riêng
    file này qua kênh riêng tư, đặt đúng đường dẫn trên máy đích và khởi động lại backend.
@@ -73,7 +73,7 @@ Không phát sinh giao dịch ngân hàng; dữ liệu localStorage không có g
    `ConnectionStrings__Sep490`, `Payments__PayOS__ClientId`,
    `Payments__PayOS__ApiKey`, `Payments__PayOS__ChecksumKey`,
    `Payments__PayOS__ReturnUrl`, `Payments__PayOS__CancelUrl`.
-   Xem `be_da/Controllers/appsettings.Payment.example.json`; file mẫu không tự được nạp.
+   Xem `be_da/appsettings.Payment.example.json`; file mẫu không tự được nạp.
 3. Đăng ký webhook HTTPS công khai `/api/v1/commerce/payment/webhook/payos`
    trong kênh payOS. ReturnUrl/CancelUrl trỏ về frontend; backend thêm orderId.
 4. Đặt frontend `VITE_PAYMENT_MODE=api`; cấu hình `API_PROXY_TARGET` theo URL backend.

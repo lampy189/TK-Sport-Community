@@ -1,4 +1,7 @@
-using be_da.Application.Chatbot;
+using be_da.Application.DTOs;
+using be_da.Application.Interfaces.External;
+using be_da.Application.Interfaces.Repositories;
+using be_da.Application.Services.Chatbot;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;

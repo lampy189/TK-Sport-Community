@@ -1,9 +1,10 @@
-using be_da.Authorization;
+using be_da.Infrastructure.Persistence;
+using be_da.Presentation.Authorization;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using TKSC.Domain.Entities;
-using TKSC.Infrastructure.DbContext;
+using TKSC.Infrastructure.Persistence.Contexts;
 using Xunit;
 
 namespace TKSC.Api.Tests;
@@ -15,7 +16,7 @@ public sealed class SportCenterDatabaseTests
     {
         var options = new DbContextOptionsBuilder<Sep490Context>()
             .UseSqlServer(Environment.GetEnvironmentVariable("TKSC_TEST_SQL_CONNECTION"))
-            .AddInterceptors(new SportCenterConnectionInterceptor()).Options;
+            .AddInterceptors(new SportCenterConnectionInterceptor(new be_da.Presentation.Authorization.HttpDataAccessContext(new Microsoft.AspNetCore.Http.HttpContextAccessor()))).Options;
         await using var db = new Sep490Context(options);
         await db.Database.OpenConnectionAsync();
         await using var tx = await db.Database.BeginTransactionAsync();

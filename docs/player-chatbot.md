@@ -32,11 +32,15 @@ Các mục vận hành trả tối đa 20 bản ghi và báo nếu còn kết qu
 
 ## Cấu hình dùng chung cho mọi môi trường
 
+`be_da/appsettings.json` đã khai báo đầy đủ `Chatbot:ApiKey`, `Model`, `PublicPolicyCodes`, `MessengerUrl`, `ZaloUrl` để cả nhóm nhận được cấu hình khi pull. `ApiKey` để trống vì chưa có key thật; chỉ pull code chưa bật được OpenAI.
+
+Nếu muốn dùng file appsettings thay cho User Secrets: lấy phần `Chatbot` từ `be_da/appsettings.Chatbot.example.json`, gộp vào `be_da/appsettings.Local.json`, rồi điền key thật tại file Local. Nếu file Local đã có cấu hình SQL/dịch vụ khác, giữ nguyên các mục đó. Backend tự đọc file Local; file này được Git bỏ qua và không đóng gói publish/Docker. Không điền key thật vào appsettings.json đang được theo dõi bởi Git. Mỗi người có thể cấu hình key riêng hoặc nhận key dùng chung qua kênh nội bộ an toàn. Nếu muốn mọi người dùng mà không phải giữ key trên từng máy, triển khai backend chung và cấu hình `Chatbot__ApiKey` trên server.
+
 ### Đặt sân qua Messenger/Zalo
 
 Người chơi nhập câu hỏi tự do như “Tôi muốn đặt sân cầu lông tối mai” hoặc “Cho tôi Zalo của sân”. Chatbot trả lời kèm nội dung có thể sao chép và nút mở kênh chat đã cấu hình. Không thêm câu hỏi chọn sẵn hay menu đặt sân. Tính năng này là chuyển người chơi sang liên hệ sân, không tự gửi tin, giữ chỗ, tạo vé/đơn, hay khẳng định sân đã nhận/xác nhận yêu cầu.
 
-Theo yêu cầu ngày 10/11/2026, hai link để trống trong `be_da/Controllers/appsettings.json`:
+Theo yêu cầu ngày 10/11/2026, hai link để trống trong `be_da/appsettings.json`:
 
 ```json
 "Chatbot": {

@@ -1,3 +1,5 @@
+using be_da.Domain.Exceptions;
+using be_da.Application.DTOs;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -9,8 +11,8 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using be_da.Application.Abstractions;
-using be_da.Application.Accounts;
+using be_da.Application.Interfaces.Repositories;
+using be_da.Application.Services.Accounts;
 using be_da.Domain.Entities;
 using Xunit;
 

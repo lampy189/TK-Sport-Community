@@ -1,10 +1,11 @@
-using be_da.Authorization;
 using be_da.Infrastructure.Persistence;
+using be_da.Presentation.Authorization;
+using be_da.Infrastructure.Persistence.Repositories;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using TKSC.Infrastructure.DbContext;
-using TKSC.Infrastructure.Repositories;
+using TKSC.Infrastructure.Persistence.Contexts;
+using TKSC.Infrastructure.Persistence.Repositories;
 using Xunit;
 namespace TKSC.Api.Tests;
 [Collection("SQL Server")]
@@ -60,7 +61,7 @@ public sealed class LateEntryDatabaseReadTests
     public async Task ScopedCheckInQueriesCompileAndOptionalUpgradeDoesNotBreakPublicRead()
     {
         var connection=Environment.GetEnvironmentVariable("TKSC_TEST_SQL_CONNECTION")!;
-        var options=new DbContextOptionsBuilder<Sep490Context>().UseSqlServer(connection).AddInterceptors(new SportCenterConnectionInterceptor()).Options;
+        var options=new DbContextOptionsBuilder<Sep490Context>().UseSqlServer(connection).AddInterceptors(new SportCenterConnectionInterceptor(new be_da.Presentation.Authorization.HttpDataAccessContext(new Microsoft.AspNetCore.Http.HttpContextAccessor()))).Options;
         await using var db=new Sep490Context(options);var repo=new PaymentRepository(db);
         Assert.Empty(await repo.GetAssignedSessionsAsync(long.MinValue));
         Assert.Null(await repo.GetCheckInContextAsync("LATE-nonexistent-read-check",long.MinValue));

@@ -35,7 +35,7 @@ Thumbs.db
 !.env.example
 **/appsettings.Local.json
 .claude/launch.json
-be_da/Controllers/appsettings.Development.json
+be_da/appsettings.Development.json
 
 # Browser test artifacts
 fe_da/test-results/

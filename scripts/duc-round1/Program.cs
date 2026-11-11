@@ -4,7 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using TKSC.Domain.Entities;
-using TKSC.Infrastructure.DbContext;
+using TKSC.Infrastructure.Persistence.Contexts;
 if(!args.Contains("--apply")){Console.WriteLine("Pass --apply --database Sep490 to create isolated synthetic Round 1 data.");return;}
 var ix=Array.IndexOf(args,"--database");
 if(ix<0 || ix+1>=args.Length)throw new InvalidOperationException("Explicit --database is required.");

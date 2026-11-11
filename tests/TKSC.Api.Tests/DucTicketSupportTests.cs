@@ -1,8 +1,9 @@
+using TKSC.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using TKSC.Application.Services;
 using TKSC.Application.DTOs;
 using TKSC.Domain.Entities;
-using TKSC.Infrastructure.DbContext;
+using TKSC.Infrastructure.Persistence.Contexts;
 using Xunit;
 namespace TKSC.Api.Tests;
 
@@ -22,21 +23,21 @@ public sealed class DucTicketSupportTests
  [InlineData(1,false)] [InlineData(2,false)] [InlineData(3,true)]
  public async Task ListAllowsHolderPayerOrStaffBeforeAnyDisruption(long actor,bool staff)
  {
-  await using var db=await Database();var service=new TicketSupportService(db,TimeProvider.System);
+  await using var db=await Database();var service=new TicketSupportService(new TKSC.Infrastructure.Persistence.Repositories.TicketSupportRepository(db,TimeProvider.System),TimeProvider.System);
   Assert.NotNull(await service.List(41,actor,staff));
  }
  [Theory]
  [InlineData(41,99)] [InlineData(999,1)] [InlineData(999,99)]
  public async Task ListHidesOtherTicketsAndMissingTickets(long ticket,long actor)
  {
-  await using var db=await Database();var service=new TicketSupportService(db,TimeProvider.System);
+  await using var db=await Database();var service=new TicketSupportService(new TKSC.Infrastructure.Persistence.Repositories.TicketSupportRepository(db,TimeProvider.System),TimeProvider.System);
   await Assert.ThrowsAsync<PaymentException>(()=>service.List(ticket,actor,false));
  }
  [Theory]
  [InlineData("court")] [InlineData("flood")] [InlineData("payment")]
  public async Task ReportPersistsActorCategoryAndNotifiesStaff(string category)
  {
-  await using var db=await Database();var service=new TicketSupportService(db,TimeProvider.System);
+  await using var db=await Database();var service=new TicketSupportService(new TKSC.Infrastructure.Persistence.Repositories.TicketSupportRepository(db,TimeProvider.System),TimeProvider.System);
   await service.Report(41,1,category,"  Sân không thể chơi  ",null);
   var message=await db.TicketSupportMessages.SingleAsync();
   Assert.Equal(1,message.SenderId);Assert.Equal(41,message.TicketId);Assert.False(message.IsStaff);
@@ -55,7 +56,7 @@ public sealed class DucTicketSupportTests
    db.Users.Add(new User{Id=id,VenueId=venue,Email=$"reviewer-{id}@example.test",FullName=$"Reviewer {id}",
     Status=status,DeletedAt=deleted?DateTimeOffset.UtcNow:null,Role=reviewerRole});
   await db.SaveChangesAsync();
-  await new TicketSupportService(db,TimeProvider.System).Report(41,1,"court","The court is damaged and cannot be used.",null);
+  await new TicketSupportService(new TKSC.Infrastructure.Persistence.Repositories.TicketSupportRepository(db,TimeProvider.System),TimeProvider.System).Report(41,1,"court","The court is damaged and cannot be used.",null);
   var recipients=await db.Notifications.Where(n=>n.ReferenceType=="ticket_player_message").Select(n=>n.UserId).OrderBy(id=>id).ToListAsync();
   Assert.Equal(new long[]{3,10},recipients);
  }
@@ -65,7 +66,7 @@ public sealed class DucTicketSupportTests
  [InlineData("court","Mô tả đầy đủ sự cố",99)]
  public async Task ReportRejectsInvalidInputOrWrongActorWithoutWrites(string category,string content,long actor)
  {
-  await using var db=await Database();var service=new TicketSupportService(db,TimeProvider.System);
+  await using var db=await Database();var service=new TicketSupportService(new TKSC.Infrastructure.Persistence.Repositories.TicketSupportRepository(db,TimeProvider.System),TimeProvider.System);
   await Assert.ThrowsAsync<PaymentException>(()=>service.Report(41,actor,category,content,null));
   Assert.Empty(db.TicketSupportMessages);Assert.Empty(db.Notifications);
  }
@@ -73,7 +74,7 @@ public sealed class DucTicketSupportTests
  [InlineData(1,false)] [InlineData(2,false)] [InlineData(3,true)]
  public async Task SendKeepsActorAndStaffFlag(long actor,bool staff)
  {
-  await using var db=await Database();var service=new TicketSupportService(db,TimeProvider.System);
+  await using var db=await Database();var service=new TicketSupportService(new TKSC.Infrastructure.Persistence.Repositories.TicketSupportRepository(db,TimeProvider.System),TimeProvider.System);
   await service.Send(41,actor,staff,"  Đang kiểm tra sự cố  ",null);
   var message=await db.TicketSupportMessages.SingleAsync();
   Assert.Equal(actor,message.SenderId);Assert.Equal(staff,message.IsStaff);Assert.Equal("Đang kiểm tra sự cố",message.Content);
@@ -82,7 +83,7 @@ public sealed class DucTicketSupportTests
  [InlineData("")] [InlineData("   ")] [InlineData(null)]
  public async Task SendRejectsEmptyTextWithoutAttachment(string? text)
  {
-  await using var db=await Database();var service=new TicketSupportService(db,TimeProvider.System);
+  await using var db=await Database();var service=new TicketSupportService(new TKSC.Infrastructure.Persistence.Repositories.TicketSupportRepository(db,TimeProvider.System),TimeProvider.System);
   await Assert.ThrowsAsync<PaymentException>(()=>service.Send(41,1,false,text,null));
   Assert.Empty(db.TicketSupportMessages);
  }
@@ -90,7 +91,7 @@ public sealed class DucTicketSupportTests
  [InlineData(1,false)] [InlineData(2,false)] [InlineData(3,true)]
  public async Task ImageAllowsOnlyPermittedConversationParticipants(long actor,bool staff)
  {
-  await using var db=await Database();var service=new TicketSupportService(db,TimeProvider.System);
+  await using var db=await Database();var service=new TicketSupportService(new TKSC.Infrastructure.Persistence.Repositories.TicketSupportRepository(db,TimeProvider.System),TimeProvider.System);
   db.TicketSupportMessages.Add(new(){Id=1,TicketId=41,SenderId=1,ImageData=[1,2,3],ImageType="image/png"});
   await db.SaveChangesAsync();
   var image=await service.Image(41,1,actor,staff);Assert.Equal(new byte[]{1,2,3},image.Bytes);
@@ -99,14 +100,14 @@ public sealed class DucTicketSupportTests
  [InlineData(41,1,99)] [InlineData(41,999,1)] [InlineData(999,1,1)]
  public async Task ImageRejectsOtherUserOrMissingImage(long ticket,long message,long actor)
  {
-  await using var db=await Database();var service=new TicketSupportService(db,TimeProvider.System);
+  await using var db=await Database();var service=new TicketSupportService(new TKSC.Infrastructure.Persistence.Repositories.TicketSupportRepository(db,TimeProvider.System),TimeProvider.System);
   await Assert.ThrowsAsync<PaymentException>(()=>service.Image(ticket,message,actor,false));
  }
  [Theory]
  [InlineData(0)] [InlineData(1)] [InlineData(3)]
  public async Task InboxGroupsByTicketAndUsesLastPlayerAsReporter(int replies)
  {
-  await using var db=await Database();var service=new TicketSupportService(db,TimeProvider.System);
+  await using var db=await Database();var service=new TicketSupportService(new TKSC.Infrastructure.Persistence.Repositories.TicketSupportRepository(db,TimeProvider.System),TimeProvider.System);
   await service.Report(41,2,"refund","Chưa nhận được tiền hoàn",null);
   for(var i=0;i<replies;i++)await service.Send(41,3,true,"Đang xử lý hoàn tiền",null);
   var json=System.Text.Json.JsonSerializer.Serialize(await service.Inbox());

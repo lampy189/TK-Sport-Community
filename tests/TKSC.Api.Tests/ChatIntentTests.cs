@@ -1,7 +1,10 @@
+using be_da.Application.DTOs;
+using be_da.Application.Interfaces.External;
+using be_da.Application.Interfaces.Repositories;
 using System.Net;
 using System.Text.Json;
-using be_da.Application.Chatbot;
-using be_da.Infrastructure.Services;
+using be_da.Application.Services.Chatbot;
+using be_da.Infrastructure.ExternalServices;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;

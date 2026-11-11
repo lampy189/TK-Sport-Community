@@ -1,5 +1,5 @@
 using Microsoft.Data.SqlClient;
-using be_da.Infrastructure.Persistence;
+using be_da.Infrastructure.Persistence.Repositories;
 using Xunit;
 
 namespace TKSC.Api.Tests;

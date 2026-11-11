@@ -16,13 +16,16 @@ The frontend and the old local four-project scaffold are not changed by this imp
 
 | Folder | Responsibility |
 | --- | --- |
-| Controllers | HTTP endpoints and CSRF validation |
-| Authorization | Secure cookie and fresh account/role checks |
-| Application | Google registration/sign-in rules and store interface |
-| Domain | Local account model |
-| Infrastructure/Persistence | Parameterized SQL Server queries and atomic registration |
+| Presentation/Controllers | HTTP endpoints, authorization and CSRF validation |
+| Presentation/Authorization | Secure cookie and fresh account/role checks; HTTP tenancy adapter |
+| Application/Interfaces | Service, repository and external integration contracts |
+| Application/Services, DTOs, Validators, Mappings | Use cases, data contracts, validation and mapping |
+| Domain | Entities, core rules and exceptions |
+| Infrastructure/Persistence | EF Core context/configuration, SQL repositories and historical migrations |
+| Infrastructure/ExternalServices | payOS, OpenAI, SMTP and local avatar storage |
+| Program.cs, Composition.cs | Application startup and dependency injection |
 
-These are folders within the existing project. SQL access uses Microsoft.Data.SqlClient; no EF Core model or automatic migration is installed.
+These are folders within the **same `be_da.csproj`**, targeting .NET 8. The existing EF Core and ADO.NET paths are retained; startup does not apply migrations. `Program.cs` and all appsettings files now live at the project root. Local/development configuration is still ignored by Git and excluded from publishing. See [the refactor report](../docs/architecture-refactor.md) for the file map, checks and EF commands.
 
 ## Database
 

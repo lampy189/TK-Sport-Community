@@ -5,7 +5,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using TKSC.Domain.Entities;
-using TKSC.Infrastructure.DbContext;
+using TKSC.Infrastructure.Persistence.Contexts;
 
 if (!args.Contains("--apply") && !args.Contains("--check") && !args.Contains("--verify") && !args.Contains("--upgrade-approved") && !args.Contains("--activate-fixtures") && !args.Contains("--upgrade-exception-visibility"))
 {

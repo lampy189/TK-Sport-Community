@@ -1,3 +1,4 @@
+using TKSC.Domain.Exceptions;
 using TKSC.Application.Services;
 using TKSC.Application.DTOs;
 using Xunit;

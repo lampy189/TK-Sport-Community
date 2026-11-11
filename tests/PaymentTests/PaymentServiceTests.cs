@@ -1,5 +1,8 @@
+using TKSC.Domain.Exceptions;
 using TKSC.Application.Services;
-using TKSC.Application.Interfaces;
+using TKSC.Application.Interfaces.Services;
+using TKSC.Application.Interfaces.Repositories;
+using TKSC.Application.Interfaces.External;
 using TKSC.Application.DTOs;
 using TKSC.Domain.Entities;
 using Xunit;

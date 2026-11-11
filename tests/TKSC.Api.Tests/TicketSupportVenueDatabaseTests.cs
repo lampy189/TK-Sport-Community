@@ -1,7 +1,8 @@
+using TKSC.Application.DTOs;
 using Microsoft.EntityFrameworkCore;
 using TKSC.Application.Services;
 using TKSC.Domain.Entities;
-using TKSC.Infrastructure.DbContext;
+using TKSC.Infrastructure.Persistence.Contexts;
 using Xunit;
 
 namespace TKSC.Api.Tests;
@@ -56,7 +57,7 @@ public sealed class TicketSupportVenueDatabaseTests
             db.ChangeTracker.Clear();
             // Players bypass the venue RLS filter, so the service must scope recipients itself.
             await db.Database.ExecuteSqlRawAsync("EXEC sys.sp_set_session_context @key=N'tksc_role',@value=N'Player';");
-            await new TicketSupportService(db, TimeProvider.System)
+            await new TicketSupportService(new TKSC.Infrastructure.Persistence.Repositories.TicketSupportRepository(db,TimeProvider.System),TimeProvider.System)
                 .Report(ticketId, actorId, "court", "The court is damaged and cannot be used.", null);
             var recipients = await db.Notifications.Where(n => n.ReferenceType == "ticket_player_message" && n.ReferenceId == ticketId)
                 .Select(n => n.UserId).OrderBy(id => id).ToArrayAsync();

@@ -1,5 +1,9 @@
 # TK Sport Community — Project Context
 
+## Single-project architecture refactor (11 Nov 2026)
+
+The user explicitly chose Clean Architecture by folders within the existing .NET 8 `be_da.csproj`, not multiple application projects. HTTP code is under `Presentation`; `Application` owns services, interfaces and DTOs; `Domain` owns entities/core rules; persistence and external implementations are under `Infrastructure`. `Program.cs` and `appsettings*.json` are at the project root. Keep existing SQL/EF transactions, API contracts and historical migrations. See `docs/architecture-refactor.md` for the file map, validation results and launch instructions.
+
 ## Precise slider scoring (10 Nov 2026)
 
 The user requested retaining detailed slider points rather than rounding each criterion to 0–4 first. For new saves, each of four integer 0–10 observations contributes 0.5 points to its 20-point criterion. Sum all five precise criterion contributions and round once at the final 0–100 total (half up) to match existing integer profile storage. Level 0–4 is descriptive only. Save structured SliderScores in the existing assessment audit payload and validate/recalculate them at the server; player result contributions use those same values. Existing published assessments without structured slider data retain their original level-based calculations and history. No schema change is needed. Old drafts with recorded sliders adopt the precise calculation when explicitly saved.

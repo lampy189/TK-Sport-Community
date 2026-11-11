@@ -1,12 +1,15 @@
-using be_da.Authorization;
+using be_da.Infrastructure.Persistence;
+using TKSC.Domain.Exceptions;
+using be_da.Application.DTOs;
+using be_da.Presentation.Authorization;
 using be_da.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using TKSC.Application.DTOs;
-using TKSC.Controllers;
-using TKSC.Infrastructure.DbContext;
+using TKSC.Presentation.Controllers;
+using TKSC.Infrastructure.Persistence.Contexts;
 using Xunit;
 
 namespace TKSC.Api.Tests;
@@ -18,7 +21,7 @@ public sealed class MultiCenterDatabaseTests
     {
         var connection = Environment.GetEnvironmentVariable("TKSC_TEST_SQL_CONNECTION")!;
         var options = new DbContextOptionsBuilder<Sep490Context>().UseSqlServer(connection)
-            .AddInterceptors(new SportCenterConnectionInterceptor()).Options;
+            .AddInterceptors(new SportCenterConnectionInterceptor(new be_da.Presentation.Authorization.HttpDataAccessContext(new Microsoft.AspNetCore.Http.HttpContextAccessor()))).Options;
         await using var db = new Sep490Context(options);
         var actor = await db.Users.Where(u => u.Role.Code == "Player" && u.Status == "Active" && u.DeletedAt == null)
             .OrderBy(u => u.Id).FirstAsync();
@@ -31,7 +34,7 @@ public sealed class MultiCenterDatabaseTests
         accessor.HttpContext = http;
         var config = new ConfigurationBuilder().AddInMemoryCollection(
             new Dictionary<string,string?> { ["ConnectionStrings:Sep490"] = connection }).Build();
-        var controller = new StoreController(db, config) { ControllerContext = new ControllerContext { HttpContext = http } };
+        var controller = new StoreController(new TKSC.Application.Services.StoreService(new TKSC.Infrastructure.Persistence.Repositories.StoreRepository(db, config, new HttpDataAccessContext(accessor)))) { ControllerContext = new ControllerContext { HttpContext = http } };
         await db.Database.OpenConnectionAsync();
         await using var transaction = await db.Database.BeginTransactionAsync();
         try

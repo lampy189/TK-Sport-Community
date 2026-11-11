@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TKSC.Domain.Entities;
-using TKSC.Infrastructure.DbContext;
+using TKSC.Infrastructure.Persistence.Contexts;
 using Xunit;
 
 namespace TKSC.Api.Tests;

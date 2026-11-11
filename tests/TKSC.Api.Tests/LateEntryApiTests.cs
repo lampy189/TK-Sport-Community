@@ -1,11 +1,12 @@
+using be_da.Infrastructure.Persistence;
+using be_da.Application.DTOs;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using be_da.Application.Abstractions;
-using be_da.Application.Sessions;
-using be_da.Authorization;
+using be_da.Application.Interfaces.Repositories;
+using be_da.Presentation.Authorization;
 using be_da.Domain.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
