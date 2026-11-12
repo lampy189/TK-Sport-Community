@@ -21,7 +21,7 @@ sqlcmd -S localhost -E -C -b -f 65001 -i db/schema.sql
 sqlcmd -S localhost -d Sep490 -E -C -b -f 65001 -i db/seed-demo.sql
 ```
 
-2. Tạo `be_da/Controllers/appsettings.Development.json` (file này không có trong Git) với `ConnectionStrings:Sep490` = `Server=localhost;Database=Sep490;Integrated Security=True;Encrypt=True;TrustServerCertificate=True`. Thiếu file này thì mọi API báo lỗi 500.
+2. Tạo `be_da/appsettings.Development.json` (file này không có trong Git) với `ConnectionStrings:Sep490` = `Server=localhost;Database=Sep490;Integrated Security=True;Encrypt=True;TrustServerCertificate=True`. Thiếu file này thì mọi API báo lỗi 500.
 3. Tin chứng chỉ dev một lần: `dotnet dev-certs https --trust`.
 4. Chạy backend profile `https`; `npm ci` rồi `npm run dev` trong `fe_da` (cổng 5173).
 

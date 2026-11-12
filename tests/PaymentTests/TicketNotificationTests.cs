@@ -1,5 +1,6 @@
-using TKSC.Application.Notifications;
-using TKSC.Infrastructure.Notifications;
+using TKSC.Presentation.BackgroundServices;
+using TKSC.Application.Services.Notifications;
+using TKSC.Infrastructure.ExternalServices;
 using Xunit;
 
 public class TicketNotificationTests

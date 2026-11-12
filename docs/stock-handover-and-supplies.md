@@ -46,7 +46,7 @@ Chưa có bảng phân bổ vật tư: số lượng nằm trong `stock_movement
 
 ## Database cần có
 
-Ngoài `db/schema.sql`, code thanh toán hàng hóa cần `be_da/Infrastructure/Migrations/20261020-payos.sql` (cột `payments.checkout_url`, `payments.gateway_payment_link_id`, `bank_transactions.raw_payload`). Thiếu file này thì mọi API đơn hàng hóa trả 500.
+Ngoài `db/schema.sql`, code thanh toán hàng hóa cần `be_da/Infrastructure/Persistence/Migrations/20261020-payos.sql` (cột `payments.checkout_url`, `payments.gateway_payment_link_id`, `bank_transactions.raw_payload`). Thiếu file này thì mọi API đơn hàng hóa trả 500.
 
 ## Kiểm thử
 

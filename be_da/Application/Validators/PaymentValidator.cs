@@ -1,8 +1,8 @@
+using TKSC.Domain.Exceptions;
 using TKSC.Application.DTOs;
 using TKSC.Domain.Entities;
 
 namespace TKSC.Application.Validators;
-
 public static class PaymentValidator
 {
     public static void OwnOrder(SocialBookingOrder? order, long userId)
@@ -10,6 +10,7 @@ public static class PaymentValidator
         if (userId <= 0 || order is null || order.PayerId != userId)
             throw new PaymentException(404, "Không tìm thấy đơn của bạn.");
     }
+
     public static void ReviewReason(string? reason)
     {
         if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length is < 10 or > 1000)

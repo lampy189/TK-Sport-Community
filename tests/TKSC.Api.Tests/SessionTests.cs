@@ -1,3 +1,5 @@
+using be_da.Domain.Exceptions;
+using be_da.Application.DTOs;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -8,10 +10,9 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using be_da.Application.Abstractions;
-using be_da.Application.Accounts;
-using be_da.Application.Sessions;
-using be_da.Controllers;
+using be_da.Application.Interfaces.Repositories;
+using be_da.Application.Services.Accounts;
+using be_da.Presentation.Controllers;
 using be_da.Domain.Entities;
 using Xunit;
 
@@ -348,6 +349,57 @@ public sealed class SessionTests
         Assert.NotNull(body.GetProperty("expiresAt").GetString());
     }
 
+    [Fact]
+    public async Task GetVenues_Anonymous_ReturnsSportCentersList()
+    {
+        await using var app = new SessionApp();
+        using var client = app.Client();
+
+        var response = await client.GetAsync("/api/sessions/venues");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var venues = await response.Content.ReadFromJsonAsync<List<JsonElement>>();
+        Assert.NotNull(venues);
+        Assert.Equal(2, venues.Count);
+        Assert.Equal(1, venues[0].GetProperty("id").GetInt64());
+        Assert.Equal("TK Sport Community Center", venues[0].GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public async Task BrowseSessions_FilterByVenueAndSessionType_ReturnsHourlyCourtAndVenueMatches()
+    {
+        await using var app = new SessionApp();
+        var sSocial = CreateTestSession(1, "Badminton", "B1", 8, 2) with
+        {
+            VenueId = 1,
+            VenueName = "TK Sport Community Center"
+        };
+        var sHourly = CreateTestSession(2, "Badminton", "B2", 4, 0) with
+        {
+            VenueId = 2,
+            VenueName = "TKSC Demo",
+            StartTime = new TimeSpan(7, 0, 0),
+            EndTime = new TimeSpan(8, 0, 0),
+            TimeLabel = "07:00 - 08:00"
+        };
+        app.SessionStore.Sessions.Add(sSocial);
+        app.SessionStore.Sessions.Add(sHourly);
+
+        using var client = app.Client();
+
+        var byVenue = await client.GetFromJsonAsync<List<JsonElement>>("/api/sessions?venueId=2");
+        Assert.NotNull(byVenue);
+        Assert.Single(byVenue);
+        Assert.Equal(2, byVenue[0].GetProperty("id").GetInt64());
+        Assert.True(byVenue[0].GetProperty("isHourlyCourt").GetBoolean());
+        Assert.Equal("HourlyCourt", byVenue[0].GetProperty("sessionType").GetString());
+
+        var byType = await client.GetFromJsonAsync<List<JsonElement>>("/api/sessions?sessionType=HourlyCourt");
+        Assert.NotNull(byType);
+        Assert.Single(byType);
+        Assert.Equal(2, byType[0].GetProperty("id").GetInt64());
+    }
+
     private static SessionSummary CreateTestSession(
         long id,
         string sportName,
@@ -463,6 +515,12 @@ internal sealed class FakeSessionStore : ISessionStore
         new(6, new TimeSpan(20, 0, 0), new TimeSpan(22, 0, 0), "20:00 - 22:00")
     };
 
+    public List<VenueSummary> Venues { get; } = new()
+    {
+        new(1, "TK Sport Community Center", "Hanoi, Vietnam"),
+        new(2, "TKSC Demo", "TP. Hồ Chí Minh")
+    };
+
     public List<SessionSummary> Sessions { get; } = new();
     public Dictionary<long, List<SessionParticipant>> Participants { get; } = new();
     public Dictionary<(long PlayerId, long SportId), PlayerSportProfileInfo> Profiles { get; } = new();
@@ -471,6 +529,9 @@ internal sealed class FakeSessionStore : ISessionStore
 
     public Task<IReadOnlyList<TimeSlotSummary>> GetTimeSlotsAsync(CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<TimeSlotSummary>>(TimeSlots.OrderBy(t => t.StartTime).ThenBy(t => t.Id).ToList());
+
+    public Task<IReadOnlyList<VenueSummary>> GetVenuesAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<VenueSummary>>(Venues.OrderBy(v => v.Id).ToList());
 
     public Task<IReadOnlyList<SessionSummary>> GetSessionsAsync(SessionFilter filter, long? currentUserId, CancellationToken cancellationToken)
     {
@@ -483,6 +544,22 @@ internal sealed class FakeSessionStore : ISessionStore
         if (filter.FromDate.HasValue) list = list.Where(s => s.SessionDate >= filter.FromDate.Value);
         if (filter.ToDate.HasValue) list = list.Where(s => s.SessionDate <= filter.ToDate.Value);
         if (filter.TimeSlotId.HasValue) list = list.Where(s => s.TimeSlotId == filter.TimeSlotId.Value);
+        if (filter.VenueId.HasValue) list = list.Where(s => s.VenueId == filter.VenueId.Value);
+        if (!string.IsNullOrWhiteSpace(filter.Venue))
+            list = list.Where(s => s.VenueName.Equals(filter.Venue, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(filter.SessionType))
+        {
+            if (filter.SessionType.Equals("HourlyCourt", StringComparison.OrdinalIgnoreCase) ||
+                filter.SessionType.Equals("1h", StringComparison.OrdinalIgnoreCase))
+            {
+                list = list.Where(s => s.IsHourlyCourt);
+            }
+            else if (filter.SessionType.Equals("Social", StringComparison.OrdinalIgnoreCase) ||
+                     filter.SessionType.Equals("2h", StringComparison.OrdinalIgnoreCase))
+            {
+                list = list.Where(s => !s.IsHourlyCourt);
+            }
+        }
 
         var raw = list.ToList();
         if (!currentUserId.HasValue)
@@ -493,11 +570,7 @@ internal sealed class FakeSessionStore : ISessionStore
         var result = new List<SessionSummary>(raw.Count);
         foreach (var s in raw)
         {
-            if (ApprovedExceptions.Contains((s.Id, currentUserId.Value)))
-            {
-                result.Add(s with { IsEligibleSuggestion = true });
-            }
-            else if (string.IsNullOrWhiteSpace(s.Band))
+            if (ApprovedExceptions.Contains((s.Id, currentUserId.Value)) || s.IsHourlyCourt || string.IsNullOrWhiteSpace(s.Band))
             {
                 result.Add(s with { IsEligibleSuggestion = true });
             }
@@ -540,7 +613,7 @@ internal sealed class FakeSessionStore : ISessionStore
 
         // Bước A: Check Sport-Specific Skill Eligibility
         bool hasException = ApprovedExceptions.Contains((sessionId, userId));
-        if (!hasException && !string.IsNullOrWhiteSpace(session.Band))
+        if (!hasException && !session.IsHourlyCourt && !string.IsNullOrWhiteSpace(session.Band))
         {
             if (!Profiles.TryGetValue((userId, session.SportId), out var profile))
             {

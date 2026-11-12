@@ -1,3 +1,5 @@
+using be_da.Domain.Exceptions;
+using be_da.Application.DTOs;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -9,8 +11,8 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using be_da.Application.Abstractions;
-using be_da.Application.Accounts;
+using be_da.Application.Interfaces.Repositories;
+using be_da.Application.Services.Accounts;
 using be_da.Domain.Entities;
 using Xunit;
 
@@ -387,6 +389,9 @@ public class GoogleLoginTests
         Assert.Equal("accounts.google.com", challenge.Headers.Location!.Host);
         var query = QueryHelpers.ParseQuery(challenge.Headers.Location.Query);
         Assert.True(query.ContainsKey("code_challenge"));
+        Assert.Equal("select_account", query["prompt"].ToString());
+        Assert.False(query.ContainsKey("login_hint"));
+        Assert.False(query.ContainsKey("authuser"));
         return await client.GetAsync("/signin-google?code=test-code&state=" + Uri.EscapeDataString(query["state"].ToString()));
     }
 
@@ -412,6 +417,8 @@ internal sealed class LoginApp : WebApplicationFactory<Program>
         builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Email:Enabled"] = "false",
+            ["SportCenters:Enabled"] = "false",
+            ["Chatbot:ApiKey"] = null,
             ["Authentication:Google:ClientId"] = Configured ? "test-client" : null,
             ["Authentication:Google:ClientSecret"] = Configured ? "test-secret-not-real" : null,
             ["Payments:PayOS:ClientId"] = null,
