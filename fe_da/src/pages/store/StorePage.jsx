@@ -59,7 +59,8 @@ export default function StorePage({ role = 'staff', user }) {
   }
 
   function getAvailableQuantity(productId) {
-    return products.find((product) => product.productId === productId)?.quantityOnHand ?? 0;
+    const product = products.find((entry) => entry.productId === productId);
+    return product?.availableQuantity ?? product?.quantityOnHand ?? 0;
   }
 
   function addItemByBarcode(lookup) {
@@ -67,7 +68,7 @@ export default function StorePage({ role = 'staff', user }) {
     const product = products.find((entry) => entry.productId === productId);
     const unitQuantity = Number(lookup.factorToBase || 1);
     const currentQty = Number(quantities[productId] ?? 0);
-    const availableQty = Number(product?.quantityOnHand ?? lookup.quantityOnHand ?? 0);
+    const availableQty = Number(product?.availableQuantity ?? lookup.availableQuantity ?? product?.quantityOnHand ?? lookup.quantityOnHand ?? 0);
     const nextQty = currentQty + unitQuantity;
 
     if (nextQty > availableQty) {
@@ -266,7 +267,7 @@ export default function StorePage({ role = 'staff', user }) {
 
                 <div className="store-meta">
                   <span>{product.category || 'Chưa phân loại'}</span>
-                  <span>Tồn kho: {product.quantityOnHand}</span>
+                  <span>Còn bán: {product.availableQuantity ?? product.quantityOnHand}</span>
                   <span>Đặt lại: {product.reorderLevel}</span>
                 </div>
 

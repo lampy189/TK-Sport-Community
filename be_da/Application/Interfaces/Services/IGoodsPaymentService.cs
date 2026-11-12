@@ -23,4 +23,9 @@ public interface IGoodsPaymentService
     Task<GoodsOrderView> ReceiveAsync(long id, long actorId, CancellationToken ct);
     Task<BuyerGoodsOrder> ReceiveAsBuyerAsync(long id, long buyerId, CancellationToken ct);
     Task<IReadOnlyList<BuyerGoodsOrder>> ListForBuyerAsync(long buyerId, CancellationToken ct);
+    // Unpaid orders only; releases the order's stock hold once.
+    Task<GoodsOrderView> CancelAsync(long id, long actorId, CancellationToken ct);
+    Task<BuyerGoodsOrder> CancelAsBuyerAsync(long id, long buyerId, CancellationToken ct);
+    // JOB-04: expires unpaid holds past their time; returns how many orders expired.
+    Task<int> ExpireDueAsync(CancellationToken ct);
 }

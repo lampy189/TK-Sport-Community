@@ -21,6 +21,9 @@ public sealed class GoodsHandoverController(IGoodsPaymentService service, IAntif
     public Task<IActionResult> Deliver(long id, CancellationToken ct) => Mutate(() => service.DeliverAsync(id, ActorId, ct));
     [HttpPost("{id:long:min(1)}/receive")]
     public Task<IActionResult> Receive(long id, CancellationToken ct) => Mutate(() => service.ReceiveAsync(id, ActorId, ct));
+    // RP3 UC-36 A4 / task 13/11: an unpaid order is cancelled and only its own hold goes back to available stock.
+    [HttpPost("{id:long:min(1)}/cancel")]
+    public Task<IActionResult> Cancel(long id, CancellationToken ct) => Mutate(() => service.CancelAsync(id, ActorId, ct));
     private async Task<IActionResult> Mutate(Func<Task<GoodsOrderView>> action)
     {
         if (ActorId <= 0)

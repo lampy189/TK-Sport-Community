@@ -60,6 +60,8 @@ builder.Services.AddScoped<SkillReviewService>();
 builder.Services.AddScoped<GoodsPaymentService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddHostedService<TKSC.Presentation.BackgroundServices.TicketEmailWorker>();
+builder.Services.Configure<TKSC.Application.Services.GoodsOrderOptions>(builder.Configuration.GetSection("GoodsOrders"));
+builder.Services.AddHostedService<TKSC.Presentation.BackgroundServices.GoodsReservationWorker>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -87,6 +89,9 @@ builder.Services.AddScoped<IFriendshipStore>(services => new SqlFriendshipStore(
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables."), services.GetRequiredService<IDataAccessContext>()));
 builder.Services.AddScoped<IFirebaseNotificationService, FirebaseNotificationService>();
 builder.Services.AddScoped<IStockStore>(services => new SqlStockStore(
+    services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
+    ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables."), services.GetRequiredService<IDataAccessContext>()));
+builder.Services.AddScoped<be_da.Application.Interfaces.Repositories.IStockCountStore>(services => new be_da.Infrastructure.Persistence.Repositories.SqlStockCountStore(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables."), services.GetRequiredService<IDataAccessContext>()));
 builder.Services.AddScoped<ISessionSupplyStore>(services => new SqlSessionSupplyStore(

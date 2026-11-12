@@ -673,3 +673,74 @@
     padding: 20px 16px;
   }
 }
+
+/* Task 13/11/2026: stock held for orders, supply requests, counts and report. */
+.stock-reserved {
+  display: block;
+  color: var(--color-warning, #b45309);
+  font-size: 13px;
+}
+.stock-table .is-out {
+  color: var(--color-danger, #b91c1c);
+}
+.stock-table .is-in {
+  color: var(--color-success, #15803d);
+}
+.supply-requests {
+  margin: 4px 0 16px;
+}
+.supply-requests h4 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.supply-requests ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 12px;
+}
+.supply-requests li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+.supply-requests li:last-child {
+  border-bottom: 0;
+}
+.supply-requests li > span:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.supply-requests small {
+  color: var(--color-muted);
+}
+.supply-use label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.supply-use {
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.stock-page p.stock-error svg,
+.stock-page p.stock-notice svg {
+  vertical-align: -2px;
+}
+@media (max-width: 640px) {
+  .supply-requests li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+/* Keep absolutely positioned screen-reader labels inside the scrolling table instead of widening the page. */
+.stock-table-wrap {
+  position: relative;
+}

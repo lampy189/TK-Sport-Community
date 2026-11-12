@@ -123,6 +123,55 @@ public sealed class SessionSupplyTests
         Assert.Equal(12, allocation.GetProperty("outstanding").GetInt32());
     }
 
+    // Task 13/11/2026: referee request -> Staff issues (or rejects) -> the request cannot be handled twice.
+    [Fact]
+    public async Task SupplyRequest_RefereeAsks_StaffIssuesOnce()
+    {
+        await using var app = new SupplyApp();
+        app.Store.AssignedReferees.Add(Referee.Id);
+        using var referee = app.Client();
+        await DevLogin(referee, Referee.Email);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Send(referee, "/api/stock/referee-supplies/5/requests", new { productId = 1, quantity = 0 })).StatusCode);
+        var created = await Send(referee, "/api/stock/referee-supplies/5/requests", new { productId = 1, quantity = 12, note = "Ca tối" });
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        Assert.Equal(Referee.Id, app.Store.LastRequester);
+        Assert.Equal(HttpStatusCode.Forbidden, (await Send(referee, "/api/stock/session-supplies/5/requests/1/issue", new { })).StatusCode);
+
+        using var staff = app.Client();
+        await DevLogin(staff, Staff.Email);
+        var issued = await Send(staff, "/api/stock/session-supplies/5/requests/1/issue", new { });
+        Assert.Equal(HttpStatusCode.OK, issued.StatusCode);
+        var body = await issued.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Issued", body.GetProperty("requests")[0].GetProperty("status").GetString());
+        Assert.Equal(12, body.GetProperty("allocations")[0].GetProperty("issued").GetInt32());
+        Assert.Equal(Staff.Id, app.Store.LastOperator);
+        Assert.Equal(HttpStatusCode.Conflict, (await Send(staff, "/api/stock/session-supplies/5/requests/1/issue", new { })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await Send(staff, "/api/stock/session-supplies/5/requests/1/reject", new { note = "x" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Send(staff, "/api/stock/session-supplies/5/requests/99/issue", new { })).StatusCode);
+    }
+
+    [Fact]
+    public async Task SupplyRequest_RejectNeedsReason_AndRefereeCancelsOwnPending()
+    {
+        await using var app = new SupplyApp();
+        app.Store.AssignedReferees.Add(Referee.Id);
+        using var referee = app.Client();
+        await DevLogin(referee, Referee.Email);
+        await Send(referee, "/api/stock/referee-supplies/5/requests", new { productId = 1, quantity = 4 });
+        await Send(referee, "/api/stock/referee-supplies/5/requests", new { productId = 1, quantity = 2 });
+
+        using var staff = app.Client();
+        await DevLogin(staff, Staff.Email);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Send(staff, "/api/stock/session-supplies/5/requests/1/reject", new { note = " " })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await Send(staff, "/api/stock/session-supplies/5/requests/1/reject", new { note = "Hết hàng" })).StatusCode);
+
+        var cancelled = await Send(referee, "/api/stock/referee-supplies/5/requests/2/cancel", new { });
+        Assert.Equal(HttpStatusCode.OK, cancelled.StatusCode);
+        var statuses = (await cancelled.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("requests").EnumerateArray().Select(r => r.GetProperty("status").GetString()).ToList();
+        Assert.Equal(["Rejected", "Cancelled"], statuses);
+        Assert.Equal(0, app.Store.IssueCalls);
+    }
+
     [Fact]
     public async Task GoodsHandover_RequiresStaff()
     {
@@ -242,6 +291,46 @@ internal sealed class FakeSupplyStore : ISessionSupplyStore
         return Task.FromResult(SupplyResult.Ok(Details()));
     }
 
+    // Referee requests (task 13/11/2026): pending until Staff issues or rejects, or the referee cancels.
+    private readonly Dictionary<long, SupplyRequestView> requests = new();
+    public long? LastRequester { get; private set; }
+
+    public Task<SupplyResult> CreateRequestAsync(long sessionId, CreateSupplyRequest request, long refereeId, CancellationToken cancellationToken)
+    {
+        if (!AssignedReferees.Contains(refereeId)) return Task.FromResult(SupplyResult.Fail("NOT_ASSIGNED", "not assigned"));
+        LastRequester = refereeId;
+        var id = requests.Count + 1L;
+        requests[id] = new SupplyRequestView(id, request.ProductId, "SHUTTLE", "Quả cầu lông", request.Quantity, request.UnitName, request.Quantity, request.Note, "Pending", null, refereeId, "Referee", null, DateTimeOffset.UnixEpoch, null, null);
+        return Task.FromResult(SupplyResult.Ok(Details()));
+    }
+
+    public Task<SupplyResult> CancelRequestAsync(long sessionId, long requestId, long refereeId, CancellationToken cancellationToken) =>
+        Close(requestId, "Cancelled", refereeId, null, ownerId: refereeId);
+
+    public Task<SupplyResult> RejectRequestAsync(long sessionId, long requestId, string note, long staffUserId, CancellationToken cancellationToken) =>
+        Close(requestId, "Rejected", staffUserId, note);
+
+    public async Task<SupplyResult> IssueRequestAsync(long sessionId, long requestId, IssueSupplyFromRequest request, long staffUserId, CancellationToken cancellationToken)
+    {
+        if (!requests.TryGetValue(requestId, out var pending) || (pending.Status != "Pending"))
+            return SupplyResult.Fail(pending is null ? "REQUEST_NOT_FOUND" : "REQUEST_HANDLED", "request");
+        var quantity = request.Quantity ?? pending.Quantity;
+        var issued = await IssueAsync(sessionId, new IssueSupplyRequest(pending.ProductId, quantity, pending.RequestedBy), staffUserId, cancellationToken);
+        if (issued.Success)
+            requests[requestId] = pending with { Status = "Issued", IssuedQuantity = quantity };
+        return issued.Success ? SupplyResult.Ok(Details()) : issued;
+    }
+
+    private Task<SupplyResult> Close(long requestId, string status, long actorId, string? note, long? ownerId = null)
+    {
+        if (!requests.TryGetValue(requestId, out var pending) || (ownerId is not null && pending.RequestedBy != ownerId))
+            return Task.FromResult(SupplyResult.Fail("REQUEST_NOT_FOUND", "request"));
+        if (pending.Status != "Pending")
+            return Task.FromResult(SupplyResult.Fail("REQUEST_HANDLED", "handled"));
+        requests[requestId] = pending with { Status = status, DecisionNote = note };
+        return Task.FromResult(SupplyResult.Ok(Details()));
+    }
+
     private SessionSupplyDetails Details() =>
-        new(Session, [new SupplyRecipient(9, "Referee", "Referee")], allocations.Values.ToList());
+        new(Session, [new SupplyRecipient(9, "Referee", "Referee")], allocations.Values.ToList(), requests.Values.ToList());
 }

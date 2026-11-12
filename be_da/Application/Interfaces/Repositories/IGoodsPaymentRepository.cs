@@ -23,8 +23,12 @@ public interface IGoodsPaymentRepository
     Task<string?> AuditValueAuditLogsAsync(long id, string action, CancellationToken ct);
     void AddAuditLogs(AuditLog value);
     Task<List<Order>> ListForBuyerOrdersListAsync(long buyerId, CancellationToken ct);
-    Task<bool> ConfirmReceiptStockMovementsExistsAsync(CancellationToken ct, long id);
-    Task<long?> ConfirmReceiptStockItemsAsync(CancellationToken ct, GoodsStockLine line);
-    Task<int> ConfirmReceiptDatabaseUpdateAsync(CancellationToken ct, GoodsStockLine line, long stockItemId);
-    void AddStockMovements(StockMovement value);
+    // Stock holds (upgrade 017), run inside the current transaction.
+    // Reserve: null when every line is held, otherwise the product that is short (nothing held).
+    Task<long?> ReserveStockAsync(long orderId, CancellationToken ct);
+    Task ReleaseStockAsync(long orderId, CancellationToken ct);
+    // Posts the sale once: 0 posted now, -1 already posted, otherwise the product without enough stock.
+    Task<long> ConsumeStockAsync(long orderId, long actorId, bool held, CancellationToken ct);
+    Task<string?> ProductNameAsync(long productId, CancellationToken ct);
+    Task<List<long>> DueForExpiryAsync(DateTimeOffset now, int take, CancellationToken ct);
 }

@@ -15,8 +15,48 @@ namespace be_da.Presentation.Controllers;
 [Route("api/stock/referee-supplies")]
 [Authorize(Roles = "Referee")]
 [ValidatedRequest]
-public sealed class RefereeSuppliesController(ISessionSupplyService store, IAntiforgery antiforgery) : ControllerBase
+public sealed class RefereeSuppliesController(ISessionSupplyService store, IStockService stock, IAntiforgery antiforgery) : ControllerBase
 {
+    // Active items of the referee's center, to pick from when requesting supplies.
+    [HttpGet("products")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetProducts(CancellationToken cancellationToken)
+    {
+        var result = await stock.GetProductsAsync(new StockProductFilter(IncludeInactive: false), cancellationToken);
+        if (result.Value is not IReadOnlyList<StockProduct> products)
+            return result.ToResponse();
+        return Ok(products.Select(p => new { p.Id, p.Sku, p.Name, p.Category, p.BaseUnit, p.Units, p.AvailableQuantity }));
+    }
+
+    [HttpPost("{sessionId:long:min(1)}/requests")]
+    [ProducesResponseType(typeof(SessionSupplyDetails), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CreateRequest(long sessionId, [FromBody] CreateSupplyRequest request, CancellationToken cancellationToken)
+    {
+        if (!await HasValidCsrf())
+            return BadRequest(new { code = "invalid_csrf_token" });
+        if (!TryGetUserId(out var refereeId))
+            return Unauthorized();
+        return SupplyResponses.ToResponse(this, await store.CreateRequestAsync(sessionId, request, refereeId, cancellationToken));
+    }
+
+    [HttpPost("{sessionId:long:min(1)}/requests/{requestId:long:min(1)}/cancel")]
+    [ProducesResponseType(typeof(SessionSupplyDetails), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CancelRequest(long sessionId, long requestId, CancellationToken cancellationToken)
+    {
+        if (!await HasValidCsrf())
+            return BadRequest(new { code = "invalid_csrf_token" });
+        if (!TryGetUserId(out var refereeId))
+            return Unauthorized();
+        if (!await store.IsRefereeAssignedAsync(sessionId, refereeId, cancellationToken))
+            return NotFound(new { code = "NOT_ASSIGNED", message = "Bạn không được phân công cho buổi chơi này." });
+        return SupplyResponses.ToResponse(this, await store.CancelRequestAsync(sessionId, requestId, refereeId, cancellationToken));
+    }
+
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<SupplySession>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSessions([FromQuery] DateOnly? date, CancellationToken cancellationToken)
@@ -48,8 +88,7 @@ public sealed class RefereeSuppliesController(ISessionSupplyService store, IAnti
             return BadRequest(new { code = "invalid_csrf_token" });
         if (!TryGetUserId(out var refereeId))
             return Unauthorized();
-        var result = await store.ReportUseAsync(sessionId, productId, request, refereeId, cancellationToken);
-        return result.Success ? Ok(result.Details) : result.ErrorCode == "VALIDATION_FAILED" ? BadRequest(new { code = result.ErrorCode, message = result.Message }) : result.ErrorCode is "NOT_ASSIGNED" or "ALLOCATION_NOT_FOUND" ? NotFound(new { code = result.ErrorCode, message = result.Message }) : Conflict(new { code = result.ErrorCode, message = result.Message });
+        return SupplyResponses.ToResponse(this, await store.ReportUseAsync(sessionId, productId, request, refereeId, cancellationToken));
     }
 
     private bool TryGetUserId(out long userId)

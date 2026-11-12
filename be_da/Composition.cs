@@ -25,6 +25,7 @@ public static class Composition
         services.AddScoped<ISessionSupplyService, be_da.Application.Services.SessionSupplyService>();
         services.AddScoped<ISkillProfileService, be_da.Application.Services.SkillProfileService>();
         services.AddScoped<IStockService, be_da.Application.Services.StockService>();
+        services.AddScoped<IStockCountService, be_da.Application.Services.StockCountService>();
         services.AddScoped<INotificationService, TKSC.Application.Services.NotificationService>();
         services.AddScoped<TKSC.Application.Interfaces.Repositories.INotificationRepository, TKSC.Infrastructure.Persistence.Repositories.NotificationRepository>();
         services.AddScoped<IStoreService, TKSC.Application.Services.StoreService>();
