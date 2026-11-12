@@ -1,5 +1,7 @@
 import RevenuePage from "../revenue/RevenuePage";
-import SportCenterPersonnel from "../revenue/SportCenterPersonnel";
+import OperationsPage from '../operations/OperationsPage';
+import AccessPage from '../operations/AccessPage';
+import InvitationsView from '../player/InvitationsView';
 import MessagesPage from "../messages/MessagesPage";
 import SkillReviews from "../skill/SkillReviews";
 import TicketOperations from "../payment/TicketOperations";
@@ -38,8 +40,10 @@ export default function HomeWorkspace({
     return <PaymentPage key={active} initialView={active === 'Vé của tôi' ? 'tickets' : 'payment'} />;
   if (!preview && ['staff','manager'].includes(role) && active === 'Vé giờ lẻ') return <LateEntryManagement/>;
   if (!preview && ["owner", "manager", "staff"].includes(role) && ["Kinh doanh", "Thống kê doanh số"].includes(active)) return <RevenuePage />;
-  if (!preview && role === "owner" && active === "Phân quyền Sport Center") return <SportCenterPersonnel />;
-  if ((active === "Thông báo" || active === "Tin nhắn") && role !== "guest") return <MessagesPage preview={preview} />;
+  if (!preview && ['owner', 'manager'].includes(role) && ['Cơ sở & sân', 'Phân quyền Sport Center'].includes(active)) return <OperationsPage key={active} role={role} initialTab={active === 'Phân quyền Sport Center' ? 'people' : 'venues'} />;
+  if (!preview && ['owner', 'manager', 'system-admin'].includes(role) && ['Bổ nhiệm quản lý', 'Phê duyệt nhân sự', 'Tài khoản & truy cập', 'Bàn giao hỗ trợ'].includes(active)) return <AccessPage role={role} user={user} />;
+  if (!preview && role === 'player' && active === 'Lời mời buổi chơi') return <InvitationsView user={user} onPayment={onPayment} onSelectSession={onSelectSession} />;
+  if ((active === "Thông báo" || active === "Tin nhắn") && role !== "guest") return <MessagesPage preview={preview} onOpen={onOpen} role={role} />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Ngoại lệ trình độ") return <SkillReviews role={role} kind="exceptions" />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Khiếu nại đánh giá") return <SkillReviews role={role} />;
   if (!preview && role === "referee" && active === "Đánh giá kỹ năng") return <AssessmentPage />;

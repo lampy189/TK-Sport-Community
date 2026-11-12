@@ -1,17 +1,15 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { parseSessionInviteMessage } from './sessionInviteMessage';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { MessageCircle, Send, ChevronLeft, Minus, Eye, CalendarPlus } from 'lucide-react';
 import { api } from '../api';
 import { PublicPlayerProfileModal } from './PublicPlayerProfileModal';
 import {
   ChatMessageContent,
-  PickSessionToInviteModal,
-  parseSessionInviteMessage
+  PickSessionToInviteModal
 } from './SessionInviteCard';
 import '../styles/community.css';
 
-export function openFloatingChatWith(friendObj) {
-  window.dispatchEvent(new CustomEvent('tksc:open-chat', { detail: friendObj }));
-}
+
 
 export default function FloatingChatBubble({ onOpenCommunity }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,6 +22,8 @@ export default function FloatingChatBubble({ onOpenCommunity }) {
   const [publicModalPlayerId, setPublicModalPlayerId] = useState(null);
   const [showPickSessionModal, setShowPickSessionModal] = useState(false);
   const messagesEndRef = useRef(null);
+  const conversationRequest = useRef(0);
+  const [error, setError] = useState('');
   useEffect(() => {
     if (isOpen) window.dispatchEvent(new Event('tksc:close-assistant'));
   }, [isOpen]);
@@ -35,17 +35,17 @@ export default function FloatingChatBubble({ onOpenCommunity }) {
       setFriends(arr);
       setActiveFriend((prev) => {
         if (!prev) return null;
-        return arr.find((f) => f.friendPlayerId === prev.friendPlayerId) || prev;
+        return arr.find((f) => f.friendPlayerId === prev.friendPlayerId) || null;
       });
-    } catch {
-      // ignore when not logged in
+    } catch (e) {
+      setError(e.message || 'Chưa tải được danh sách bạn bè.');
     }
   }, []);
 
   useEffect(() => {
-    loadFriends();
+    const initial = setTimeout(() => void loadFriends(), 0);
     const timer = setInterval(loadFriends, 8000);
-    return () => clearInterval(timer);
+    return () => { clearTimeout(initial); clearInterval(timer); };
   }, [loadFriends]);
 
   // Listen for global "open chat with player" trigger
@@ -78,28 +78,31 @@ export default function FloatingChatBubble({ onOpenCommunity }) {
 
   const loadConversation = useCallback(async (friendPlayerId, silent = false) => {
     if (!friendPlayerId) return;
+    const generation = ++conversationRequest.current;
     if (!silent) setLoadingMsgs(true);
     try {
       const list = await api.getConversation(friendPlayerId, 60);
+      if (generation !== conversationRequest.current) return;
       setMessages(Array.isArray(list) ? list : []);
+      setError('');
       await api.markMessagesAsRead(friendPlayerId);
       setFriends((prev) =>
         prev.map((f) => (f.friendPlayerId === friendPlayerId ? { ...f, unreadCount: 0 } : f))
       );
-    } catch {
-      // ignore
+    } catch (e) {
+      if (generation === conversationRequest.current) setError(e.message || 'Chưa tải được tin nhắn.');
     } finally {
-      if (!silent) setLoadingMsgs(false);
+      if (generation === conversationRequest.current) setLoadingMsgs(false);
     }
   }, []);
 
   useEffect(() => {
     if (isOpen && activeFriend?.friendPlayerId) {
-      loadConversation(activeFriend.friendPlayerId);
+      const initial = setTimeout(() => void loadConversation(activeFriend.friendPlayerId), 0);
       const timer = setInterval(() => {
         loadConversation(activeFriend.friendPlayerId, true);
       }, 4500);
-      return () => clearInterval(timer);
+      return () => { clearTimeout(initial); clearInterval(timer); ++conversationRequest.current; };
     }
   }, [isOpen, activeFriend?.friendPlayerId, loadConversation]);
 
@@ -113,6 +116,7 @@ export default function FloatingChatBubble({ onOpenCommunity }) {
     e.preventDefault();
     if (!activeFriend?.friendPlayerId || !draft.trim() || sending) return;
     setSending(true);
+    setError('');
     try {
       const created = await api.sendMessage(activeFriend.friendPlayerId, draft.trim());
       setMessages((prev) => [...prev, created]);
@@ -124,8 +128,8 @@ export default function FloatingChatBubble({ onOpenCommunity }) {
             : f
         )
       );
-    } catch {
-      // ignore
+    } catch (e) {
+      setError(e.message || 'Chưa gửi được tin nhắn. Nội dung vẫn được giữ để bạn thử lại.');
     } finally {
       setSending(false);
     }
@@ -140,6 +144,7 @@ export default function FloatingChatBubble({ onOpenCommunity }) {
         {/* Popup Chat Box when expanded */}
         {isOpen && (
           <div className="mess-popup-window">
+            {error && <div role="alert" style={{ padding: 12 }}>{error}<button type="button" onClick={() => activeFriend ? loadConversation(activeFriend.friendPlayerId) : loadFriends()}>Thử lại</button></div>}
             {!activeFriend ? (
               <>
                 <div className="mess-popup-header">
@@ -392,6 +397,7 @@ export default function FloatingChatBubble({ onOpenCommunity }) {
       {showPickSessionModal && activeFriend && (
         <PickSessionToInviteModal
           friendName={activeFriend.fullName}
+          friendPlayerId={activeFriend.friendPlayerId}
           onClose={() => setShowPickSessionModal(false)}
           onSelectSessionToSend={async (msgContent) => {
             const created = await api.sendMessage(activeFriend.friendPlayerId, msgContent);

@@ -4,6 +4,7 @@ using be_da.Domain.Entities;
 namespace be_da.Application.Interfaces.Repositories;
 public interface ISessionStore
 {
+    Task<RegisterSessionResult> AcceptInvitationAsync(long userId, long invitationId, CancellationToken ct) => throw new NotSupportedException();
     Task<IReadOnlyList<TimeSlotSummary>> GetTimeSlotsAsync(CancellationToken cancellationToken);
     Task<IReadOnlyList<VenueSummary>> GetVenuesAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<VenueSummary>>([]);
     Task<IReadOnlyList<SessionSummary>> GetSessionsAsync(SessionFilter filter, long? currentUserId, CancellationToken cancellationToken);

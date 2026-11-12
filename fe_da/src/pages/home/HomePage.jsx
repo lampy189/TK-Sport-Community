@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import HomeLayout from "../../layouts/HomeLayout";
 import { roleHomeConfig } from "../../config/roleHomeConfig";
 import HomeOverview from "./HomeOverview";
+import OperationsOverview from '../operations/OperationsOverview';
 import HomeWorkspace from "./HomeWorkspace";
 import GuestLayout from "../../components/layout/GuestLayout";
 import GuestHome from "./GuestHome";
@@ -21,12 +22,13 @@ export default function HomePage({
   const config = roleHomeConfig[role] || roleHomeConfig.guest;
   const [active, setActive] = useState(() =>
     ["owner", "manager", "staff"].includes(role) && new URLSearchParams(window.location.search).get("view") === "revenue" ? (role === "owner" ? "Kinh doanh" : "Thống kê doanh số") :
+    role === 'player' && new URLSearchParams(window.location.search).get('view') === 'invitations' ? 'Lời mời buổi chơi' :
     role !== "guest" && ["messages", "notifications"].includes(new URLSearchParams(window.location.search).get("view")) ? "Thông báo" :
     role === "staff" && new URLSearchParams(window.location.search).has("goodsOrderId") ? "Bán hàng" :
     role === "player" &&
     new URLSearchParams(window.location.search).has("orderId")
       ? "Thanh toán"
-      : role === "player" && new URLSearchParams(window.location.search).get("view") === "tickets" ? "Vé của tôi" : "overview",
+      : role === "player" && new URLSearchParams(window.location.search).get("view") === "tickets" ? "Vé của tôi" : window.history.state?.tkscHome?.role === role ? window.history.state.tkscHome.active : "overview",
   );
   const [sessionId, setSessionId] = useState(() => window.history.state?.tkscHome?.role === role ? window.history.state.tkscHome.sessionId : null);
   const [browseSport, setBrowseSport] = useState(() => window.history.state?.tkscHome?.role === role ? window.history.state.tkscHome.browseSport : "ALL");
@@ -72,6 +74,8 @@ export default function HomePage({
         url.searchParams.delete(key),
       );
       if (label === "Thông báo" || label === "Tin nhắn") url.searchParams.set("view", "messages");
+      if (label === 'Lời mời buổi chơi') url.searchParams.set('view', 'invitations');
+      if (label === 'Vé của tôi') url.searchParams.set('view', 'tickets');
       if (["Kinh doanh", "Thống kê doanh số"].includes(label)) url.searchParams.set("view", "revenue");
       remember(label, sessionId, url);
     }
@@ -80,7 +84,8 @@ export default function HomePage({
   function payment(id) {
     const url = new URL(window.location.href);
     if (id) url.searchParams.set("orderId", id);
-    window.history.replaceState({}, "", url);
+    url.searchParams.delete('view');
+    remember('Thanh toán', sessionId, url);
     setActive("Thanh toán");
     window.scrollTo({ top: 0, behavior: "instant" });
   }
@@ -98,7 +103,9 @@ export default function HomePage({
       }
     };
     window.addEventListener("tksc:open-session", onOpenSessionEvent);
-    return () => window.removeEventListener("tksc:open-session", onOpenSessionEvent);
+    const onInvitations = () => open('Lời mời buổi chơi');
+    window.addEventListener('tksc:open-invitations', onInvitations);
+    return () => { window.removeEventListener("tksc:open-session", onOpenSessionEvent); window.removeEventListener('tksc:open-invitations', onInvitations); };
   }, []);
   if (role === "guest") {
     const browse = (sport = "ALL") => {
@@ -217,7 +224,7 @@ export default function HomePage({
     >
       {!preview && ["owner", "manager", "staff", "referee"].includes(role) && <SportCenterBadge />}
       {active === "overview" ? (
-        <HomeOverview config={config} preview={preview} onOpen={open} />
+        <>{!preview && <OperationsOverview role={role} />}<HomeOverview config={config} preview={preview} onOpen={open} /></>
       ) : (
         <div className="home-workspace">
           <div className="home-breadcrumb">

@@ -9,6 +9,9 @@ export const roleHomeConfig = {
     label: "Người chơi",
     modules: [
       "Lịch social",
+      "Lời mời buổi chơi",
+      "Hồ sơ cá nhân",
+      "Hồ sơ kỹ năng",
       "Cửa hàng",
       "Thanh toán",
       "Vé của tôi",
@@ -65,6 +68,8 @@ export const roleHomeConfig = {
     section: "Tổng quan vận hành",
     modules: [
       "Thống kê doanh số",
+      "Cơ sở & sân",
+      "Phê duyệt nhân sự",
       "Quản lý buổi chơi",
       "Vé giờ lẻ",
       "Phân công nhân sự",
@@ -97,6 +102,7 @@ export const roleHomeConfig = {
     section: "Tổng quan chủ sân",
     modules: [
       "Kinh doanh",
+      "Cơ sở & sân",
       "Phân quyền Sport Center",
       "Chính sách & giá",
       "Bổ nhiệm quản lý",

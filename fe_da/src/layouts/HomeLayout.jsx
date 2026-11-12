@@ -24,7 +24,7 @@ export default function HomeLayout({
       <a className="skip-link" href="#main-content">
         Bỏ qua điều hướng
       </a>
-      <Header roleLabel={roleLabel} accountName={accountName} onLogout={onLogout} onLogin={onLogin} onHome={onHome} />
+      <Header roleLabel={roleLabel} accountName={accountName} onLogout={onLogout} onLogin={onLogin} onHome={onHome} onNotifications={() => onNavigate('Thông báo')} />
       <Navbar items={navigation} activeId={activeId} onNavigate={onNavigate} />
       <MainContainer>
         {hero && <HeroLayout {...hero} />}

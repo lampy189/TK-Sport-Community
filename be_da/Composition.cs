@@ -34,6 +34,10 @@ public static class Composition
         services.AddScoped<IRevenueService, be_da.Application.Services.RevenueService>();
         services.AddScoped<be_da.Application.Interfaces.Repositories.IRevenueRepository, be_da.Infrastructure.Persistence.Repositories.RevenueRepository>();
         services.AddScoped<ISportCenterService, be_da.Application.Services.SportCenterService>();
+        services.AddScoped<IInvitationService, be_da.Application.Services.InvitationService>();
+        services.AddScoped<IOperationsService, be_da.Application.Services.OperationsService>();
+        services.AddScoped<be_da.Application.Interfaces.Repositories.IOperationsRepository, be_da.Infrastructure.Persistence.Repositories.OperationsRepository>();
+        services.AddScoped<be_da.Application.Interfaces.Repositories.IInvitationRepository, be_da.Infrastructure.Persistence.Repositories.InvitationRepository>();
         services.AddScoped<be_da.Application.Interfaces.Repositories.ISportCenterRepository, be_da.Infrastructure.Persistence.Repositories.SportCenterRepository>();
         services.AddScoped<be_da.Application.Interfaces.External.IAvatarStorage, be_da.Infrastructure.ExternalServices.LocalAvatarStorage>();
         services.AddScoped<ICommunityService, be_da.Application.Services.CommunityService>();

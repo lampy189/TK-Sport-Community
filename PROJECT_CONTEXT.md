@@ -1,5 +1,9 @@
 # TK Sport Community — Project Context
 
+## Player and operations implementation (12 Nov 2026)
+
+The user explicitly assigned Nhat's Player invitation/payer UX, Player journey/profile/community/notifications, venue/court/personnel management, approved account access and technical handover, plus an operations overview and trial feedback. Frontend changes for this scope are authorized. Implementation remains on `nhat-refactor-20261112` in the existing refactored single project. See `docs/nhat-player-operations.md` for behavior, requirement mapping, validation and material limits. Upgrade 017 is prepared but NOT applied to the working database; apply only after the required explicit acceptance. Isolated tests additionally restore missing revenue triggers and enable existing center isolation; these changes have NOT been applied to `Sep490_Nhat_20261112`. Production setup/real external integrations and deployment backup/restore remain subsequent work per the user's code-first priority.
+
 ## Single-project architecture refactor (11 Nov 2026)
 
 The user explicitly chose Clean Architecture by folders within the existing .NET 8 `be_da.csproj`, not multiple application projects. HTTP code is under `Presentation`; `Application` owns services, interfaces and DTOs; `Domain` owns entities/core rules; persistence and external implementations are under `Infrastructure`. `Program.cs` and `appsettings*.json` are at the project root. Keep existing SQL/EF transactions, API contracts and historical migrations. See `docs/architecture-refactor.md` for the file map, validation results and launch instructions.

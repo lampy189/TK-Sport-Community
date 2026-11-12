@@ -86,12 +86,13 @@ export const api = {
   },
   async getMe() {
     const res = await request('/api/auth/me');
-    if (!res.ok) return null;
+    if (res.status === 401) return null;
+    if (!res.ok) throw new Error('Chưa kiểm tra được phiên đăng nhập. Vui lòng thử lại.');
     try {
       const text = await res.text();
       return text ? JSON.parse(text) : null;
     } catch {
-      return null;
+      throw new Error('Không đọc được phiên đăng nhập. Vui lòng thử lại.');
     }
   },
 

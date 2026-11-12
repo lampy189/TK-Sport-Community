@@ -410,6 +410,7 @@ public sealed class SqlFriendshipStore(string connectionString, be_da.Applicatio
             auditCmd.Parameters.Add("@userId", SqlDbType.BigInt).Value = currentUserId;
             auditCmd.Parameters.Add("@val", SqlDbType.NVarChar, -1).Value = JsonSerializer.Serialize(new { TargetPlayerId = targetPlayerId, FriendshipId = friendshipId });
             await auditCmd.ExecuteNonQueryAsync(cancellationToken);
+            await WorkflowSql.Execute(connection,transaction,"INSERT dbo.notifications(user_id,channel,title,reference_type,reference_id,status) SELECT user_id,'web',N'Bạn có lời mời kết bạn','friend_request',@id,'unread' FROM dbo.players WHERE id=@player",cancellationToken,("@id",friendshipId),("@player",targetPlayerId));
             await transaction.CommitAsync(cancellationToken);
             return new FriendshipActionResult(true, null, null, friendshipId);
         }
@@ -481,6 +482,7 @@ public sealed class SqlFriendshipStore(string connectionString, be_da.Applicatio
             updateCmd.Parameters.Add("@status", SqlDbType.VarChar, 50).Value = newStatus;
             updateCmd.Parameters.Add("@friendshipId", SqlDbType.BigInt).Value = friendshipId;
             await updateCmd.ExecuteNonQueryAsync(cancellationToken);
+            await WorkflowSql.Execute(connection,transaction,"UPDATE dbo.notifications SET status='read' WHERE user_id=@user AND channel='web' AND reference_type='friend_request' AND reference_id=@id",cancellationToken,("@user",currentUserId),("@id",friendshipId));
             await using var auditCmd = new SqlCommand("""
                 INSERT INTO dbo.account_audit_logs (user_id, actor_id, action, new_value)
                 VALUES (@userId, @userId, @action, @val);
@@ -489,6 +491,7 @@ public sealed class SqlFriendshipStore(string connectionString, be_da.Applicatio
             auditCmd.Parameters.Add("@action", SqlDbType.VarChar, 100).Value = accept ? "AcceptFriendRequest" : "DeclineFriendRequest";
             auditCmd.Parameters.Add("@val", SqlDbType.NVarChar, -1).Value = JsonSerializer.Serialize(new { FriendshipId = friendshipId, RequesterId = requesterId });
             await auditCmd.ExecuteNonQueryAsync(cancellationToken);
+            if(accept) await WorkflowSql.Execute(connection,transaction,"INSERT dbo.notifications(user_id,channel,title,reference_type,reference_id,status) SELECT user_id,'web',N'Lời mời kết bạn đã được chấp nhận','friend_accepted',@id,'unread' FROM dbo.players WHERE id=@player",cancellationToken,("@id",friendshipId),("@player",requesterId));
             await transaction.CommitAsync(cancellationToken);
             return new FriendshipActionResult(true, null, null, friendshipId);
         }
@@ -595,12 +598,14 @@ public sealed class SqlFriendshipStore(string connectionString, be_da.Applicatio
         var recipientUserId = await GetUserIdByPlayerIdAsync(recipientPlayerId, cancellationToken);
         if (!recipientUserId.HasValue)
             return null;
+        await using var transaction=(SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable,cancellationToken);
+        if(await WorkflowSql.Scalar(connection,transaction,"SELECT COUNT(*) FROM dbo.friendships WITH(UPDLOCK,HOLDLOCK) WHERE LOWER(status)='accepted' AND ((requester_id=@sender AND addressee_id=@recipient) OR (requester_id=@recipient AND addressee_id=@sender))",cancellationToken,("@sender",senderPlayerId.Value),("@recipient",recipientPlayerId))==0) return null;
         const string sql = """
             INSERT INTO dbo.messages (sender_id, recipient_id, content, is_read, created_at)
             OUTPUT INSERTED.id, INSERTED.created_at
             VALUES (@senderUserId, @recipientUserId, @content, 0, SYSDATETIMEOFFSET());
             """;
-        await using var cmd = new SqlCommand(sql, connection);
+        await using var cmd = new SqlCommand(sql, connection, transaction);
         cmd.Parameters.Add("@senderUserId", SqlDbType.BigInt).Value = currentUserId;
         cmd.Parameters.Add("@recipientUserId", SqlDbType.BigInt).Value = recipientUserId.Value;
         cmd.Parameters.Add("@content", SqlDbType.NVarChar, 2000).Value = content;
@@ -614,9 +619,11 @@ public sealed class SqlFriendshipStore(string connectionString, be_da.Applicatio
             createdAt = reader.GetDateTimeOffset(1);
         }
 
-        await using var nameCmd = new SqlCommand("SELECT full_name FROM dbo.users WHERE id = @userId;", connection);
+        await using var nameCmd = new SqlCommand("SELECT full_name FROM dbo.users WHERE id = @userId;", connection,transaction);
         nameCmd.Parameters.Add("@userId", SqlDbType.BigInt).Value = currentUserId;
         var senderFullName = (string? )await nameCmd.ExecuteScalarAsync(cancellationToken) ?? "Player";
+        await WorkflowSql.Execute(connection,transaction,"INSERT dbo.notifications(user_id,channel,title,reference_type,reference_id,status) VALUES(@recipient,'web',@title,'chat_message',@id,'unread')",cancellationToken,("@recipient",recipientUserId.Value),("@title","Tin nhắn mới từ "+senderFullName[..Math.Min(senderFullName.Length,220)]),("@id",msgId));
+        await transaction.CommitAsync(cancellationToken);
         return new ChatMessageItem(msgId, senderPlayerId.Value, currentUserId, senderFullName, recipientPlayerId, recipientUserId.Value, content, false, createdAt, true);
     }
 
@@ -651,7 +658,7 @@ public sealed class SqlFriendshipStore(string connectionString, be_da.Applicatio
             JOIN dbo.players rp ON rp.user_id = ru.id
             WHERE (m.sender_id = @currentUserId AND m.recipient_id = @otherUserId)
                OR (m.sender_id = @otherUserId AND m.recipient_id = @currentUserId)
-            ORDER BY m.created_at ASC, m.id ASC;
+            ORDER BY m.created_at DESC, m.id DESC;
             """;
         await using var cmd = new SqlCommand(sql, connection);
         cmd.Parameters.Add("@limit", SqlDbType.Int).Value = Math.Clamp(limit, 1, 100);
@@ -672,7 +679,7 @@ public sealed class SqlFriendshipStore(string connectionString, be_da.Applicatio
             var createdAt = reader.GetDateTimeOffset(8);
             list.Add(new ChatMessageItem(msgId, senderPlayerId, senderUserId, senderFullName, recipientPlayerId, recipientUserId, content, isRead, createdAt, senderUserId == currentUserId));
         }
-
+        list.Reverse();
         return list;
     }
 
@@ -687,6 +694,9 @@ public sealed class SqlFriendshipStore(string connectionString, be_da.Applicatio
             UPDATE dbo.messages
             SET is_read = 1
             WHERE sender_id = @senderUserId AND recipient_id = @currentUserId AND is_read = 0;
+            UPDATE n SET status='read' FROM dbo.notifications n JOIN dbo.messages m ON m.id=n.reference_id
+            WHERE n.user_id=@currentUserId AND n.channel='web' AND n.reference_type='chat_message'
+              AND m.sender_id=@senderUserId AND m.recipient_id=@currentUserId;
             """;
         await using var cmd = new SqlCommand(sql, connection);
         cmd.Parameters.Add("@senderUserId", SqlDbType.BigInt).Value = senderUserId.Value;

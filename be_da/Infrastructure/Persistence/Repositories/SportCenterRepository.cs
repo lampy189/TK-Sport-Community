@@ -11,7 +11,9 @@ public sealed class SportCenterRepository(IConfiguration configuration, be_da.Ap
     {
         await using var connection = Connection();
         await SportCenterConnection.OpenAsync(connection, ct, dataScope);
-        await using var command = new SqlCommand("SELECT id,name,is_active FROM dbo.venues ORDER BY name", connection);
+        await using var command = new SqlCommand("SELECT id,name,is_active FROM dbo.venues WHERE @owner=1 OR id=@venue ORDER BY name", connection);
+        command.Parameters.AddWithValue("@owner",dataScope?.Role=="Owner");
+        command.Parameters.AddWithValue("@venue",(object?)dataScope?.RestrictedVenueId??DBNull.Value);
         var rows = new List<object>();
         await using var reader = await command.ExecuteReaderAsync(ct);
         while (await reader.ReadAsync(ct))
@@ -33,26 +35,8 @@ public sealed class SportCenterRepository(IConfiguration configuration, be_da.Ap
 
     public async Task<bool> AssignAsync(long id, long venueId, long actor, CancellationToken ct)
     {
-        await using var connection = Connection();
-        await SportCenterConnection.OpenAsync(connection, ct, dataScope);
-        await using var tx = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, ct);
-        await using var command = new SqlCommand("""
-            IF NOT EXISTS(SELECT 1 FROM dbo.venues WHERE id=@venue AND is_active=1) SELECT 0;
-            ELSE BEGIN
-              DECLARE @old bigint=(SELECT venue_id FROM dbo.users WITH(UPDLOCK,HOLDLOCK) WHERE id=@id);
-              UPDATE u SET venue_id=@venue FROM dbo.users u JOIN dbo.roles r ON r.id=u.role_id
-              WHERE u.id=@id AND u.deleted_at IS NULL AND r.code IN ('Staff','Manager','Referee');
-              DECLARE @changed int=@@ROWCOUNT;
-              IF @changed=1 INSERT dbo.account_audit_logs(user_id,actor_id,action,old_value,new_value)
-              VALUES(@id,@actor,'SportCenterAssigned',CONVERT(varchar(30),@old),CONVERT(varchar(30),@venue));
-              SELECT @changed;
-            END
-            """, connection, tx);
-        command.Parameters.AddWithValue("@id", id);
-        command.Parameters.AddWithValue("@venue", venueId);
-        command.Parameters.AddWithValue("@actor", actor);
-        var changed = (int)(await command.ExecuteScalarAsync(ct))!;
-        await tx.CommitAsync(ct);
-        return changed == 1;
+        if(dataScope is null) return false;
+        await new OperationsRepository(configuration,dataScope).PersonnelAsync(actor,id,new(venueId),ct);
+        return true;
     }
 }

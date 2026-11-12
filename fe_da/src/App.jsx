@@ -19,11 +19,13 @@ function Redirect({ to }) {
 function ApplicationApp() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let active = true;
-    api.getMe().then(account => { if (active) setUser(account); }).catch(() => { if (active) setUser(null); }).finally(() => { if (active) setLoading(false); });
+    api.getMe().then(account => { if (active) { setUser(account); setError(''); } }).catch(e => { if (active) setError(e.message || 'Chưa kết nối được hệ thống.'); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, []);
+  }, [attempt]);
   async function logout() {
     try {
       if (!await api.logout()) throw new Error('logout_failed');
@@ -31,6 +33,7 @@ function ApplicationApp() {
     } catch { window.alert('Đăng xuất chưa thành công. Vui lòng thử lại.'); }
   }
   if (loading) return <div className="home-loading" role="status"><strong>↗ TKSC</strong><span>Đang kết nối hệ thống…</span></div>;
+  if (error) return <main className="home-loading" role="alert"><p>{error}</p><button className="button" onClick={() => { setLoading(true); setAttempt(value => value + 1); }}>Thử lại</button></main>;
   if (user && !roleKeys[user.role]) return <p>Vai trò không được hỗ trợ. <button onClick={logout}>Đăng xuất</button></p>;
   const route = !user && window.location.pathname === '/' && new URLSearchParams(window.location.search).has('loginError')
     ? { redirect: '/player/login' } : resolveHomeRoute(window.location.pathname, user?.role);

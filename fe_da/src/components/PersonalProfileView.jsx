@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Pencil,
   Award,
@@ -103,9 +103,11 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const fileInputRef = useRef(null);
+  const [today] = useState(() => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date()));
 
   const loadMyProfile = useCallback(async () => {
     setLoading(true);
+    setFeedback(null);
     try {
       const data = await api.getMyProfile();
       setMyProfile(data);
@@ -124,13 +126,16 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
   }, []);
 
   useEffect(() => {
-    loadMyProfile();
+    const initial = setTimeout(() => void loadMyProfile(), 0);
+    return () => clearTimeout(initial);
   }, [loadMyProfile]);
 
   const handleAvatarFileSelected = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    if (saving || uploadingAvatar) return;
+    if (file.size > 5 * 1024 * 1024) { setFeedback({ type: 'error', text: 'Chọn ảnh tối đa 5 MB.' }); return; }
     if (!file.type.startsWith('image/')) {
       setFeedback({ type: 'error', text: 'Vui lòng chọn một file hình ảnh hợp lệ (JPG, PNG, WEBP).' });
       return;
@@ -141,6 +146,7 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
     try {
       const dataUrl = await resizeImageFileToDataUrl(file, 320);
       setEditForm((prev) => ({ ...prev, avatarUrl: dataUrl }));
+      if (isEditing) { setFeedback({ type: 'success', text: 'Ảnh đã sẵn sàng. Bấm Lưu để cập nhật hồ sơ.' }); return; }
 
       const currentName = (isEditing ? editForm.fullName : myProfile?.fullName || user?.fullName || '').trim();
       if (currentName) {
@@ -237,6 +243,9 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
   const myBadminton = getSportItem(myProfile?.sportProfiles, 'badminton');
   const myPickleball = getSportItem(myProfile?.sportProfiles, 'pickleball');
   const currentAvatar = (isEditing ? editForm.avatarUrl : myProfile?.avatarUrl) || myProfile?.avatarUrl;
+
+  if (loading && !myProfile) return <p role="status">Đang tải hồ sơ…</p>;
+  if (!myProfile) return <div role="alert"><p>{feedback?.text || 'Chưa tải được hồ sơ.'}</p><button className="button" onClick={loadMyProfile}>Thử lại</button></div>;
 
   return (
     <div className="comm-container">
@@ -593,7 +602,7 @@ export default function PersonalProfileView({ user, onNavigateSkill }) {
                 <input
                   type="date"
                   min="1920-01-01"
-                  max={new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10)}
+                  max={today}
                   value={editForm.dateOfBirth}
                   onChange={(e) => setEditForm((f) => ({ ...f, dateOfBirth: e.target.value }))}
                 />
