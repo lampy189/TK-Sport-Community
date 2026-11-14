@@ -51,8 +51,13 @@ public sealed class MultiCenterDatabaseTests
             Assert.NotEmpty(hn);
             Assert.All(hn, p => Assert.Contains(p.ProductId,firstProductIds));
             Assert.IsType<NotFoundObjectResult>(await controller.CreateCart(new([new CreateCartLine(secondProductIds.First(), 1)]), "counter-cart-outside-center-1"));
-            var created = Assert.IsType<StoreCartOrderResult>(Assert.IsType<OkObjectResult>(
+            var createdResponse = Assert.IsType<ObjectResult>(
+                await controller.CreateCart(new([new CreateCartLine(hn.First().ProductId, 1)]), "counter-cart-local-center-1"));
+            Assert.Equal(StatusCodes.Status201Created, createdResponse.StatusCode);
+            var created = Assert.IsType<StoreCartOrderResult>(createdResponse.Value);
+            var retried = Assert.IsType<StoreCartOrderResult>(Assert.IsType<OkObjectResult>(
                 await controller.CreateCart(new([new CreateCartLine(hn.First().ProductId, 1)]), "counter-cart-local-center-1")).Value);
+            Assert.Equal(created.OrderId, retried.OrderId);
             Assert.Equal(firstVenue, await db.Database.SqlQueryRaw<long>("SELECT venue_id AS Value FROM dbo.orders WHERE id={0}", created.OrderId).SingleAsync());
             http.Items["SportCenterId"] = secondVenue;
             var vp = Assert.IsAssignableFrom<IEnumerable<StoreProductItem>>(

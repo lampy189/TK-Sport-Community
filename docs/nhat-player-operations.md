@@ -18,10 +18,10 @@ Phạm vi được người dùng giao trực tiếp ngày 12/11/2026: ưu tiên
 
 ## Dữ liệu và giới hạn hiện tại
 
-- DB làm việc vẫn là `localhost / Sep490_Nhat_20261112`. Chưa áp dụng thay đổi schema hay bật chính sách/trigger tại DB này.
+- DB làm việc là `localhost / Sep490_Nhat_20261112`. Ngày 14/11/2026, người dùng đã duyệt và đã áp dụng upgrade 017, trigger 012 và policy cách ly cơ sở cùng compatibility 014. Xem `db-update-20261114.md`.
 - `db/upgrades/017-player-invitations.sql` bổ sung bốn cột nullable vào `invitations`: `payer_user_id` (FK users), `expires_at`, `created_at`, `responded_at`. Không tạo vé, thay đổi tiền hoặc sửa dữ liệu lịch sử. Lời mời lịch sử thiếu thông tin đồng ý/người trả không tự tạo giữ chỗ.
 - Hạn trả lời mặc định là thời điểm sớm hơn giữa 24 giờ sau khi mời và giờ bắt đầu buổi. Giữ chỗ thanh toán tối đa 15 phút và không vượt giờ bắt đầu. Thời hạn của vé giờ lẻ tiếp tục do luồng hiện có xử lý.
-- Đã phát hiện bản dump mới thiếu `TR_payments_revenue`/`TR_refunds_revenue` và có `SportCenterIsolation` ở trạng thái OFF. Các yêu cầu cấu hình này có sẵn trong upgrades 012 và 014; cần kiểm tra/phê duyệt riêng trước khi áp dụng vào DB làm việc. Không chạy lại scripts seed/rollout 015/016: ID cơ sở của dump mới khác baseline cũ.
+- Bản dump ban đầu thiếu `TR_payments_revenue`/`TR_refunds_revenue` và có `SportCenterIsolation` ở trạng thái OFF. Đã khôi phục hai trigger, bật policy và áp dụng visibility 014 theo phê duyệt ngày 14/11/2026. Không chạy lại scripts seed/rollout 015/016: ID cơ sở của dump mới khác baseline cũ.
 - Account access dùng bảng `approvals` và audit JSON bất biến của đề xuất; không thêm bảng quyền hoặc một account có nhiều role. Truy cập dữ liệu phục vụ bổ nhiệm dùng identity DB `service` đã có sẵn cho SystemAdmin và các thao tác account được kiểm soát của Manager. Phân quyền HTTP, kiểm tra cơ sở và phê duyệt độc lập vẫn dùng scope/actor thật; đường quản lý sân/cơ sở không được mở quyền theo identity kỹ thuật này.
 - Hệ thống hiện có unique email/Google subject, chưa có khóa liên kết một người thật giữa nhiều tài khoản Google khác nhau. Kiểm tra tự duyệt dùng ID/email/Google subject hiện có; không khẳng định đã phát hiện được cùng một người dùng nhiều danh tính Google độc lập.
 - Đăng nhập Google thật, payOS thật, gửi push Firebase thật, SMTP, HTTPS production, lưu ảnh dùng chung và backup/restore triển khai chưa được kiểm chứng trong phần code này. Firebase adapter hiện có vẫn là adapter ghi log; thông báo web trong DB hoạt động độc lập với nó.
@@ -30,7 +30,7 @@ Phạm vi được người dùng giao trực tiếp ngày 12/11/2026: ưu tiên
 
 - Backend build: thành công, không warning/error.
 - API: 644 đạt, không bỏ qua, trên DB kiểm thử riêng có đủ schema/chính sách/trigger nền. Trong đó 7 test mới kiểm tra lời mời, tranh chỗ cuối, điểm thay đổi, hết hạn/trùng lịch, bảo vệ lịch/điều chuyển, quyền theo cơ sở, bàn giao và chat.
-- PaymentTests: 67 đạt.
+- PaymentTests: 71 đạt trên source đã tích hợp phần Quân ngày 14/11/2026.
 - Frontend: build thành công; 20 test Node đạt; ESLint không có error trên các file JavaScript/JSX đã sửa/thêm. Vite còn cảnh báo kích thước bundle vốn có.
 - Kiểm thử Chrome: người gửi theo dõi lời mời; người nhận nhận lời và mở đúng đơn thanh toán; Vé của tôi/hồ sơ/điểm; mobile không tràn ngang; Owner thêm cơ sở; SystemAdmin đề xuất → Owner độc lập duyệt → SystemAdmin triển khai. Không có lỗi JavaScript trình duyệt.
 - Test catalog đa cơ sở đã bỏ giả định ID `1/2` và SKU `HN-DEMO-*`, kiểm tra bằng quan hệ cơ sở thực tế của dữ liệu.
@@ -46,4 +46,4 @@ dotnet test tests/TKSC.Api.Tests
 dotnet test tests/PaymentTests
 ```
 
-DB kiểm thử được nhập từ cùng dump, chạy 017, khôi phục hai trigger theo 012, bật policy đã có và kiểm tra visibility theo 014 (guard tên DB được đổi riêng cho test). Những bước này chỉ thực hiện trên DB kiểm thử. Không tự áp dụng chúng khi ứng dụng khởi động. Backend do Codex mở để kiểm thử được dừng trước khi bàn giao Visual Studio.
+DB kiểm thử được nhập từ cùng dump, chạy 017, khôi phục hai trigger theo 012, bật policy đã có và kiểm tra visibility theo 014 (guard tên DB được đổi riêng cho test). Ngày 14/11/2026 các cập nhật tương ứng đã được áp dụng vào DB làm việc sau backup và phê duyệt; xem biên bản cập nhật. Không tự áp dụng chúng khi ứng dụng khởi động. Backend do Codex mở để kiểm thử được dừng trước khi bàn giao Visual Studio.
