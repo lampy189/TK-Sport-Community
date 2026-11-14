@@ -41,7 +41,7 @@ public sealed class MultiCenterDatabaseTests
         accessor.HttpContext = http;
         var config = new ConfigurationBuilder().AddInMemoryCollection(
             new Dictionary<string,string?> { ["ConnectionStrings:Sep490"] = connection }).Build();
-        var controller = new StoreController(new TKSC.Application.Services.StoreService(new TKSC.Infrastructure.Persistence.Repositories.StoreRepository(db, config, new HttpDataAccessContext(accessor)))) { ControllerContext = new ControllerContext { HttpContext = http } };
+        var controller = new StoreController(new TKSC.Application.Services.StoreService(new TKSC.Infrastructure.Persistence.Repositories.StoreRepository(db, config, new HttpDataAccessContext(accessor)), TimeProvider.System)) { ControllerContext = new ControllerContext { HttpContext = http } };
         await db.Database.OpenConnectionAsync();
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
@@ -50,9 +50,9 @@ public sealed class MultiCenterDatabaseTests
                 Assert.IsType<OkObjectResult>(await controller.GetOpenProducts()).Value).ToList();
             Assert.NotEmpty(hn);
             Assert.All(hn, p => Assert.Contains(p.ProductId,firstProductIds));
-            Assert.IsType<NotFoundObjectResult>(await controller.CreateCart(new([new CreateCartLine(secondProductIds.First(), 1)])));
+            Assert.IsType<NotFoundObjectResult>(await controller.CreateCart(new([new CreateCartLine(secondProductIds.First(), 1)]), "counter-cart-outside-center-1"));
             var created = Assert.IsType<StoreCartOrderResult>(Assert.IsType<OkObjectResult>(
-                await controller.CreateCart(new([new CreateCartLine(hn.First().ProductId, 1)]))).Value);
+                await controller.CreateCart(new([new CreateCartLine(hn.First().ProductId, 1)]), "counter-cart-local-center-1")).Value);
             Assert.Equal(firstVenue, await db.Database.SqlQueryRaw<long>("SELECT venue_id AS Value FROM dbo.orders WHERE id={0}", created.OrderId).SingleAsync());
             http.Items["SportCenterId"] = secondVenue;
             var vp = Assert.IsAssignableFrom<IEnumerable<StoreProductItem>>(

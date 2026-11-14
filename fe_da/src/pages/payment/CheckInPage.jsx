@@ -20,6 +20,8 @@ export default function CheckInPage({ canManageLateEntries = false }) {
   const [scanning, setScanning] = useState(false);
   const [verified, setVerified] = useState(false);
   const [sessions, setSessions] = useState([]);
+  const [roster, setRoster] = useState([]);
+  const [loadingRoster, setLoadingRoster] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [loadingSessions, setLoadingSessions] = useState(true);
   const video = useRef(null);
@@ -59,14 +61,21 @@ export default function CheckInPage({ canManageLateEntries = false }) {
     setScanning(false);
   }
 
-  function selectSession(sessionId) {
+  async function selectSession(sessionId) {
     if (busyRef.current) return;
     stop();
     setSelectedSessionId(sessionId);
+    setRoster([]);
     setCode('');
     setTicket(null);
     setVerified(false);
     setError('');
+    if (sessionId) {
+      setLoadingRoster(true);
+      try { setRoster(await paymentClient.getSessionRoster(sessionId)); }
+      catch (e) { setError(e.message); }
+      finally { setLoadingRoster(false); }
+    }
   }
 
   function requireSelectedSession() {
@@ -86,7 +95,7 @@ export default function CheckInPage({ canManageLateEntries = false }) {
     setTicket(null);
     setVerified(false);
     try {
-      setTicket(await paymentClient.inspectTicket(value));
+      setTicket(await paymentClient.inspectTicket(value, selectedSessionId));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -160,7 +169,8 @@ export default function CheckInPage({ canManageLateEntries = false }) {
     setBusy(true);
     setError('');
     try {
-      setTicket(await paymentClient.checkIn(ticket.ticketCode));
+      setTicket(await paymentClient.checkIn(ticket.ticketCode, selectedSessionId));
+      setRoster(await paymentClient.getSessionRoster(selectedSessionId));
     } catch (e) {
       setTicket(null);
       setVerified(false);
@@ -213,6 +223,17 @@ export default function CheckInPage({ canManageLateEntries = false }) {
             ))}
           </div>}
       </section>
+      {selectedSession && <section className="checkin-panel checkin-roster" aria-labelledby="checkin-roster-title" aria-busy={loadingRoster}>
+        <div className="checkin-panel-heading"><span className="checkin-icon"><UserRound size={22} aria-hidden="true" /></span>
+          <div><h3 id="checkin-roster-title">Người chơi của buổi</h3><p>Chỉ gồm vé đã thanh toán còn hiệu lực.</p></div>
+        </div>
+        {loadingRoster ? <p role="status">Đang tải danh sách người chơi…</p> : roster.length === 0 ? <p>Chưa có vé hợp lệ trong buổi này.</p> : <div className="checkin-roster-list">
+          {roster.map(player => <div className="checkin-roster-row" key={player.ticketId}>
+            <div><strong>{player.fullName}</strong><span>{player.currentBand || 'Chưa có trình độ'}{player.isProvisional ? ' · Chưa xác nhận' : ''}</span></div>
+            <span className={`checkin-roster-status ${player.checkedIn ? 'is-checked' : ''}`}>{player.checkedIn ? 'Đã điểm danh' : 'Chưa điểm danh'}</span>
+          </div>)}
+        </div>}
+      </section>}
       {selectedSession && <div className="checkin-grid">
         <section className="checkin-panel" aria-labelledby="checkin-scan-title">
           <div className="checkin-panel-heading"><span className="checkin-icon"><ScanLine size={22} aria-hidden="true" /></span>

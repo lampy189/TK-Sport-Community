@@ -251,7 +251,7 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
     public async Task<StockCodeLookup?> LookupCodeAsync(string code, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
         const string sql = """
             SELECT TOP (1) p.id, p.sku, p.name, ISNULL(p.is_active, 0), p.unit_price_vnd, ISNULL(si.quantity_on_hand, 0),
                    ISNULL(b.unit_name, u.unit_name), u.unit_name, u.factor_to_base, u.barcode

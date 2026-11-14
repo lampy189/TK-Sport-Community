@@ -1,4 +1,5 @@
 using be_da.Application.Interfaces.Services;
+using be_da.Application.Interfaces.Repositories;
 
 namespace be_da;
 public static class Composition
@@ -22,6 +23,8 @@ public static class Composition
         services.AddScoped<ILateEntryService, be_da.Application.Services.LateEntryService>();
         services.AddScoped<IProfileService, be_da.Application.Services.ProfileService>();
         services.AddScoped<ISessionService, be_da.Application.Services.SessionService>();
+        services.AddScoped<ISessionManagementService, be_da.Application.Services.SessionManagementService>();
+        services.AddScoped<ISessionManagementRepository, be_da.Infrastructure.Persistence.Repositories.SqlSessionManagementRepository>();
         services.AddScoped<ISessionSupplyService, be_da.Application.Services.SessionSupplyService>();
         services.AddScoped<ISkillProfileService, be_da.Application.Services.SkillProfileService>();
         services.AddScoped<IStockService, be_da.Application.Services.StockService>();

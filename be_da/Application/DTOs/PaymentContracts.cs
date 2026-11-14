@@ -22,7 +22,8 @@ public record CheckoutResult(long Id, string ReferenceCode, string Status, strin
 public record GatewayCheckout(long OrderCode, long Amount, string LinkId, string Url, string Status);
 public record GatewayStatus(long OrderCode, long AmountPaid, string Status, string LinkId, IReadOnlyList<VerifiedBankEvent>? Transactions = null);
 public record VerifiedBankEvent(long OrderCode, long Amount, string Reference, string LinkId, string Currency, bool Success, string RawPayload);
-public record CheckInContext(long TicketId, long OrderId, DateOnly SessionDate, TimeOnly EndTime, string SessionStatus, bool Assigned, string HolderName, string SportName, string CourtName, TimeOnly StartTime);
-public record CheckInResult(long TicketId, string TicketCode, string HolderName, string SportName, string CourtName, DateOnly SessionDate, TimeOnly StartTime, TimeOnly EndTime, bool CheckedIn, long? CheckedInBy);
+public record CheckInContext(long TicketId, long OrderId, DateOnly SessionDate, TimeOnly EndTime, string SessionStatus, bool Assigned, string HolderName, string SportName, string CourtName, TimeOnly StartTime, long SessionId = 0);
+public record CheckInResult(long TicketId, string TicketCode, string HolderName, string SportName, string CourtName, DateOnly SessionDate, TimeOnly StartTime, TimeOnly EndTime, bool CheckedIn, long? CheckedInBy, long SessionId = 0);
+public record CheckInRosterEntry(long TicketId, long PlayerId, string FullName, string? CurrentBand, bool IsProvisional, bool CheckedIn);
 public record TicketFundingSummary(long PaymentId, int AmountVnd);
 public record AssignedSessionSummary(long SessionId, string SportName, string CourtName, string VenueName, DateOnly SessionDate, TimeOnly StartTime, TimeOnly EndTime, string SessionStatus, string? Band, short Capacity, short OccupiedPlaces, bool Assigned, string ConditionCode, string ConditionMessage);

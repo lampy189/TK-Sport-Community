@@ -28,6 +28,7 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
         var paid = order.Payments.SingleOrDefault(p => p.Status == "paid");
         if (paid != null && paid.Method == "cash" && order.PaymentState == "Paid")
             return await ViewAsync(order, ct);
+        await RequireActiveStockHoldAsync(id, ct);
         RequireCart(order);
         ValidateCart(order);
         if (receivedAmount != order.TotalAmount)
@@ -67,7 +68,10 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
             {
                 RequireCart(order);
                 ValidateCart(order);
-                snapshot = new(clock.GetUtcNow().AddMinutes(15), order.TotalAmount, Lines(order));
+                var holdExpiry = await StockHoldExpiryAsync(id, ct) ?? throw Error(409, "Đơn không còn giữ hàng. Hãy tạo lại đơn trước khi thanh toán.");
+                if (holdExpiry <= clock.GetUtcNow())
+                    throw Error(409, "Thời gian giữ hàng đã hết. Hãy tạo lại đơn trước khi thanh toán.");
+                snapshot = new(holdExpiry, order.TotalAmount, Lines(order));
                 payment = new Payment
                 {
                     GoodsOrderId = id,
@@ -193,8 +197,24 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
     {
         var payment = order.Payments.OrderByDescending(p => p.Id).FirstOrDefault();
         var json = await AuditValueAsync(order.Id, "goods_checkout", ct);
-        var expiry = json == null ? (DateTimeOffset? )null : JsonSerializer.Deserialize<GoodsCheckoutSnapshot>(json)!.ExpiresAt;
+        var reservationExpiry = await StockHoldExpiryAsync(order.Id, ct);
+        var expiry = order.PaymentState == "Paid" ? null : json == null ? reservationExpiry : JsonSerializer.Deserialize<GoodsCheckoutSnapshot>(json)!.ExpiresAt;
         return new(order.Id, order.OrderCode, order.CustomerName, order.TotalAmount, order.Status, order.PaymentState, order.HandoverState, Lines(order), payment?.Method, payment?.ReferenceCode, payment?.Status == "pending" && expiry > clock.GetUtcNow() ? payment.CheckoutUrl : null, expiry, await InvoiceRecordAsync(order.Id, ct));
+    }
+
+    private async Task RequireActiveStockHoldAsync(long id, CancellationToken ct)
+    {
+        var expiry = await StockHoldExpiryAsync(id, ct);
+        if (expiry is null || expiry <= clock.GetUtcNow())
+            throw Error(409, "Thời gian giữ hàng đã hết. Hãy tạo lại đơn trước khi thu tiền.");
+    }
+
+    private async Task<DateTimeOffset?> StockHoldExpiryAsync(long id, CancellationToken ct)
+    {
+        var json = await AuditValueAsync(id, "goods_stock_reserved", ct);
+        if (json is null) return null;
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.TryGetProperty("expiresAt", out var value) && value.TryGetDateTimeOffset(out var expiry) ? expiry : null;
     }
 
     private async Task<GoodsInvoice?> InvoiceRecordAsync(long id, CancellationToken ct)

@@ -62,7 +62,7 @@ public sealed partial class GoodsPaymentService
             foreach (var line in GoodsHandoverRules.StockLines(invoice.Lines))
             {
                 var stockItemId = await repository.ConfirmReceiptStockItemsAsync(ct, line) ?? throw Error(409, $"{line.Name} chưa có trong kho. Cần nhập kho trước khi chốt đơn.");
-                var updated = await repository.ConfirmReceiptDatabaseUpdateAsync(ct, line, stockItemId);
+                var updated = await repository.ConfirmReceiptDatabaseUpdateAsync(ct, line, stockItemId, id);
                 if (updated == 0)
                     throw Error(409, $"Không đủ tồn kho {line.Name} để chốt đơn. Cần kiểm kho/đối soát.");
                 repository.AddStockMovements(new StockMovement { StockItemId = stockItemId, MovementType = SaleOut, Quantity = -line.Quantity, ReferenceType = "GoodsOrder", ReferenceId = id, CreatedBy = actorId });

@@ -19,6 +19,7 @@ import StockPage from "../stock/StockPage";
 import RefereeSuppliesView from "../stock/RefereeSuppliesView";
 import MyGoodsOrders from "../stock/MyGoodsOrders";
 import StorePage from "../store/StorePage";
+import SessionManagementPage from "../sessions/SessionManagementPage";
 import { Construction, ArrowLeft } from "lucide-react";
 import { LateEntryManagement } from '../late-entry/LateEntrySales';
 
@@ -41,13 +42,14 @@ export default function HomeWorkspace({
   if (!preview && ['staff','manager'].includes(role) && active === 'Vé giờ lẻ') return <LateEntryManagement/>;
   if (!preview && ["owner", "manager", "staff"].includes(role) && ["Kinh doanh", "Thống kê doanh số"].includes(active)) return <RevenuePage />;
   if (!preview && ['owner', 'manager'].includes(role) && ['Cơ sở & sân', 'Phân quyền Sport Center'].includes(active)) return <OperationsPage key={active} role={role} initialTab={active === 'Phân quyền Sport Center' ? 'people' : 'venues'} />;
+  if (!preview && role === 'manager' && active === 'Quản lý buổi chơi') return <SessionManagementPage />;
   if (!preview && ['owner', 'manager', 'system-admin'].includes(role) && ['Bổ nhiệm quản lý', 'Phê duyệt nhân sự', 'Tài khoản & truy cập', 'Bàn giao hỗ trợ'].includes(active)) return <AccessPage role={role} user={user} />;
   if (!preview && role === 'player' && active === 'Lời mời buổi chơi') return <InvitationsView user={user} onPayment={onPayment} onSelectSession={onSelectSession} />;
   if ((active === "Thông báo" || active === "Tin nhắn") && role !== "guest") return <MessagesPage preview={preview} onOpen={onOpen} role={role} />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Ngoại lệ trình độ") return <SkillReviews role={role} kind="exceptions" />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Khiếu nại đánh giá") return <SkillReviews role={role} />;
   if (!preview && role === "referee" && active === "Đánh giá kỹ năng") return <AssessmentPage />;
-  if (!preview && role === "staff" && active === "Bán hàng")
+  if (!preview && ["staff", "manager"].includes(role) && active === "Bán hàng")
     return (
       <>
         <StorePage role="staff" user={user} />
@@ -133,8 +135,6 @@ export default function HomeWorkspace({
         />
       );
   }
-  if (!preview && ["staff", "manager"].includes(role) && active === "Bán hàng")
-    return <StorePage role="staff" user={user} />;
   if (
     !preview &&
     ["staff", "manager"].includes(role) &&

@@ -28,6 +28,7 @@ public sealed class GoodsPaymentRepository(Sep490Context db, TimeProvider clock)
             if (eventKey != null)
                 await LockAsync(eventKey, ct);
             await LockAsync("TKSC:goods-payments", ct);
+            await LockAsync("TKSC:goods-stock", ct);
             var result = await action();
             await transaction.CommitAsync(ct);
             return result;
@@ -56,9 +57,21 @@ public sealed class GoodsPaymentRepository(Sep490Context db, TimeProvider clock)
     public Task<List<Order>> ListForBuyerOrdersListAsync(long buyerId, CancellationToken ct) => db.Orders.AsNoTracking().Include(o => o.OrderItems).ThenInclude(i => i.Product).Where(o => o.BuyerId == buyerId).OrderByDescending(o => o.Id).Take(50).ToListAsync(ct);
     public Task<bool> ConfirmReceiptStockMovementsExistsAsync(CancellationToken ct, long id) => db.StockMovements.AnyAsync(m => m.ReferenceType == "GoodsOrder" && m.ReferenceId == id && m.MovementType == "SaleOut", ct);
     public Task<long?> ConfirmReceiptStockItemsAsync(CancellationToken ct, GoodsStockLine line) => db.StockItems.Where(s => s.ProductId == line.ProductId).Select(s => (long? )s.Id).SingleOrDefaultAsync(ct);
-    public Task<int> ConfirmReceiptDatabaseUpdateAsync(CancellationToken ct, GoodsStockLine line, long stockItemId) => db.Database.ExecuteSqlInterpolatedAsync($"""
-                    UPDATE dbo.stock_items SET quantity_on_hand = quantity_on_hand - {line.Quantity}
-                    WHERE id = {stockItemId} AND quantity_on_hand >= {line.Quantity};
-                    """, ct);
+        public Task<int> ConfirmReceiptDatabaseUpdateAsync(CancellationToken ct, GoodsStockLine line, long stockItemId, long orderId) => db.Database.ExecuteSqlInterpolatedAsync($"""
+                                        UPDATE si SET quantity_on_hand = quantity_on_hand - {line.Quantity}
+                                        FROM dbo.stock_items si
+                                        WHERE si.id = {stockItemId}
+                                            AND si.quantity_on_hand - {line.Quantity} >= (
+                                                SELECT ISNULL(SUM(lines.quantity),0)
+                                                FROM dbo.audit_logs a
+                                                JOIN dbo.orders reserved_order ON reserved_order.id=a.entity_id
+                                                CROSS APPLY OPENJSON(a.new_value,'$.lines') WITH (productId bigint '$.productId',quantity int '$.quantity') lines
+                                                WHERE a.entity_type='GoodsOrder' AND a.action='goods_stock_reserved' AND lines.productId=si.product_id
+                                                    AND reserved_order.id<>{orderId}
+                                                    AND (LOWER(ISNULL(reserved_order.payment_state,''))='paid'
+                                                             OR TRY_CONVERT(datetimeoffset,JSON_VALUE(a.new_value,'$.expiresAt'))>SYSUTCDATETIME())
+                                                    AND NOT EXISTS(SELECT 1 FROM dbo.stock_movements m WHERE m.reference_type='GoodsOrder' AND m.reference_id=reserved_order.id AND m.movement_type='SaleOut')
+                                            );
+                                        """, ct);
     public void AddStockMovements(StockMovement value) => db.StockMovements.Add(value);
 }

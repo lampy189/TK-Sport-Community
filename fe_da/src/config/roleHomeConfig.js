@@ -68,6 +68,7 @@ export const roleHomeConfig = {
     section: "Tổng quan vận hành",
     modules: [
       "Thống kê doanh số",
+      "Bán hàng",
       "Cơ sở & sân",
       "Phê duyệt nhân sự",
       "Quản lý buổi chơi",

@@ -1,3 +1,8 @@
+.store-barcode-form { display: grid; gap: .55rem; margin: 1rem 0; }
+.store-barcode-form > label { display: flex; align-items: center; gap: .45rem; font-weight: 700; }
+.store-barcode-form > div { display: flex; gap: .65rem; }
+.store-barcode-form input { flex: 1; min-width: 0; padding: .7rem .8rem; border: 1px solid #b4c6ba; border-radius: 6px; font: inherit; }
+@media (max-width: 520px) { .store-barcode-form > div { flex-direction: column; } }
 .store-page {
   display: flex;
   flex-direction: column;

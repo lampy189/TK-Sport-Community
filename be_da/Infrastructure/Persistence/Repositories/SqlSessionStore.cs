@@ -79,7 +79,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                       OR (LOWER(t.status) IN ('pending', 'reserved') AND o.expires_at > SYSUTCDATETIME())
                   )
             ) occ
-            WHERE (@status IS NOT NULL AND s.status = @status OR @status IS NULL AND s.status IN ('Open', 'Published'))
+            WHERE s.status IN ('Open','Published') AND (@status IS NULL OR s.status = @status)
               AND c.is_active=1 AND v.is_active=1
               AND (@sportId IS NULL OR s.sport_id = @sportId)
               AND (@sport IS NULL OR sp.code = @sport OR sp.name = @sport)
@@ -160,7 +160,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                       OR (LOWER(t.status) IN ('pending','reserved') AND o.expires_at > SYSUTCDATETIME())
                   )
             ) occ
-            WHERE s.id = @id;
+            WHERE s.id = @id AND s.status IN ('Open','Published','ongoing');
             """;
         SessionSummary? summary = null;
         await using (var command = new SqlCommand(sessionSql, connection))

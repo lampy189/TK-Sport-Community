@@ -25,6 +25,6 @@ public interface IGoodsPaymentRepository
     Task<List<Order>> ListForBuyerOrdersListAsync(long buyerId, CancellationToken ct);
     Task<bool> ConfirmReceiptStockMovementsExistsAsync(CancellationToken ct, long id);
     Task<long?> ConfirmReceiptStockItemsAsync(CancellationToken ct, GoodsStockLine line);
-    Task<int> ConfirmReceiptDatabaseUpdateAsync(CancellationToken ct, GoodsStockLine line, long stockItemId);
+    Task<int> ConfirmReceiptDatabaseUpdateAsync(CancellationToken ct, GoodsStockLine line, long stockItemId, long orderId);
     void AddStockMovements(StockMovement value);
 }

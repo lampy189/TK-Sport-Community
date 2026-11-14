@@ -1,4 +1,4 @@
 using be_da.Application.DTOs;
 
 namespace be_da.Application.DTOs;
-public record CheckInRequest(string? TicketCode);
+public record CheckInRequest(string? TicketCode, long? SessionId = null);

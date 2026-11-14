@@ -155,6 +155,31 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
         return sessions;
     }
 
+    public async Task<IReadOnlyList<CheckInRosterEntry>?> GetSessionRosterAsync(long sessionId, long actorId)
+    {
+        var hasVenueColumn = await HasVenueAssignmentAsync();
+        var authorizedSessions = hasVenueColumn ? db.Sessions.FromSqlInterpolated($"""
+            SELECT s.* FROM dbo.sessions s JOIN dbo.courts c ON c.id=s.court_id
+            WHERE s.id={sessionId} AND (
+                EXISTS(SELECT 1 FROM dbo.session_referees sr WHERE sr.session_id=s.id AND sr.referee_id={actorId})
+                OR EXISTS(SELECT 1 FROM dbo.users u JOIN dbo.roles r ON r.id=u.role_id WHERE u.id={actorId}
+                    AND LOWER(r.code)='manager' AND LOWER(u.status)='active' AND u.deleted_at IS NULL AND u.venue_id=c.venue_id))
+            """) : db.Sessions.Where(s => s.Id == sessionId && s.SessionReferees.Any(sr => sr.RefereeId == actorId));
+        if (!await authorizedSessions.AsNoTracking().AnyAsync()) return null;
+
+        return await db.Tickets.AsNoTracking()
+            .Where(t => t.SessionId == sessionId
+                && t.Order.Status.ToLower() == "paid"
+                && (t.Status.ToLower() == "confirmed" || t.Status.ToLower() == "checkedin"))
+            .OrderBy(t => t.Player.User.FullName).ThenBy(t => t.Id)
+            .Select(t => new CheckInRosterEntry(t.Id, t.PlayerId, t.Player.User.FullName,
+                t.Player.PlayerSportProfiles.Where(p => p.SportId == t.Session.SportId).Select(p => p.CurrentBand).FirstOrDefault(),
+                t.Player.PlayerSportProfiles.Where(p => p.SportId == t.Session.SportId).Select(p => p.RatingStatus).FirstOrDefault() == null
+                    || t.Player.PlayerSportProfiles.Where(p => p.SportId == t.Session.SportId).Select(p => p.RatingStatus).FirstOrDefault()!.ToLower() != "rated",
+                t.CheckedInBy != null || t.Status.ToLower() == "checkedin"))
+            .ToListAsync();
+    }
+
     private async Task<bool> HasVenueAssignmentAsync() => await db.Database.SqlQueryRaw<int>("SELECT CASE WHEN COL_LENGTH('dbo.users','venue_id') IS NOT NULL THEN 1 ELSE 0 END AS [Value]").SingleAsync() == 1;
     public async Task<CheckInContext?> GetCheckInContextAsync(string code, long actorId)
     {
@@ -164,7 +189,7 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
          OR EXISTS(SELECT 1 FROM dbo.users u JOIN dbo.roles r ON r.id=u.role_id WHERE u.id={actorId}
            AND LOWER(r.code)='manager' AND LOWER(u.status)='active' AND u.deleted_at IS NULL AND u.venue_id=c.venue_id)
         """) : db.Tickets.Where(t => t.Session.SessionReferees.Any(sr => sr.RefereeId == actorId));
-        return await scoped.AsNoTracking().Where(t => t.TicketCode == code).Select(t => new CheckInContext(t.Id, t.OrderId, t.Session.SessionDate, t.Session.TimeSlot.EndTime, t.Session.Status, t.Session.SessionReferees.Any(r => r.RefereeId == actorId), t.Player.User.FullName, t.Session.Sport.Name, t.Session.Court.Name ?? "Sân chưa đặt tên", t.Session.TimeSlot.StartTime)).SingleOrDefaultAsync();
+        return await scoped.AsNoTracking().Where(t => t.TicketCode == code).Select(t => new CheckInContext(t.Id, t.OrderId, t.Session.SessionDate, t.Session.TimeSlot.EndTime, t.Session.Status, t.Session.SessionReferees.Any(r => r.RefereeId == actorId), t.Player.User.FullName, t.Session.Sport.Name, t.Session.Court.Name ?? "Sân chưa đặt tên", t.Session.TimeSlot.StartTime, t.SessionId)).SingleOrDefaultAsync();
     }
 
     public Task<bool> HasPendingChangeAsync(long ticketId) => db.TicketChanges.AnyAsync(c => c.TicketId == ticketId && c.Status == "requested");

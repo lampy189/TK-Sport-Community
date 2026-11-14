@@ -123,6 +123,21 @@ public class PaymentServiceTests
         await service.ExecuteAsync("TK-test", 11, true, true);
         Assert.Equal(10, ticket.CheckedInBy); Assert.Single(repo.Audits);
     }
+    [Fact]
+    public async Task CheckInRejectsTicketFromAnotherSelectedSession()
+    {
+        var (_, repo, _) = Setup();
+        repo.Order.Status = "paid";
+        var ticket = repo.Order.Tickets.First(); ticket.Status = "confirmed"; ticket.TicketCode = "TK-test";
+        repo.SessionDate = DateOnly.FromDateTime(Now.UtcDateTime);
+        var service = new TicketCheckInService(repo, new Clock());
+
+        var error = await Assert.ThrowsAsync<PaymentException>(() => service.ExecuteAsync("TK-test", 10, false, true, expectedSessionId: 2));
+
+        Assert.Equal(409, error.StatusCode);
+        Assert.Null(ticket.CheckedInBy);
+        Assert.Empty(repo.Audits);
+    }
     [Theory]
     [InlineData("pending", "Pending")]
     [InlineData("paid", "cancelled")]
@@ -365,8 +380,9 @@ public class PaymentServiceTests
         public Task<IReadOnlyList<AssignedSessionSummary>> GetAssignedSessionsAsync(long actorId) => Task.FromResult<IReadOnlyList<AssignedSessionSummary>>([
             new AssignedSessionSummary(1, "Cầu lông", "Sân 1", "TK Sport", SessionDate, new TimeOnly(18, 0), new TimeOnly(20, 0), "Open", "B1", 8, 0, Assigned, "ready", "Buổi đang mở, có thể điểm danh người chơi.")
         ]);
+        public Task<IReadOnlyList<CheckInRosterEntry>?> GetSessionRosterAsync(long sessionId, long actorId) => Task.FromResult<IReadOnlyList<CheckInRosterEntry>?>(sessionId == 1 ? [] : null);
         public Task<CheckInContext?> GetCheckInContextAsync(string code, long actorId) => Task.FromResult<CheckInContext?>(
-            new CheckInContext(1, Order.Id, SessionDate, new TimeOnly(20, 0), "Open", Assigned, "Người chơi", "Cầu lông", "Sân 1", new TimeOnly(18, 0)));
+            new CheckInContext(1, Order.Id, SessionDate, new TimeOnly(20, 0), "Open", Assigned, "Người chơi", "Cầu lông", "Sân 1", new TimeOnly(18, 0), 1));
         public Task<bool> HasPendingChangeAsync(long ticketId) => Task.FromResult(false);
         public Task<IReadOnlyList<TicketFundingSummary>> GetFundingAsync(long ticketId) => Task.FromResult<IReadOnlyList<TicketFundingSummary>>([]);
         public Task SaveAsync() => Task.CompletedTask;

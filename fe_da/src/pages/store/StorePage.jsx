@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useRef } from 'react';
+import { ScanLine } from 'lucide-react';
 import { storeClient } from './storeClient';
 import './store.css';
 
@@ -9,6 +11,9 @@ export default function StorePage({ role = 'staff', user }) {
   const [order, setOrder] = useState(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [barcode, setBarcode] = useState('');
+  const [holdExpiresAt, setHoldExpiresAt] = useState(null);
+  const idempotencyKey = useRef(crypto.randomUUID());
 
   useEffect(() => {
     let active = true;
@@ -43,16 +48,37 @@ export default function StorePage({ role = 'staff', user }) {
   const totalAmount = selectedItems.reduce((sum, item) => sum + item.subtotal, 0);
 
   function updateQuantity(productId, delta) {
+    idempotencyKey.current = crypto.randomUUID();
     setOrder(null);
     setError('');
     setQuantities((current) => {
       const next = Number(current[productId] ?? 0) + delta;
       if (next <= 0) {
-        const { [productId]: _removed, ...rest } = current;
-        return rest;
+        const updated = { ...current };
+        delete updated[productId];
+        return updated;
       }
       return { ...current, [productId]: next };
     });
+  }
+
+  async function lookupBarcode(event) {
+    event.preventDefault();
+    const code = barcode.trim();
+    if (!code || busy) return;
+    setBusy(true); setError(''); setOrder(null);
+    try {
+      const match = await storeClient.lookupBarcode(code);
+      if (!match.isActive) throw new Error('Mặt hàng đã ngừng bán.');
+      setProducts(current => current.some(product => product.productId === match.productId) ? current : [...current, {
+        productId: match.productId, sku: match.sku, name: match.name, category: null, unitPriceVnd: match.unitPriceVnd,
+        quantityOnHand: match.quantityOnHand, reorderLevel: 0,
+      }]);
+      idempotencyKey.current = crypto.randomUUID();
+      setQuantities(current => ({ ...current, [match.productId]: Number(current[match.productId] || 0) + match.factorToBase }));
+      setBarcode('');
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
   }
 
   async function submitOrder() {
@@ -69,9 +95,11 @@ export default function StorePage({ role = 'staff', user }) {
     setBusy(true);
     setError('');
     try {
-      const result = await storeClient.createCart(items);
+      const result = await storeClient.createCart(items, idempotencyKey.current);
       setOrder(result);
+      setHoldExpiresAt(result.expiresAt || null);
       setQuantities({});
+      idempotencyKey.current = crypto.randomUUID();
     } catch (e) {
       setError(e.message);
     } finally {
@@ -102,8 +130,15 @@ export default function StorePage({ role = 'staff', user }) {
           <p><strong>Mã đơn:</strong> {order.orderCode}</p>
           <p><strong>Tổng tiền:</strong> {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount)}</p>
           <p><strong>Trạng thái:</strong> {order.status} · {order.paymentState}</p>
+          {holdExpiresAt && <p><strong>Giữ tồn đến:</strong> {new Date(holdExpiresAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</p>}
         </div>
       )}
+
+      {role !== 'player' && <form className="store-barcode-form" onSubmit={lookupBarcode}>
+        <label htmlFor="store-barcode"><ScanLine size={18} aria-hidden="true" />Quét hoặc nhập barcode / SKU</label>
+        <div><input id="store-barcode" autoComplete="off" value={barcode} onChange={event => setBarcode(event.target.value)} placeholder="Đưa mã vào đây rồi nhấn Enter" disabled={busy} />
+          <button type="submit" className="button button-secondary" disabled={busy || !barcode.trim()}>Thêm vào giỏ</button></div>
+      </form>}
 
       {loading ? (
         <p>Đang tải danh sách sản phẩm…</p>
