@@ -1,6 +1,5 @@
-using TKSC.Domain.Exceptions;
-
 namespace TKSC.Application.DTOs;
+
 public record CreateCartRequest(IReadOnlyList<CreateCartLine>? Items);
 public record CreateCartLine(long ProductId, short Quantity);
 public record StoreProductItem(long ProductId, string Sku, string Name, string? Category, int UnitPriceVnd, int QuantityOnHand, int ReorderLevel);

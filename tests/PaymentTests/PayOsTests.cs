@@ -1,7 +1,6 @@
-using TKSC.Domain.Exceptions;
 using TKSC.Domain.Payments;
-using TKSC.Infrastructure.ExternalServices;
-using TKSC.Infrastructure.Persistence.Configurations;
+using TKSC.Infrastructure.Services;
+using TKSC.Infrastructure.Configurations;
 using TKSC.Application.DTOs;
 using Microsoft.Extensions.Configuration;
 using Xunit;

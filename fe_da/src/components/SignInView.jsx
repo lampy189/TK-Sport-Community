@@ -2,8 +2,6 @@ import { useState } from "react";
 import { ArrowUpRight, ArrowRight, Mail, Lightbulb } from "lucide-react";
 import { api } from "../api";
 import "./player-signin.css";
-import { LoginCenterChoice } from './CenterSelection';
-import { useCenterOptions } from './useCenterOptions';
 
 const BADMINTON_TIPS = [
   "Khởi động kỹ cổ tay, khớp gối và cổ chân ít nhất 10 phút trước khi vào sân để phòng ngừa chấn thương dây chằng.",
@@ -24,8 +22,6 @@ const BADMINTON_TIPS = [
 ];
 
 export function SignInView({ onLoginSuccess, onContinueAsGuest }) {
-  const centerOptions = useCenterOptions();
-  const [centerId, setCenterId] = useState('');
   const [customEmail, setCustomEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(
@@ -52,11 +48,10 @@ export function SignInView({ onLoginSuccess, onContinueAsGuest }) {
 
   async function handleLogin(email) {
     if (!email) return;
-    if (centerOptions.enabled && !centerId) { setError('Vui lòng chọn cơ sở.'); return; }
     setLoading(true);
     setError(null);
     try {
-      const account = await api.devLogin(email, "player", centerId);
+      const account = await api.devLogin(email, "player");
       if (onLoginSuccess) {
         onLoginSuccess(account);
       }
@@ -90,16 +85,20 @@ export function SignInView({ onLoginSuccess, onContinueAsGuest }) {
           <h1>
             Chào mừng trở lại<span>.</span>
           </h1>
+          <p className="player-login-intro">
+            Buổi chơi tiếp theo bắt đầu từ đây.
+            <br />
+            Đăng nhập để tìm hội và sẵn sàng ra sân.
+          </p>
           {error && (
             <div className="login-error" role="alert">
               {error}
             </div>
           )}
-          <LoginCenterChoice options={centerOptions} value={centerId} onChange={setCenterId} />
           <div className="login-social">
             <button
               className="button button-secondary"
-              onClick={() => centerOptions.enabled && !centerId ? setError("Vui lòng chọn cơ sở.") : api.googleLogin("player", centerId)}
+              onClick={() => api.googleLogin("player")}
             >
               <svg
                 width="18"
@@ -128,7 +127,7 @@ export function SignInView({ onLoginSuccess, onContinueAsGuest }) {
             </button>
             <button
               className="button button-secondary"
-              onClick={() => centerOptions.enabled && !centerId ? setError("Vui lòng chọn cơ sở.") : api.googleLogin("player", centerId)}
+              onClick={() => api.googleLogin("player")}
             >
               <Mail size={18} /> Tiếp tục với Email
             </button>
@@ -150,7 +149,7 @@ export function SignInView({ onLoginSuccess, onContinueAsGuest }) {
                 id="player-email"
                 autoComplete="email"
                 type="email"
-                placeholder="Email"
+                placeholder="Nhập địa chỉ email của bạn"
                 value={customEmail}
                 onChange={(e) => setCustomEmail(e.target.value)}
               />
@@ -187,6 +186,11 @@ export function SignInView({ onLoginSuccess, onContinueAsGuest }) {
                 <br />
                 <em>Chơi hết mình.</em>
               </h2>
+              <p>
+                Một buổi chơi phù hợp.
+                <br />
+                Những người bạn cùng đam mê.
+              </p>
             </div>
           </div>
           <div className="login-court" aria-hidden="true">
@@ -204,6 +208,7 @@ export function SignInView({ onLoginSuccess, onContinueAsGuest }) {
               <ArrowRight size={16} />
             </span>
             <span className="tip-copy">{BADMINTON_TIPS[currentTipIndex]}</span>
+            <span className="tip-next">Bấm để xem mẹo tiếp theo</span>
           </button>
         </aside>
       </div>

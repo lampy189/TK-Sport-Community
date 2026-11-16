@@ -1,4 +1,3 @@
-using be_da.Application.DTOs;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -9,9 +8,10 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using be_da.Application.Interfaces.Repositories;
+using be_da.Application.Abstractions;
+using be_da.Application.Skills;
 using be_da.Domain.Entities;
-using be_da.Infrastructure.Persistence.Repositories;
+using be_da.Infrastructure.Persistence;
 using Xunit;
 
 namespace TKSC.Api.Tests;

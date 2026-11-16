@@ -1,10 +1,9 @@
 using Microsoft.Data.SqlClient;
-using be_da.Infrastructure.Persistence.Repositories;
+using be_da.Infrastructure.Persistence;
 using Xunit;
 
 namespace TKSC.Api.Tests;
 
-[Collection("SQL Server")]
 public sealed class DatabaseReadTests
 {
     [DatabaseFact]
