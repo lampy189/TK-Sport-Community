@@ -5,6 +5,12 @@ public record PaymentSummary(long Id, string ReferenceCode, string Status, int A
 public record TicketSummary(long Id, long OrderId, long PlayerId, long SessionId, int AmountVnd, string Status, string? TicketCode, bool Valid, DateOnly? SessionDate, TimeOnly? StartTime, TimeOnly? EndTime, string OrderStatus, DateTimeOffset? ExpiresAt, string? PaymentStatus, string? SportName, string? CourtName, string? VenueName, string? HolderName, bool CheckedIn, string? RefundStatus, int? RefundAmountVnd)
 {
     public long PayerId { get; init; }
+    public string? PayerName { get; init; }
+    public string? OrderCode { get; init; }
+    public bool PaidForOther { get; init; }
+    public IReadOnlyList<PaymentSummary> Payments { get; init; } = [];
+    public IReadOnlyList<TicketHistoryEntry> History { get; init; } = [];
+    public IReadOnlyList<PersonalRefundSummary> Refunds { get; init; } = [];
     public bool CanManage { get; init; } = true;
     public string? SessionStatus { get; init; }
     public string? VenueIssue { get; init; }
@@ -15,6 +21,8 @@ public record TicketSummary(long Id, long OrderId, long PlayerId, long SessionId
 }
 
 public record TicketCancelContext(long OrderId, DateOnly SessionDate, TimeOnly StartTime);
+public record TicketHistoryEntry(long Sequence, string Label);
+public record PersonalRefundSummary(long Id, int? AmountVnd, string? Status, string Recipient, bool PayoutRecorded);
 public record TicketCancelResult(long TicketId, string Status, int RefundAmountVnd);
 public record OrderSummary(long Id, string OrderCode, int TotalAmount, string Status, DateTimeOffset? ExpiresAt, IReadOnlyList<PaymentSummary> Payments, IReadOnlyList<TicketSummary> Tickets);
 public record ReviewSummary(long Id, long? OrderId, string ReferenceCode, int AmountVnd, string Status, IReadOnlyList<ReviewReason> Reasons);
