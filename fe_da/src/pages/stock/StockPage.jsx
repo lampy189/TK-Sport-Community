@@ -1,7 +1,8 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
+  ClipboardCheck,
   History,
   PackagePlus,
   Pencil,
@@ -16,6 +17,9 @@ import StatePanel from "../../components/ui/StatePanel";
 import { categoryLabels, movementLabels, stockClient } from "./stockClient";
 import SessionSuppliesView from "./SessionSuppliesView";
 import BulkReceiptView from "./BulkReceiptView";
+import StockCountsView, { CountDialog } from "./StockCountsView";
+import SupplyReportView from "./SupplyReportView";
+import Dialog from "./StockDialog";
 import "./stock.css";
 
 const money = (value) =>
@@ -24,14 +28,26 @@ const money = (value) =>
   );
 const number = (value) => new Intl.NumberFormat("vi-VN").format(value);
 
-const tabs = [
-  { id: "catalog", label: "Danh mục & tồn kho" },
-  { id: "receipts", label: "Nhập hàng loạt" },
-  { id: "supplies", label: "Vật tư buổi chơi" },
-];
+// Staff runs the store; the Manager reviews stock and decides adjustments (RP3 UC-43 / UC-44).
+const tabsByRole = {
+  staff: [
+    { id: "catalog", label: "Danh mục & tồn kho" },
+    { id: "receipts", label: "Nhập hàng loạt" },
+    { id: "supplies", label: "Vật tư buổi chơi" },
+    { id: "counts", label: "Kiểm kê & điều chỉnh" },
+    { id: "report", label: "Báo cáo & đối soát" },
+  ],
+  manager: [
+    { id: "counts", label: "Duyệt điều chỉnh kho" },
+    { id: "catalog", label: "Danh mục & tồn kho" },
+    { id: "supplies", label: "Vật tư buổi chơi" },
+    { id: "report", label: "Báo cáo & đối soát" },
+  ],
+};
 
-export default function StockPage() {
-  const [tab, setTab] = useState("catalog");
+export default function StockPage({ role = "staff" }) {
+  const tabs = tabsByRole[role] ?? tabsByRole.staff;
+  const [tab, setTab] = useState(tabs[0].id);
   return (
     <div className="stock-workspace">
       <div className="stock-tabs" role="tablist" aria-label="Kho & vật tư">
@@ -47,15 +63,17 @@ export default function StockPage() {
           </button>
         ))}
       </div>
-      {tab === "catalog" && <StockCatalog />}
+      {tab === "catalog" && <StockCatalog canCount={role === "staff"} />}
       {tab === "receipts" && <BulkReceiptView />}
-      {tab === "supplies" && <SessionSuppliesView />}
+      {tab === "supplies" && <SessionSuppliesView readOnly={role !== "staff"} />}
+      {tab === "counts" && <StockCountsView role={role} />}
+      {tab === "report" && <SupplyReportView />}
     </div>
   );
 }
 
 // UC-26 / UC-27 (team breakdown; RP3 SCR-22): Staff catalogue, receipts/issues and movement history.
-function StockCatalog() {
+function StockCatalog({ canCount = true }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -249,6 +267,12 @@ function StockCatalog() {
                       {p.quantityBreakdown !== `${p.quantityOnHand} ${p.baseUnit}` && (
                         <span className="stock-reorder">{p.quantityBreakdown}</span>
                       )}
+                      {p.reservedQuantity > 0 && (
+                        <span className="stock-reserved">
+                          Đang giữ cho đơn {number(p.reservedQuantity)} · Khả dụng{" "}
+                          {number(p.availableQuantity)}
+                        </span>
+                      )}
                       <span className="stock-reorder">
                         Cảnh báo ≤ {number(p.reorderLevel)}
                       </span>
@@ -275,13 +299,24 @@ function StockCatalog() {
                     </button>
                     <button
                       className="button button-secondary"
-                      disabled={!p.isActive || p.quantityOnHand === 0}
+                      disabled={!p.isActive || p.availableQuantity <= 0}
+                      title={p.availableQuantity <= 0 && p.quantityOnHand > 0 ? "Toàn bộ tồn đang giữ cho đơn hàng" : undefined}
                       onClick={() =>
                         setDialog({ kind: "move", type: "Issue", product: p })
                       }
                     >
                       <ArrowUpFromLine size={15} aria-hidden="true" /> Xuất
                     </button>
+                    {canCount && (
+                      <button
+                        className="stock-icon-button"
+                        aria-label={`Kiểm kê ${p.name}`}
+                        title="Kiểm kê thực tế"
+                        onClick={() => setDialog({ kind: "count", product: p })}
+                      >
+                        <ClipboardCheck size={16} />
+                      </button>
+                    )}
                     <button
                       className="stock-icon-button"
                       aria-label={`Sửa ${p.name}`}
@@ -336,37 +371,21 @@ function StockCatalog() {
       {dialog?.kind === "history" && (
         <HistoryDialog product={dialog.product} onClose={() => setDialog(null)} />
       )}
+      {dialog?.kind === "count" && (
+        <CountDialog
+          product={dialog.product}
+          onClose={() => setDialog(null)}
+          onSaved={(count) => {
+            setDialog(null);
+            setNotice(
+              count.status === "NoDifference"
+                ? `Kiểm kê ${count.name}: khớp sổ, không cần điều chỉnh.`
+                : `Đã gửi đề xuất điều chỉnh ${count.name} (${count.difference > 0 ? "+" : ""}${number(count.difference)} ${count.baseUnit}) cho Quản lý duyệt. Tồn kho chưa thay đổi.`,
+            );
+          }}
+        />
+      )}
     </SectionLayout>
-  );
-}
-
-function Dialog({ title, onClose, children }) {
-  const titleId = useId();
-  useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-  return (
-    <div
-      className="modal-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        className="modal-content stock-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-      >
-        <div className="stock-dialog-head">
-          <h3 id={titleId}>{title}</h3>
-          <button className="stock-icon-button" aria-label="Đóng" onClick={onClose}>
-            <X size={18} />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
   );
 }
 
@@ -639,6 +658,7 @@ function MovementDialog({ type, product, onClose, onSaved }) {
   const amount = Number(quantity) || 0;
   const baseAmount = amount * factor;
   const after = product.quantityOnHand + (issue ? -baseAmount : baseAmount);
+  const belowHeld = issue && after < (product.reservedQuantity ?? 0);
 
   async function submit(e) {
     e.preventDefault();
@@ -684,7 +704,7 @@ function MovementDialog({ type, product, onClose, onSaved }) {
               type="number"
               inputMode="numeric"
               min="1"
-              max={issue ? Math.floor(product.quantityOnHand / factor) : 100000}
+              max={issue ? Math.floor((product.availableQuantity ?? product.quantityOnHand) / factor) : 100000}
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               required
@@ -700,7 +720,9 @@ function MovementDialog({ type, product, onClose, onSaved }) {
         )}
         <p className="stock-hint">
           {issue
-            ? "Không thể xuất vượt số tồn. Bán hàng và cấp vật tư buổi chơi sẽ tự trừ kho ở luồng riêng."
+            ? product.reservedQuantity > 0
+              ? `Đang giữ ${number(product.reservedQuantity)} ${product.baseUnit} cho đơn hàng; chỉ xuất được phần khả dụng ${number(product.availableQuantity)} ${product.baseUnit}.`
+              : "Không thể xuất vượt số tồn. Bán hàng và cấp vật tư buổi chơi sẽ tự trừ kho ở luồng riêng."
             : "Ghi số lượng thực tế đã nhận tại sân. Phiếu đã ghi không thể xóa."}
         </p>
         {error && (
@@ -712,7 +734,7 @@ function MovementDialog({ type, product, onClose, onSaved }) {
           <button type="button" className="button button-secondary" onClick={onClose}>
             Hủy
           </button>
-          <button className="button button-primary" disabled={busy || after < 0}>
+          <button className="button button-primary" disabled={busy || after < 0 || belowHeld}>
             {busy ? "Đang ghi…" : `Xác nhận ${issue ? "xuất" : "nhập"}`}
           </button>
         </div>

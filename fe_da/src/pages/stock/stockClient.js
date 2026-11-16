@@ -45,6 +45,21 @@ export const movementLabels = {
   SaleOut: "Xuất bán (giao hàng)",
   SessionIssue: "Cấp cho buổi chơi",
   SessionReturn: "Buổi chơi trả lại",
+  Adjustment: "Điều chỉnh sau kiểm kê",
+};
+
+export const countStatusLabels = {
+  Pending: "Chờ duyệt",
+  Applied: "Đã điều chỉnh",
+  Rejected: "Bị từ chối",
+  NoDifference: "Khớp sổ",
+};
+
+export const requestStatusLabels = {
+  Pending: "Chờ cấp",
+  Issued: "Đã cấp",
+  Rejected: "Bị từ chối",
+  Cancelled: "Đã hủy",
 };
 
 export const stockClient = {
@@ -63,12 +78,30 @@ export const stockClient = {
   refereeSessions: (date) =>
     call(`referee-supplies${date ? `?date=${encodeURIComponent(date)}` : ""}`),
   refereeDetails: (sessionId) => call(`referee-supplies/${sessionId}`),
-  reportSupplyUse: (sessionId, productId, usedQuantity) =>
+  reportSupplyUse: (sessionId, productId, usedQuantity, returnQuantity) =>
     send(
       `referee-supplies/${sessionId}/products/${productId}/usage`,
       "POST",
-      { usedQuantity },
+      { usedQuantity, returnQuantity: returnQuantity ?? null },
     ),
+  refereeProducts: () => call("referee-supplies/products"),
+  requestSupply: (sessionId, body) =>
+    send(`referee-supplies/${sessionId}/requests`, "POST", body),
+  cancelSupplyRequest: (sessionId, requestId) =>
+    send(`referee-supplies/${sessionId}/requests/${requestId}/cancel`, "POST", {}),
+  issueSupplyRequest: (sessionId, requestId, body = {}) =>
+    send(`session-supplies/${sessionId}/requests/${requestId}/issue`, "POST", body),
+  rejectSupplyRequest: (sessionId, requestId, note) =>
+    send(`session-supplies/${sessionId}/requests/${requestId}/reject`, "POST", { note }),
+  countSheet: (productId) => call(`products/${productId}/count-sheet`),
+  createCount: (body) => send("counts", "POST", body),
+  counts: (status) => call(`counts${status ? `?status=${encodeURIComponent(status)}` : ""}`),
+  approveCount: (id, expectedDifference, note) =>
+    send(`counts/${id}/approve`, "POST", { expectedDifference, note: note || null }),
+  rejectCount: (id, note) => send(`counts/${id}/reject`, "POST", { note }),
+  supplyReport: (from, to) =>
+    call(`reports/supplies?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+  reconciliation: () => call("reconciliation"),
   reconcileSupply: (sessionId, productId, returnedQuantity) =>
     send(
       `session-supplies/${sessionId}/products/${productId}/reconcile`,

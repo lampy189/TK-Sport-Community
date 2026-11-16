@@ -7,4 +7,7 @@ public sealed record GoodsOrderListItem
     public int TotalAmount { get; init; } = default!;
     public string Status { get; init; } = default!;
     public string? PaymentState { get; init; } = default!;
+    public string? HandoverState { get; init; }
+    public string? ReservationState { get; init; }
+    public DateTimeOffset? ExpiresAt { get; init; }
 }
