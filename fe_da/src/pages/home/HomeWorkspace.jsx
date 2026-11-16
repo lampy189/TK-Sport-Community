@@ -145,8 +145,8 @@ export default function HomeWorkspace({
     ["Thanh toán", "Sự cố", "Sự cố sân", "Đổi & hoàn vé"].includes(active)
   )
     return <TicketOperations role={role} key={active} initialTab={["Sự cố", "Sự cố sân"].includes(active) ? "issues" : active === "Đổi & hoàn vé" ? "changes" : "reviews"} />;
-  if (!preview && role === "staff" && active === "Kho & vật tư")
-    return <StockPage />;
+  if (!preview && ["staff", "manager"].includes(role) && active === "Kho & vật tư")
+    return <StockPage role={role} />;
   return (
     <SectionLayout
       title={active}

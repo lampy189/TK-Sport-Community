@@ -45,7 +45,7 @@ public sealed class MultiCenterDatabaseTests
         accessor.HttpContext = http;
         var config = new ConfigurationBuilder().AddInMemoryCollection(
             new Dictionary<string,string?> { ["ConnectionStrings:Sep490"] = connection }).Build();
-        var controller = new StoreController(new TKSC.Application.Services.StoreService(new TKSC.Infrastructure.Persistence.Repositories.StoreRepository(db, config, new HttpDataAccessContext(accessor)), TimeProvider.System)) { ControllerContext = new ControllerContext { HttpContext = http } };
+        var controller = new StoreController(new TKSC.Application.Services.StoreService(new TKSC.Infrastructure.Persistence.Repositories.StoreRepository(db, config, new HttpDataAccessContext(accessor)), TimeProvider.System), new AcceptingAntiforgery()) { ControllerContext = new ControllerContext { HttpContext = http } };
         await db.Database.OpenConnectionAsync();
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
@@ -83,4 +83,14 @@ public sealed class MultiCenterDatabaseTests
             accessor.HttpContext = previous;
         }
     }
+}
+
+// The test drives the controller directly; CSRF itself is covered by the HTTP-level tests.
+file sealed class AcceptingAntiforgery : Microsoft.AspNetCore.Antiforgery.IAntiforgery
+{
+    public Microsoft.AspNetCore.Antiforgery.AntiforgeryTokenSet GetAndStoreTokens(Microsoft.AspNetCore.Http.HttpContext httpContext) => new("request", "cookie", "form", "header");
+    public Microsoft.AspNetCore.Antiforgery.AntiforgeryTokenSet GetTokens(Microsoft.AspNetCore.Http.HttpContext httpContext) => new("request", "cookie", "form", "header");
+    public Task<bool> IsRequestValidAsync(Microsoft.AspNetCore.Http.HttpContext httpContext) => Task.FromResult(true);
+    public Task ValidateRequestAsync(Microsoft.AspNetCore.Http.HttpContext httpContext) => Task.CompletedTask;
+    public void SetCookieTokenAndHeader(Microsoft.AspNetCore.Http.HttpContext httpContext) { }
 }

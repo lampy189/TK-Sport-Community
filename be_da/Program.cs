@@ -102,6 +102,9 @@ builder.Services.AddHostedService<TKSC.Presentation.BackgroundServices.TicketPus
 builder.Services.AddScoped<IStockStore>(services => new SqlStockStore(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables."), services.GetRequiredService<IDataAccessContext>()));
+builder.Services.AddScoped<be_da.Application.Interfaces.Repositories.IStockCountStore>(services => new be_da.Infrastructure.Persistence.Repositories.SqlStockCountStore(
+    services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
+    ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables."), services.GetRequiredService<IDataAccessContext>()));
 builder.Services.AddScoped<ISessionSupplyStore>(services => new SqlSessionSupplyStore(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables."), services.GetRequiredService<IDataAccessContext>()));

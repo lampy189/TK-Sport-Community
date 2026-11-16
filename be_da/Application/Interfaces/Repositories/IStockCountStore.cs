@@ -10,6 +10,6 @@ public interface IStockCountStore
     Task<IReadOnlyList<StockCountView>> ListAsync(string? status, long? productId, CancellationToken cancellationToken);
     Task<StockCountView?> GetAsync(long id, CancellationToken cancellationToken);
     Task<StockCountResult> DecideAsync(long id, long deciderId, bool approve, string? note, int? expectedDifference, CancellationToken cancellationToken);
-    Task<SupplyReport> GetSupplyReportAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken);
+    Task<StockSupplyReport> GetSupplyReportAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken);
     Task<IReadOnlyList<StockReconciliationLine>> GetReconciliationAsync(CancellationToken cancellationToken);
 }
