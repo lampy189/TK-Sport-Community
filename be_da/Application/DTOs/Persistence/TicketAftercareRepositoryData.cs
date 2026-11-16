@@ -29,6 +29,7 @@ public sealed record TicketChangeSummary
 
 public sealed record TicketRefundSummary
 {
+    public long RecipientId { get; init; }
     public long? ApprovedBy { get; init; }
     public string? Decision { get; init; }
     public string? Payout { get; init; }

@@ -224,7 +224,7 @@ public sealed partial class TicketAftercareService(ITicketAftercareRepository re
         {
             bankReference = bankReference?.Trim();
             Require(bankReference is { Length: >= 6 and <= 100 }, "Nhập mã giao dịch khoản thu thêm.", 400);
-            Require(!await repository.CompleteChangeBankTransactionsExistsAsync(bankReference) && !await repository.CompleteChangePaymentsExistsAsync(bankReference), "Mã giao dịch đã được sử dụng.");
+            Require(!await repository.CompleteChangeBankTransactionsExistsAsync(bankReference) && !await repository.CompleteChangePaymentsExistsAsync(bankReference) && !await repository.CompleteRefundAuditLogsExistsAsync(bankReference), "Mã giao dịch đã được sử dụng.");
         }
 
         var order = new SocialBookingOrder

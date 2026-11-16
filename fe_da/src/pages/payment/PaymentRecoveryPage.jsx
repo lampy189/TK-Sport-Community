@@ -1,16 +1,19 @@
+import { incidents } from './incidentClient';
+import IssueWorkflowControls from './IssueWorkflowControls';
 import { useEffect, useState } from 'react';
 import { workflowRequest } from '../workflowClient';
 import '../workflow.css';
 import './recovery.css';
 import { historyDetails, recoveryLabels } from './recoveryModel';
-const root='/api/v1/commerce/payment-recovery';
+const root='/api/ticket-recovery';
 const money=n=>`${Number(n).toLocaleString('vi-VN')} ₫`;
 const labels={pending:'Chưa xác nhận',failed:'Thất bại / đã đóng',review_required:'Cần đối soát',paid:'Đã thu tiền · có khoản cần kiểm tra'};
-export default function PaymentRecoveryPage(){
- const [rows,setRows]=useState([]),[selected,setSelected]=useState(null),[evidence,setEvidence]=useState(''),[bank,setBank]=useState('');
+export default function PaymentRecoveryPage({role='staff',initialPaymentId=null}){
+ const [rows,setRows]=useState([]),[selected,setSelected]=useState(initialPaymentId),[evidence,setEvidence]=useState(''),[bank,setBank]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[loading,setLoading]=useState(true);
  useEffect(()=>{let live=true;workflowRequest(root).then(data=>{if(live)setRows(data);}).catch(e=>{if(live)setError(e.message);}).finally(()=>{if(live)setLoading(false);});return()=>{live=false;};},[]);
  const current=rows.find(r=>r.id===selected);
+ async function proposeReturn(){if(busy)return;setBusy(true);setError('');try{await incidents.request({kind:'reviews',subjectId:selected,category:'return_unallocated',bankTransactionId:Number(bank),reason:evidence.trim()});setNotice('Đã gửi đề nghị hoàn toàn bộ khoản thu chưa phân bổ. Theo dõi tại Ngoại lệ vận hành; không chuyển lại trước khi duyệt.');}catch(e){setError(e.message);}finally{setBusy(false);}}
  async function run(action){
   if(busy)return;setBusy(true);setError('');setNotice('');
   try{
@@ -30,7 +33,7 @@ export default function PaymentRecoveryPage(){
     </button>)}
    </div>
    <div aria-live="polite">{current?<>
-    <h3>{current.reference}</h3><p>Đơn #{current.orderId} · {labels[current.status]||current.status}</p>
+    <h3>{current.reference}</h3><IssueWorkflowControls key={current.id} kind="reviews" id={current.id} role={role}/><p>Đơn #{current.orderId} · {labels[current.status]||current.status}</p>
     <p>Số tiền cần thu: <strong>{money(current.amountVnd)}</strong></p>
     <label>Giao dịch ngân hàng<select value={bank} onChange={e=>setBank(e.target.value)} disabled={busy}>
      <option value="">Chọn chứng từ để duyệt</option>{current.transactions.map(t=><option key={t.id} value={t.id}>{t.reference} · {money(t.amountVnd)} · {recoveryLabels[t.status]||t.status}</option>)}
@@ -41,9 +44,10 @@ export default function PaymentRecoveryPage(){
      <button className="button button-primary" disabled={!canAct} onClick={()=>run('recheck')}>Kiểm tra lại payOS</button>
      <button className="button button-secondary" disabled={!canAct||!bank||current.status!=='review_required'} onClick={()=>run('approve')}>Duyệt khoản đủ tiền</button>
      <button className="button button-secondary" disabled={!canAct||current.status==='paid'||current.transactions.length>0} onClick={()=>run('close-unpaid')}>Đóng khi chưa thu tiền</button>
+     {role!=='owner'&&current.kind!=='goods'&&<button className="button button-secondary" disabled={!canAct||!bank} onClick={proposeReturn}>Đề nghị hoàn toàn bộ khoản chưa phân bổ</button>}
      <button className="button button-secondary" disabled={!canAct} onClick={()=>run('note')}>Lưu ghi chú</button>
     </div>
-    <p>Khoản thiếu/thừa hoặc chưa rõ kết quả cần tiếp tục đối soát. Không tự cấp vé hay bàn giao hàng.</p>
+    <p>Khoản thiếu/thừa hoặc chưa rõ kết quả cần tiếp tục đối soát. Tiếp tục theo dõi trong Sự cố và gửi ngoại lệ nếu vượt quyền.</p>
     <h4>Lịch sử và nguyên nhân</h4>{!current.history.length&&<p>Chưa có lịch sử xử lý. Dùng kiểm tra lại payOS để xác minh.</p>}
     {current.history.map((h,i)=>{const detail=historyDetails(h);return <article className="recovery-history" key={i}>
      <strong>{detail.title}</strong><p>Người xử lý: {h.actorId??'Hệ thống'}{detail.at&&<> · {new Date(detail.at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})}</>}</p>

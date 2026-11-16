@@ -1,0 +1,4 @@
+import { workflowRequest } from '../workflowClient';
+const root='/api/issue-workflow';
+export const incidents={states:()=>workflowRequest(root),detail:(kind,id)=>workflowRequest(`${root}/${kind}/${id}`),act:(kind,id,input)=>workflowRequest(`${root}/${kind}/${id}`,'POST',input),cases:()=>workflowRequest(root+'/cases'),request:input=>workflowRequest(root+'/cases','POST',input),decide:(id,input)=>workflowRequest(`${root}/cases/${id}/decision`,'POST',input),returnPayout:(id,input)=>workflowRequest(`${root}/cases/${id}/payout`,'POST',input),verifyReturn:(id,reason)=>workflowRequest(`${root}/cases/${id}/verify-return`,'POST',{reason}),execute:(id,reason)=>workflowRequest(`${root}/cases/${id}/execute`,'POST',{reason}),close:(id,reason)=>workflowRequest(`${root}/cases/${id}/close`,'POST',{reason})};
+export const issueLabels={open:'Chưa nhận xử lý',in_progress:'Đang xử lý',waiting_bank:'Chờ ngân hàng / đối soát',waiting_approval:'Chờ phê duyệt',resolved:'Đã giải quyết'};

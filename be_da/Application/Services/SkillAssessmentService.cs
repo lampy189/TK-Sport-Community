@@ -1,3 +1,4 @@
+using TKSC.Application.Services.Notifications;
 using TKSC.Application.DTOs;
 using TKSC.Domain.Exceptions;
 using be_da.Application.Interfaces.Services;
@@ -200,16 +201,9 @@ public sealed class SkillAssessmentService(ISkillAssessmentRepository repository
         {
             if (string.IsNullOrWhiteSpace(ticket.Session.Band) || string.Equals(ticket.Session.Band, profile.CurrentBand, StringComparison.OrdinalIgnoreCase) || await repository.CheckFutureTicketsSessionExceptionsExistsAsync(profile, ct, ticket))
                 continue;
-            var payment = ticket.Order.Payments.Where(p => p.Status == "paid" && p.GoodsOrderId == null).OrderByDescending(p => p.Id).FirstOrDefault() ?? throw Error(409, "Vé tương lai thiếu giao dịch thanh toán; cần Staff kiểm tra trước khi công bố.");
-            if (!await repository.CheckFutureTicketsRefundsExistsAsync(ct, ticket))
-                {
-                if (!payment.PayerId.HasValue) throw Error(409, "Chưa xác định được người trả gốc.");
-                var refund = new Refund { PaymentId = payment.Id, TicketId = ticket.Id, RecipientId = payment.PayerId.Value, AmountVnd = ticket.AmountVnd, Status = "processing", InitiatedBy = actorId };
-                repository.AddRefunds(refund);
-                await repository.SaveAsync(ct);
-                repository.AddAuditLogs(new AuditLog { ActorId = actorId, Action = "refund_decision", EntityType = "Refund", EntityId = refund.Id,
-                    NewValue = JsonSerializer.Serialize(new TKSC.Application.DTOs.RefundDecisionRecord(ticket.AmountVnd, payment.PayerId.Value, "Vé tương lai không còn đủ điều kiện sau công bố hạng", "UC-21", clock.GetUtcNow())) });
-            }
+            foreach (var source in await repository.FutureRefundSourcesAsync(ticket,ct))
+                repository.AddRefunds(new Refund { PaymentId=source.PaymentId, TicketId=ticket.Id, RecipientId=source.RecipientId, AmountVnd=source.AmountVnd, Status="requested", InitiatedBy=actorId });
+            repository.AddNotifications(TicketNotifications.Create("ticket_refund_requested",ticket.Id,ticket.Player.UserId,ticket.Order.PayerId));
             repository.AddAuditLogs(new AuditLog { ActorId = actorId, Action = "rating_ticket_invalidated", EntityType = "Ticket", EntityId = ticket.Id, OldValue = ticket.Status, NewValue = JsonSerializer.Serialize(new { at = clock.GetUtcNow(), band = profile.CurrentBand, refund = "requested" }) });
             ticket.Status = "cancelled";
         }

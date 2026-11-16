@@ -3,6 +3,6 @@ const titles={payment_recovery_requested:'Bắt đầu xử lý',payment_recover
 export function historyDetails(history){
  let data;try{data=JSON.parse(history.detail);}catch{data={evidence:history.detail};}
  if(!data||typeof data!=='object')data={evidence:String(data??'')};
- return {title:titles[history.action]||'Cập nhật giao dịch',at:data.at,evidence:data.evidence,reason:data.reason||data.result?.reason,
+ return {title:titles[history.action]||'Cập nhật giao dịch',at:data.at,evidence:data.evidence,reason:data.reason||(typeof data.result==='string'?data.result:data.result?.reason),
   status:recoveryLabels[data.result?.status||data.Status]||'',reference:data.Reference,expected:data.expected,received:data.received};
 }

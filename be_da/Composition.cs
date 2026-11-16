@@ -41,6 +41,9 @@ public static class Composition
         services.AddScoped<TKSC.Application.Interfaces.Repositories.ITicketEmailRepository, TKSC.Infrastructure.Persistence.Repositories.TicketEmailRepository>();
         services.AddScoped<TKSC.Application.Interfaces.External.ITicketEmailSender, TKSC.Infrastructure.ExternalServices.SmtpTicketEmailSender>();
         services.AddSingleton<TKSC.Application.Interfaces.Repositories.IPersistenceFailureClassifier, TKSC.Infrastructure.Persistence.PersistenceFailureClassifier>();
+        services.AddScoped<TKSC.Application.Interfaces.Repositories.IIncidentRepository,TKSC.Infrastructure.Persistence.Repositories.IncidentRepository>();
+        services.AddScoped<TKSC.Application.Interfaces.Services.IIncidentWorkflowService,TKSC.Application.Services.IncidentWorkflowService>();
+        services.AddScoped<TKSC.Application.Interfaces.Services.ITicketRecoveryService,TKSC.Application.Services.TicketRecoveryService>();
         return services;
     }
 }

@@ -16,3 +16,8 @@ test('buildIssues: staff response changes queue label without marking refund com
  const row=buildIssues({inbox:[{id:2,ticketId:4,holder:'Player',lastIsStaff:true}]})[0];
  assert.equal(row.status,'Đã phản hồi');assert.equal(row.summary,'Ảnh đính kèm');
 });
+for(const [status,label] of [['completed','Đã hoàn tất'],['rejected','Đã từ chối'],['failed','Chuyển tiền lỗi']]){
+ test(`buildIssues: refund ${status} keeps its actual outcome`,()=>{
+  const row=buildIssues({refunds:[{id:1,ticketId:2,amountVnd:100,status}]})[0];assert.equal(row.status,label);
+ });
+}
