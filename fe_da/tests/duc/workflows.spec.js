@@ -6,9 +6,9 @@ const evidence=env.DUC_EVIDENCE_DIR || '../docs/evidence/duc-nov-07-10';
 const session={id:22,sport:'Cầu lông',court:'Sân 1',venue:'TK Sport',sessionDate:'2026-11-10',startTime:'18:00:00',endTime:'20:00:00',status:'suspended'};
 const exception={id:7,player:'Nguyễn An (fixture)',sport:'Cầu lông',status:'Pending',sessionId:22,sessionDate:'2026-11-10',sessionBand:'B3',currentBand:'B2',reason:'Xin tham gia cùng nhóm bạn'};
 const appeal={...exception,status:'UnderReview',disputedScore:65,disputedBand:'B3',currentScore:65,currentBand:'B3',expectedHistoryId:8};
-const refund={id:5,ticketId:41,amountVnd:100000,recipient:'Nguyễn An (fixture)',email:'player@example.test',referenceCode:'SOCIAL-41'};
+const refund={status:'requested',recipientId:99,id:5,ticketId:41,amountVnd:100000,recipient:'Nguyễn An (fixture)',email:'player@example.test',referenceCode:'SOCIAL-41'};
 const change={id:6,ticketId:41,holder:'Nguyễn An (fixture)',payer:'Nguyễn An (fixture)',court:'Sân 2',sessionDate:'2026-11-11',startTime:'18:00:00',endTime:'20:00:00',oldPriceVnd:100000,newPriceVnd:120000};
-async function fixture(page,{fail=false,empty=false}={}) {
+async function fixture(page,{fail=false,empty=false,refundStatus='requested',payout=null}={}) {
  const posts=[];
  await page.route('**/api/**',async route=>{
   const req=route.request(),path=new URL(req.url()).pathname;
@@ -17,8 +17,11 @@ async function fixture(page,{fail=false,empty=false}={}) {
    return route.fulfill({status:fail?409:200,json:fail?{message:'Dữ liệu đã thay đổi. Tải lại để xem.'}:{id:1}});
   }
   const data=path.endsWith('/csrf')?{token:'fixture'}:
+   path.endsWith('/api/issue-workflow')||path.endsWith('/api/issue-workflow/cases')?[]:
+   path.includes('/api/issue-workflow/')?{resource:{canResolve:true},state:{status:'open',version:0},people:[],history:[]}:
+   path.endsWith('/history')?[]:
    path.endsWith('/exceptions')?[exception]:path.endsWith('/appeals')?[appeal]:
-   (path.endsWith('/sessions')||path.endsWith('/incidents'))?[session]:path.endsWith('/refunds')?[refund]:
+   (path.endsWith('/sessions')||path.endsWith('/incidents'))?[session]:path.endsWith('/refunds')?[{...refund,status:refundStatus,payout,decision:refundStatus==='processing'?JSON.stringify({Reason:'Manager checked original payer and allocation'}):null}]:
    path.endsWith('/changes')?[change]:path.endsWith('/reviews')?[{id:9,referenceCode:'SOCIAL-ERROR',payer:'Nguyễn Bình',amountVnd:100000,transactions:[]}]:
    path.endsWith('/inbox')?[{id:41,ticketId:41,holder:'Nguyễn An (fixture)',status:'confirmed',lastSender:'Nguyễn An (fixture)',lastMessage:'[Báo cáo sự cố · Sân ngập]\nSân bị ngập nước, không thể chơi.',lastIsStaff:false}]:
    path.endsWith('/messages')?{canProvidePayout:true,messages:[{id:1,sender:'Nguyễn An (fixture)',content:'[Báo cáo sự cố · Sân ngập]\nSân bị ngập nước, không thể chơi.',isStaff:false,createdAt:'2026-11-09T08:00:00Z'}]}:[];
@@ -117,22 +120,30 @@ test('reply: API error retains draft',async({page})=>{
  await page.getByLabel('Phản hồi cho người chơi').fill('Đang kiểm tra, vui lòng chờ.');await page.getByRole('button',{name:'Gửi phản hồi',exact:true}).click();
  await expect(page.getByRole('alert')).toContainText('Dữ liệu đã thay đổi');await expect(page.getByLabel('Phản hồi cho người chơi')).toHaveValue('Đang kiểm tra, vui lòng chờ.');
 });
-test('refund settlement: requires checked evidence and bank reference',async({page})=>{
+test('refund decision: requires reason and exact amount and recipient',async({page})=>{
  const posts=await fixture(page);await screen(page,'hub');await page.getByRole('button',{name:'Hoàn tiền',exact:true}).click();
- const submit=page.getByRole('button',{name:'Xác nhận đã hoàn tiền',exact:true});await expect(submit).toBeDisabled();
- await page.getByLabel('Nội dung đối soát / bằng chứng').fill('Đã chuyển 100.000đ về người thanh toán.');await page.getByRole('checkbox').check();await submit.click();expect(posts).toHaveLength(0);
- await page.getByLabel('Mã giao dịch ngân hàng').fill('BANK-123456');await shot(page,'07-refund-evidence');await submit.click();await expect.poll(()=>posts.length).toBe(1);
- expect(posts[0].path).toBe('/api/ticket-aftercare/refunds/5/complete');expect(posts[0].body.bankReference).toBe('BANK-123456');
+ const submit=page.getByRole('button',{name:'Duyệt khoản hoàn',exact:true});await expect(submit).toBeDisabled();
+ await page.getByLabel('Lý do / căn cứ xử lý').fill('Independent approval of original payer and allocation');await shot(page,'07-refund-approval');await submit.click();await expect.poll(()=>posts.length).toBe(1);
+ expect(posts[0].body).toMatchObject({approve:true,amountVnd:100000,recipientId:99});
+});
+test('refund payout: requires actual transfer proof',async({page})=>{
+ const posts=await fixture(page,{refundStatus:'processing'});await screen(page,'hub');await page.getByRole('button',{name:'Hoàn tiền',exact:true}).click();
+ const submit=page.getByRole('button',{name:'Lưu chứng từ tiền ra',exact:true});await expect(submit).toBeDisabled();
+ await page.getByLabel('Mã giao dịch ngân hàng').fill('BANK-123456');await page.getByLabel('Chứng từ tiền ra').fill('Bank statement confirms original recipient and amount');await page.getByLabel('Thời điểm chuyển tiền').fill('2026-11-01T10:00');await page.getByLabel('Tôi đã chuyển đủ tiền',{exact:false}).check();
+ await shot(page,'09-refund-payout');await submit.click();await expect.poll(()=>posts.length).toBe(1);expect(posts[0].path).toBe('/api/ticket-aftercare/refunds/5/payout');
+});
+test('refund verification: checks saved proof without requesting another payout',async({page})=>{
+ const payout=JSON.stringify({BankReference:'BANK-SAVED',AmountVnd:100000,RecordedBy:12,Document:'Existing outgoing bank statement'});
+ const posts=await fixture(page,{refundStatus:'processing',payout});await screen(page,'hub');await page.getByRole('button',{name:'Hoàn tiền',exact:true}).click();await expect(page.getByRole('button',{name:'Lưu chứng từ tiền ra',exact:true})).toHaveCount(0);
+ await page.getByLabel('Lý do / căn cứ xử lý').fill('Independently verified transfer, recipient and amount');await page.getByLabel('Tôi là người kiểm tra độc lập',{exact:false}).check();await shot(page,'10-refund-independent-verification');await page.getByRole('button',{name:'Xác minh và hoàn tất',exact:true}).click();await expect.poll(()=>posts.length).toBe(1);expect(posts[0].body.bankReference).toBe('BANK-SAVED');
 });
 test('exchange settlement: additional payment includes bank reference',async({page})=>{
  const posts=await fixture(page);await screen(page,'hub');await page.getByRole('button',{name:'Yêu cầu đổi vé',exact:true}).click();
  await page.getByLabel('Nội dung đối soát / bằng chứng').fill('Đã nhận 20.000đ chênh lệch và đối chiếu.');await page.getByRole('checkbox').check();await page.getByLabel('Mã giao dịch ngân hàng').fill('BANK-CHANGE');
  await shot(page,'08-exchange-evidence');await page.getByRole('button',{name:'Xác nhận đổi và cấp QR mới',exact:true}).click();await expect.poll(()=>posts.length).toBe(1);expect(posts[0].path).toBe('/api/ticket-aftercare/changes/6/complete');
 });
-test('settlement: API failure never shows completed payout',async({page})=>{
- await fixture(page,{fail:true});await screen(page,'hub');await page.getByRole('button',{name:'Hoàn tiền',exact:true}).click();
- await page.getByLabel('Nội dung đối soát / bằng chứng').fill('Đối soát chuyển khoản hoàn về người trả.');await page.getByRole('checkbox').check();await page.getByLabel('Mã giao dịch ngân hàng').fill('BANK-ERROR');
- await page.getByRole('button',{name:'Xác nhận đã hoàn tiền',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Dữ liệu đã thay đổi');await expect(page.locator('.payment-notice')).toHaveCount(0);
+test('refund approval: API failure preserves evidence',async({page})=>{
+ await fixture(page,{fail:true});await screen(page,'hub');await page.getByRole('button',{name:'Hoàn tiền',exact:true}).click();await page.getByLabel('Lý do / căn cứ xử lý').fill('Independent refund decision with evidence');await page.getByRole('button',{name:'Duyệt khoản hoàn',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Dữ liệu đã thay đổi');await expect(page.getByLabel('Lý do / căn cứ xử lý')).toHaveValue('Independent refund decision with evidence');
 });
 test('appeal: keep score sends expected history and no correction',async({page})=>{
  const posts=await fixture(page);await screen(page,'appeal');await page.getByLabel('Lý do / nhận xét').fill('Giữ nguyên điểm theo bằng chứng trọng tài.');await shot(page,'05-appeal-decision');

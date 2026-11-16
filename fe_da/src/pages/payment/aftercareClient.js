@@ -5,6 +5,10 @@ async function call(path, body) {
  return response.json();
 }
 export const aftercare={
+ decideRefund:(id,input)=>call(`refunds/${id}/decision`,input),
+ refundPayout:(id,input)=>call(`refunds/${id}/payout`,input),
+ failRefund:(id,reason)=>call(`refunds/${id}/fail`,{reason}),
+ refundHistory:id=>call(`refunds/${id}/history`),
  report:(id,category,content,imageBase64)=>call(`tickets/${id}/reports`,{category,content,imageBase64}),
  incidents:()=>call('incidents'),
  inbox:()=>call('inbox'),

@@ -1,3 +1,4 @@
+import OperationalExceptions from '../payment/OperationalExceptions';
 import RevenuePage from "../revenue/RevenuePage";
 import SportCenterPersonnel from "../revenue/SportCenterPersonnel";
 import MessagesPage from "../messages/MessagesPage";
@@ -40,6 +41,7 @@ export default function HomeWorkspace({
   if (!preview && ["owner", "manager", "staff"].includes(role) && ["Kinh doanh", "Thống kê doanh số"].includes(active)) return <RevenuePage />;
   if (!preview && role === "owner" && active === "Phân quyền Sport Center") return <SportCenterPersonnel />;
   if ((active === "Thông báo" || active === "Tin nhắn") && role !== "guest") return <MessagesPage preview={preview} />;
+  if (!preview && ["staff","manager","owner"].includes(role) && active === "Ngoại lệ vận hành") return <OperationalExceptions role={role}/>;
   if (!preview && ["referee", "manager"].includes(role) && active === "Ngoại lệ trình độ") return <SkillReviews role={role} kind="exceptions" />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Khiếu nại đánh giá") return <SkillReviews role={role} />;
   if (!preview && role === "referee" && active === "Đánh giá kỹ năng") return <AssessmentPage />;
@@ -133,10 +135,10 @@ export default function HomeWorkspace({
     return <StorePage role="staff" user={user} />;
   if (
     !preview &&
-    ["staff", "manager"].includes(role) &&
+    ["staff", "manager", "owner"].includes(role) &&
     ["Thanh toán", "Sự cố", "Sự cố sân", "Đổi & hoàn vé"].includes(active)
   )
-    return <TicketOperations key={active} initialTab={["Sự cố", "Sự cố sân"].includes(active) ? "issues" : active === "Đổi & hoàn vé" ? "changes" : "reviews"} />;
+    return <TicketOperations role={role} key={active} initialTab={["Sự cố", "Sự cố sân"].includes(active) ? "issues" : active === "Đổi & hoàn vé" ? "changes" : "reviews"} />;
   if (!preview && role === "staff" && active === "Kho & vật tư")
     return <StockPage />;
   return (

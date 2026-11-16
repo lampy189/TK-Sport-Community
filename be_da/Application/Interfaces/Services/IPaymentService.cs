@@ -10,6 +10,7 @@ public interface IPaymentService
     Task<CheckoutResult> ProcessAsync(long id, long userId);
     Task<OrderSummary> RefreshAsync(long id, long userId);
     Task<bool> FlagAsync(long id, long userId, string? reason);
+    Task RecheckAsync(long paymentId);
     Task HandleWebhookAsync(string payload);
     Task<TicketCancelResult> CancelTicketAsync(long ticketId, long userId);
 }

@@ -196,6 +196,15 @@ public sealed class PaymentService(IPaymentRepository repository, IPaymentGatewa
         });
     }
 
+    public async Task RecheckAsync(long paymentId)
+    {
+        if (await repository.FindOrderForPaymentAsync(paymentId) is null) throw new PaymentException(404,"Không tìm thấy giao dịch.");
+        var remote = await gateway.GetAsync(paymentId);
+        if (remote.OrderCode != paymentId || (remote.Transactions?.Sum(t=>t.Amount) ?? 0) != remote.AmountPaid)
+            throw new GatewayException("Giao dịch payOS chưa có chi tiết khớp tổng tiền.");
+        foreach (var transfer in remote.Transactions ?? []) await HandleVerifiedEventAsync(transfer,remote);
+    }
+
     public async Task HandleWebhookAsync(string payload)
     {
         var data = await gateway.VerifyAsync(payload);

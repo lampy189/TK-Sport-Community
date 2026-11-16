@@ -10,7 +10,7 @@ using TKSC.Application.Services;
 namespace TKSC.Presentation.Controllers;
 [ApiController, Authorize]
 [Route("api/ticket-aftercare")]
-public class TicketAftercareController(ITicketAftercareService service, ITicketSupportService support, IAntiforgery csrf) : ControllerBase
+public class TicketAftercareController(ITicketAftercareService service, ITicketSupportService support, TKSC.Application.Interfaces.Services.ITicketRecoveryService recovery, IAntiforgery csrf) : ControllerBase
 {
     private long Actor => long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : -1;
 
@@ -28,11 +28,11 @@ public class TicketAftercareController(ITicketAftercareService service, ITicketS
         return Ok(await action());
     }
 
-    [HttpGet("incidents"), Authorize(Roles = "Staff,staff,Manager,manager")]
+    [HttpGet("incidents"), Authorize(Roles = "Staff,staff,Manager,manager,Owner,owner")]
     public async Task<IActionResult> Incidents() => Ok(await service.SessionsAsync(true));
-    [HttpGet("sessions"), Authorize(Roles = "Staff,staff,Manager,manager")]
+    [HttpGet("sessions"), Authorize(Roles = "Staff,staff,Manager,manager,Owner,owner")]
     public async Task<IActionResult> Sessions() => Ok(await service.SessionsAsync());
-    [HttpPost("sessions/{id:long}/issue"), Authorize(Roles = "Staff,staff,Manager,manager")]
+    [HttpPost("sessions/{id:long}/issue"), Authorize(Roles = "Staff,staff,Manager,manager,Owner,owner")]
     public Task<IActionResult> Issue(long id, IssueRequest input) => Write(() => service.ReportAsync(id, Actor, input.Reason, input.Cancel));
     [HttpGet("tickets/{id:long}/alternatives")]
     public async Task<IActionResult> Alternatives(long id) => Ok(await service.OptionsAsync(id, Actor));
@@ -42,21 +42,29 @@ public class TicketAftercareController(ITicketAftercareService service, ITicketS
     public Task<IActionResult> CancelChange(long id) => Write(() => service.CancelChangeAsync(id, Actor));
     [HttpPost("tickets/{id:long}/refund")]
     public Task<IActionResult> Refund(long id) => Write(() => service.RequestRefundAsync(id, Actor));
-    [HttpGet("changes"), Authorize(Roles = "Staff,staff,Manager,manager")]
+    [HttpGet("changes"), Authorize(Roles = "Staff,staff,Manager,manager,Owner,owner")]
     public async Task<IActionResult> Changes() => Ok(await service.ChangesAsync());
-    [HttpPost("changes/{id:long}/complete"), Authorize(Roles = "Staff,staff,Manager,manager")]
+    [HttpPost("changes/{id:long}/complete"), Authorize(Roles = "Staff,staff,Manager,manager,Owner,owner")]
     public Task<IActionResult> CompleteChange(long id, Settlement input) => Write(() => service.CompleteChangeAsync(id, Actor, input.Evidence, input.BankReference));
-    [HttpGet("refunds"), Authorize(Roles = "Staff,staff,Manager,manager")]
+    [HttpGet("refunds"), Authorize(Roles = "Staff,staff,Manager,manager,Owner,owner")]
     public async Task<IActionResult> Refunds() => Ok(await service.RefundsAsync());
-    [HttpPost("refunds/{id:long}/complete"), Authorize(Roles = "Staff,staff,Manager,manager")]
+    [HttpPost("refunds/{id:long}/complete"), Authorize(Roles = "Staff,staff,Manager,manager,Owner,owner")]
     public Task<IActionResult> CompleteRefund(long id, Settlement input) => Write(() => service.CompleteRefundAsync(id, Actor, input.Evidence, input.BankReference));
-    [HttpGet("reviews"), Authorize(Roles = "Staff,staff,Manager,manager")]
+    [HttpPost("refunds/{id:long}/decision"), Authorize(Roles="Manager,manager,Owner,owner")]
+    public Task<IActionResult> DecideRefund(long id, RefundDecisionInput input) => Write(() => service.DecideRefundAsync(id,Actor,input));
+    [HttpPost("refunds/{id:long}/payout"), Authorize(Roles="Staff,staff,Manager,manager,Owner,owner")]
+    public Task<IActionResult> Payout(long id, RefundPayoutInput input) => Write(() => service.RecordRefundPayoutAsync(id,Actor,input));
+    [HttpPost("refunds/{id:long}/fail"), Authorize(Roles="Staff,staff,Manager,manager,Owner,owner")]
+    public Task<IActionResult> FailRefund(long id, IssueRequest input) => Write(() => service.FailRefundAsync(id,Actor,input.Reason));
+    [HttpGet("refunds/{id:long}/history"), Authorize(Roles="Staff,staff,Manager,manager,Owner,owner")]
+    public async Task<IActionResult> RefundHistory(long id) => Ok(await service.RefundHistoryAsync(id));
+    [HttpGet("reviews"), Authorize(Roles = "Staff,staff,Manager,manager,Owner,owner")]
     public async Task<IActionResult> Reviews() => Ok(await service.ReviewsAsync());
-    [HttpPost("reviews/{id:long}/approve"), Authorize(Roles = "Staff,staff,Manager,manager")]
-    public Task<IActionResult> Approve(long id, FlaggedPaymentApprovalRequest input) => Write(() => service.ApprovePaymentAsync(id, input.BankTransactionId, Actor, input.Evidence));
-    private bool IsStaff => User.IsInRole("Staff") || User.IsInRole("staff") || User.IsInRole("Manager") || User.IsInRole("manager");
+    [HttpPost("reviews/{id:long}/approve"), Authorize(Roles = "Staff,staff,Manager,manager,Owner,owner")]
+    public Task<IActionResult> Approve(long id, FlaggedPaymentApprovalRequest input) => Write(() => recovery.Act(Actor,id,"approve",new PaymentRecoveryInput(input.Evidence,input.BankTransactionId)));
+    private bool IsStaff => User.IsInRole("Staff") || User.IsInRole("staff") || User.IsInRole("Manager") || User.IsInRole("manager") || User.IsInRole("Owner") || User.IsInRole("owner");
 
-    [HttpGet("inbox"), Authorize(Roles = "Staff,staff,Manager,manager")]
+    [HttpGet("inbox"), Authorize(Roles = "Staff,staff,Manager,manager,Owner,owner")]
     public async Task<IActionResult> Inbox() => Ok(await support.Inbox());
     [HttpGet("tickets/{id:long}/messages")]
     public async Task<IActionResult> Messages(long id)

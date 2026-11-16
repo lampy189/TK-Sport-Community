@@ -17,12 +17,14 @@ public sealed class TicketSupportRepository(Sep490Context db, TimeProvider clock
     public Task<Ticket?> AccessTicketsAsync(long id, long actor, bool staff) => db.Tickets.AsNoTracking().Include(t => t.Order).Include(t => t.Player).Include(t => t.Session).SingleOrDefaultAsync(t => t.Id == id && (staff || t.Order.PayerId == actor || t.Player.UserId == actor));
     public Task<List<TicketSupportInboxItem>> InboxTicketsListAsync() => db.Tickets.AsNoTracking().Where(t => db.TicketSupportMessages.Any(m => m.TicketId == t.Id)).OrderByDescending(t => db.TicketSupportMessages.Where(m => m.TicketId == t.Id).Max(m => m.Id)).Select(t => new TicketSupportInboxItem { Id = t.Id, TicketId = t.Id, Holder = t.Player.User.FullName, Status = t.Status, LastMessage = db.TicketSupportMessages.Where(m => m.TicketId == t.Id).OrderByDescending(m => m.Id).Select(m => m.Content).FirstOrDefault(), LastIsStaff = db.TicketSupportMessages.Where(m => m.TicketId == t.Id).OrderByDescending(m => m.Id).Select(m => m.IsStaff).FirstOrDefault(), LastSender = (
         from m in db.TicketSupportMessages
-        join u in db.Users on m.SenderId equals u.Id
+        join sender in db.Users on m.SenderId equals sender.Id into senders
+        from u in senders.DefaultIfEmpty()
         where m.TicketId == t.Id && !m.IsStaff
         orderby m.Id descending
-        select u.FullName).FirstOrDefault(), RefundStatus = db.Refunds.Where(r => r.TicketId == t.Id).OrderByDescending(r => r.Id).Select(r => r.Status).FirstOrDefault() }).ToListAsync();
+        select u == null ? "Người gửi theo vé" : u.FullName).FirstOrDefault(), RefundStatus = db.Refunds.Where(r => r.TicketId == t.Id).OrderByDescending(r => r.Id).Select(r => r.Status).FirstOrDefault() }).ToListAsync();
     public Task<List<TicketSupportMessageItem>> ListTicketSupportMessagesListAsync(long id) => (
-        from m in db.TicketSupportMessages.AsNoTracking()join u in db.Users on m.SenderId equals u.Id
+        from m in db.TicketSupportMessages.AsNoTracking()join sender in db.Users on m.SenderId equals sender.Id into senders
+        from u in senders.DefaultIfEmpty()
         where m.TicketId == id
         orderby m.Id
         select new TicketSupportMessageItem
@@ -31,7 +33,7 @@ public sealed class TicketSupportRepository(Sep490Context db, TimeProvider clock
             Content = m.Content,
             CreatedAt = m.CreatedAt,
             IsStaff = m.IsStaff,
-            Sender = u.FullName,
+            Sender = u == null ? "Người gửi theo vé" : u.FullName,
             HasImage = m.ImageData != null
         }
 

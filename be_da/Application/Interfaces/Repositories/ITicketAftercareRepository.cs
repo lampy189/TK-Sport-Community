@@ -63,4 +63,13 @@ public interface ITicketAftercareRepository
     Task<BankTransaction?> ApprovePaymentBankTransactionsAsync(long id, long bankId);
     Task<List<Ticket>> ApprovePaymentTicketsListAsync(SocialBookingOrder order);
     Task<int> ApprovePaymentCountAsync(SocialBookingOrder order, Session session);
+    Task<User?> RefundActorAsync(long actor);
+    Task<bool> SameRefundPersonAsync(long actor, long other);
+    Task<AuditLog?> RefundAuditAsync(long id, string action);
+    Task<List<AuditLog>> RefundHistoryAsync(long id);
+    Task<long> RefundTicketTotalAsync(long ticketId);
+    Task<long> RefundAllocationAsync(long ticketId, long paymentId);
+    Task<long> RefundAllocationReservedAsync(long ticketId, long paymentId);
+    Task LockRefundPaymentAsync(long paymentId);
+    void AddRefundApproval(Approval approval);
 }

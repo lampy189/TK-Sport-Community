@@ -11,7 +11,7 @@ using TKSC.Application.DTOs.Persistence;
 using TKSC.Application.Interfaces.Repositories;
 
 namespace TKSC.Infrastructure.Persistence.Repositories;
-public sealed class TicketAftercareRepository(Sep490Context db, TimeProvider clock) : ITicketAftercareRepository
+public sealed partial class TicketAftercareRepository(Sep490Context db, TimeProvider clock) : ITicketAftercareRepository
 {
     public Task LoadLateEntryEligibilityAsync(Ticket ticket, DateTimeOffset now) => be_da.Infrastructure.Persistence.Repositories.LateEntrySql.ValidatePayment((Microsoft.Data.SqlClient.SqlConnection)db.Database.GetDbConnection(), (Microsoft.Data.SqlClient.SqlTransaction)db.Database.CurrentTransaction!.GetDbTransaction(), ticket, now);
     private DateTimeOffset Now => clock.GetUtcNow();
@@ -20,6 +20,7 @@ public sealed class TicketAftercareRepository(Sep490Context db, TimeProvider clo
     public async Task<T> Transaction<T>(Func<Task<T>> work)
     {
         db.ChangeTracker.Clear();
+        if(db.Database.CurrentTransaction!=null){var joined=await work();await db.SaveChangesAsync();return joined;}
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
         var result = await work();
         await db.SaveChangesAsync();
@@ -48,8 +49,8 @@ public sealed class TicketAftercareRepository(Sep490Context db, TimeProvider clo
     public void AddRefunds(Refund value) => db.Refunds.Add(value);
     public Task<List<AftercareSessionSummary>> SessionsSessionsListAsync(bool issuesOnly, DateOnly today) => db.Sessions.AsNoTracking().Where(s => issuesOnly ? s.Status.ToLower() == "suspended" || s.Status.ToLower() == "cancelled" : s.SessionDate >= today.AddDays(-1)).OrderBy(s => s.SessionDate).ThenBy(s => s.TimeSlot.StartTime).Select(s => new AftercareSessionSummary { Id = s.Id, SessionDate = s.SessionDate, Status = s.Status, StartTime = s.TimeSlot.StartTime, EndTime = s.TimeSlot.EndTime, Sport = s.Sport.Name, Court = s.Court.Name, Venue = s.Court.Venue.Name, Reason = db.AuditLogs.Where(a => a.EntityType == "Session" && a.EntityId == s.Id && a.Action == "venue_condition_issue").OrderByDescending(a => a.Id).Select(a => a.NewValue).FirstOrDefault() }).ToListAsync();
     public Task<List<Ticket>> ReportTicketsListAsync(long id) => db.Tickets.Include(t => t.Player).Include(t => t.Order).Where(t => t.SessionId == id && (t.Status.ToLower() == "confirmed" || t.Status.ToLower() == "pending" || t.Status.ToLower() == "reserved")).ToListAsync();
-    public Task<Ticket?> OptionsTicketsAsync(long id, long user) => db.Tickets.Include(t => t.Player).Include(t => t.Order).Include(t => t.Refunds).Include(t => t.Session).ThenInclude(s => s.TimeSlot).SingleOrDefaultAsync(t => t.Id == id && (t.Player.UserId == user || t.Order.PayerId == user));
-    public Task<List<Session>> OptionsSessionsListAsync(Ticket ticket, DateOnly today) => db.Sessions.Include(s => s.TimeSlot).Include(s => s.Court).Include(s => s.Sport).Where(s => s.Id != ticket.SessionId && s.SportId == ticket.Session.SportId && s.SessionDate >= today && (s.Status.ToLower() == "open" || s.Status.ToLower() == "published")).OrderBy(s => s.SessionDate).ThenBy(s => s.TimeSlot.StartTime).Take(100).ToListAsync();
+    public Task<Ticket?> OptionsTicketsAsync(long id, long user) => db.Tickets.Include(t => t.Player).Include(t => t.Order).Include(t => t.Refunds).Include(t => t.Session).ThenInclude(s => s.TimeSlot).Include(t => t.Session).ThenInclude(s => s.Court).SingleOrDefaultAsync(t => t.Id == id && (t.Player.UserId == user || t.Order.PayerId == user));
+    public Task<List<Session>> OptionsSessionsListAsync(Ticket ticket, DateOnly today) => db.Sessions.Include(s => s.TimeSlot).Include(s => s.Court).Include(s => s.Sport).Where(s => s.Id != ticket.SessionId && s.Court.VenueId==ticket.Session.Court.VenueId && s.SportId == ticket.Session.SportId && s.SessionDate >= today && (s.Status.ToLower() == "open" || s.Status.ToLower() == "published")).OrderBy(s => s.SessionDate).ThenBy(s => s.TimeSlot.StartTime).Take(100).ToListAsync();
     public Task<int> OptionsCountAsync(Session target) => Occupied(target.Id).CountAsync();
     public Task<bool> RequestChangeTicketChangesExistsAsync(long id) => db.TicketChanges.AnyAsync(c => c.TicketId == id && c.Status == "requested");
     public Task<int> RequestChangeCountAsync(long targetId) => Occupied(targetId).CountAsync();
@@ -71,7 +72,7 @@ public sealed class TicketAftercareRepository(Sep490Context db, TimeProvider clo
             NewPriceVnd = c.NewPriceVnd,
             Status = c.Status,
             Holder = t.Player.User.FullName,
-            Payer = t.Order.Payer.FullName,
+            Payer = db.Users.Where(u=>u.Id==t.Order.PayerId).Select(u=>u.FullName).FirstOrDefault() ?? "Người thanh toán gốc",
             Court = s.Court.Name,
             SessionDate = s.SessionDate,
             StartTime = s.TimeSlot.StartTime,
@@ -82,20 +83,20 @@ public sealed class TicketAftercareRepository(Sep490Context db, TimeProvider clo
     public Task<TicketChange?> CompleteChangeTicketChangesAsync(long id) => db.TicketChanges.AsNoTracking().SingleOrDefaultAsync(c => c.Id == id);
     public Task<TicketChange> GetTrackedChangeForSettlementAsync(long id) => db.TicketChanges.SingleAsync(c => c.Id == id);
     public Task<int> CompleteChangeCountAsync(Session target) => Occupied(target.Id).CountAsync();
-    public Task<bool> CompleteChangeBankTransactionsExistsAsync(string? bankReference) => db.BankTransactions.AnyAsync(b => b.ExternalId == "staff:" + bankReference || b.ReferenceCode == bankReference);
+    public Task<bool> CompleteChangeBankTransactionsExistsAsync(string? bankReference) => db.BankTransactions.AnyAsync(b => b.ExternalId == "staff:" + bankReference || b.ExternalId == "payos:" + bankReference || b.ExternalId == bankReference || b.ReferenceCode == bankReference);
     public Task<bool> CompleteChangePaymentsExistsAsync(string? bankReference) => db.Payments.AnyAsync(p => p.ReferenceCode == bankReference);
     public void AddSocialBookingOrders(SocialBookingOrder value) => db.SocialBookingOrders.Add(value);
     public void AddTickets(Ticket value) => db.Tickets.Add(value);
     public void AddPayments(Payment value) => db.Payments.Add(value);
     public void AddBankTransactions(BankTransaction value) => db.BankTransactions.Add(value);
     public Task<List<PartnerRequest>> CompleteChangePartnerRequestsListAsync(Ticket t) => db.PartnerRequests.Where(p => p.SessionId == t.SessionId && (p.RequesterId == t.PlayerId || p.PartnerId == t.PlayerId)).ToListAsync();
-    public Task<List<TicketRefundSummary>> RefundsRefundsListAsync() => db.Refunds.AsNoTracking().Where(r => r.Status == "requested" || r.Status == "processing").OrderByDescending(r => r.Id).Select(r => new TicketRefundSummary { Id = r.Id, TicketId = r.TicketId, AmountVnd = r.AmountVnd, Status = r.Status, Recipient = r.Recipient.FullName, Email = r.Recipient.Email, ReferenceCode = r.Payment.ReferenceCode }).ToListAsync();
+    public Task<List<TicketRefundSummary>> RefundsRefundsListAsync() => db.Refunds.AsNoTracking().OrderByDescending(r => r.Id).Select(r => new TicketRefundSummary { RecipientId=r.RecipientId, Id = r.Id, TicketId = r.TicketId, AmountVnd = r.AmountVnd, Status = r.Status, Recipient = db.Users.Where(u=>u.Id==r.RecipientId).Select(u=>u.FullName).FirstOrDefault() ?? "Người thanh toán gốc", Email = db.Users.Where(u=>u.Id==r.RecipientId).Select(u=>u.Email).FirstOrDefault() ?? "", ReferenceCode = r.Payment.ReferenceCode, ApprovedBy = r.ApprovedBy, Decision = db.AuditLogs.Where(a => a.EntityType == "Refund" && a.EntityId == r.Id && a.Action == "refund_decision").OrderByDescending(a => a.Id).Select(a => a.NewValue).FirstOrDefault(), Payout = db.AuditLogs.Where(a => a.EntityType == "Refund" && a.EntityId == r.Id && a.Action == "refund_payout").OrderByDescending(a => a.Id).Select(a => a.NewValue).FirstOrDefault() }).ToListAsync();
     public Task<Refund?> CompleteRefundRefundsAsync(long id) => db.Refunds.AsNoTracking().SingleOrDefaultAsync(r => r.Id == id);
     public Task<Refund> GetTrackedRefundForSettlementAsync(long id) => db.Refunds.SingleAsync(r => r.Id == id);
-    public Task<bool> CompleteRefundAuditLogsExistsAsync(string? reference) => db.AuditLogs.AnyAsync(a => a.Action == "refund_transfer_reference" && a.NewValue == reference);
+    public Task<bool> CompleteRefundAuditLogsExistsAsync(string? reference) => db.AuditLogs.AnyAsync(a => (a.Action == "refund_transfer_reference" || a.Action == "return_transfer_reference") && a.NewValue == reference);
     public Task<Payment> CompleteRefundPaymentsAsync(Refund r) => db.Payments.SingleAsync(p => p.Id == r.PaymentId);
-    public Task<long?> CompleteRefundRefundsTotalAsync(Refund r) => db.Refunds.Where(x => x.PaymentId == r.PaymentId && x.Status != "failed").SumAsync(x => (long? )x.AmountVnd);
-    public Task<List<FlaggedTicketPayment>> ReviewsPaymentsListAsync() => db.Payments.AsNoTracking().Where(p => p.Status == "review_required" && p.OrderId != null && p.Order!.Status.ToLower() != "paid").OrderByDescending(p => p.Id).Select(p => new FlaggedTicketPayment { Id = p.Id, OrderId = p.OrderId, ReferenceCode = p.ReferenceCode, AmountVnd = p.AmountVnd, Payer = p.Order!.Payer.FullName, Transactions = p.BankTransactions.Where(b => b.MatchStatus == "review_required").Select(b => new FlaggedBankTransaction { Id = b.Id, ExternalId = b.ExternalId, AmountVnd = b.AmountVnd, ReferenceCode = b.ReferenceCode }).ToList() }).ToListAsync();
+    public Task<long?> CompleteRefundRefundsTotalAsync(Refund r) => db.Refunds.Where(x => x.PaymentId == r.PaymentId && x.Status != "rejected").SumAsync(x => (long? )x.AmountVnd);
+    public Task<List<FlaggedTicketPayment>> ReviewsPaymentsListAsync() => db.Payments.AsNoTracking().Where(p => p.Status == "review_required" && p.OrderId != null).OrderByDescending(p => p.Id).Select(p => new FlaggedTicketPayment { Id = p.Id, OrderId = p.OrderId, ReferenceCode = p.ReferenceCode, AmountVnd = p.AmountVnd, Payer = db.Users.Where(u=>u.Id==p.PayerId).Select(u=>u.FullName).FirstOrDefault() ?? "Người thanh toán gốc", Transactions = p.BankTransactions.Where(b => b.MatchStatus == "review_required").Select(b => new FlaggedBankTransaction { Id = b.Id, ExternalId = b.ExternalId, AmountVnd = b.AmountVnd, ReferenceCode = b.ReferenceCode }).ToList() }).ToListAsync();
     public Task<Payment?> ApprovePaymentPaymentsAsync(long id) => db.Payments.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id && p.OrderId != null && p.GoodsOrderId == null);
     public Task<SocialBookingOrder> ApprovePaymentSocialBookingOrdersAsync(Payment lookup) => db.SocialBookingOrders.Include(o => o.Payments).SingleAsync(o => o.Id == lookup.OrderId);
     public Task<BankTransaction?> ApprovePaymentBankTransactionsAsync(long id, long bankId) => db.BankTransactions.SingleOrDefaultAsync(b => b.Id == bankId && b.MatchedPaymentId == id && b.MatchStatus == "review_required");
