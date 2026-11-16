@@ -33,7 +33,15 @@ public sealed class TicketCheckInService(IPaymentRepository repository, TimeProv
         }).ToList();
     }
 
-    public async Task<CheckInResult> ExecuteAsync(string? ticketCode, long actorId, bool manager, bool confirm)
+    public async Task<IReadOnlyList<CheckInRosterEntry>> GetSessionRosterAsync(long sessionId, long actorId)
+    {
+        if (sessionId <= 0)
+            throw new PaymentException(400, "Buổi chơi không hợp lệ.");
+        return await repository.GetSessionRosterAsync(sessionId, actorId)
+            ?? throw new PaymentException(404, "Không tìm thấy buổi được phân công.");
+    }
+
+    public async Task<CheckInResult> ExecuteAsync(string? ticketCode, long actorId, bool manager, bool confirm, long? expectedSessionId = null)
     {
         var code = ticketCode?.Trim();
         if (string.IsNullOrWhiteSpace(code) || code.Length > 100)
@@ -43,6 +51,8 @@ public sealed class TicketCheckInService(IPaymentRepository repository, TimeProv
         return await repository.InTransactionAsync(orderId, null, async order =>
         {
             var context = await repository.GetCheckInContextAsync(code, actorId) ?? throw new PaymentException(404, "Không tìm thấy vé.");
+            if (expectedSessionId.HasValue && context.SessionId != expectedSessionId.Value)
+                throw new PaymentException(409, "Vé không thuộc buổi đang được chọn.");
             if (!manager && !context.Assigned)
                 throw new PaymentException(403, "Bạn không được phân công điểm danh buổi chơi này.");
             var ticket = order?.Tickets.SingleOrDefault(t => t.Id == context.TicketId && t.TicketCode == code) ?? throw new PaymentException(404, "Không tìm thấy vé.");
@@ -71,7 +81,7 @@ public sealed class TicketCheckInService(IPaymentRepository repository, TimeProv
                 }
             }
 
-            return new CheckInResult(ticket.Id, code, context.HolderName, context.SportName, context.CourtName, context.SessionDate, context.StartTime, context.EndTime, already || confirm, ticket.CheckedInBy);
+            return new CheckInResult(ticket.Id, code, context.HolderName, context.SportName, context.CourtName, context.SessionDate, context.StartTime, context.EndTime, already || confirm, ticket.CheckedInBy, context.SessionId);
         });
     }
 }

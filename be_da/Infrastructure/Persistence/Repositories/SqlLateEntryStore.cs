@@ -13,7 +13,7 @@ public sealed class SqlLateEntryStore(IConfiguration config, TimeProvider clock,
     private const string Select = """
       SELECT s.id,c.venue_id,v.name,c.name,sp.name,s.band,s.session_date,ts.start_time,ts.end_time,
         s.capacity,ISNULL(a.playing,0),ISNULL(a.confirmed,0),ISNULL(a.holds,0),
-        s.price_vnd,s.status
+        dbo.OwnerEffectivePrice('session',s.id,s.price_vnd,SYSDATETIMEOFFSET()),s.status
       FROM dbo.sessions s JOIN dbo.courts c ON c.id=s.court_id JOIN dbo.venues v ON v.id=c.venue_id
       JOIN dbo.sports sp ON sp.id=s.sport_id JOIN dbo.time_slots ts ON ts.id=s.time_slot_id
       OUTER APPLY(
@@ -24,12 +24,13 @@ public sealed class SqlLateEntryStore(IConfiguration config, TimeProvider clock,
         WHERE t.session_id=s.id AND (LOWER(t.status) IN ('confirmed','checkedin','valid','paid') OR
           (LOWER(t.status) IN ('pending','reserved') AND o.expires_at>@now))
       ) a
-      WHERE v.is_active=1 AND (@venue IS NULL OR c.venue_id=@venue) AND (@session IS NULL OR s.id=@session)
+      WHERE v.is_active=1 AND (@venue IS NULL OR c.venue_id=@venue) AND (@session IS NULL OR s.id=@session) AND (@accessVenue IS NULL OR c.venue_id=@accessVenue)
       """;
     private async Task<List<LateEntryOffer>> Read(SqlConnection c, long? venue, long? session, bool manage, CancellationToken ct)
     {
         var now = clock.GetUtcNow();
         await using var cmd = new SqlCommand(Select, c);
+        CenterAccess.Bind(cmd, dataScope, browsing: true);
         cmd.Parameters.AddWithValue("@now", now);
         cmd.Parameters.Add("@venue", SqlDbType.BigInt).Value = (object? )venue ?? DBNull.Value;
         cmd.Parameters.Add("@session", SqlDbType.BigInt).Value = (object? )session ?? DBNull.Value;

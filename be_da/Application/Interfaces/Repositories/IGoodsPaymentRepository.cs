@@ -11,6 +11,13 @@ using TKSC.Application.DTOs.Persistence;
 namespace TKSC.Application.Interfaces.Repositories;
 public interface IGoodsPaymentRepository
 {
+    Task<Payment?> RecoveryPaymentAsync(long id, CancellationToken ct);
+    Task<BankTransaction?> RecoveryBankAsync(long paymentId, long bankId, CancellationToken ct);
+    Task ReserveAsync(Order order, DateTimeOffset expiresAt, bool reacquire, CancellationToken ct);
+    Task<DateTimeOffset?> HoldExpiryAsync(long orderId, CancellationToken ct);
+    Task<bool> CommitHoldAsync(Order order, CancellationToken ct);
+    Task ReleaseHoldAsync(long orderId, CancellationToken ct);
+    Task ConsumeHoldAsync(Order order, long actorId, CancellationToken ct);
     Task<T> TransactionAsync<T>(Func<Task<T>> action, string? eventKey, CancellationToken ct);
     Task<List<GoodsOrderListItem>> ListOrdersListAsync(CancellationToken ct);
     Task<Order?> LoadOrdersAsync(long id, CancellationToken ct);
@@ -25,6 +32,6 @@ public interface IGoodsPaymentRepository
     Task<List<Order>> ListForBuyerOrdersListAsync(long buyerId, CancellationToken ct);
     Task<bool> ConfirmReceiptStockMovementsExistsAsync(CancellationToken ct, long id);
     Task<long?> ConfirmReceiptStockItemsAsync(CancellationToken ct, GoodsStockLine line);
-    Task<int> ConfirmReceiptDatabaseUpdateAsync(CancellationToken ct, GoodsStockLine line, long stockItemId);
+    Task<int> ConfirmReceiptDatabaseUpdateAsync(CancellationToken ct, GoodsStockLine line, long stockItemId, long orderId);
     void AddStockMovements(StockMovement value);
 }

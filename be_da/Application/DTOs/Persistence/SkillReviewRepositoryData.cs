@@ -35,3 +35,5 @@ public sealed record SkillAppealHistoryEntry
     public string? OldBand { get; init; } = default!;
     public string? NewBand { get; init; } = default!;
 }
+
+public sealed record FutureRefundSource(long PaymentId, long RecipientId, int AmountVnd);

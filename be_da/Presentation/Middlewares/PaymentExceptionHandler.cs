@@ -13,7 +13,7 @@ public sealed class PaymentExceptionHandler(IPersistenceFailureClassifier failur
         if (failure is not null)
         {
             context.Response.StatusCode = failure == PersistenceFailure.OutsideAssignedCenter ? 403 : 409;
-            await context.Response.WriteAsJsonAsync(new { message = failure == PersistenceFailure.OutsideAssignedCenter ? "Giao dịch nằm ngoài Sport Center được phân công." : "Chưa thể hạch toán: cần đối soát cơ sở, khoản thu gốc hoặc số tiền hoàn." }, token);
+            await context.Response.WriteAsJsonAsync(new { message = failure == PersistenceFailure.ReservedStockConflict ? "Không đủ hàng khả dụng hoặc giữ tồn đã hết hạn. Tải lại đơn để kiểm tra." : failure == PersistenceFailure.OutsideAssignedCenter ? "Giao dịch nằm ngoài Sport Center được phân công." : "Chưa thể hạch toán: cần đối soát cơ sở, khoản thu gốc hoặc số tiền hoàn." }, token);
             return true;
         }
 

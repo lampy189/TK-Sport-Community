@@ -42,12 +42,10 @@ public static class LateEntrySql
           SELECT CASE WHEN OBJECT_ID('dbo.late_entry_offers','U') IS NOT NULL
             AND OBJECT_ID('dbo.late_entry_tickets','U') IS NOT NULL
             AND (
-              (COL_LENGTH('dbo.users','venue_id') IS NULL
-                AND NOT EXISTS(SELECT 1 FROM sys.security_policies WHERE name='SportCenterIsolation'))
+              (COL_LENGTH('dbo.users','venue_id') IS NULL)
               OR (COL_LENGTH('dbo.users','venue_id') IS NOT NULL
                 AND OBJECT_ID('dbo.revenue_entries','U') IS NOT NULL
-                AND EXISTS(SELECT 1 FROM sys.triggers WHERE object_id=OBJECT_ID('dbo.TR_payments_revenue') AND is_disabled=0)
-                AND EXISTS(SELECT 1 FROM sys.security_policies WHERE name='SportCenterIsolation' AND is_enabled=1))
+                AND EXISTS(SELECT 1 FROM sys.triggers WHERE object_id=OBJECT_ID('dbo.TR_payments_revenue') AND is_disabled=0))
             )
           THEN 1 ELSE 0 END
           """, c, tx);
@@ -59,7 +57,6 @@ public static class LateEntrySql
     {
         await using var command = new SqlCommand("""
             SELECT CASE WHEN COL_LENGTH('dbo.users','venue_id') IS NULL
-              AND NOT EXISTS(SELECT 1 FROM sys.security_policies WHERE name='SportCenterIsolation')
             THEN 1 ELSE 0 END;
             """, c);
         return Convert.ToInt32(await command.ExecuteScalarAsync(ct)) == 1;

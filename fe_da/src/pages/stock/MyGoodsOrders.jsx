@@ -63,7 +63,7 @@ export default function MyGoodsOrders() {
           {orders.map((order) => {
             const state = orderState(order);
             return (
-              <li key={order.id}>
+              <li key={order.id} id={`goods-order-${order.id}`} ref={node => { if (node && String(order.id) === new URLSearchParams(window.location.search).get('goodsOrderId')) node.scrollIntoView({ block: 'center' }); }}>
                 <div className="my-order-head">
                   <strong>{order.orderCode}</strong>
                   <span className={state.className}>{state.label}</span>

@@ -10,6 +10,7 @@
 .player-site main {
   flex: 1;
 }
+@media(max-width:380px) { .player-brand > span:last-child { display:none; } }
 .player-container {
   width: min(1560px, calc(100% - 64px));
   margin-inline: auto;
@@ -510,14 +511,17 @@
   .player-account-name {
     display: none;
   }
+  .player-user-name { display: none; }
+  .player-user-trigger { gap: 4px; padding: 4px; }
   .player-logout {
     border: 0;
     padding-inline: 4px;
     font-size: 12px;
   }
   .player-logout svg {
-    display: none;
+    display: block;
   }
+  .player-logout span { display: none; }
   .player-menu-toggle {
     display: flex;
   }

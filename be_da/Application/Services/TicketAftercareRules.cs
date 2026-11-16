@@ -27,6 +27,8 @@ public static class TicketAftercareRules
     public static int Limit(int capacity) => Math.Min(capacity, 8);
     public static void CheckTarget(Session source, Session target, int occupied, DateTimeOffset now)
     {
+        if(source.Court!=null&&target.Court!=null&&source.Court.VenueId!=target.Court.VenueId)
+            throw new PaymentException(409,"Chỉ đổi vé trong cùng cơ sở; gửi ngoại lệ nếu cần xử lý liên cơ sở.");
         if (target.Id == source.Id || target.SportId != source.SportId)
             throw new PaymentException(409, "Chọn buổi khác cùng môn thể thao.");
         if (target.Status.ToLowerInvariant()is not ("open" or "published") || new DateTimeOffset(target.SessionDate.ToDateTime(target.TimeSlot.StartTime), TimeSpan.FromHours(7)) <= now)

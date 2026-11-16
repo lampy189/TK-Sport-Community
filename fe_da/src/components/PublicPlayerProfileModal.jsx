@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   UserPlus,
   Check,
@@ -8,7 +8,7 @@ import {
   Send
 } from 'lucide-react';
 import { api } from '../api';
-import { openFloatingChatWith } from './FloatingChatBubble';
+import { openFloatingChatWith } from './sessionInviteMessage';
 import { ChatMessageContent } from './SessionInviteCard';
 import '../styles/community.css';
 
@@ -47,7 +47,6 @@ function getStatusClass(status) {
 export function PublicPlayerProfileModal({
   playerId,
   onClose,
-  onOpenFullChat,
   onFriendshipChanged
 }) {
   const [profile, setProfile] = useState(null);
@@ -78,7 +77,8 @@ export function PublicPlayerProfileModal({
   }, [playerId]);
 
   useEffect(() => {
-    loadPublicProfile();
+    const initial = setTimeout(() => void loadPublicProfile(), 0);
+    return () => clearTimeout(initial);
   }, [loadPublicProfile]);
 
   const loadInlineChat = useCallback(async () => {
@@ -88,8 +88,8 @@ export function PublicPlayerProfileModal({
       const list = await api.getConversation(playerId, 40);
       setMessages(Array.isArray(list) ? list : []);
       await api.markMessagesAsRead(playerId);
-    } catch {
-      // Ignore if not friends yet
+    } catch (e) {
+      setActionBanner({ type: 'error', text: e.message || 'Chưa tải được tin nhắn. Vui lòng thử lại.' });
     } finally {
       setChatLoading(false);
     }
@@ -97,7 +97,8 @@ export function PublicPlayerProfileModal({
 
   useEffect(() => {
     if (showInlineChat && profile?.friendshipStatus === 'Accepted') {
-      loadInlineChat();
+      const initial = setTimeout(() => void loadInlineChat(), 0);
+      return () => clearTimeout(initial);
     }
   }, [showInlineChat, profile?.friendshipStatus, loadInlineChat]);
 

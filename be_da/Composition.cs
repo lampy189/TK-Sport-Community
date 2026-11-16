@@ -1,4 +1,5 @@
 using be_da.Application.Interfaces.Services;
+using be_da.Application.Interfaces.Repositories;
 
 namespace be_da;
 public static class Composition
@@ -22,6 +23,8 @@ public static class Composition
         services.AddScoped<ILateEntryService, be_da.Application.Services.LateEntryService>();
         services.AddScoped<IProfileService, be_da.Application.Services.ProfileService>();
         services.AddScoped<ISessionService, be_da.Application.Services.SessionService>();
+        services.AddScoped<ISessionManagementService, be_da.Application.Services.SessionManagementService>();
+        services.AddScoped<ISessionManagementRepository, be_da.Infrastructure.Persistence.Repositories.SqlSessionManagementRepository>();
         services.AddScoped<ISessionSupplyService, be_da.Application.Services.SessionSupplyService>();
         services.AddScoped<ISkillProfileService, be_da.Application.Services.SkillProfileService>();
         services.AddScoped<IStockService, be_da.Application.Services.StockService>();
@@ -34,6 +37,10 @@ public static class Composition
         services.AddScoped<IRevenueService, be_da.Application.Services.RevenueService>();
         services.AddScoped<be_da.Application.Interfaces.Repositories.IRevenueRepository, be_da.Infrastructure.Persistence.Repositories.RevenueRepository>();
         services.AddScoped<ISportCenterService, be_da.Application.Services.SportCenterService>();
+        services.AddScoped<IInvitationService, be_da.Application.Services.InvitationService>();
+        services.AddScoped<IOperationsService, be_da.Application.Services.OperationsService>();
+        services.AddScoped<be_da.Application.Interfaces.Repositories.IOperationsRepository, be_da.Infrastructure.Persistence.Repositories.OperationsRepository>();
+        services.AddScoped<be_da.Application.Interfaces.Repositories.IInvitationRepository, be_da.Infrastructure.Persistence.Repositories.InvitationRepository>();
         services.AddScoped<be_da.Application.Interfaces.Repositories.ISportCenterRepository, be_da.Infrastructure.Persistence.Repositories.SportCenterRepository>();
         services.AddScoped<be_da.Application.Interfaces.External.IAvatarStorage, be_da.Infrastructure.ExternalServices.LocalAvatarStorage>();
         services.AddScoped<ICommunityService, be_da.Application.Services.CommunityService>();
@@ -41,6 +48,9 @@ public static class Composition
         services.AddScoped<TKSC.Application.Interfaces.Repositories.ITicketEmailRepository, TKSC.Infrastructure.Persistence.Repositories.TicketEmailRepository>();
         services.AddScoped<TKSC.Application.Interfaces.External.ITicketEmailSender, TKSC.Infrastructure.ExternalServices.SmtpTicketEmailSender>();
         services.AddSingleton<TKSC.Application.Interfaces.Repositories.IPersistenceFailureClassifier, TKSC.Infrastructure.Persistence.PersistenceFailureClassifier>();
+        services.AddScoped<TKSC.Application.Interfaces.Repositories.IIncidentRepository,TKSC.Infrastructure.Persistence.Repositories.IncidentRepository>();
+        services.AddScoped<TKSC.Application.Interfaces.Services.IIncidentWorkflowService,TKSC.Application.Services.IncidentWorkflowService>();
+        services.AddScoped<TKSC.Application.Interfaces.Services.ITicketRecoveryService,TKSC.Application.Services.TicketRecoveryService>();
         return services;
     }
 }

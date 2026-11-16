@@ -98,7 +98,7 @@ public sealed class SqlPlayerChatData(IConfiguration configuration, IOptions<Cha
     private const string SessionsSql = """
         SELECT TOP (21) s.id, CONCAT(N'Buổi #',s.id,N' · ',sp.name),
           CONCAT(N'Ngày ',CONVERT(varchar(10),s.session_date,103),N'; giờ ',CONVERT(varchar(5),ts.start_time,108),N'–',CONVERT(varchar(5),ts.end_time,108),
-            N'; sân ',c.name,N'; địa điểm ',v.name,N'; nhóm ',s.band,N'; giá ',s.price_vnd,N' VND; sức chứa ',s.capacity,
+            N'; sân ',c.name,N'; địa điểm ',v.name,N'; nhóm ',s.band,N'; giá ',dbo.OwnerEffectivePrice('session',s.id,s.price_vnd,SYSDATETIMEOFFSET()),N' VND; sức chứa ',s.capacity,
             N'; chỗ còn lại ',CASE WHEN s.capacity>occ.n THEN s.capacity-occ.n ELSE 0 END,N'; trạng thái ',s.status,
             N'. Số chỗ có thể thay đổi; hệ thống kiểm tra điều kiện khi đăng ký.')
         FROM dbo.sessions s JOIN dbo.sports sp ON sp.id=s.sport_id

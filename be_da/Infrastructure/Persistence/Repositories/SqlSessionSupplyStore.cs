@@ -33,6 +33,7 @@ public sealed class SqlSessionSupplyStore(string connectionString, be_da.Applica
         SELECT u.id, u.full_name, r.code
         FROM dbo.users u JOIN dbo.roles r ON r.id = u.role_id
         WHERE u.status = 'Active' AND u.deleted_at IS NULL
+          AND EXISTS (SELECT 1 FROM dbo.sessions s JOIN dbo.courts c ON c.id=s.court_id WHERE s.id=@sessionId AND c.venue_id=u.venue_id)
           AND (@recipientId IS NULL OR u.id = @recipientId)
           AND (r.code = 'Manager' OR (r.code = 'Referee'
                AND EXISTS (SELECT 1 FROM dbo.session_referees sr WHERE sr.session_id = @sessionId AND sr.referee_id = u.id)))
@@ -81,11 +82,12 @@ public sealed class SqlSessionSupplyStore(string connectionString, be_da.Applica
         await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
         await using var command = new SqlCommand(SessionSelect + """
 
-            WHERE s.session_date = @date AND s.status <> 'Cancelled'
+            WHERE s.session_date = @date AND s.status <> 'Cancelled' AND (@accessVenue IS NULL OR c.venue_id=@accessVenue)
               AND (@refereeId IS NULL OR EXISTS (
                   SELECT 1 FROM dbo.session_referees sr WHERE sr.session_id = s.id AND sr.referee_id = @refereeId))
             ORDER BY ts.start_time, c.name;
             """, connection);
+        CenterAccess.Bind(command, dataScope);
         command.Parameters.Add("@date", SqlDbType.Date).Value = date.ToDateTime(TimeOnly.MinValue);
         command.Parameters.Add("@refereeId", SqlDbType.BigInt).Value = (object? )refereeId ?? DBNull.Value;
         var sessions = new List<SupplySession>();
@@ -99,6 +101,7 @@ public sealed class SqlSessionSupplyStore(string connectionString, be_da.Applica
     {
         await using var connection = new SqlConnection(connectionString);
         await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
+        await CenterAccess.RequireAsync(connection, null, dataScope, "session", sessionId, cancellationToken);
         return await LoadDetailsAsync(connection, null, sessionId, cancellationToken);
     }
 
@@ -107,6 +110,8 @@ public sealed class SqlSessionSupplyStore(string connectionString, be_da.Applica
         await using var connection = new SqlConnection(connectionString);
         await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
+        await CenterAccess.RequireAsync(connection, transaction, dataScope, "session", sessionId, cancellationToken);
+        await CenterAccess.RequireAsync(connection, transaction, dataScope, "product", request.ProductId, cancellationToken);
         // Status: 0 posted, 1 session missing, 2 session cancelled, 3 recipient not allowed,
         // 4 allocation already closed, 5 product missing, 6 product inactive, 7 insufficient stock,
         // 8 session already ended, 9 unknown unit, 10 too large to post.
@@ -188,6 +193,7 @@ public sealed class SqlSessionSupplyStore(string connectionString, be_da.Applica
     {
         await using var connection = new SqlConnection(connectionString);
         await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
+        await CenterAccess.RequireAsync(connection, null, dataScope, "session", sessionId, cancellationToken);
         await using var command = new SqlCommand("SELECT COUNT(*) FROM dbo.session_referees WHERE session_id = @sessionId AND referee_id = @refereeId;", connection);
         command.Parameters.Add("@sessionId", SqlDbType.BigInt).Value = sessionId;
         command.Parameters.Add("@refereeId", SqlDbType.BigInt).Value = refereeId;
@@ -199,6 +205,8 @@ public sealed class SqlSessionSupplyStore(string connectionString, be_da.Applica
         await using var connection = new SqlConnection(connectionString);
         await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
+        await CenterAccess.RequireAsync(connection, transaction, dataScope, "session", sessionId, cancellationToken);
+        await CenterAccess.RequireAsync(connection, transaction, dataScope, "product", productId, cancellationToken);
         // Status: 0 recorded, 1 not assigned, 2 nothing issued, 3 already closed, 4 use exceeds outstanding.
         const string sql = """
             DECLARE @lock int;
@@ -249,6 +257,8 @@ public sealed class SqlSessionSupplyStore(string connectionString, be_da.Applica
         await using var connection = new SqlConnection(connectionString);
         await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
+        await CenterAccess.RequireAsync(connection, transaction, dataScope, "session", sessionId, cancellationToken);
+        await CenterAccess.RequireAsync(connection, transaction, dataScope, "product", productId, cancellationToken);
         // Status: 0 closed now, 1 session missing, 2 nothing issued, 3 return exceeds outstanding, 9 already closed.
         const string sql = """
             DECLARE @lock int;

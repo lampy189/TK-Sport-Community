@@ -5,7 +5,7 @@ import './messages.css';
 
 const isConversation = item => ['ticket_staff_reply', 'ticket_player_message'].includes(item?.referenceType) && item.referenceId > 0;
 
-export default function MessagesPage({ preview = false }) {
+export default function MessagesPage({ preview = false, onOpen, role }) {
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(!preview);
@@ -49,7 +49,7 @@ export default function MessagesPage({ preview = false }) {
       <aside className="messages-list" aria-label="Danh sách thông báo">
         <h2>Thông báo gần đây</h2>
         <small>Hiển thị 50 thông báo gần nhất, giống danh sách ở chuông.</small>
-        {loading ? <p role="status">Đang tải thông báo…</p> : !items.length && <p>{preview ? 'Thông báo sẽ hiển thị khi bạn đăng nhập.' : 'Chưa có thông báo về vé.'}</p>}
+        {loading ? <p role="status">Đang tải thông báo…</p> : !items.length && <p>{preview ? 'Thông báo sẽ hiển thị khi bạn đăng nhập.' : 'Chưa có thông báo.'}</p>}
         {items.map(item => <button key={item.id} className={`messages-entry ${selected?.id === item.id ? 'is-selected' : ''}`} aria-pressed={selected?.id === item.id} onClick={() => select(item)}>
           <strong>{item.title}</strong>
           <small>{item.referenceId > 0 && item.referenceType?.startsWith('ticket_') ? `Vé #${item.referenceId} · ` : ''}{item.status === 'unread' ? 'Chưa đọc' : 'Đã đọc'}</small>
@@ -60,6 +60,9 @@ export default function MessagesPage({ preview = false }) {
           <h2>{isConversation(selected) ? 'Trao đổi về vé' : 'Chi tiết thông báo'}</h2>
           <h3>Nội dung chi tiết</h3>
           <p className="messages-description">{selected.description || selected.title}</p>
+          {selected.referenceType === 'session_invitation' && <button onClick={() => onOpen?.('Lời mời buổi chơi')}>Mở lời mời buổi chơi</button>}
+          {selected.referenceType === 'access_request' && <button onClick={() => onOpen?.(role === 'owner' ? 'Bổ nhiệm quản lý' : role === 'manager' ? 'Phê duyệt nhân sự' : 'Tài khoản & truy cập')}>Mở yêu cầu quyền tài khoản</button>}
+          {['friend_request', 'friend_accepted', 'chat_message'].includes(selected.referenceType) && role === 'player' && <button onClick={() => onOpen?.('Cộng đồng')}>Mở cộng đồng và tin nhắn</button>}
           {isConversation(selected) && <TicketSupport key={selected.referenceId} ticketId={selected.referenceId} staff={selected.referenceType === 'ticket_player_message'} initialOpen />}
         </> : <p>Chọn một thông báo để xem đầy đủ nội dung và ảnh đính kèm.</p>}
       </article>

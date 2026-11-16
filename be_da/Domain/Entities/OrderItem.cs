@@ -7,6 +7,8 @@ public partial class OrderItem
 {
     public long Id { get; set; }
 
+    public long? PriceVersionId { get; set; }
+
     public long OrderId { get; set; }
 
     public long ProductId { get; set; }

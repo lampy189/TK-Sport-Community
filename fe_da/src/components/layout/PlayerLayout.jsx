@@ -88,7 +88,7 @@ export default function PlayerLayout({
             </span>
           </a>
           <div className="player-account">
-            {onLogout && <NotificationBell onTickets={() => navigate("Vé của tôi")} />}
+            {onLogout && <NotificationBell onTickets={() => navigate("Vé của tôi")} onInvitations={() => navigate('Lời mời buổi chơi')} onCommunity={() => navigate('Cộng đồng')} />}
             {accountName && (
               <div className="player-user-dropdown-wrap" ref={userMenuRef}>
                 <button
@@ -96,6 +96,7 @@ export default function PlayerLayout({
                   className={`player-user-trigger ${userMenuOpen ? "is-open" : ""}`}
                   aria-expanded={userMenuOpen}
                   title="Bấm để mở Hồ sơ cá nhân & Hồ sơ kỹ năng"
+                  aria-label={`Tài khoản ${headerProfile?.fullName || accountName}`}
                   onClick={() => setUserMenuOpen((v) => !v)}
                 >
                   <span className="player-user-trigger-avatar">
@@ -105,7 +106,7 @@ export default function PlayerLayout({
                       (headerProfile?.fullName || accountName).charAt(0).toUpperCase()
                     )}
                   </span>
-                  <span style={{ maxWidth: "180px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <span className="player-user-name" style={{ maxWidth: "180px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {headerProfile?.fullName || accountName}
                   </span>
                   <ChevronDown size={15} />
@@ -144,7 +145,7 @@ export default function PlayerLayout({
               </div>
             )}
             {onLogout && (
-              <button className="player-logout" onClick={onLogout}>
+              <button className="player-logout" onClick={onLogout} aria-label="Đăng xuất">
                 <LogOut size={17} aria-hidden="true" />
                 <span>Đăng xuất</span>
               </button>
