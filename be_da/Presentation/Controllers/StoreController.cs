@@ -21,10 +21,10 @@ public class StoreController(IStoreService service) : ControllerBase
     [HttpPost("orders/cart")]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Player,Staff,Manager")]
-    public async Task<IActionResult> CreateCart([FromBody] CreateCartRequest request)
+    public async Task<IActionResult> CreateCart([FromBody] CreateCartRequest request, [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey)
     {
         if (UserId <= 0)
             return Unauthorized();
-        return (await service.CreateCartAsync(request, UserId, User.IsInRole("Player"), User.FindFirstValue(ClaimTypes.Name), CenterSelection.Scoped, CenterSelection.CurrentVenue, HttpContext.RequestAborted)).ToResponse();
+        return (await service.CreateCartAsync(request, UserId, User.IsInRole("Player"), User.FindFirstValue(ClaimTypes.Name), CenterSelection.Scoped, CenterSelection.CurrentVenue, idempotencyKey, HttpContext.RequestAborted)).ToResponse();
     }
 }

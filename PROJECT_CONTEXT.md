@@ -9,9 +9,21 @@ The user explicitly approved migration 018 after test validation. COPY_ONLY back
 
 The user explicitly disabled SQL Server RLS and requested center authorization entirely in backend code. Keep `SportCenterIsolation` OFF; do not re-enable it. EF query filters/write validation and explicit SQL repository checks enforce personnel center boundaries. Owner remains global; Player personal histories remain ownership-protected and global. SQL session center metadata is retained only for existing accounting defaults, not authorization. See `docs/application-center-authorization.md` and upgrade 017. This supersedes earlier RLS deployment guidance.
 
+## Player and operations implementation (12 Nov 2026)
+
+The user explicitly assigned Nhat's Player invitation/payer UX, Player journey/profile/community/notifications, venue/court/personnel management, approved account access and technical handover, plus an operations overview and trial feedback. Frontend changes for this scope are authorized. Implementation remains on `nhat-refactor-20261112` in the existing refactored single project. See `docs/nhat-player-operations.md` for behavior, requirement mapping, validation and material limits. Upgrade 017 is prepared but NOT applied to the working database; apply only after the required explicit acceptance. Isolated tests additionally restore missing revenue triggers and enable existing center isolation; these changes have NOT been applied to `Sep490_Nhat_20261112`. Production setup/real external integrations and deployment backup/restore remain subsequent work per the user's code-first priority.
+
 ## Single-project architecture refactor (11 Nov 2026)
 
 The user explicitly chose Clean Architecture by folders within the existing .NET 8 `be_da.csproj`, not multiple application projects. HTTP code is under `Presentation`; `Application` owns services, interfaces and DTOs; `Domain` owns entities/core rules; persistence and external implementations are under `Infrastructure`. `Program.cs` and `appsettings*.json` are at the project root. Keep existing SQL/EF transactions, API contracts and historical migrations. See `docs/architecture-refactor.md` for the file map, validation results and launch instructions.
+
+## Current local source and database (12 Nov 2026)
+
+The user requested preparing the latest refactored source and the supplied new database for upcoming work, allowing a new Nhat branch. The active Visual Studio checkout remains `C:\Users\shogu\Documents\ChatGPT\TK-Sport-Community`; active branch is `nhat-refactor-20261112`, based directly on `origin/main` commit `739c90d`. The prior local `NhatLT` branch remains unchanged. Do not merge the old implementation into this new baseline automatically.
+
+Local SQL Server `localhost` now has `Sep490_Nhat_20261112`, imported from `C:\Users\shogu\Downloads\dbdoan.sql` (dump timestamp 11 Nov 2026 23:47:43; SHA256 `AD7F9B1A09C1AE08C362A75D4D3086579B9981809D5A7CE895A755C92C8070C7`). Only the database name and database creation file locations were adapted for a separate local import using SQL Server default directories. The existing `Sep490` database was not changed. The new baseline has 48 tables and 104 foreign keys; DBCC CHECKCONSTRAINTS completed without violations. Its SportCenterIsolation security policy is disabled as supplied; do not enable it or apply historical upgrades automatically. The imported venue IDs differ from earlier notes: 1 = Vinh Phuc, 11 = Ha Noi. Query the new database rather than relying on historic IDs, schema snapshots, demo data or old feature decisions below when they conflict with this baseline.
+
+Existing local configuration was copied from `be_da/Controllers/` to the refactored project root; ignored `be_da/appsettings.Local.json` sets `ConnectionStrings:Sep490` to this new database with Windows Authentication. No credentials or database rows were added to Git. Continue using `be_da/be_da.slnx` and the Visual Studio `https` profile. Backend and frontend builds passed; API tests: 628 passed / 9 SQL integration tests skipped; payment tests: 67 passed. Development smoke checks returned HTTP 200 for Swagger and `/api/auth/centers` against the new database. The smoke-test backend was stopped; real Google OAuth, payments and email were not exercised.
 
 ## Precise slider scoring (10 Nov 2026)
 

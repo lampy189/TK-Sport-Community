@@ -19,4 +19,12 @@ public class RefereeSessionsController(ITicketCheckInService service) : Controll
         var sessions = await service.GetAssignedSessionsAsync(actorId);
         return Ok(sessions);
     }
+
+    [HttpGet("sessions/{sessionId:long}/attendees")]
+    public async Task<IActionResult> GetAttendees(long sessionId)
+    {
+        if (!long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actorId))
+            return Unauthorized();
+        return Ok(await service.GetSessionRosterAsync(sessionId, actorId));
+    }
 }

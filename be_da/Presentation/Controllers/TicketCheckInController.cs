@@ -32,6 +32,6 @@ public class TicketCheckInController(ITicketCheckInService service, IAntiforgery
             return BadRequest();
         if (!long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actorId))
             return Unauthorized();
-        return Ok(await service.ExecuteAsync(request.TicketCode, actorId, User.IsInRole("manager") || User.IsInRole("Manager"), confirm));
+        return Ok(await service.ExecuteAsync(request.TicketCode, actorId, User.IsInRole("manager") || User.IsInRole("Manager"), confirm, request.SessionId));
     }
 }

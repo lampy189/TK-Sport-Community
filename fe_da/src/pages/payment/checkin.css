@@ -1,3 +1,10 @@
+.checkin-roster-list { display: grid; }
+.checkin-roster-row { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: .7rem 0; border-top: 1px solid #dce5df; }
+.checkin-roster-row > div { display: grid; gap: .2rem; }
+.checkin-roster-row > div span { color: #52665d; font-size: .9rem; }
+.checkin-roster-status { flex: 0 0 auto; color: #76521a; font-size: .9rem; }
+.checkin-roster-status.is-checked { color: #17684d; font-weight: 700; }
+@media (max-width: 500px) { .checkin-roster-row { align-items: flex-start; flex-direction: column; } }
 .checkin-workspace { width: 100%; min-width: 0; }
 .checkin-steps { display: flex; gap: 24px; list-style: none; padding: 0; margin: 0 0 24px; }
 .checkin-steps li { display: flex; align-items: center; gap: 10px; color: var(--color-muted); font-size: 12px; }

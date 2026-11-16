@@ -63,9 +63,9 @@ public sealed class MultiCenterDatabaseTests
                 Assert.Equal(secondCenter, await db.Database.SqlQueryRaw<long>("SELECT venue_id AS Value FROM dbo.products WHERE id={0}", product.ProductId).SingleAsync());
             Assert.Empty(firstProducts.Select(p => p.ProductId).Intersect(secondProducts.Select(p => p.ProductId)));
             http.Items["SportCenterId"] = firstCenter;
-            Assert.IsType<NotFoundObjectResult>(await controller.CreateCart(new([new CreateCartLine(secondProducts[0].ProductId, 1)])));
+            Assert.IsType<NotFoundObjectResult>(await controller.CreateCart(new([new CreateCartLine(secondProducts[0].ProductId, 1)]), "counter-cart-outside-center-1"));
             var created = Assert.IsType<StoreCartOrderResult>(Assert.IsType<OkObjectResult>(
-                await controller.CreateCart(new([new CreateCartLine(firstProducts.First(p => p.QuantityOnHand > 0).ProductId, 1)]))).Value);
+                await controller.CreateCart(new([new CreateCartLine(firstProducts.First(p => p.QuantityOnHand > 0).ProductId, 1)]), "counter-cart-local-center-1")).Value);
             Assert.Equal(firstCenter, await db.Database.SqlQueryRaw<long>("SELECT venue_id AS Value FROM dbo.orders WHERE id={0}", created.OrderId).SingleAsync());
             http.Items["SportCenterId"] = secondCenter;
             var afterSwitch = Assert.IsAssignableFrom<IEnumerable<StoreProductItem>>(

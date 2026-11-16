@@ -3,7 +3,7 @@
 ## Phạm vi hiện tại
 
 - Theo lựa chọn ngày 06/10/2026, triển khai trực tiếp trong `be_da/` của repo GitHub, giữ target .NET 8. Solution là `be_da/be_da.slnx` (mở bằng Visual Studio mới hoặc SDK 10); không thêm lại bốn project backend cũ. Xem `be_da/README.md`. Không sửa frontend nếu chưa được yêu cầu.
-- SQL Server trên máy dùng database `Sep490`. `db/schema.sql` và `db/erd.mmd` là baseline vật lý hiện tại, chưa được coi là thiết kế cuối cùng.
+- Theo yêu cầu ngày 12/11/2026, môi trường làm việc mới dùng SQL Server `localhost`, database `Sep490_Nhat_20261112`, nhập từ `C:\Users\shogu\Downloads\dbdoan.sql` ngày 11/11/2026. Database `Sep490` cũ được giữ nguyên. Cấu hình tại `be_da/appsettings.Local.json` (Git ignore). `db/schema.sql` và `db/erd.mmd` là tài liệu lịch sử; đối chiếu database mới trước khi triển khai.
 - Chưa tự thêm chức năng, endpoint, bảng, tích hợp hoặc thư viện chỉ vì chúng xuất hiện trong tài liệu. Chọn phần cần làm theo yêu cầu hiện tại của người dùng.
 
 ## Đọc yêu cầu trước khi sửa code
@@ -25,7 +25,7 @@
 ## Cách làm việc
 
 - Người dùng chạy backend bằng profile `https` trong Visual Studio. Sau kiểm thử, dừng tiến trình backend do Codex khởi động để tránh khóa `be_da.exe` hoặc chiếm cổng 7207 khi người dùng bấm F5. Chỉ dừng tiến trình đã xác minh thuộc đúng checkout; không tự khởi động lại nền khi bàn giao cho Visual Studio.
-- Theo yêu cầu ngày 07/10/2026, cập nhật trực tiếp checkout đang mở trong Visual Studio: `C:\Users\shogu\Documents\ChatGPT\TK-Sport-Community`, nhánh `NhatLT`, solution `be_da/be_da.slnx`. Đây là nơi làm việc chính trên máy này; không chuyển sang worktree cũ hoặc scaffold `Sep490/backend` nếu người dùng chưa yêu cầu. Kiểm tra thay đổi của người dùng trước mỗi lần sửa; không tự merge vào `main`.
+- Theo yêu cầu ngày 12/11/2026, dùng source refactor từ `origin/main` (`739c90d`) trên nhánh `nhat-refactor-20261112` trong checkout Visual Studio `C:\Users\shogu\Documents\ChatGPT\TK-Sport-Community`, solution `be_da/be_da.slnx`. Nhánh `NhatLT` cũ được giữ nguyên; không tự mang code cũ sang bản refactor. Đây là nơi làm việc chính; không chuyển sang worktree cũ hoặc scaffold `Sep490/backend`. Kiểm tra thay đổi của người dùng trước mỗi lần sửa; không tự merge vào `main`.
 - Khi triển khai một tính năng, nêu ngắn gọn mã UC/FR/quy tắc nguồn và phần nào đã được thực hiện.
 - Không lưu mật khẩu, API key hoặc connection string có bí mật vào Git. Dùng cấu hình phát triển an toàn.
 - Không xóa dữ liệu hoặc sửa schema đã có dữ liệu mà chưa kiểm tra tác động; thêm migration và hướng nâng cấp khi bắt đầu dùng EF Core.

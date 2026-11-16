@@ -52,8 +52,16 @@ export const paymentClient = {
     }
     return response.json();
   },
-  inspectTicket: code => request('check-in/inspect', { ticketCode: code }),
-  checkIn: code => request('check-in/confirm', { ticketCode: code }),
+  getSessionRoster: async sessionId => {
+    const response = await authenticatedRequest(`/api/v1/referee/sessions/${sessionId}/attendees`, { cache: 'no-store', credentials: 'same-origin' });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.message || 'Không thể tải danh sách người chơi của buổi.');
+    }
+    return response.json();
+  },
+  inspectTicket: (code, sessionId) => request('check-in/inspect', { ticketCode: code, sessionId }),
+  checkIn: (code, sessionId) => request('check-in/confirm', { ticketCode: code, sessionId }),
   cancel: async (id) => {
     if (!demoMode) return request('tickets/' + id + '/cancel', {});
     const order = readDemo();

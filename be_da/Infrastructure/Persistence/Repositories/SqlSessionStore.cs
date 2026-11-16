@@ -80,7 +80,8 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                       OR (LOWER(t.status) IN ('pending', 'reserved') AND o.expires_at > SYSUTCDATETIME())
                   )
             ) occ
-            WHERE (@status IS NOT NULL AND s.status = @status OR @status IS NULL AND s.status IN ('Open', 'Published'))
+            WHERE s.status IN ('Open','Published') AND (@status IS NULL OR s.status = @status)
+              AND c.is_active=1 AND v.is_active=1
               AND (@sportId IS NULL OR s.sport_id = @sportId)
               AND (@sport IS NULL OR sp.code = @sport OR sp.name = @sport)
               AND (@sessionDate IS NULL OR s.session_date = @sessionDate)
@@ -254,8 +255,16 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
 
     public Task<RegisterSessionResult> RegisterSessionAsync(long userId, long sessionId, CancellationToken cancellationToken) => RegisterCoreAsync(userId, sessionId, null, cancellationToken);
     public Task<RegisterSessionResult> RegisterLateEntryAsync(long userId, long sessionId, long expectedRevision, CancellationToken cancellationToken) => RegisterCoreAsync(userId, sessionId, expectedRevision, cancellationToken);
-    public Task<RegisterSessionResult> AcceptSponsoredInvitationAsync(long userId, long sessionId, long invitationId, CancellationToken cancellationToken) => RegisterCoreAsync(userId, sessionId, null, cancellationToken, invitationId);
-    private async Task<RegisterSessionResult> RegisterCoreAsync(long userId, long sessionId, long? lateRevision, CancellationToken cancellationToken, long? invitationId = null)
+    public Task<RegisterSessionResult> AcceptSponsoredInvitationAsync(long userId, long sessionId, long invitationId, CancellationToken cancellationToken) => RegisterCoreAsync(userId, sessionId, null, cancellationToken, invitationId, true);
+    public async Task<RegisterSessionResult> AcceptInvitationAsync(long userId, long invitationId, CancellationToken ct)
+    {
+        await using var c = new SqlConnection(connectionString);
+        await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(c,ct,dataScope);
+        await WorkflowSql.RequireInvitations(c,null,ct);
+        var session = await WorkflowSql.Scalar(c,null,"SELECT i.session_id FROM dbo.invitations i JOIN dbo.players p ON p.id=i.invitee_id WHERE i.id=@id AND p.user_id=@user",ct,("@id",invitationId),("@user",userId));
+        return session==0 ? new(false,"INVITATION_NOT_FOUND","Không tìm thấy lời mời.") : await RegisterCoreAsync(userId,session,null,ct,invitationId);
+    }
+    private async Task<RegisterSessionResult> RegisterCoreAsync(long userId, long sessionId, long? lateRevision, CancellationToken cancellationToken, long? invitationId = null, bool legacySponsored = false)
     {
         await using var connection = new SqlConnection(connectionString);
         await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
@@ -284,7 +293,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 FROM dbo.sessions s WITH (UPDLOCK, HOLDLOCK)
                 JOIN dbo.time_slots ts ON ts.id = s.time_slot_id
                 JOIN dbo.courts c ON c.id=s.court_id JOIN dbo.venues v ON v.id=c.venue_id
-                  WHERE s.id = @sessionId AND (@late=0 OR v.is_active=1)
+                  WHERE s.id = @sessionId AND v.is_active=1 AND c.is_active=1
                     AND (@selectedCenter IS NULL OR c.venue_id=@selectedCenter);
                 """;
             long sportId;
@@ -322,7 +331,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
             }
 
             // Consent and the hold share a transaction; only the invitee can accept.
-            if (invitationId.HasValue)
+            if (invitationId.HasValue && legacySponsored)
             {
                 await using var invitation = new SqlCommand("""
                     SELECT i.status,p.user_id,i.ticket_id,o.id,o.order_code,t.ticket_code,t.amount_vnd,o.expires_at
@@ -351,6 +360,24 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                     return new(false, "INVITATION_NOT_PENDING", "Lời mời không còn chờ chấp nhận.");
             }
 
+            if (invitationId.HasValue && !legacySponsored)
+            {
+                await WorkflowSql.RequireInvitations(connection,transaction,cancellationToken);
+                await using var invite = WorkflowSql.Command(connection,transaction,"""
+                    SELECT i.status,i.expires_at,i.payer_user_id,i.order_id,i.ticket_id,o.order_code,t.ticket_code,t.amount_vnd,o.expires_at
+                    FROM dbo.invitations i WITH(UPDLOCK,HOLDLOCK) JOIN dbo.players p ON p.id=i.invitee_id
+                    LEFT JOIN dbo.social_booking_orders o ON o.id=i.order_id LEFT JOIN dbo.tickets t ON t.id=i.ticket_id
+                    WHERE i.id=@id AND p.user_id=@user AND i.session_id=@session;
+                    """,("@id",invitationId.Value),("@user",userId),("@session",sessionId));
+                await using var row=await invite.ExecuteReaderAsync(cancellationToken);
+                if(!await row.ReadAsync(cancellationToken)) return new(false,"INVITATION_NOT_FOUND","Không tìm thấy lời mời.");
+                if(string.Equals(row.GetString(0),"accepted",StringComparison.OrdinalIgnoreCase) && !row.IsDBNull(3) && !row.IsDBNull(4))
+                    return new(true,null,"Lời mời đã được chấp nhận.",null,row.GetInt64(3),row.GetString(5),row.GetInt64(4),row.GetString(6),row.GetInt32(7),row.GetFieldValue<DateTimeOffset>(8));
+                if(!string.Equals(row.GetString(0),"pending",StringComparison.OrdinalIgnoreCase) || row.IsDBNull(1) || row.GetFieldValue<DateTimeOffset>(1)<=DateTimeOffset.UtcNow || row.IsDBNull(2))
+                    return new(false,"INVITATION_EXPIRED","Lời mời đã xử lý hoặc hết hạn.");
+                payerId=row.GetInt64(2);
+            }
+
             var durationMinutes = (endTime - startTime).TotalMinutes;
             var isHourlyCourt = durationMinutes > 0 && durationMinutes <= 60;
             if (!string.Equals(sessionStatus, "Open", StringComparison.OrdinalIgnoreCase) && !string.Equals(sessionStatus, "Published", StringComparison.OrdinalIgnoreCase) && !(lateRevision.HasValue && string.Equals(sessionStatus, "ongoing", StringComparison.OrdinalIgnoreCase)))
@@ -363,6 +390,13 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
             var sessionStartVn = sessionDate.ToDateTime(TimeOnly.FromTimeSpan(startTime));
             var now = DateTimeOffset.UtcNow;
             var endsAt = TKSC.Domain.Payments.LateEntryRules.End(sessionDate, TimeOnly.FromTimeSpan(endTime));
+            if(!lateRevision.HasValue)
+            {
+                var reason=await WorkflowSql.Eligibility(connection,transaction,sessionId,playerId,cancellationToken);
+                if(reason is not null) return new(false,reason.Contains("giữ chỗ",StringComparison.Ordinal)?"ALREADY_REGISTERED":reason.Contains("đủ người",StringComparison.Ordinal)?"SESSION_FULL":reason.Contains("trình độ",StringComparison.Ordinal)?"SKILL_INELIGIBLE":"REGISTRATION_INELIGIBLE",reason);
+            }
+            if(await WorkflowSql.Scalar(connection,transaction,"SELECT COUNT(*) FROM dbo.users u JOIN dbo.roles r ON r.id=u.role_id WHERE u.id=@payer AND u.deleted_at IS NULL AND LOWER(u.status)='active' AND r.code='Player'",cancellationToken,("@payer",payerId))!=1)
+                return new(false,"PAYER_UNAVAILABLE","Người thanh toán không còn hoạt động.");
             if (lateRevision.HasValue)
             {
                 await LateEntrySql.RequireSchema(connection, transaction, cancellationToken);
@@ -618,7 +652,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 await notify.ExecuteNonQueryAsync(cancellationToken);
             }
 
-            if (invitationId.HasValue)
+            if (invitationId.HasValue && legacySponsored)
             {
                 await using var accept = new SqlCommand("""
                     UPDATE dbo.invitations SET status='Accepted',order_id=@order,ticket_id=@ticket WHERE id=@id;
@@ -635,6 +669,18 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 await accept.ExecuteNonQueryAsync(cancellationToken);
             }
 
+
+            if(invitationId.HasValue && !legacySponsored)
+            {
+                await WorkflowSql.Execute(connection,transaction,"""
+                    UPDATE dbo.invitations SET status='accepted',responded_at=SYSDATETIMEOFFSET(),order_id=@order,ticket_id=@ticket WHERE id=@id;
+                    INSERT dbo.notifications(user_id,channel,title,reference_type,reference_id,status)
+                    SELECT p.user_id,'web',N'Lời mời đã được chấp nhận','session_invitation',i.id,'unread'
+                    FROM dbo.invitations i JOIN dbo.players p ON p.id=i.inviter_id WHERE i.id=@id;
+                    IF @payer<>@recipient INSERT dbo.notifications(user_id,channel,title,reference_type,reference_id,status)
+                    VALUES(@payer,'web',N'Bạn có vé của bạn bè đang chờ thanh toán','session_invitation',@id,'unread');
+                    """,cancellationToken,("@id",invitationId.Value),("@order",orderId),("@ticket",ticketId),("@payer",payerId),("@recipient",userId));
+            }
             await transaction.CommitAsync(cancellationToken);
             return new RegisterSessionResult(Success: true, ErrorCode: null, Message: "Giữ chỗ thành công. Vui lòng thanh toán trước khi hết hạn.", Reason: null, OrderId: orderId, OrderCode: orderCode, TicketId: ticketId, TicketCode: ticketCode, AmountVnd: priceVnd, ExpiresAt: expiresAt);
         }
