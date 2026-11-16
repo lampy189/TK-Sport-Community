@@ -245,9 +245,11 @@ public sealed class SqlStockCountStore(string connectionString, be_da.Applicatio
                    ISNULL(SUM(CASE WHEN mv.movement_type = 'Adjustment' AND mv.quantity > 0 THEN mv.quantity END), 0),
                    ISNULL(-SUM(CASE WHEN mv.movement_type = 'Adjustment' AND mv.quantity < 0 THEN mv.quantity END), 0),
                    ISNULL(MAX(gap.unaccounted), 0),
-                   ISNULL(MAX(si.quantity_on_hand), 0), ISNULL(MAX(CASE WHEN si.id IS NULL THEN 0 ELSE @@HELD@@ END), 0)
+                   ISNULL(MAX(si.quantity_on_hand), 0), ISNULL(MAX(h.held), 0)
             FROM dbo.products p
             LEFT JOIN dbo.stock_items si ON si.product_id = p.id
+            -- SQL Server cannot aggregate over a subquery (error 130): compute the held quantity per row first.
+            OUTER APPLY (SELECT CASE WHEN si.id IS NULL THEN 0 ELSE @@HELD@@ END AS held) h
             LEFT JOIN mv ON mv.product_id = p.id
             LEFT JOIN gap ON gap.product_id = p.id
             LEFT JOIN dbo.product_units bu ON bu.product_id = p.id AND bu.factor_to_base = 1
