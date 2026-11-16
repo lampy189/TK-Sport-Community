@@ -1,5 +1,33 @@
 # TK Sport Community — Project Context
 
+## Single-project architecture refactor (11 Nov 2026)
+
+The user explicitly chose Clean Architecture by folders within the existing .NET 8 `be_da.csproj`, not multiple application projects. HTTP code is under `Presentation`; `Application` owns services, interfaces and DTOs; `Domain` owns entities/core rules; persistence and external implementations are under `Infrastructure`. `Program.cs` and `appsettings*.json` are at the project root. Keep existing SQL/EF transactions, API contracts and historical migrations. See `docs/architecture-refactor.md` for the file map, validation results and launch instructions.
+
+## Precise slider scoring (10 Nov 2026)
+
+The user requested retaining detailed slider points rather than rounding each criterion to 0–4 first. For new saves, each of four integer 0–10 observations contributes 0.5 points to its 20-point criterion. Sum all five precise criterion contributions and round once at the final 0–100 total (half up) to match existing integer profile storage. Level 0–4 is descriptive only. Save structured SliderScores in the existing assessment audit payload and validate/recalculate them at the server; player result contributions use those same values. Existing published assessments without structured slider data retain their original level-based calculations and history. No schema change is needed. Old drafts with recorded sliders adopt the precise calculation when explicitly saved.
+
+## Optional assessment comments (10 Nov 2026)
+
+The user explicitly made referee comments optional, including scores 0 and 4. Do not require evidence text to publish. Keep complete criterion scores, assigned-referee and checked-in attendance checks, review confirmation and rating history unchanged. Remove mandatory-comment wording and evidence checklist gates from the referee UI.
+
+## Schedule and late-entry UI clarification (10 Nov 2026)
+
+The user requested removing center selectors and redundant center labels from player session browsing and detail screens: use the center selected at login and enforced by the server. Keep only one late-entry ticket category, "Vé giờ lẻ", for the remaining duration of an ongoing social session. A session lasting 60 minutes must not create a second player-facing ticket category. Preserve the existing per-minute pricing formula, maximum 50% discount and expiry at the original session end. Personal profiles/history remain shared as previously approved.
+
+## Login correction (10 Nov 2026)
+
+The user explicitly requested restoring the existing Google OAuth login controls, including the Email entry button that enters the provider flow. Removing OAuth controls was an assistant misunderstanding, not a user decision. Preserve the backend Google OAuth integration and the selected-center parameter. TKSC must not add its own password field; password or change-password screens shown by accounts.google.com are controlled by the identity provider. Keep Development email login as the existing separate fallback, not as a replacement for OAuth.
+
+## UI wording preference (10 Nov 2026)
+
+The user prefers short functional labels and minimal copy. Use "Chọn cơ sở" rather than explanatory dropdown prompts; remove promotional introductions and redundant instructions next to controls. Keep actionable errors and necessary transaction details such as price and ticket expiry.
+
+## Approved multi-center rollout (10 Nov 2026)
+
+The user approved multi-center login and then clarified that ALL pre-existing business data belongs to Vinh Phuc. Venue 2 is TKSC Vĩnh Phúc; all nine legacy courts, 129 legacy sessions, old goods/stock/orders and existing operational personnel belong there. Venue 1 is the new TKSC Hà Nội branch, populated with explicitly requested demo courts/sessions/catalog/stock and three passwordless Development-only personnel accounts. Owners retain global authority. Players choose a browsing center per signed session and may change it; profiles, friends and personal ticket/order histories remain global and ownership-protected. New bookings/products are restricted to the selected center at the server; existing orders retain their original center. See docs/multi-center-login.md, upgrades 015/016 and db/seed-hanoi-demo.sql. This supersedes the earlier temporary standalone late-entry mode and one-venue assumption below.
+
 ## Approved assessment update (3 Nov 2026)
 
 The user approved referee scoring for Pickleball using the existing Profile internal scale: `PK-IPTPA-DUPR-V1`, five sport-specific criteria at 0–4 and 20% each, total 0–100 and internal B1–B5 bands. These are not official DUPR ratings. This explicitly supersedes the earlier restriction against this internal scale for Pickleball. New badminton forms use `BM-CLB-V1`; deactivate the old pilot rubric for new forms while retaining all existing forms and history. Upgrade 009 records the approved active-flag changes. Legacy pilot forms remain readable and scoreable under their original rubric.

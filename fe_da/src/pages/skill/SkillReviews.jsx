@@ -6,18 +6,18 @@ import "./skill-reviews.css";
 const base = "/api/v1/skill-reviews";
 const labels = { Pending: "Chờ xử lý", Approved: "Đã duyệt", Rejected: "Từ chối", UnderReview: "Đang xem xét", Kept: "Giữ nguyên điểm", Corrected: "Đã điều chỉnh điểm" };
 
-function ReasonForm({ label, onSubmit, children, maxLength = 2000 }) {
+function ReasonForm({ label, onSubmit, children, decisions, maxLength = 2000 }) {
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   return <form onSubmit={async e => {
-    e.preventDefault(); setBusy(true); setError("");
-    try { await onSubmit(reason); setReason(""); } catch (err) { setError(err.message); } finally { setBusy(false); }
+    e.preventDefault(); if (busy || !reason.trim()) return; setBusy(true); setError("");
+    try { await onSubmit(reason.trim(), e.nativeEvent.submitter?.value); setReason(""); } catch (err) { setError(err.message); } finally { setBusy(false); }
   }}>
     <label>Lý do / nhận xét<textarea required maxLength={maxLength} value={reason} onChange={e => setReason(e.target.value)} /></label>
     {children}
     {error && <p role="alert">{error}</p>}
-    <button className="button button-primary" disabled={busy || !reason.trim()}>{busy ? "Đang lưu…" : label}</button>
+    {decisions ? <div className="workflow-actions">{decisions.map(action => <button key={action.value} type="submit" value={action.value} className={action.value === "approve" ? "button button-primary" : "button button-secondary"} disabled={busy || !reason.trim()}>{busy ? "Đang lưu…" : action.label}</button>)}</div> : <button className="button button-primary" disabled={busy || !reason.trim()}>{busy ? "Đang lưu…" : label}</button>}
   </form>;
 }
 
@@ -88,9 +88,13 @@ export function ExceptionRequest({ sessionId, user, onLogin, onUpdated, canReque
 function Decision({ row, kind, role, reload }) {
   const [choice, setChoice] = useState("keep");
   const [score, setScore] = useState("");
-  if (kind === "exceptions" && row.status === "Pending" && role !== "player") return <ReasonForm label="Lưu quyết định" onSubmit={async reason => {
-    await workflowRequest(`${base}/exceptions/${row.id}/decision`, "POST", { reason, approved: choice === "approve" }); await reload();
-  }}><label>Quyết định<select value={choice} onChange={e => setChoice(e.target.value)}><option value="keep">Từ chối</option><option value="approve">Duyệt ngoại lệ</option></select></label></ReasonForm>;
+  if (kind === "exceptions" && row.status === "Pending" && ["referee", "manager"].includes(role)) return <ReasonForm
+    decisions={[{ value: "approve", label: "Chấp nhận" }, { value: "reject", label: "Từ chối" }]}
+    onSubmit={async (reason, decision) => {
+      if (!["approve", "reject"].includes(decision)) return;
+      await workflowRequest(`${base}/exceptions/${row.id}/decision`, "POST", { reason, approved: decision === "approve" });
+      await reload();
+    }} />;
   if (kind !== "appeals" || !["Pending", "UnderReview"].includes(row.status)) return null;
   if (role === "referee") return <ReasonForm label="Gửi nhận xét nội bộ" onSubmit={async reason => {
     await workflowRequest(`${base}/appeals/${row.id}/review`, "POST", { reason }); await reload();

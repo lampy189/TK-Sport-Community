@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { paymentClient } from './paymentClient';
-import { Camera, Upload, ScanLine, Ticket, UserRound, MapPin, CalendarDays, CircleCheck, ArrowRight, LoaderCircle, AlertCircle } from 'lucide-react';
+import { Camera, Upload, ScanLine, Ticket, UserRound, MapPin, CalendarDays, CircleCheck, ArrowLeft, ArrowRight, LoaderCircle, AlertCircle } from 'lucide-react';
 import SectionLayout from '../../components/layout/SectionLayout';
 import './payment.css';
 import './checkin.css';
+import { LateEntryManagement } from '../late-entry/LateEntrySales';
 
 function SessionConditionBadge({ code }) {
   if (code === 'ready') return <span className="payment-badge confirmed">Sẵn sàng</span>;
@@ -11,7 +12,7 @@ function SessionConditionBadge({ code }) {
   return <span className="payment-badge pending">Chưa phù hợp</span>;
 }
 
-export default function CheckInPage() {
+export default function CheckInPage({ canManageLateEntries = false }) {
   const [code, setCode] = useState('');
   const [ticket, setTicket] = useState(null);
   const [error, setError] = useState('');
@@ -33,7 +34,6 @@ export default function CheckInPage() {
         const data = await paymentClient.getAssignedSessions();
         if (!active) return;
         setSessions(data || []);
-        if (data?.length) setSelectedSessionId((current) => current ?? data[0].sessionId);
       } catch (e) {
         if (active) setError(e.message);
       } finally {
@@ -57,6 +57,16 @@ export default function CheckInPage() {
     controls.current?.stop();
     controls.current = null;
     setScanning(false);
+  }
+
+  function selectSession(sessionId) {
+    if (busyRef.current) return;
+    stop();
+    setSelectedSessionId(sessionId);
+    setCode('');
+    setTicket(null);
+    setVerified(false);
+    setError('');
   }
 
   function requireSelectedSession() {
@@ -165,6 +175,7 @@ export default function CheckInPage() {
   return (
     <SectionLayout className="checkin-workspace" title="Điểm danh vào sân"
       description="Kiểm tra vé và đối chiếu người chơi trước khi xác nhận vào sân.">
+      {canManageLateEntries && <LateEntryManagement/>}
       <ol className="checkin-steps" aria-label="Quy trình điểm danh">
         {['Kiểm tra vé', 'Đối chiếu người chơi', 'Xác nhận vào sân'].map((label, index) => (
           <li key={label} className={step >= index + 1 ? 'is-active' : ''} aria-current={step === index + 1 ? 'step' : undefined}>
@@ -177,23 +188,32 @@ export default function CheckInPage() {
         <div className="checkin-panel-heading"><span className="checkin-icon"><CalendarDays size={22} aria-hidden="true" /></span>
           <div><h3 id="checkin-sessions-title">Buổi được phân công</h3><p>Chọn buổi trước khi điểm danh người chơi.</p></div>
         </div>
-        {loadingSessions ? <p>Đang tải danh sách buổi được phân công…</p>
+        {selectedSession ? <div className="selected-session-summary">
+          <strong>{selectedSession.sportName} · {selectedSession.courtName}</strong>
+          <p>{selectedSession.sessionDate} · {selectedSession.startTime} – {selectedSession.endTime}</p>
+          <p>{selectedSession.conditionMessage}</p>
+          <button type="button" className="button button-secondary" disabled={busy} onClick={() => selectSession(null)}>
+            <ArrowLeft size={18} aria-hidden="true" />Chọn buổi khác
+          </button>
+        </div> : loadingSessions ? <p>Đang tải danh sách buổi được phân công…</p>
           : sessions.length === 0 ? <p>Hiện chưa có buổi nào được giao cho bạn.</p>
           : <div className="session-list">
             {sessions.map(session => (
               <button key={session.sessionId} type="button"
                 className={`session-option ${selectedSessionId === session.sessionId ? 'selected' : ''}`}
                 aria-pressed={selectedSessionId === session.sessionId}
-                onClick={() => setSelectedSessionId(session.sessionId)}>
+                disabled={busy}
+                onClick={() => selectSession(session.sessionId)}>
                 <div className="session-option-header"><strong>{session.sportName}</strong><SessionConditionBadge code={session.conditionCode} /></div>
                 <span>{session.courtName} · {session.venueName}</span>
                 <small>{session.sessionDate} · {session.startTime} – {session.endTime}</small>
                 <small>{session.conditionMessage}</small>
+                <strong>Mở điểm danh →</strong>
               </button>
             ))}
           </div>}
       </section>
-      <div className="checkin-grid">
+      {selectedSession && <div className="checkin-grid">
         <section className="checkin-panel" aria-labelledby="checkin-scan-title">
           <div className="checkin-panel-heading"><span className="checkin-icon"><ScanLine size={22} aria-hidden="true" /></span>
             <div><h3 id="checkin-scan-title">Quét vé người chơi</h3><p>Sử dụng mã QR hoặc mã vé đã được cấp.</p></div>
@@ -249,7 +269,7 @@ export default function CheckInPage() {
               <h4>Chưa có vé được chọn</h4><p>Quét QR, tải ảnh hoặc nhập mã vé.<br />Thông tin người chơi sẽ hiển thị tại đây.</p></div>}
           </div>
         </section>
-      </div>
+      </div>}
     </SectionLayout>
   );
 }

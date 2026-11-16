@@ -1,4 +1,5 @@
-using be_da.Application.Stock;
+using be_da.Application.DTOs;
+using be_da.Application.Validators;
 using Xunit;
 
 namespace TKSC.Api.Tests.Stock;

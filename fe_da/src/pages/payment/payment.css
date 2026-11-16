@@ -1,6 +1,6 @@
 .payment-workspace {
   min-width: 0;
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 .payment-heading {
@@ -9,7 +9,7 @@
   justify-content: space-between;
   gap: 20px;
   flex-wrap: wrap;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 .payment-heading h1 {
   margin: 10px 0 12px;
@@ -23,7 +23,7 @@
   border-radius: 30px;
   padding: 7px 12px;
   background: #f0f3ee;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 600;
 }
 .payment-badge.paid,
@@ -50,14 +50,14 @@
   display: flex;
   gap: 5px;
   padding: 5px;
-  margin: 26px 0;
+  margin: 16px 0;
   width: fit-content;
   border: 1px solid var(--color-border);
   background: #ecefe8;
   border-radius: 14px;
 }
 .payment-tabs .button {
-  font-size: 12px;
+  font-size: 15px;
   padding: 9px 20px;
   min-height: 40px;
   color: var(--color-muted);
@@ -71,11 +71,11 @@
   color: var(--color-primary);
 }
 .payment-card {
-  padding: 30px;
+  padding: 20px;
   border: 1px solid var(--color-border);
   border-radius: 18px;
   background: #fff;
-  margin: 22px 0;
+  margin: 16px 0;
   box-shadow: var(--shadow-sm);
 }
 .payment-card h4 {
@@ -84,29 +84,29 @@
   margin: 16px 0;
 }
 .payment-card p {
-  font-size: 13px;
-  line-height: 1.8;
+  font-size: 16px;
+  line-height: 1.6;
   margin-block: 12px;
 }
 .payment-card label {
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 500;
 }
 .payment-actions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin-top: 22px;
+  margin-top: 14px;
 }
 .payment-details {
   display: grid;
   grid-template-columns: 1fr 1.5fr;
-  gap: 18px;
+  gap: 12px;
   align-items: baseline;
-  margin: 24px 0;
-  padding: 24px 0;
+  margin: 16px 0;
+  padding: 16px 0;
   border-block: 1px solid #edf0e9;
-  font-size: 13px;
+  font-size: 16px;
 }
 .payment-details dt {
   color: var(--color-muted);
@@ -124,7 +124,7 @@
 .checkout {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
-  gap: 22px;
+  gap: 16px;
   align-items: start;
 }
 .checkout .payment-card {
@@ -154,7 +154,7 @@
   justify-content: space-between;
   padding: 14px 0;
   border-bottom: 1px solid #edf0e9;
-  font-size: 14px;
+  font-size: 16px;
 }
 .checkout-message {
   padding: 12px 14px;
@@ -180,7 +180,7 @@
 .summary-row {
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
+  font-size: 16px;
   padding: 8px 0;
   color: var(--color-muted);
 }
@@ -222,11 +222,11 @@
   justify-content: center;
   gap: 6px;
   color: var(--color-muted);
-  font-size: 12px !important;
+  font-size: 15px !important;
 }
 .payment-support {
   margin-top: 18px;
-  font-size: 13px;
+  font-size: 16px;
 }
 .payment-support summary {
   cursor: pointer;
@@ -253,7 +253,7 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 .ticket-main {
-  padding: 22px 24px;
+  padding: 18px 20px;
   border-left: 5px solid #97b76c;
 }
 .ticket-main h4 {
@@ -264,7 +264,7 @@
   flex-wrap: wrap;
   gap: 8px 20px;
   margin: 12px 0;
-  font-size: 13px;
+  font-size: 16px;
   color: var(--color-muted);
 }
 .ticket-meta span {
@@ -287,7 +287,7 @@
   text-align: center;
 }
 .ticket-side-label {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--color-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -297,19 +297,19 @@
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
-  padding: 24px;
+  padding: 18px;
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: 16px;
-  margin: 24px 0;
+  margin: 16px 0;
 }
 .payment-order-form label {
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 500;
 }
 .payment-workspace input {
   width: 150px;
-  font-size: 13px;
+  font-size: 16px;
 }
 .payment-workspace textarea {
   display: block;
@@ -317,13 +317,13 @@
   min-height: 120px;
   margin: 12px 0;
   resize: vertical;
-  font-size: 13px;
+  font-size: 16px;
 }
 .payment-error,
 .payment-notice {
   padding: 16px 18px;
   border-radius: 12px;
-  font-size: 13px;
+  font-size: 16px;
   margin: 18px 0;
 }
 .payment-error {
@@ -337,16 +337,16 @@
   border: 1px solid var(--color-success-border);
 }
 .payment-hint {
-  font-size: 12px;
+  font-size: 15px;
   color: var(--color-muted);
-  line-height: 1.8;
+  line-height: 1.6;
 }
 .payment-reset {
-  margin-top: 22px;
+  margin-top: 14px;
   padding: 8px 0;
   color: var(--color-muted);
   text-decoration: underline;
-  font-size: 11px;
+  font-size: 14px;
 }
 .demo-gateway {
   margin-top: 18px;
@@ -354,7 +354,7 @@
   border-radius: 12px;
   border: 1px dashed #adc279;
   background: #fafcef;
-  font-size: 13px;
+  font-size: 16px;
 }
 .ticket-code {
   display: block;
@@ -380,7 +380,7 @@
 }
 @media (max-width: 600px) {
   .payment-card {
-    padding: 22px;
+    padding: 16px;
   }
   .payment-details {
     grid-template-columns: minmax(0, 1fr);
@@ -500,4 +500,34 @@
   .ticket-main, .ticket-side { padding: 20px; }
   .checkout-items li { flex-wrap: wrap; gap: 8px; }
   .summary-row { gap: 12px; }
+}
+
+.payment-workspace { font-size: 16px; }
+.payment-workspace .button { font-size: 15px; }
+.payment-workspace input, .payment-workspace select, .payment-workspace textarea { font-size: 16px; }
+.payment-tabs { max-width: 100%; flex-wrap: wrap; }
+
+.ticket-operations { font-size:17px; }
+.ticket-operations .payment-heading { margin-bottom:12px; gap:12px; flex-wrap:wrap; }
+.ticket-operations .payment-heading h1 { font-size:26px; }
+.ticket-operations .ticket-filters { margin-bottom:12px; gap:8px; }
+.ticket-operations .payment-card { padding:16px; margin-bottom:12px; }
+.ticket-operations .payment-card h4 { font-size:19px; margin:0 0 6px; }
+.ticket-operations .payment-card p { margin:6px 0; line-height:1.5; }
+.ticket-operations .aftercare-form { margin-top:10px; gap:10px; }
+.ticket-operations .button { font-size:16px; min-height:44px; }
+.ticket-operations .payment-badge { font-size:14px; white-space:normal; }
+.ticket-operations .aftercare-form textarea,
+.ticket-support .aftercare-form textarea {
+ width:100%; min-height:80px; padding:10px 12px; border:1px solid #a8b5b0;
+ border-radius:8px; font:inherit; color:#183b30; background:#fff; resize:vertical;
+}
+.ticket-operations .aftercare-form .checkin-verify { margin-top:4px; }
+.ticket-operations .workflow-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.ticket-operations .issue-hub-detail .payment-card { padding:12px; margin:10px 0 0; }
+.ticket-operations .issue-row { font-size:16px; }
+.ticket-operations .issue-row > span:last-child { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+@media(max-width:600px) {
+ .ticket-operations .payment-card,.ticket-operations .issue-hub-detail { padding:12px; }
+ .ticket-operations .workflow-actions .button { flex:1; }
 }

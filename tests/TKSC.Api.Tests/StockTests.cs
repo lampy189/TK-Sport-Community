@@ -1,3 +1,4 @@
+using be_da.Application.DTOs;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -8,8 +9,8 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using be_da.Application.Abstractions;
-using be_da.Application.Stock;
+using be_da.Application.Interfaces.Repositories;
+using be_da.Application.Validators;
 using be_da.Domain.Entities;
 using Xunit;
 
@@ -17,7 +18,7 @@ namespace TKSC.Api.Tests;
 
 public sealed class StockTests
 {
-    private static readonly Account Staff = new(20, "staff@example.test", "Staff One", "Staff", "Active", "sub-20", false);
+    private static readonly Account Staff = new(20, "staff@example.test", "Staff One", "Staff", "Active", "sub-20", false, VenueId: 1);
     private static readonly Account Player = new(30, "player@example.test", "Player One", "Player", "Active", "sub-30", false);
 
     [Fact]
