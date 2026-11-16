@@ -14,17 +14,19 @@ export default function InvitationsView({ user, onPayment, onSelectSession }) {
   const userId = Number(user?.id ?? user?.userId);
   useEffect(() => {
     let active = true, pending = false;
-    async function load() {
-      if (pending || document.hidden) return;
+    async function load(background = false) {
+      if (pending || (background && document.hidden)) return;
       pending = true;
       try { const data = await invitationClient.list(); if (active) { setItems(data); setError(''); } }
       catch (e) { if (active) setError(e.message); }
       finally { pending = false; if (active) setLoading(false); }
     }
     void load();
-    const timer = setInterval(() => { setNow(Date.now()); void load(); }, 10000);
-    window.addEventListener('focus', load);
-    return () => { active = false; clearInterval(timer); window.removeEventListener('focus', load); };
+    const refresh = () => { if (!document.hidden) void load(); };
+    const timer = setInterval(() => { setNow(Date.now()); void load(true); }, 10000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { active = false; clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
   }, [reload]);
   async function reply(item, accept) {
     setBusy(item.id); setError('');

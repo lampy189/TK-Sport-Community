@@ -4,6 +4,7 @@
 
 - Theo lựa chọn ngày 06/10/2026, triển khai trực tiếp trong `be_da/` của repo GitHub, giữ target .NET 8. Solution là `be_da/be_da.slnx` (mở bằng Visual Studio mới hoặc SDK 10); không thêm lại bốn project backend cũ. Xem `be_da/README.md`. Không sửa frontend nếu chưa được yêu cầu.
 - Theo yêu cầu ngày 12/11/2026, môi trường làm việc mới dùng SQL Server `localhost`, database `Sep490_Nhat_20261112`, nhập từ `C:\Users\shogu\Downloads\dbdoan.sql` ngày 11/11/2026. Database `Sep490` cũ được giữ nguyên. Cấu hình tại `be_da/appsettings.Local.json` (Git ignore). `db/schema.sql` và `db/erd.mmd` là tài liệu lịch sử; đối chiếu database mới trước khi triển khai.
+- Theo phê duyệt trực tiếp ngày 14/11/2026, DB `Sep490_Nhat_20261112` đã áp dụng upgrade 017, hai trigger từ 012 và bật `SportCenterIsolation` cùng compatibility 014. Backup đã xác minh và thử restore; xem `docs/db-update-20261114.md`. Không tự tắt lại policy hoặc chạy seed/rollout cũ.
 - Chưa tự thêm chức năng, endpoint, bảng, tích hợp hoặc thư viện chỉ vì chúng xuất hiện trong tài liệu. Chọn phần cần làm theo yêu cầu hiện tại của người dùng.
 
 ## Đọc yêu cầu trước khi sửa code
