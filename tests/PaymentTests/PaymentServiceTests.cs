@@ -10,6 +10,40 @@ using Xunit;
 public class PaymentServiceTests
 {
     [Fact]
+    public async Task LateEntryWebhookWithoutBrowserReturnPreservesSavedPriceCodeAndExpiry()
+    {
+        var (service, repo, gateway) = Setup();
+        var ticket = repo.Order.Tickets.First();
+        repo.Order.Tickets = [ticket];
+        ticket.TicketCode = "LATE-pay01";
+        ticket.AmountVnd = 35001;
+        ticket.LateEntryEligible = true;
+        var endsAt = Now.AddMinutes(20);
+        ticket.LateEntryEndsAt = endsAt;
+        repo.Order.TotalAmount = ticket.AmountVnd;
+        gateway.Event = gateway.Event with { Amount = ticket.AmountVnd };
+
+        await service.ProcessAsync(1, 7);
+        // No RefreshAsync: confirmation must work without a browser return.
+        await service.HandleWebhookAsync("signed");
+        await service.HandleWebhookAsync("signed");
+
+        Assert.Equal("paid", repo.Order.Status);
+        Assert.Equal("confirmed", ticket.Status);
+        Assert.Equal("LATE-pay01", ticket.TicketCode);
+        Assert.Equal(35001, ticket.AmountVnd);
+        Assert.Equal(35001, repo.Order.TotalAmount);
+        Assert.Equal(endsAt, ticket.LateEntryEndsAt);
+        var payment = Assert.Single(repo.Order.Payments);
+        Assert.Equal("paid", payment.Status);
+        Assert.Equal(35001, payment.AmountVnd);
+        var bankEvent = Assert.Single(repo.Events);
+        Assert.Equal(35001, bankEvent.AmountVnd);
+        Assert.Equal(payment.Id, bankEvent.MatchedPaymentId);
+        Assert.Equal("matched", bankEvent.MatchStatus);
+    }
+
+    [Fact]
     public async Task LateEntryPaymentFailsClosedUntilRepositoryRevalidatesSavedTicket()
     {
         var(service,repo,_)=Setup();var t=repo.Order.Tickets.First();t.TicketCode="LATE-test";
@@ -243,7 +277,7 @@ public class PaymentServiceTests
         await service.HandleWebhookAsync("signed");
         Assert.Equal(2, repo.Events.Count);
         Assert.Equal("paid", repo.Order.Status);
-        Assert.Equal("review_required", repo.Order.Payments.Single().Status);
+        Assert.Equal("paid", repo.Order.Payments.Single().Status);
         Assert.All(repo.Order.Tickets, t => Assert.Equal("confirmed", t.Status));
     }
     [Fact]

@@ -6,6 +6,7 @@ import { resolveHomeRoute, loginPaths } from './config/homeRoutes';
 import { api } from './api';
 import HomePage from './pages/home/HomePage';
 import { CenterSwitcher } from './components/CenterSelection';
+import { enablePush, disablePush, pushConfigured } from './push';
 
 function Redirect({ to }) {
   useEffect(() => {
@@ -26,10 +27,15 @@ function ApplicationApp() {
   }, []);
   async function logout() {
     try {
+      await disablePush();
       if (!await api.logout()) throw new Error('logout_failed');
       window.location.replace(loginPaths[portalForRole(user.role)]);
     } catch { window.alert('Đăng xuất chưa thành công. Vui lòng thử lại.'); }
   }
+  useEffect(() => {
+    if (user && pushConfigured && localStorage.getItem('tksc-push-enabled') === 'true' && 'Notification' in window && Notification.permission === 'granted')
+      enablePush(false).catch(() => {});
+  }, [user]);
   if (loading) return <div className="home-loading" role="status"><strong>↗ TKSC</strong><span>Đang kết nối hệ thống…</span></div>;
   if (user && !roleKeys[user.role]) return <p>Vai trò không được hỗ trợ. <button onClick={logout}>Đăng xuất</button></p>;
   const route = !user && window.location.pathname === '/' && new URLSearchParams(window.location.search).has('loginError')

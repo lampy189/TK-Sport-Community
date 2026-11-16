@@ -12,8 +12,12 @@ public sealed class TicketEmailRepository(Sep490Context db) : ITicketEmailReposi
     {
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var notification = await db.Notifications.FromSqlInterpolated($"SELECT * FROM notifications WITH (UPDLOCK, ROWLOCK) WHERE id = {id}").SingleOrDefaultAsync(ct);
+        var previous = notification?.Status;
         if (!await action(notification))
             return;
+        if (notification is not null && previous != notification.Status)
+            db.AuditLogs.Add(new AuditLog { Action = "email_delivery", EntityType = "notification", EntityId = id,
+                OldValue = previous, NewValue = $"{notification.Status}; {DateTimeOffset.UtcNow:O}" });
         await db.SaveChangesAsync(saveToken);
         await tx.CommitAsync(saveToken);
     }

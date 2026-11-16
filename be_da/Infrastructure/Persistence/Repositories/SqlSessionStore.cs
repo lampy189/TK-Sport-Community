@@ -42,6 +42,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
             ORDER BY id ASC;
             """;
         await using var command = new SqlCommand(sql, connection);
+        // Public login choices are filtered by CenterSelection using the freshly loaded account.
         var venues = new List<VenueSummary>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -61,7 +62,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 s.id, s.sport_id, sp.code AS sport_code, sp.name AS sport_name,
                 s.court_id, c.name AS court_name, v.name AS venue_name,
                 s.time_slot_id, ts.start_time, ts.end_time, ts.label AS time_label,
-                s.session_date, s.band, s.capacity, s.price_vnd, s.status, s.created_by,
+                s.session_date, s.band, s.capacity, dbo.OwnerEffectivePrice('session',s.id,s.price_vnd,SYSDATETIMEOFFSET()), s.status, s.created_by,
                 ISNULL(occ.occupied_count, 0) AS occupied_places,
                 v.id AS venue_id, v.address AS venue_address
             FROM dbo.sessions s
@@ -86,7 +87,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
               AND (@fromDate IS NULL OR s.session_date >= @fromDate)
               AND (@toDate IS NULL OR s.session_date <= @toDate)
               AND (@timeSlotId IS NULL OR s.time_slot_id = @timeSlotId)
-              AND (@venueId IS NULL OR c.venue_id = @venueId)
+              AND (@venueId IS NULL OR c.venue_id = @venueId) AND (@accessVenue IS NULL OR c.venue_id=@accessVenue)
               AND (@venue IS NULL OR v.name = @venue)
               AND (
                   @sessionType IS NULL
@@ -96,6 +97,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
             ORDER BY s.session_date ASC, ts.start_time ASC;
             """;
         await using var command = new SqlCommand(sql, connection);
+        CenterAccess.Bind(command, dataScope, browsing: true);
         command.Parameters.Add("@status", SqlDbType.VarChar, 100).Value = (object? )filter.Status ?? DBNull.Value;
         command.Parameters.Add("@sportId", SqlDbType.BigInt).Value = (object? )filter.SportId ?? DBNull.Value;
         command.Parameters.Add("@sport", SqlDbType.NVarChar, 100).Value = (object? )filter.Sport ?? DBNull.Value;
@@ -141,7 +143,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 s.id, s.sport_id, sp.code AS sport_code, sp.name AS sport_name,
                 s.court_id, c.name AS court_name, v.name AS venue_name,
                 s.time_slot_id, ts.start_time, ts.end_time, ts.label AS time_label,
-                s.session_date, s.band, s.capacity, s.price_vnd, s.status, s.created_by,
+                s.session_date, s.band, s.capacity, dbo.OwnerEffectivePrice('session',s.id,s.price_vnd,SYSDATETIMEOFFSET()), s.status, s.created_by,
                 ISNULL(occ.occupied_count, 0) AS occupied_places,
                 v.id AS venue_id, v.address AS venue_address
             FROM dbo.sessions s
@@ -159,11 +161,12 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                       OR (LOWER(t.status) IN ('pending','reserved') AND o.expires_at > SYSUTCDATETIME())
                   )
             ) occ
-            WHERE s.id = @id;
+            WHERE s.id = @id AND (@accessVenue IS NULL OR c.venue_id=@accessVenue);
             """;
         SessionSummary? summary = null;
         await using (var command = new SqlCommand(sessionSql, connection))
         {
+            CenterAccess.Bind(command, dataScope, browsing: true);
             command.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             if (await reader.ReadAsync(cancellationToken))
@@ -199,7 +202,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
             WHERE t.session_id = @sessionId
               AND (
                   LOWER(t.status) IN ('valid', 'paid', 'confirmed', 'checkedin')
-                  OR (LOWER(t.status) = 'pending' AND o.expires_at > SYSUTCDATETIME())
+                  OR (LOWER(t.status) IN ('pending','reserved') AND o.expires_at > SYSUTCDATETIME())
               )
             ORDER BY t.id ASC;
             """;
@@ -251,16 +254,18 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
 
     public Task<RegisterSessionResult> RegisterSessionAsync(long userId, long sessionId, CancellationToken cancellationToken) => RegisterCoreAsync(userId, sessionId, null, cancellationToken);
     public Task<RegisterSessionResult> RegisterLateEntryAsync(long userId, long sessionId, long expectedRevision, CancellationToken cancellationToken) => RegisterCoreAsync(userId, sessionId, expectedRevision, cancellationToken);
-    private async Task<RegisterSessionResult> RegisterCoreAsync(long userId, long sessionId, long? lateRevision, CancellationToken cancellationToken)
+    public Task<RegisterSessionResult> AcceptSponsoredInvitationAsync(long userId, long sessionId, long invitationId, CancellationToken cancellationToken) => RegisterCoreAsync(userId, sessionId, null, cancellationToken, invitationId);
+    private async Task<RegisterSessionResult> RegisterCoreAsync(long userId, long sessionId, long? lateRevision, CancellationToken cancellationToken, long? invitationId = null)
     {
         await using var connection = new SqlConnection(connectionString);
         await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         try
         {
+            long payerId = userId;
             // Find player ID for user
             long playerId;
-            await using (var playerCmd = new SqlCommand("SELECT id FROM dbo.players WHERE user_id=@userId;", connection, transaction))
+            await using (var playerCmd = new SqlCommand("SELECT p.id FROM dbo.players p WITH (UPDLOCK,HOLDLOCK) JOIN dbo.users u ON u.id=p.user_id WHERE p.user_id=@userId AND LOWER(u.status)='active' AND u.deleted_at IS NULL;", connection, transaction))
             {
                 playerCmd.Parameters.Add("@userId", SqlDbType.BigInt).Value = userId;
                 var res = await playerCmd.ExecuteScalarAsync(cancellationToken);
@@ -275,7 +280,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
 
             // Lock and inspect session
             const string sessionLockSql = """
-                SELECT s.id, s.sport_id, s.band, s.capacity, s.price_vnd, s.status, s.session_date, ts.start_time, ts.end_time
+                SELECT s.id, s.sport_id, s.band, s.capacity, dbo.OwnerEffectivePrice('session',s.id,s.price_vnd,@quoteAt), s.status, s.session_date, ts.start_time, ts.end_time, dbo.OwnerPriceVersion('session',s.id,@quoteAt)
                 FROM dbo.sessions s WITH (UPDLOCK, HOLDLOCK)
                 JOIN dbo.time_slots ts ON ts.id = s.time_slot_id
                 JOIN dbo.courts c ON c.id=s.court_id JOIN dbo.venues v ON v.id=c.venue_id
@@ -286,15 +291,18 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
             string? sessionBand;
             short capacity;
             int priceVnd;
+            long? priceVersionId;
+            var quoteAt=DateTimeOffset.UtcNow;
             string sessionStatus;
             DateOnly sessionDate;
             TimeSpan startTime;
             TimeSpan endTime;
             await using (var sessionCmd = new SqlCommand(sessionLockSql, connection, transaction))
             {
+                sessionCmd.Parameters.AddWithValue("@quoteAt",quoteAt);
                 sessionCmd.Parameters.Add("@sessionId", SqlDbType.BigInt).Value = sessionId;
                 sessionCmd.Parameters.Add("@late", SqlDbType.Bit).Value = lateRevision.HasValue;
-                sessionCmd.Parameters.Add("@selectedCenter", SqlDbType.BigInt).Value = (object? )dataScope?.RestrictedVenueId ?? DBNull.Value;
+                sessionCmd.Parameters.Add("@selectedCenter", SqlDbType.BigInt).Value = (object? )CenterAccess.BrowsingVenue(dataScope) ?? DBNull.Value;
                 await using var reader = await sessionCmd.ExecuteReaderAsync(cancellationToken);
                 if (!await reader.ReadAsync(cancellationToken))
                 {
@@ -310,6 +318,37 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 sessionDate = DateOnly.FromDateTime(reader.GetDateTime(6));
                 startTime = reader.GetTimeSpan(7);
                 endTime = reader.GetTimeSpan(8);
+                priceVersionId=reader.IsDBNull(9)?null:reader.GetInt64(9);
+            }
+
+            // Consent and the hold share a transaction; only the invitee can accept.
+            if (invitationId.HasValue)
+            {
+                await using var invitation = new SqlCommand("""
+                    SELECT i.status,p.user_id,i.ticket_id,o.id,o.order_code,t.ticket_code,t.amount_vnd,o.expires_at
+                    FROM dbo.invitations i WITH (UPDLOCK,HOLDLOCK)
+                    JOIN dbo.players p ON p.id=i.inviter_id
+                    JOIN dbo.users u ON u.id=p.user_id
+                    LEFT JOIN dbo.tickets t ON t.id=i.ticket_id AND t.player_id=i.invitee_id AND t.session_id=i.session_id
+                    LEFT JOIN dbo.social_booking_orders o ON o.id=i.order_id AND o.id=t.order_id AND o.payer_id=p.user_id
+                    WHERE i.id=@invitation AND i.session_id=@session AND i.invitee_id=@player
+                      AND LOWER(u.status)='active' AND u.deleted_at IS NULL;
+                    """, connection, transaction);
+                invitation.Parameters.AddWithValue("@invitation", invitationId.Value);
+                invitation.Parameters.AddWithValue("@session", sessionId);
+                invitation.Parameters.AddWithValue("@player", playerId);
+                await using var response = await invitation.ExecuteReaderAsync(cancellationToken);
+                if (!await response.ReadAsync(cancellationToken))
+                    return new(false, "INVITATION_NOT_FOUND", "Không tìm thấy lời mời của bạn.");
+                var state = response.IsDBNull(0) ? "" : response.GetString(0).ToLowerInvariant();
+                payerId = response.GetInt64(1);
+                if (state == "accepted" && !response.IsDBNull(3))
+                    return new(true, null, "Lời mời đã được chấp nhận trước đó.", null,
+                        response.GetInt64(3), response.GetString(4), response.GetInt64(2),
+                        response.IsDBNull(5) ? null : response.GetString(5), response.GetInt32(6),
+                        response.IsDBNull(7) ? null : response.GetFieldValue<DateTimeOffset>(7));
+                if (state != "pending" || !response.IsDBNull(2))
+                    return new(false, "INVITATION_NOT_PENDING", "Lời mời không còn chờ chấp nhận.");
             }
 
             var durationMinutes = (endTime - startTime).TotalMinutes;
@@ -382,6 +421,19 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 return new RegisterSessionResult(false, "SESSION_PAST_START", "Buổi chơi đã qua thời điểm bắt đầu và đã khóa đăng ký.");
             }
 
+            if (invitationId.HasValue)
+            {
+                await using var profile = new SqlCommand("""
+                    SELECT COUNT(*) FROM dbo.player_sport_profiles WITH (UPDLOCK,HOLDLOCK)
+                    WHERE player_id=@player AND sport_id=@sport AND current_score IS NOT NULL
+                      AND LOWER(rating_status) NOT IN ('pendingsurvey','unrated');
+                    """, connection, transaction);
+                profile.Parameters.AddWithValue("@player", playerId);
+                profile.Parameters.AddWithValue("@sport", sportId);
+                if (Convert.ToInt32(await profile.ExecuteScalarAsync(cancellationToken)) == 0)
+                    return new(false, "SKILL_INELIGIBLE", "Bạn chưa có hồ sơ kỹ năng hợp lệ cho môn này.");
+            }
+
             // Bước A: Check Sport-Specific Skill Eligibility
             bool hasApprovedException = false;
             await using (var excCmd = new SqlCommand("""
@@ -394,7 +446,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 hasApprovedException = Convert.ToInt32(await excCmd.ExecuteScalarAsync(cancellationToken)) > 0;
             }
 
-            if (!hasApprovedException && (!isHourlyCourt || lateRevision.HasValue) && !string.IsNullOrWhiteSpace(sessionBand))
+            if (!hasApprovedException && (!isHourlyCourt || lateRevision.HasValue || invitationId.HasValue) && !string.IsNullOrWhiteSpace(sessionBand))
             {
                 // Must have sport profile matching required band
                 string? playerBand = null;
@@ -438,6 +490,29 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 }
             }
 
+            if (!lateRevision.HasValue)
+            {
+                await using var conflict = new SqlCommand("""
+                    SELECT COUNT(*) FROM dbo.tickets t WITH (UPDLOCK,HOLDLOCK)
+                    JOIN dbo.social_booking_orders o ON o.id=t.order_id
+                    JOIN dbo.sessions s ON s.id=t.session_id
+                    JOIN dbo.time_slots ts ON ts.id=s.time_slot_id
+                    WHERE t.player_id=@player AND t.session_id<>@session AND s.session_date=@date
+                      AND LOWER(s.status) NOT IN ('cancelled','suspended','completed')
+                      AND ts.start_time<@end AND ts.end_time>@start
+                      AND (LOWER(t.status) IN ('confirmed','checkedin','valid','paid')
+                        OR (LOWER(t.status) IN ('pending','reserved') AND o.expires_at>@now));
+                    """, connection, transaction);
+                conflict.Parameters.AddWithValue("@player", playerId);
+                conflict.Parameters.AddWithValue("@session", sessionId);
+                conflict.Parameters.AddWithValue("@date", sessionDate.ToDateTime(TimeOnly.MinValue));
+                conflict.Parameters.AddWithValue("@start", startTime);
+                conflict.Parameters.AddWithValue("@end", endTime);
+                conflict.Parameters.AddWithValue("@now", now);
+                if (Convert.ToInt32(await conflict.ExecuteScalarAsync(cancellationToken)) > 0)
+                    return new(false, "TIME_CONFLICT", "Bạn đã có vé hoặc giữ chỗ trùng giờ.");
+            }
+
             // Check if player already registered
             await using (var checkCmd = new SqlCommand("""
                 SELECT COUNT(*)
@@ -468,7 +543,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 WHERE t.session_id = @sessionId
                   AND (
                       LOWER(t.status) IN ('valid', 'paid', 'confirmed', 'checkedin')
-                      OR (LOWER(t.status) = 'pending' AND o.expires_at > SYSUTCDATETIME())
+                      OR (LOWER(t.status) IN ('pending','reserved') AND o.expires_at > SYSUTCDATETIME())
                   );
                 """, connection, transaction))
             {
@@ -483,7 +558,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
             }
 
             // Bước C: Record Pending Registration (Timed place hold)
-            var expiresAt = lateRevision.HasValue ? TKSC.Domain.Payments.LateEntryRules.HoldExpiry(now, endsAt) : DateTimeOffset.UtcNow.AddMinutes(15);
+            var expiresAt = lateRevision.HasValue ? TKSC.Domain.Payments.LateEntryRules.HoldExpiry(now, endsAt) : (now.AddMinutes(15) < new DateTimeOffset(sessionStartVn, TimeSpan.FromHours(7)) ? now.AddMinutes(15) : new DateTimeOffset(sessionStartVn, TimeSpan.FromHours(7)));
             var orderCode = $"SBO-{DateTimeOffset.UtcNow:yyMMddHHmmss}-{Random.Shared.Next(1000, 9999)}";
             long orderId;
             const string insertOrderSql = """
@@ -494,7 +569,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
             await using (var insertOrderCmd = new SqlCommand(insertOrderSql, connection, transaction))
             {
                 insertOrderCmd.Parameters.Add("@orderCode", SqlDbType.VarChar, 100).Value = orderCode;
-                insertOrderCmd.Parameters.Add("@payerId", SqlDbType.BigInt).Value = userId;
+                insertOrderCmd.Parameters.Add("@payerId", SqlDbType.BigInt).Value = payerId;
                 insertOrderCmd.Parameters.Add("@totalAmount", SqlDbType.Int).Value = priceVnd;
                 insertOrderCmd.Parameters.Add("@expiresAt", SqlDbType.DateTimeOffset, 0).Value = expiresAt;
                 orderId = (long)(await insertOrderCmd.ExecuteScalarAsync(cancellationToken))!;
@@ -503,12 +578,13 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
             var ticketCode = lateRevision.HasValue ? $"LATE-{Guid.NewGuid():N}" : $"TKT-{orderId}-{DateTimeOffset.UtcNow:yyMMddHHmmss}-{Random.Shared.Next(100, 999)}";
             long ticketId;
             const string insertTicketSql = """
-                INSERT INTO dbo.tickets (order_id, session_id, player_id, ticket_code, status, amount_vnd)
-                VALUES (@orderId, @sessionId, @playerId, @ticketCode, 'Pending', @amountVnd);
+                INSERT INTO dbo.tickets (order_id, session_id, player_id, ticket_code, status, amount_vnd, price_version_id)
+                VALUES (@orderId, @sessionId, @playerId, @ticketCode, 'Pending', @amountVnd, @priceVersion);
                 SELECT CONVERT(bigint, SCOPE_IDENTITY());
                 """;
             await using (var insertTicketCmd = new SqlCommand(insertTicketSql, connection, transaction))
             {
+                insertTicketCmd.Parameters.Add("@priceVersion",SqlDbType.BigInt).Value=(object?)priceVersionId??DBNull.Value;
                 insertTicketCmd.Parameters.Add("@orderId", SqlDbType.BigInt).Value = orderId;
                 insertTicketCmd.Parameters.Add("@sessionId", SqlDbType.BigInt).Value = sessionId;
                 insertTicketCmd.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerId;
@@ -540,6 +616,23 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 notify.Parameters.Add("@ticketId", SqlDbType.BigInt).Value = ticketId;
                 notify.Parameters.Add("@title", SqlDbType.NVarChar, 255).Value = TKSC.Application.Services.Notifications.TicketNotifications.Title("ticket_reserved", ticketId);
                 await notify.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            if (invitationId.HasValue)
+            {
+                await using var accept = new SqlCommand("""
+                    UPDATE dbo.invitations SET status='Accepted',order_id=@order,ticket_id=@ticket WHERE id=@id;
+                    INSERT dbo.audit_logs(actor_id,action,entity_type,entity_id,old_value,new_value)
+                    VALUES(@actor,'invitation_accepted','Invitation',@id,'Pending','Accepted');
+                    INSERT dbo.notifications(user_id,channel,title,reference_type,reference_id,status)
+                    VALUES(@payer,'web',N'Bạn có vé cần thanh toán hộ','ticket_reserved',@ticket,'unread');
+                    """, connection, transaction);
+                accept.Parameters.AddWithValue("@order", orderId);
+                accept.Parameters.AddWithValue("@ticket", ticketId);
+                accept.Parameters.AddWithValue("@id", invitationId.Value);
+                accept.Parameters.AddWithValue("@actor", userId);
+                accept.Parameters.AddWithValue("@payer", payerId);
+                await accept.ExecuteNonQueryAsync(cancellationToken);
             }
 
             await transaction.CommitAsync(cancellationToken);

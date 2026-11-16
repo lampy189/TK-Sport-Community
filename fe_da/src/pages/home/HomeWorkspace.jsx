@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import RevenuePage from "../revenue/RevenuePage";
 import SportCenterPersonnel from "../revenue/SportCenterPersonnel";
 import MessagesPage from "../messages/MessagesPage";
@@ -33,6 +34,7 @@ export default function HomeWorkspace({
   initialSport = "ALL",
   onBrowseSport,
 }) {
+  const [createdGoodsOrder,setCreatedGoodsOrder]=useState(null);
   if (preview && import.meta.env.DEV && import.meta.env.VITE_PAYMENT_MODE === 'demo'
     && role === 'player' && ['Thanh toán', 'Vé của tôi'].includes(active))
     return <PaymentPage key={active} initialView={active === 'Vé của tôi' ? 'tickets' : 'payment'} />;
@@ -46,8 +48,8 @@ export default function HomeWorkspace({
   if (!preview && role === "staff" && active === "Bán hàng")
     return (
       <>
-        <StorePage role="staff" user={user} />
-        <GoodsPaymentPage />
+        <StorePage role="staff" user={user} onCreated={setCreatedGoodsOrder} />
+        <GoodsPaymentPage key={createdGoodsOrder?.orderId??"initial"} initialOrderId={createdGoodsOrder?.orderId} />
       </>
     );
   if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage canManageLateEntries={role === 'manager'} />;

@@ -20,6 +20,14 @@ public sealed class GoodsPaymentsController(IGoodsPaymentService service, IAntif
     public async Task<IActionResult> List(CancellationToken ct) => Ok(await service.ListAsync(ct));
     [HttpGet("{id:long}")]
     public async Task<IActionResult> Read(long id, CancellationToken ct) => Ok(await service.ReadAsync(id, ct));
+    [HttpGet("{id:long}/invoice")]
+    public async Task<IActionResult> ReadInvoice(long id, CancellationToken ct)
+    {
+        var view = await service.ReadAsync(id, ct);
+        return view.Invoice is null ? Conflict(new { message="Đơn chưa được xuất hóa đơn." }) : Ok(view.Invoice);
+    }
+    [HttpPost("{id:long}/cancel")]
+    public Task<IActionResult> Cancel(long id, CancellationToken ct) => Mutate(() => service.CancelAsync(id, ActorId, null, ct));
     [HttpPost("{id:long}/payment-instructions")]
     public Task<IActionResult> Instructions(long id, CancellationToken ct) => Mutate(() => service.InstructionsAsync(id, ActorId, ct));
     [HttpPost("{id:long}/confirm-transfer")]

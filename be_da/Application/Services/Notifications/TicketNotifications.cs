@@ -37,5 +37,5 @@ public static class TicketNotifications
         "ticket_checked_in" => $"Vé #{ticketId} đã check-in. Chúc bạn có buổi chơi vui vẻ!",
         "ticket_expired" => $"Vé #{ticketId} đã hết thời gian giữ chỗ.",
         _ => $"Thanh toán của vé #{ticketId} đang được kiểm tra. Vui lòng không thanh toán lại."};
-    public static IEnumerable<Notification> Create(string kind, long ticketId, params long[] recipients) => recipients.Distinct().SelectMany(userId => new[] { "web", "email" }.Select(channel => new Notification { UserId = userId, Channel = channel, ReferenceType = kind, ReferenceId = ticketId, Title = Title(kind, ticketId), Status = channel == "web" ? "unread" : "pending" }));
+    public static IEnumerable<Notification> Create(string kind, long ticketId, params long[] recipients) => recipients.Distinct().SelectMany(userId => new[] { "web", "email", "push" }.Select(channel => new Notification { UserId = userId, Channel = channel, ReferenceType = kind, ReferenceId = ticketId, Title = Title(kind, ticketId), Status = channel == "web" ? "unread" : "pending" }));
 }

@@ -112,6 +112,19 @@ public sealed class SessionController(ISessionService sessionStore, IAntiforgery
         return Ok(new { success = true, orderId = result.OrderId, orderCode = result.OrderCode, ticketId = result.TicketId, ticketCode = result.TicketCode, sessionId = id, amountVnd = result.AmountVnd, status = "Pending", expiresAt = result.ExpiresAt, message = result.Message ?? "Giữ chỗ thành công. Vui lòng thanh toán trước khi hết hạn." });
     }
 
+    // UC-10 / UC-11: consent to a place paid by the inviter.
+    [Authorize(Roles = "Player")]
+    [HttpPost("{id:long}/invitations/{invitationId:long}/accept-sponsored")]
+    public async Task<IActionResult> AcceptSponsoredInvitation(long id, long invitationId, CancellationToken cancellationToken)
+    {
+        if (!await HasValidCsrf()) return BadRequest(new { code = "invalid_csrf_token" });
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+        var result = await sessionStore.AcceptSponsoredInvitationAsync(userId, id, invitationId, cancellationToken);
+        if (result.Success) return Ok(result);
+        if (result.ErrorCode is "INVITATION_NOT_FOUND" or "SESSION_NOT_FOUND") return NotFound(result);
+        return Conflict(result);
+    }
+
     private bool TryGetUserId(out long userId)
     {
         var rawId = User.FindFirstValue(ClaimTypes.NameIdentifier);

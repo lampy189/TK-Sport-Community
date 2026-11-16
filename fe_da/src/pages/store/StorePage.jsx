@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { storeClient } from './storeClient';
 import './store.css';
 
-export default function StorePage({ role = 'staff', user }) {
+export default function StorePage({ role = 'staff', user, onCreated }) {
   const [products, setProducts] = useState([]);
   const [quantities, setQuantities] = useState({});
   const [error, setError] = useState('');
@@ -48,7 +48,8 @@ export default function StorePage({ role = 'staff', user }) {
     setQuantities((current) => {
       const next = Number(current[productId] ?? 0) + delta;
       if (next <= 0) {
-        const { [productId]: _removed, ...rest } = current;
+        const rest = { ...current };
+        delete rest[productId];
         return rest;
       }
       return { ...current, [productId]: next };
@@ -71,6 +72,7 @@ export default function StorePage({ role = 'staff', user }) {
     try {
       const result = await storeClient.createCart(items);
       setOrder(result);
+      onCreated?.(result);
       setQuantities({});
     } catch (e) {
       setError(e.message);

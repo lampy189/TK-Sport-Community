@@ -1,5 +1,14 @@
 # TK Sport Community — Project Context
 
+## Approved goods reservation rollout (16 Nov 2026)
+
+The user explicitly approved migration 018 after test validation. COPY_ONLY backup verified, restored to TKSC_PAY018_Test_20261116, concurrent last-item/expiry/exactly-once sale test passed, migration rerun passed, then Sep490 upgraded successfully. Four Committed rows protect two previously paid unposted orders; trigger enabled, no stock violations. GoodsReservations:ExpiryWorkerEnabled is true in Development user-secrets and takes effect on next backend start. See docs/pay-04-07-sales-stock-recovery.md for backup and rollout evidence. Do not restore the old receipt-time stock deduction: delivery consumes the committed reservation once.
+
+
+## Application center authorization (11 Nov 2026)
+
+The user explicitly disabled SQL Server RLS and requested center authorization entirely in backend code. Keep `SportCenterIsolation` OFF; do not re-enable it. EF query filters/write validation and explicit SQL repository checks enforce personnel center boundaries. Owner remains global; Player personal histories remain ownership-protected and global. SQL session center metadata is retained only for existing accounting defaults, not authorization. See `docs/application-center-authorization.md` and upgrade 017. This supersedes earlier RLS deployment guidance.
+
 ## Single-project architecture refactor (11 Nov 2026)
 
 The user explicitly chose Clean Architecture by folders within the existing .NET 8 `be_da.csproj`, not multiple application projects. HTTP code is under `Presentation`; `Application` owns services, interfaces and DTOs; `Domain` owns entities/core rules; persistence and external implementations are under `Infrastructure`. `Program.cs` and `appsettings*.json` are at the project root. Keep existing SQL/EF transactions, API contracts and historical migrations. See `docs/architecture-refactor.md` for the file map, validation results and launch instructions.
@@ -87,3 +96,8 @@ The user chose to implement in the existing GitHub `be_da` project on branch `Nh
 The requested authentication flow is Google sign-in only. First sign-in creates a Player account and player profile; later sign-ins resolve the stable Google subject, not email alone. Existing role and account status remain authoritative. This user decision supersedes the SRS local-username/password flow for this implementation. Google OAuth configuration must be supplied locally before real sign-in can be tested.
 
 The user approved adding nullable users.google_subject VARCHAR(255) and a unique filtered index; upgrade 001 records that additive change. Database changes beyond this require another specific approval. No EF Core or automatic startup migration is used. The baseline ERD has been aligned with actual users columns; the historical erd-source remains unchanged.
+
+## Notification delivery (NOT-01 / NOT-02)
+
+Email now exposes owner-only delivery status and one audited, bounded manual retry cycle, with CSRF and row locking. SMTP test delivery to the configured sender mailbox was independently verified in Gmail Inbox by IMAP; this verifies localhost links, not production deployment. Firebase logging stub is replaced by Admin SDK transport, opt-in web token registration/removal, data-only service worker click handling, and persisted push events for ticket and goods-order changes. Existing notification/token/audit tables are reused; no schema upgrade. FCM live-device acceptance remains pending project/web/ADC configuration. See docs/ticket-notifications.md for evidence and delivery limitations.
+

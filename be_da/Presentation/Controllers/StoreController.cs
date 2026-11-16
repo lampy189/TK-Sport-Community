@@ -19,6 +19,7 @@ public class StoreController(IStoreService service) : ControllerBase
     [HttpGet("products")]
     public async Task<IActionResult> GetOpenProducts() => Ok(await service.ProductsAsync(CenterSelection.Scoped, CenterSelection.CurrentVenue, HttpContext.RequestAborted));
     [HttpPost("orders/cart")]
+    [ValidateAntiForgeryToken]
     [Authorize(Roles = "Player,Staff,Manager")]
     public async Task<IActionResult> CreateCart([FromBody] CreateCartRequest request)
     {

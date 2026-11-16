@@ -32,6 +32,8 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
         ValidateCart(order);
         if (receivedAmount != order.TotalAmount)
             throw Error(400, "Số tiền xác nhận phải bằng tổng đơn hàng.");
+        await repository.ReserveAsync(order, clock.GetUtcNow().AddMinutes(15), false, ct);
+        if (!await repository.CommitHoldAsync(order, ct)) throw Error(409, "Giữ tồn đã hết hạn. Không ghi nhận thu tiền.");
         var payment = new Payment
         {
             GoodsOrderId = id,
@@ -55,22 +57,26 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
             throw Error(409, "Đơn không còn là Cart chưa thanh toán. Không thể thu tiền lần nữa hoặc đổi phương thức.");
     }
 
-    public async Task<GoodsOrderView> InstructionsAsync(long id, long actorId, CancellationToken ct)
+    public Task<GoodsOrderView> InstructionsAsync(long id, long actorId, CancellationToken ct) => InstructionsCoreAsync(id, actorId, null, ct);
+    private async Task<GoodsOrderView> InstructionsCoreAsync(long id, long actorId, long? buyerId, CancellationToken ct)
     {
-        gateway.ValidateConfiguration();
         var attempt = await repository.TransactionAsync(async () =>
         {
-            var order = await LoadAsync(id, ct);
+            var order = await LoadForPaymentAsync(id, buyerId, ct);
+            gateway.ValidateConfiguration();
             var payment = order.Payments.SingleOrDefault(p => p.Status == "pending" && p.Method == "payos");
             GoodsCheckoutSnapshot snapshot;
             if (payment == null)
             {
                 RequireCart(order);
                 ValidateCart(order);
-                snapshot = new(clock.GetUtcNow().AddMinutes(15), order.TotalAmount, Lines(order));
+                await repository.ReserveAsync(order, clock.GetUtcNow().AddMinutes(15), false, ct);
+                var expiry = await repository.HoldExpiryAsync(id, ct) ?? throw Error(409, "Không có giữ tồn còn hiệu lực.");
+                snapshot = new(expiry, order.TotalAmount, Lines(order));
                 payment = new Payment
                 {
                     GoodsOrderId = id,
+                    PayerId = order.BuyerId,
                     AmountVnd = order.TotalAmount,
                     Method = "payos",
                     Status = "pending",
@@ -92,7 +98,7 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
         var link = await gateway.CreateGoodsAsync(attempt.Id, id, attempt.AmountVnd, attempt.ExpiresAt);
         return await repository.TransactionAsync(async () =>
         {
-            var order = await LoadAsync(id, ct);
+            var order = await LoadForPaymentAsync(id, buyerId, ct);
             var payment = order.Payments.Single(p => p.Id == attempt.Id);
             if (link.OrderCode != payment.Id || link.Amount != payment.AmountVnd || string.IsNullOrWhiteSpace(link.LinkId) || !Uri.TryCreate(link.Url, UriKind.Absolute, out var uri) || uri.Scheme != "https" || (payment.GatewayPaymentLinkId != null && payment.GatewayPaymentLinkId != link.LinkId))
                 throw new GatewayException("Thông tin thanh toán hàng hóa không khớp.");
@@ -103,19 +109,39 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
         }, null, ct);
     }
 
-    public async Task<GoodsOrderView> ConfirmTransferAsync(long id, CancellationToken ct)
+    public Task<GoodsOrderView> ConfirmTransferAsync(long id, CancellationToken ct) => ConfirmTransferCoreAsync(id, null, ct);
+    private async Task<GoodsOrderView> ConfirmTransferCoreAsync(long id, long? buyerId, CancellationToken ct)
     {
-        var order = await LoadAsync(id, ct);
+        var order = await LoadForPaymentAsync(id, buyerId, ct);
         if (order.PaymentState == "Paid")
             return await ViewAsync(order, ct);
-        var payment = order.Payments.SingleOrDefault(p => p.Method == "payos" && p.Status == "pending") ?? throw Error(409, "Đơn chưa có mã chuyển khoản đang chờ thanh toán.");
+        var payment = order.Payments.SingleOrDefault(p => p.Method == "payos" && p.Status == "pending");
+        if (payment == null)
+            return await ViewAsync(order, ct);
         var remote = await gateway.GetAsync(payment.Id);
         if (remote.OrderCode != payment.Id || (payment.GatewayPaymentLinkId != null && remote.LinkId != payment.GatewayPaymentLinkId))
             throw new GatewayException("Giao dịch ngân hàng không khớp đơn.");
+        if (remote.AmountPaid == 0 && (remote.Transactions == null || remote.Transactions.Count == 0) && remote.Status is "CANCELLED" or "EXPIRED" or "FAILED")
+        {
+            await repository.TransactionAsync(async () =>
+            {
+                var current = await LoadForPaymentAsync(id, buyerId, ct);
+                var attempt = current.Payments.Single(p => p.Id == payment.Id);
+                if (attempt.Status == "pending" && current.PaymentState == "Pending")
+                {
+                    await repository.ReleaseHoldAsync(id, ct);
+                    attempt.Status = "failed";
+                    current.PaymentState = remote.Status == "EXPIRED" ? "Expired" : remote.Status == "CANCELLED" ? "Cancelled" : "Failed";
+                    Audit(id, buyerId, "goods_checkout_closed", new { at = clock.GetUtcNow(), remote.Status });
+                    await repository.SaveAsync(ct);
+                }
+                return true;
+            }, null, ct);
+        }
         foreach (var transfer in remote.Transactions ?? [])
             await ApplyAsync(transfer, remote, ct);
         repository.ClearTracking();
-        return await ReadAsync(id, ct);
+        return await ViewAsync(await LoadForPaymentAsync(id, buyerId, ct), ct);
     }
 
     public async Task<bool> TryWebhookAsync(string payload, CancellationToken ct)
@@ -139,7 +165,7 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
             var payment = await repository.ApplyPaymentsAsync(data, ct);
             var order = await LoadAsync(payment.GoodsOrderId!.Value, ct);
             var snapshot = await SnapshotAsync(order.Id, ct);
-            var valid = CanConfirmTransfer(order, payment, snapshot, data, remote, clock.GetUtcNow());
+            var valid = CanConfirmTransfer(order, payment, snapshot, data, remote, clock.GetUtcNow()) && await repository.CommitHoldAsync(order, ct);
             var bank = new BankTransaction
             {
                 ExternalId = externalId,
@@ -164,6 +190,9 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
                 order.PaymentState = "NeedsReview";
             }
 
+            repository.AddAuditLogs(new AuditLog { EntityType="Payment",EntityId=payment.Id,Action=valid?"goods_transfer_confirmed":"goods_transfer_review",
+                NewValue=JsonSerializer.Serialize(new { at=clock.GetUtcNow(), data.Reference, received=data.Amount, expected=payment.AmountVnd,
+                    deadline=snapshot.ExpiresAt, remote.Status, reason=valid?"matched":"Kiểm tra số tiền, hạn giữ tồn, mã link và trạng thái đơn." }) });
             Audit(order.Id, null, valid ? "goods_transfer_confirmed" : "goods_transfer_review", new { at = clock.GetUtcNow(), data.Reference, data.Amount });
             await repository.SaveAsync(ct);
             return true;
@@ -192,9 +221,9 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
     private async Task<GoodsOrderView> ViewAsync(Order order, CancellationToken ct)
     {
         var payment = order.Payments.OrderByDescending(p => p.Id).FirstOrDefault();
-        var json = await AuditValueAsync(order.Id, "goods_checkout", ct);
-        var expiry = json == null ? (DateTimeOffset? )null : JsonSerializer.Deserialize<GoodsCheckoutSnapshot>(json)!.ExpiresAt;
-        return new(order.Id, order.OrderCode, order.CustomerName, order.TotalAmount, order.Status, order.PaymentState, order.HandoverState, Lines(order), payment?.Method, payment?.ReferenceCode, payment?.Status == "pending" && expiry > clock.GetUtcNow() ? payment.CheckoutUrl : null, expiry, await InvoiceRecordAsync(order.Id, ct));
+        var json = await AuditValueAsync(order.Id, "goods_checkout", ct) ?? await AuditValueAsync(order.Id, "goods_hold", ct);
+        var expiry = json == null ? (DateTimeOffset? )null : JsonDocument.Parse(json).RootElement.GetProperty("ExpiresAt").GetDateTimeOffset();
+        return new(order.Id, order.OrderCode, order.CustomerName, order.TotalAmount, order.Status, order.PaymentState, order.HandoverState, Lines(order), payment?.Method, payment?.ReferenceCode, order.PaymentState == "Pending" && payment?.Status == "pending" && expiry > clock.GetUtcNow() ? payment.CheckoutUrl : null, expiry, await InvoiceRecordAsync(order.Id, ct));
     }
 
     private async Task<GoodsInvoice?> InvoiceRecordAsync(long id, CancellationToken ct)

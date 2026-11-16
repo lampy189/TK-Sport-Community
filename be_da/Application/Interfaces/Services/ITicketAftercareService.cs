@@ -19,6 +19,10 @@ public interface ITicketAftercareService
     Task<object> ChangesAsync();
     Task<object> CompleteChangeAsync(long id, long actor, string? evidence, string? bankReference);
     Task<object> RefundsAsync();
+    Task<object> DecideRefundAsync(long id, long actor, RefundDecisionInput input);
+    Task<object> RecordRefundPayoutAsync(long id, long actor, RefundPayoutInput input);
+    Task<object> FailRefundAsync(long id, long actor, string? reason);
+    Task<object> RefundHistoryAsync(long id);
     Task<object> CompleteRefundAsync(long id, long actor, string? evidence, string? reference);
     Task<object> ReviewsAsync();
     Task<object> ApprovePaymentAsync(long id, long bankId, long actor, string? evidence);

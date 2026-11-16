@@ -9,7 +9,7 @@ const labels = {confirmed:'Sắp diễn ra',pending:'Chờ thanh toán',cancelle
 export default function TicketList({tickets,now,busy,onRefresh,onPay,onCancel,onBrowse,initialFilter='all',checkoutOnly=false}) {
   const [filter,setFilter]=useState(initialFilter);
   const [query,setQuery]=useState('');
-  const [detail,setDetail]=useState(null);
+  const [detail,setDetail]=useState(() => Number(new URLSearchParams(window.location.search).get('ticketId')) || null);
   const [cancelId,setCancelId]=useState(null);
   const visible=tickets.filter(t=>((checkoutOnly ? state(t,now)==='pending' : filter==='all')||(filter==='history'?['cancelled','expired','completed','invalidated','checkedin','exchanged'].includes(state(t,now)):state(t,now)===filter))&&[t.ticketCode,t.sportName,t.courtName,t.venueName,t.holderName].join(' ').toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi'))).sort((a,b)=>(start(b)||0)-(start(a)||0));
   return <>
@@ -17,7 +17,7 @@ export default function TicketList({tickets,now,busy,onRefresh,onPay,onCancel,on
     {!checkoutOnly && <div className="ticket-filters" aria-label="Lọc vé">{[['all','Tất cả'],['confirmed','Sắp diễn ra'],['pending','Chờ thanh toán'],['venue_issue','Sự cố sân'],['history','Lịch sử']].map(([key,label])=><button key={key} className="button" aria-pressed={filter===key} onClick={()=>setFilter(key)}>{label}</button>)}</div>}
     <div className="ticket-list">{!visible.length&&<StatePanel title={checkoutOnly ? (query ? 'Không tìm thấy vé chờ thanh toán' : 'Bạn không có vé chờ thanh toán') : tickets.length?'Không có vé phù hợp':'Bạn chưa có vé nào'} description={checkoutOnly ? (query ? 'Thử tìm bằng tên sân hoặc mã vé khác.' : 'Vé cần thanh toán sẽ xuất hiện tại đây sau khi bạn đăng ký buổi chơi.') : 'Chọn buổi chơi mới hoặc thay đổi bộ lọc để tìm vé.'}/>}
     {visible.map(t=>{const status=state(t,now); const open=detail===t.id; const canCancel=t.canManage!==false&&['pending','confirmed'].includes(status)&&(status==='pending'||start(t)-now>=43200000);
-      return <article className="ticket-stub" key={t.id}><div className="ticket-main">
+      return <article className="ticket-stub" key={t.id} ref={node => { if (node && String(t.id) === new URLSearchParams(window.location.search).get('ticketId')) node.scrollIntoView({ block: 'center' }); }}><div className="ticket-main">
         <div className="ticket-top"><h4>{t.sportName||'Buổi chơi'} · {t.courtName||'Thông tin sân đang cập nhật'}</h4><span className={`payment-badge ${status}`}>{labels[status]}</span></div>
         <div className="ticket-meta">{t.venueName&&<span>{t.venueName}</span>}{t.sessionDate&&<span>{new Date(t.sessionDate+'T00:00:00+07:00').toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})}</span>}{t.startTime&&<span>{t.startTime.slice(0,5)} – {t.endTime?.slice(0,5)}</span>}{t.holderName&&<span>Người chơi: {t.holderName}</span>}</div>
         {t.ticketKind==='remaining'&&<p className="ticket-refund"><strong>Vé phần buổi còn lại</strong> · Hết hiệu lực {t.validUntil ? new Date(t.validUntil).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Ho_Chi_Minh'}) : t.endTime?.slice(0,5)}. Check-in muộn không kéo dài giờ chơi.</p>}

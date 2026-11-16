@@ -29,6 +29,9 @@ public sealed record TicketChangeSummary
 
 public sealed record TicketRefundSummary
 {
+    public long? ApprovedBy { get; init; }
+    public string? Decision { get; init; }
+    public string? Payout { get; init; }
     public long Id { get; init; } = default!;
     public long TicketId { get; init; } = default!;
     public global::System.Nullable<int> AmountVnd { get; init; } = default!;

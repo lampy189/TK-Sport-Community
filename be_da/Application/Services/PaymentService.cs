@@ -196,6 +196,15 @@ public sealed class PaymentService(IPaymentRepository repository, IPaymentGatewa
         });
     }
 
+    public async Task RecheckAsync(long paymentId)
+    {
+        if (await repository.FindOrderForPaymentAsync(paymentId) is null) throw new PaymentException(404,"Không tìm thấy giao dịch.");
+        var remote = await gateway.GetAsync(paymentId);
+        if (remote.OrderCode != paymentId || (remote.Transactions?.Sum(t=>t.Amount) ?? 0) != remote.AmountPaid)
+            throw new GatewayException("Giao dịch payOS chưa có chi tiết khớp tổng tiền.");
+        foreach (var transfer in remote.Transactions ?? []) await HandleVerifiedEventAsync(transfer,remote);
+    }
+
     public async Task HandleWebhookAsync(string payload)
     {
         var data = await gateway.VerifyAsync(payload);
@@ -259,7 +268,7 @@ public sealed class PaymentService(IPaymentRepository repository, IPaymentGatewa
     private void Flag(SocialBookingOrder order, Payment payment, string action, string detail, long? actor = null)
     {
         Audit(payment, action, detail, actor);
-        payment.Status = "review_required";
+        if (payment.Status != "paid") payment.Status = "review_required";
         // A surplus transfer is a financial exception, not a reason to revoke an already valid ticket.
         if (order.Status != "paid")
             order.Status = "review_required";

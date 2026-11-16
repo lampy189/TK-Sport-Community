@@ -202,7 +202,14 @@ public sealed class SkillAssessmentService(ISkillAssessmentRepository repository
                 continue;
             var payment = ticket.Order.Payments.Where(p => p.Status == "paid" && p.GoodsOrderId == null).OrderByDescending(p => p.Id).FirstOrDefault() ?? throw Error(409, "Vé tương lai thiếu giao dịch thanh toán; cần Staff kiểm tra trước khi công bố.");
             if (!await repository.CheckFutureTicketsRefundsExistsAsync(ct, ticket))
-                repository.AddRefunds(new Refund { PaymentId = payment.Id, TicketId = ticket.Id, RecipientId = ticket.Order.PayerId, AmountVnd = ticket.AmountVnd, Status = "requested", InitiatedBy = actorId });
+                {
+                if (!payment.PayerId.HasValue) throw Error(409, "Chưa xác định được người trả gốc.");
+                var refund = new Refund { PaymentId = payment.Id, TicketId = ticket.Id, RecipientId = payment.PayerId.Value, AmountVnd = ticket.AmountVnd, Status = "processing", InitiatedBy = actorId };
+                repository.AddRefunds(refund);
+                await repository.SaveAsync(ct);
+                repository.AddAuditLogs(new AuditLog { ActorId = actorId, Action = "refund_decision", EntityType = "Refund", EntityId = refund.Id,
+                    NewValue = JsonSerializer.Serialize(new TKSC.Application.DTOs.RefundDecisionRecord(ticket.AmountVnd, payment.PayerId.Value, "Vé tương lai không còn đủ điều kiện sau công bố hạng", "UC-21", clock.GetUtcNow())) });
+            }
             repository.AddAuditLogs(new AuditLog { ActorId = actorId, Action = "rating_ticket_invalidated", EntityType = "Ticket", EntityId = ticket.Id, OldValue = ticket.Status, NewValue = JsonSerializer.Serialize(new { at = clock.GetUtcNow(), band = profile.CurrentBand, refund = "requested" }) });
             ticket.Status = "cancelled";
         }

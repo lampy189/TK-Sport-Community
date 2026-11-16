@@ -37,6 +37,10 @@ if (trustedProxies.Length > 0)
         foreach (var address in trustedProxies) options.KnownProxies.Add(System.Net.IPAddress.Parse(address));
     });
 builder.Services.AddControllers();
+builder.Services.AddScoped<be_da.Application.Interfaces.Repositories.IOwnerPolicyRepository, be_da.Infrastructure.Persistence.Repositories.OwnerPolicyRepository>();
+builder.Services.AddScoped<be_da.Application.Interfaces.Services.IOwnerPolicyService, be_da.Application.Services.OwnerPolicyService>();
+builder.Services.AddScoped<be_da.Application.Interfaces.Services.IBusinessReportService, be_da.Application.Services.BusinessReportService>();
+builder.Services.AddScoped<be_da.Application.Interfaces.Repositories.IBusinessReportRepository, be_da.Infrastructure.Persistence.Repositories.BusinessReportRepository>();
 builder.Services.AddApplicationServices();
 builder.Services.AddOptions<be_da.Application.DTOs.ChatbotOptions>()
     .Bind(builder.Configuration.GetSection("Chatbot"));
@@ -58,8 +62,11 @@ builder.Services.AddScoped<TicketSupportService>();
 builder.Services.AddScoped<SkillAssessmentService>();
 builder.Services.AddScoped<SkillReviewService>();
 builder.Services.AddScoped<GoodsPaymentService>();
+builder.Services.AddScoped<IPaymentRecoveryService,PaymentRecoveryService>();
+builder.Services.AddScoped<TKSC.Application.Interfaces.Repositories.IPaymentRecoveryRepository,TKSC.Infrastructure.Persistence.Repositories.PaymentRecoveryRepository>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddHostedService<TKSC.Presentation.BackgroundServices.TicketEmailWorker>();
+builder.Services.AddHostedService<TKSC.Presentation.BackgroundServices.GoodsHoldExpiryWorker>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -86,6 +93,12 @@ builder.Services.AddScoped<IFriendshipStore>(services => new SqlFriendshipStore(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables."), services.GetRequiredService<IDataAccessContext>()));
 builder.Services.AddScoped<IFirebaseNotificationService, FirebaseNotificationService>();
+builder.Services.AddSingleton<FirebaseClient>();
+builder.Services.AddSingleton<IFirebasePushTransport>(s => s.GetRequiredService<FirebaseClient>());
+builder.Services.AddScoped<be_da.Application.Interfaces.Services.INotificationDeliveryService, NotificationDeliveryService>();
+builder.Services.AddScoped<INotificationDeliveryRepository, TKSC.Infrastructure.Persistence.Repositories.NotificationDeliveryRepository>();
+builder.Services.AddScoped<FirebaseNotificationService>();
+builder.Services.AddHostedService<TKSC.Presentation.BackgroundServices.TicketPushWorker>();
 builder.Services.AddScoped<IStockStore>(services => new SqlStockStore(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Sep490")
     ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490 using local secrets or environment variables."), services.GetRequiredService<IDataAccessContext>()));
