@@ -53,6 +53,16 @@ public sealed class StoreServiceTests
         Assert.False(repository.Saved);
     }
 
+    [Fact]
+    public async Task CreateCartRejectsAggregatedQuantityAboveStock()
+    {
+        var repository = new Repository();
+        var service = new StoreService(repository, new Clock());
+        var result = await service.CreateCartAsync(new([new CreateCartLine(1, 6), new CreateCartLine(1, 5)]), 7, false, "Staff", false, null, "counter-sale-short-stock", CancellationToken.None);
+        Assert.Equal(OperationOutcome.Conflict, result.Outcome);
+        Assert.False(repository.Saved);
+    }
+
     private sealed class Clock : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => Now;
@@ -74,7 +84,7 @@ public sealed class StoreServiceTests
         {
             if (PreviousResult is not null) throw new InvalidOperationException("Product lookup must not run for an idempotent retry.");
             return Task.FromResult(productIds.Contains(1)
-                ? new List<Product> { new() { Id = 1, Sku = "BALL-01", Name = "Bóng", UnitPriceVnd = 20000, IsActive = true } }
+                ? new List<Product> { new() { Id = 1, Sku = "BALL-01", Name = "Bóng", UnitPriceVnd = 20000, IsActive = true, StockItem = new StockItem { ProductId = 1, QuantityOnHand = 10 } } }
                 : []);
         }
 

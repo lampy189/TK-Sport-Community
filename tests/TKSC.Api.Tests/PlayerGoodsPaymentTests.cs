@@ -283,7 +283,7 @@ public sealed class PlayerGoodsPaymentTests
         public Task<List<Order>> ListForBuyerOrdersListAsync(long buyerId, CancellationToken ct) => Task.FromResult(Order.BuyerId == buyerId ? new List<Order> { Order } : []);
         public Task<bool> ConfirmReceiptStockMovementsExistsAsync(CancellationToken ct, long id) => Task.FromResult(Consumed>0);
         public Task<long?> ConfirmReceiptStockItemsAsync(CancellationToken ct, GoodsStockLine line) => throw new NotSupportedException();
-        public Task<int> ConfirmReceiptDatabaseUpdateAsync(CancellationToken ct, GoodsStockLine line, long stockItemId) => throw new NotSupportedException();
+        public Task<int> ConfirmReceiptDatabaseUpdateAsync(CancellationToken ct, GoodsStockLine line, long stockItemId, long orderId) => throw new NotSupportedException();
         public void AddStockMovements(StockMovement value) => throw new NotSupportedException();
     }
 }

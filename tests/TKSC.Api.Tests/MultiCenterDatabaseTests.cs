@@ -45,7 +45,7 @@ public sealed class MultiCenterDatabaseTests
         accessor.HttpContext = http;
         var config = new ConfigurationBuilder().AddInMemoryCollection(
             new Dictionary<string,string?> { ["ConnectionStrings:Sep490"] = connection }).Build();
-        var controller = new StoreController(new TKSC.Application.Services.StoreService(new TKSC.Infrastructure.Persistence.Repositories.StoreRepository(db, config, new HttpDataAccessContext(accessor)))) { ControllerContext = new ControllerContext { HttpContext = http } };
+        var controller = new StoreController(new TKSC.Application.Services.StoreService(new TKSC.Infrastructure.Persistence.Repositories.StoreRepository(db, config, new HttpDataAccessContext(accessor)), TimeProvider.System)) { ControllerContext = new ControllerContext { HttpContext = http } };
         await db.Database.OpenConnectionAsync();
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
