@@ -13,6 +13,9 @@ public partial class StockItem
 
     public int ReorderLevel { get; set; }
 
+    // Held for unpaid or paid-but-not-handed-over goods orders; available = on hand - reserved (upgrade 017).
+    public int ReservedQuantity { get; set; }
+
     public virtual Product Product { get; set; } = null!;
 
     public virtual ICollection<StockCount> StockCounts { get; set; } = new List<StockCount>();

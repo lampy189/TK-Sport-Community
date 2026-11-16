@@ -17,6 +17,9 @@ public partial class Product
 
     public bool? IsActive { get; set; }
 
+    // Center that sells/stocks this product (upgrade 013); NULL on single-center databases.
+    public long? VenueId { get; set; }
+
     public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
     public virtual StockItem? StockItem { get; set; }

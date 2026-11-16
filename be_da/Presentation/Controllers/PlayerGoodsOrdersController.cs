@@ -18,6 +18,25 @@ public sealed class PlayerGoodsOrdersController(IGoodsPaymentService service, IA
 
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken ct) => ActorId <= 0 ? Unauthorized() : Ok(await service.ListForBuyerAsync(ActorId, ct));
+    [HttpPost("{id:long:min(1)}/cancel")]
+    public async Task<IActionResult> Cancel(long id, CancellationToken ct)
+    {
+        if (ActorId <= 0)
+            return Unauthorized();
+        if (Request.Headers["X-TKSC-Request"] != "1")
+            return BadRequest(new { code = "invalid_request" });
+        try
+        {
+            await antiforgery.ValidateRequestAsync(HttpContext);
+        }
+        catch (AntiforgeryValidationException)
+        {
+            return BadRequest(new { code = "invalid_csrf_token", message = "Phiên bảo mật đã thay đổi. Vui lòng thử lại." });
+        }
+
+        return Ok(await service.CancelAsBuyerAsync(id, ActorId, ct));
+    }
+
     [HttpPost("{id:long:min(1)}/receive")]
     public async Task<IActionResult> Receive(long id, CancellationToken ct)
     {

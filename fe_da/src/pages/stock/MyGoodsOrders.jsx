@@ -8,7 +8,12 @@ const root = "/api/v1/commerce/my-goods-orders";
 const money = (value) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
 
+const time = (value) =>
+  new Date(value).toLocaleTimeString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit" });
+
 function orderState(order) {
+  if (order.status === "Cancelled") return { label: "Đã hủy", className: "badge-gray" };
+  if (order.status === "Expired") return { label: "Hết hạn giữ hàng", className: "badge-gray" };
   if (order.handoverState === "Received") return { label: "Đã nhận hàng", className: "badge-lime" };
   if (order.handoverState === "Delivered") return { label: "Đã giao, chờ bạn xác nhận", className: "stock-badge-warning" };
   if (order.paymentState === "Paid") return { label: "Đã thanh toán, chờ giao", className: "badge-gray" };
@@ -34,6 +39,19 @@ export default function MyGoodsOrders() {
       active = false;
     };
   }, []);
+
+  async function cancel(id) {
+    setBusyId(id);
+    setError("");
+    try {
+      const updated = await workflowRequest(`${root}/${id}/cancel`, "POST");
+      setOrders((list) => list.map((o) => (o.id === updated.id ? updated : o)));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function receive(id) {
     setBusyId(id);
@@ -69,8 +87,16 @@ export default function MyGoodsOrders() {
                   <span className={state.className}>{state.label}</span>
                 </div>
                 <p>{order.lines.map((l) => `${l.quantity} × ${l.name}`).join(", ")}</p>
+                {order.holdExpiresAt && order.paymentState !== "Paid" && (
+                  <p className="stock-hint">Hàng được giữ cho bạn đến {time(order.holdExpiresAt)}. Quá hạn chưa thanh toán, đơn tự hủy.</p>
+                )}
                 <div className="my-order-foot">
                   <strong>{money(order.totalAmount)}</strong>
+                  {order.canCancel && (
+                    <button className="button button-secondary" disabled={busyId === order.id} onClick={() => cancel(order.id)}>
+                      {busyId === order.id ? "Đang hủy…" : "Hủy đơn"}
+                    </button>
+                  )}
                   {order.handoverState === "Delivered" && (
                     <button className="button button-primary" disabled={busyId === order.id} onClick={() => receive(order.id)}>
                       <PackageCheck size={16} aria-hidden="true" />

@@ -11,10 +11,14 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         SELECT p.id, p.sku, p.name, p.category, p.unit_price_vnd, ISNULL(p.is_active, 0) AS is_active,
                ISNULL(si.quantity_on_hand, 0) AS quantity_on_hand, ISNULL(si.reorder_level, 0) AS reorder_level,
                CAST(CASE WHEN ISNULL(si.quantity_on_hand, 0) > 0 OR EXISTS (
-                   SELECT 1 FROM dbo.stock_movements m WHERE m.stock_item_id = si.id) THEN 1 ELSE 0 END AS bit) AS units_locked
+                   SELECT 1 FROM dbo.stock_movements m WHERE m.stock_item_id = si.id) THEN 1 ELSE 0 END AS bit) AS units_locked,
+               ISNULL(si.reserved_quantity, 0) AS reserved_quantity
         FROM dbo.products p
         LEFT JOIN dbo.stock_items si ON si.product_id = p.id
         """;
+    // Center of the signed-in Staff/Manager, or the Owner's selected center; null = every center (Owner, standalone).
+    // Row-Level Security may be disabled on a database, so every query filters by center itself.
+    private long? Venue => dataScope?.VenueId;
     // Manual staff entries have no source document table yet; the operator is kept in created_by.
     private const string StaffEntry = "StaffEntry";
     public async Task<IReadOnlyList<StockProduct>> GetProductsAsync(StockProductFilter filter, CancellationToken cancellationToken)
@@ -24,6 +28,7 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         var sql = ProductSelect + """
 
             WHERE (@search IS NULL OR p.sku LIKE @search OR p.name LIKE @search)
+              AND (@venue IS NULL OR p.venue_id = @venue)
               AND (@category IS NULL OR p.category = @category)
               AND (@includeInactive = 1 OR p.is_active = 1)
             ORDER BY ISNULL(p.is_active, 0) DESC, p.name ASC;
@@ -33,6 +38,7 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         command.Parameters.Add("@search", SqlDbType.NVarChar, 260).Value = string.IsNullOrEmpty(search) ? DBNull.Value : "%" + EscapeLike(search) + "%";
         command.Parameters.Add("@category", SqlDbType.VarChar, 100).Value = (object? )filter.Category ?? DBNull.Value;
         command.Parameters.Add("@includeInactive", SqlDbType.Bit).Value = filter.IncludeInactive;
+        AddVenue(command);
         var products = new List<StockProduct>();
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
         {
@@ -48,7 +54,7 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
     {
         await using var connection = new SqlConnection(connectionString);
         await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
-        return await LoadProductAsync(connection, null, productId, cancellationToken);
+        return await LoadProductAsync(connection, null, productId, Venue, cancellationToken);
     }
 
     public async Task<StockResult> CreateProductAsync(CreateProductRequest request, long staffUserId, CancellationToken cancellationToken)
@@ -59,11 +65,11 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         try
         {
             const string sql = """
-                INSERT dbo.products (sku, name, category, unit_price_vnd, is_active)
-                VALUES (@sku, @name, @category, @price, 1);
+                INSERT dbo.products (sku, name, category, unit_price_vnd, is_active, venue_id)
+                VALUES (@sku, @name, @category, @price, 1, @venue);
                 DECLARE @productId bigint = SCOPE_IDENTITY();
-                INSERT dbo.stock_items (product_id, quantity_on_hand, reorder_level)
-                VALUES (@productId, @quantity, @reorder);
+                INSERT dbo.stock_items (product_id, quantity_on_hand, reorder_level, venue_id)
+                VALUES (@productId, @quantity, @reorder, @venue);
                 DECLARE @stockItemId bigint = SCOPE_IDENTITY();
                 IF @quantity > 0
                     INSERT dbo.stock_movements (stock_item_id, movement_type, quantity, reference_type, reference_id, created_by)
@@ -79,9 +85,10 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
             command.Parameters.Add("@reorder", SqlDbType.Int).Value = request.ReorderLevel;
             command.Parameters.Add("@movementType", SqlDbType.VarChar, 100).Value = StockRules.OpeningBalance;
             command.Parameters.Add("@staffUserId", SqlDbType.BigInt).Value = staffUserId;
+            AddVenue(command);
             var productId = Convert.ToInt64(await command.ExecuteScalarAsync(cancellationToken));
             await ReplaceUnitsAsync(connection, transaction, productId, request.Units ?? [new ProductUnitInput(StockUnitRules.DefaultBaseUnit, 1)], cancellationToken);
-            var product = await LoadProductAsync(connection, transaction, productId, cancellationToken);
+            var product = await LoadProductAsync(connection, transaction, productId, null, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return StockResult.Ok(product!);
         }
@@ -99,7 +106,7 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
         if (request.Units is not null)
         {
-            var current = await LoadProductAsync(connection, transaction, productId, cancellationToken);
+            var current = await LoadProductAsync(connection, transaction, productId, Venue, cancellationToken);
             if (current is null)
             {
                 await transaction.RollbackAsync(cancellationToken);
@@ -116,12 +123,13 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         const string sql = """
             UPDATE dbo.products
             SET name = @name, category = @category, unit_price_vnd = @price, is_active = @active
-            WHERE id = @productId;
+            WHERE id = @productId AND (@venue IS NULL OR venue_id = @venue);
             IF @@ROWCOUNT = 0 BEGIN SELECT CAST(0 AS bit); RETURN; END;
             IF EXISTS (SELECT 1 FROM dbo.stock_items WITH (UPDLOCK, HOLDLOCK) WHERE product_id = @productId)
                 UPDATE dbo.stock_items SET reorder_level = @reorder WHERE product_id = @productId;
             ELSE
-                INSERT dbo.stock_items (product_id, quantity_on_hand, reorder_level) VALUES (@productId, 0, @reorder);
+                INSERT dbo.stock_items (product_id, quantity_on_hand, reorder_level, venue_id)
+                SELECT @productId, 0, @reorder, venue_id FROM dbo.products WHERE id = @productId;
             SELECT CAST(1 AS bit);
             """;
         await using var command = new SqlCommand(sql, connection, transaction);
@@ -131,6 +139,7 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         command.Parameters.Add("@price", SqlDbType.Int).Value = request.UnitPriceVnd;
         command.Parameters.Add("@active", SqlDbType.Bit).Value = request.IsActive;
         command.Parameters.Add("@reorder", SqlDbType.Int).Value = request.ReorderLevel;
+        AddVenue(command);
         if (!(bool)(await command.ExecuteScalarAsync(cancellationToken))!)
         {
             await transaction.RollbackAsync(cancellationToken);
@@ -149,7 +158,7 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
             return StockResult.Fail("BARCODE_EXISTS", "Mã vạch đã được dùng cho mặt hàng khác.");
         }
 
-        var product = await LoadProductAsync(connection, transaction, productId, cancellationToken);
+        var product = await LoadProductAsync(connection, transaction, productId, null, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return StockResult.Ok(product!);
     }
@@ -162,7 +171,8 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         // Status: 0 posted, 1 product missing, 2 inactive, 3 insufficient stock, 4 unknown unit, 5 too large to post.
         const string sql = """
             DECLARE @active bit;
-            SELECT @active = ISNULL(is_active, 0) FROM dbo.products WITH (UPDLOCK, HOLDLOCK) WHERE id = @productId;
+            SELECT @active = ISNULL(is_active, 0) FROM dbo.products WITH (UPDLOCK, HOLDLOCK)
+            WHERE id = @productId AND (@venue IS NULL OR venue_id = @venue);
             IF @@ROWCOUNT = 0 BEGIN SELECT 1; RETURN; END;
             IF @active = 0 BEGIN SELECT 2; RETURN; END;
             IF NOT EXISTS (SELECT 1 FROM dbo.product_units WHERE product_id = @productId AND factor_to_base = 1)
@@ -175,12 +185,14 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
             IF @baseQuantity > @maxBase BEGIN SELECT 5; RETURN; END;
             DECLARE @delta int = @sign * CAST(@baseQuantity AS int);
             IF NOT EXISTS (SELECT 1 FROM dbo.stock_items WITH (UPDLOCK, HOLDLOCK) WHERE product_id = @productId)
-                INSERT dbo.stock_items (product_id, quantity_on_hand, reorder_level) VALUES (@productId, 0, 0);
+                INSERT dbo.stock_items (product_id, quantity_on_hand, reorder_level, venue_id)
+                SELECT @productId, 0, 0, venue_id FROM dbo.products WHERE id = @productId;
             DECLARE @posted TABLE (id bigint);
+            -- Goods held for orders cannot be issued: on hand never drops below the reserved quantity.
             UPDATE dbo.stock_items
             SET quantity_on_hand = quantity_on_hand + @delta
             OUTPUT inserted.id INTO @posted
-            WHERE product_id = @productId AND quantity_on_hand + @delta >= 0;
+            WHERE product_id = @productId AND quantity_on_hand + @delta >= reserved_quantity;
             IF NOT EXISTS (SELECT 1 FROM @posted) BEGIN SELECT 3; RETURN; END;
             INSERT dbo.stock_movements (stock_item_id, movement_type, quantity, reference_type, reference_id, created_by, entered_unit, entered_quantity)
             SELECT id, @movementType, @delta, @referenceType, NULL, @staffUserId, @unit, @quantity FROM @posted;
@@ -196,6 +208,7 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         command.Parameters.Add("@movementType", SqlDbType.VarChar, 100).Value = request.Type;
         command.Parameters.Add("@referenceType", SqlDbType.VarChar, 100).Value = StaffEntry;
         command.Parameters.Add("@staffUserId", SqlDbType.BigInt).Value = staffUserId;
+        AddVenue(command);
         var status = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken));
         if (status != 0)
         {
@@ -206,10 +219,10 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
                 2 => StockResult.Fail("PRODUCT_INACTIVE", "Mặt hàng đã ngừng kinh doanh, không thể nhập/xuất."),
                 4 => StockResult.Fail("UNIT_NOT_FOUND", "Mặt hàng không có đơn vị này."),
                 5 => StockResult.Fail("QUANTITY_TOO_LARGE", "Số lượng quy đổi vượt giới hạn cho phép."),
-                _ => StockResult.Fail("INSUFFICIENT_STOCK", "Số lượng xuất vượt quá tồn kho hiện có.")};
+                _ => StockResult.Fail("INSUFFICIENT_STOCK", "Số lượng xuất vượt quá số còn khả dụng (tồn kho trừ hàng đang giữ cho đơn).")};
         }
 
-        var product = await LoadProductAsync(connection, transaction, productId, cancellationToken);
+        var product = await LoadProductAsync(connection, transaction, productId, null, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return StockResult.Ok(product!);
     }
@@ -218,9 +231,10 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
     {
         await using var connection = new SqlConnection(connectionString);
         await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
-        await using (var exists = new SqlCommand("SELECT COUNT(*) FROM dbo.products WHERE id = @productId;", connection))
+        await using (var exists = new SqlCommand("SELECT COUNT(*) FROM dbo.products WHERE id = @productId AND (@venue IS NULL OR venue_id = @venue);", connection))
         {
             exists.Parameters.Add("@productId", SqlDbType.BigInt).Value = productId;
+            AddVenue(exists);
             if (Convert.ToInt32(await exists.ExecuteScalarAsync(cancellationToken)) == 0)
                 return null;
         }
@@ -251,31 +265,33 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
     public async Task<StockCodeLookup?> LookupCodeAsync(string code, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
         const string sql = """
             SELECT TOP (1) p.id, p.sku, p.name, ISNULL(p.is_active, 0), p.unit_price_vnd, ISNULL(si.quantity_on_hand, 0),
-                   ISNULL(b.unit_name, u.unit_name), u.unit_name, u.factor_to_base, u.barcode
+                   ISNULL(b.unit_name, u.unit_name), u.unit_name, u.factor_to_base, u.barcode, ISNULL(si.reserved_quantity, 0)
             FROM dbo.product_units u
             JOIN dbo.products p ON p.id = u.product_id
             LEFT JOIN dbo.stock_items si ON si.product_id = p.id
             LEFT JOIN dbo.product_units b ON b.product_id = p.id AND b.factor_to_base = 1
-            WHERE u.barcode = @code OR (p.sku = @code AND u.factor_to_base = 1)
+            WHERE (u.barcode = @code OR (p.sku = @code AND u.factor_to_base = 1))
+              AND (@venue IS NULL OR p.venue_id = @venue)
             ORDER BY CASE WHEN u.barcode = @code THEN 0 ELSE 1 END;
             """;
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add("@code", SqlDbType.VarChar, 100).Value = code;
+        AddVenue(command);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
             return null;
-        return new StockCodeLookup(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.GetBoolean(3), reader.GetInt32(4), reader.GetInt32(5), reader.GetString(6), reader.GetString(7), reader.GetInt32(8), reader.IsDBNull(9) ? null : reader.GetString(9));
+        return new StockCodeLookup(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.GetBoolean(3), reader.GetInt32(4), reader.GetInt32(5), reader.GetString(6), reader.GetString(7), reader.GetInt32(8), reader.IsDBNull(9) ? null : reader.GetString(9), reader.GetInt32(10));
     }
 
     public async Task<BatchReceiptResult> PostBatchReceiptAsync(BatchReceiptRequest request, long staffUserId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
         var sourceRef = StockReceiptRules.NormalizeSourceRef(request.SourceRef)!;
-        var catalog = await LoadCatalogAsync(connection, cancellationToken);
+        var catalog = await LoadCatalogAsync(connection, Venue, cancellationToken);
         var resolved = new List<ResolvedReceiptLine>();
         var errors = new List<BatchLineError>();
         for (var i = 0; i < request.Lines!.Count; i++)
@@ -329,7 +345,8 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
             {
                 await using var command = new SqlCommand("""
                     IF NOT EXISTS (SELECT 1 FROM dbo.stock_items WITH (UPDLOCK, HOLDLOCK) WHERE product_id = @productId)
-                        INSERT dbo.stock_items (product_id, quantity_on_hand, reorder_level) VALUES (@productId, 0, 0);
+                        INSERT dbo.stock_items (product_id, quantity_on_hand, reorder_level, venue_id)
+                        SELECT @productId, 0, 0, venue_id FROM dbo.products WHERE id = @productId;
                     DECLARE @posted TABLE (id bigint);
                     UPDATE dbo.stock_items SET quantity_on_hand = quantity_on_hand + @quantity
                     OUTPUT inserted.id INTO @posted
@@ -357,11 +374,12 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         }
     }
 
-    private static async Task<IReadOnlyList<ReceiptCatalogItem>> LoadCatalogAsync(SqlConnection connection, CancellationToken cancellationToken)
+    private static async Task<IReadOnlyList<ReceiptCatalogItem>> LoadCatalogAsync(SqlConnection connection, long? venue, CancellationToken cancellationToken)
     {
         var units = await LoadUnitsAsync(connection, null, null, cancellationToken);
         var catalog = new List<ReceiptCatalogItem>();
-        await using var command = new SqlCommand("SELECT id, sku, name, ISNULL(is_active, 0) FROM dbo.products;", connection);
+        await using var command = new SqlCommand("SELECT id, sku, name, ISNULL(is_active, 0) FROM dbo.products WHERE @venue IS NULL OR venue_id = @venue;", connection);
+        command.Parameters.Add("@venue", SqlDbType.BigInt).Value = (object?)venue ?? DBNull.Value;
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -423,10 +441,12 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         };
     }
 
-    private static async Task<StockProduct?> LoadProductAsync(SqlConnection connection, SqlTransaction? transaction, long productId, CancellationToken cancellationToken)
+    // venue null: no center filter (the caller already checked the product's center in the same transaction).
+    private static async Task<StockProduct?> LoadProductAsync(SqlConnection connection, SqlTransaction? transaction, long productId, long? venue, CancellationToken cancellationToken)
     {
-        await using var command = new SqlCommand(ProductSelect + "\nWHERE p.id = @productId;", connection, transaction);
+        await using var command = new SqlCommand(ProductSelect + "\nWHERE p.id = @productId AND (@venue IS NULL OR p.venue_id = @venue);", connection, transaction);
         command.Parameters.Add("@productId", SqlDbType.BigInt).Value = productId;
+        command.Parameters.Add("@venue", SqlDbType.BigInt).Value = (object?)venue ?? DBNull.Value;
         StockProduct? product;
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
         {
@@ -436,6 +456,7 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         return product is null ? null : WithUnits(product, await LoadUnitsAsync(connection, transaction, productId, cancellationToken));
     }
 
-    private static StockProduct ReadProduct(SqlDataReader reader) => new(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.IsDBNull(3) ? null : reader.GetString(3), reader.GetInt32(4), reader.GetBoolean(5), reader.GetInt32(6), reader.GetInt32(7), UnitsLocked: reader.GetBoolean(8));
+    private static StockProduct ReadProduct(SqlDataReader reader) => new(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.IsDBNull(3) ? null : reader.GetString(3), reader.GetInt32(4), reader.GetBoolean(5), reader.GetInt32(6), reader.GetInt32(7), UnitsLocked: reader.GetBoolean(8), ReservedQuantity: reader.GetInt32(9));
+    private void AddVenue(SqlCommand command) => command.Parameters.Add("@venue", SqlDbType.BigInt).Value = (object?)Venue ?? DBNull.Value;
     private static string EscapeLike(string value) => value.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]");
 }

@@ -8,9 +8,10 @@ using TKSC.Application.DTOs;
 using TKSC.Application.Interfaces.Services;
 using TKSC.Application.Interfaces.External;
 using TKSC.Domain.Entities;
+using TKSC.Application.Validators;
 
 namespace TKSC.Application.Services;
-public sealed partial class GoodsPaymentService(IGoodsPaymentRepository repository, IPaymentGateway gateway, TimeProvider clock) : IGoodsPaymentService
+public sealed partial class GoodsPaymentService(IGoodsPaymentRepository repository, IPaymentGateway gateway, TimeProvider clock, Microsoft.Extensions.Options.IOptions<GoodsOrderOptions>? options = null) : IGoodsPaymentService
 {
     public async Task<object> ListAsync(CancellationToken ct) => await repository.ListOrdersListAsync(ct);
     public async Task<GoodsOrderView> ReadAsync(long id, CancellationToken ct) => await ViewAsync(await LoadAsync(id, ct), ct);
@@ -32,6 +33,7 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
         ValidateCart(order);
         if (receivedAmount != order.TotalAmount)
             throw Error(400, "Số tiền xác nhận phải bằng tổng đơn hàng.");
+        await EnsureHeldAsync(order, ct);
         var payment = new Payment
         {
             GoodsOrderId = id,
@@ -67,7 +69,10 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
             {
                 RequireCart(order);
                 ValidateCart(order);
+                await EnsureHeldAsync(order, ct);
                 snapshot = new(clock.GetUtcNow().AddMinutes(15), order.TotalAmount, Lines(order));
+                // The hold lasts at least as long as the payment link (RP3 UC-36 step 5).
+                order.ExpiresAt = GoodsReservationRules.ExtendHold(order.ExpiresAt, snapshot.ExpiresAt);
                 payment = new Payment
                 {
                     GoodsOrderId = id,
@@ -194,7 +199,7 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
         var payment = order.Payments.OrderByDescending(p => p.Id).FirstOrDefault();
         var json = await AuditValueAsync(order.Id, "goods_checkout", ct);
         var expiry = json == null ? (DateTimeOffset? )null : JsonSerializer.Deserialize<GoodsCheckoutSnapshot>(json)!.ExpiresAt;
-        return new(order.Id, order.OrderCode, order.CustomerName, order.TotalAmount, order.Status, order.PaymentState, order.HandoverState, Lines(order), payment?.Method, payment?.ReferenceCode, payment?.Status == "pending" && expiry > clock.GetUtcNow() ? payment.CheckoutUrl : null, expiry, await InvoiceRecordAsync(order.Id, ct));
+        return new(order.Id, order.OrderCode, order.CustomerName, order.TotalAmount, order.Status, order.PaymentState, order.HandoverState, Lines(order), payment?.Method, payment?.ReferenceCode, payment?.Status == "pending" && expiry > clock.GetUtcNow() ? payment.CheckoutUrl : null, expiry, await InvoiceRecordAsync(order.Id, ct), order.ReservationState, order.ExpiresAt, CanCancel(order), order.DeliveredAt, order.CancelledAt);
     }
 
     private async Task<GoodsInvoice?> InvoiceRecordAsync(long id, CancellationToken ct)

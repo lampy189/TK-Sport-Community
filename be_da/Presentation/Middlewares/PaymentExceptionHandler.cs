@@ -17,6 +17,14 @@ public sealed class PaymentExceptionHandler(IPersistenceFailureClassifier failur
             return true;
         }
 
+        // Deadlock victim (1205) or an application lock timeout (51000): nothing was saved, the request can be retried.
+        if ((error as Microsoft.Data.SqlClient.SqlException ?? error.InnerException as Microsoft.Data.SqlClient.SqlException)?.Number is 1205 or 51000)
+        {
+            context.Response.StatusCode = 409;
+            await context.Response.WriteAsJsonAsync(new { code = "busy_retry", message = "Hệ thống đang xử lý yêu cầu khác cho cùng dữ liệu. Vui lòng thử lại." }, token);
+            return true;
+        }
+
         var status = error switch
         {
             PaymentException e => e.StatusCode,
