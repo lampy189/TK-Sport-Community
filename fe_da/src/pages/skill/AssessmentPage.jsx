@@ -40,6 +40,14 @@ function previewBandFromScore(score) {
   return score == null ? null : 'B' + Math.min(5, Math.floor(score / 20) + 1);
 }
 
+// Structured observations are authoritative; legacy evidence remains the fallback.
+function observation(code, mark) {
+  const parsed = parseSubSkillEvidence(code, mark.evidence, mark.score);
+  if (mark.score == null || mark.sliderScores?.length !== parsed.subSkillList.length) return parsed;
+  const subSkillList = parsed.subSkillList.map((sk,i)=>({...sk,value10:mark.sliderScores[i]}));
+  return {...parsed,hasRecordedSliders:true,subSkillList,subSkillMap:Object.fromEntries(subSkillList.map(sk=>[sk.code,sk.value10]))};
+}
+
 export default function AssessmentPage() {
   const [sessions, setSessions] = useState([]);
   const [sessionId, setSessionId] = useState("");
@@ -181,7 +189,7 @@ export default function AssessmentPage() {
       ...current,
       marks: current.marks.map((m) => {
         if (m.dimensionId !== dimensionId) return m;
-        const parsed = parseSubSkillEvidence(criterionCode, m.evidence, m.score);
+        const parsed = observation(criterionCode, m);
         const nextMap = {
           ...parsed.subSkillMap,
           [subSkillCode]: clamped,
@@ -213,7 +221,7 @@ export default function AssessmentPage() {
       ...current,
       marks: current.marks.map((m) => {
         if (m.dimensionId !== dimensionId) return m;
-        const parsed = parseSubSkillEvidence(criterionCode, m.evidence, m.score);
+        const parsed = observation(criterionCode, m);
         if (!parsed.hasRecordedSliders && m.score == null) {
           return { ...m, evidence: newNote };
         }
@@ -235,7 +243,7 @@ export default function AssessmentPage() {
     if (m.score == null) return null;
     if (m.sliderScores?.length === 4) return m.sliderScores;
     // Recalculate old drafts only when the referee saves; published results remain historical.
-    const parsed = parseSubSkillEvidence(c.code, m.evidence, m.score);
+    const parsed = observation(c.code, m);
     return !published && parsed.hasRecordedSliders && parsed.subSkillList.length === 4
       ? parsed.subSkillList.map(sk => sk.value10) : null;
   }
@@ -551,11 +559,7 @@ export default function AssessmentPage() {
                         desc: pilotDescriptions[c.code][i],
                       })),
                     });
-                  const parsed = parseSubSkillEvidence(
-                    c.code,
-                    m.evidence,
-                    m.score
-                  );
+                  const parsed = observation(c.code, m);
                   const subSkills = parsed.subSkillList || [];
                   const isObserved = m.score != null;
 
