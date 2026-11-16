@@ -16,7 +16,7 @@ public sealed class TicketEmailService(ITicketEmailRepository repository, ITicke
         var ct = timeout.Token;
         await repository.WithLockedAsync(id, async notification =>
         {
-            if (notification is null || !IsPending(notification.Status))
+            if (notification is null || notification.Channel != "email" || !IsPending(notification.Status))
                 return false;
             var user = await repository.UserAsync(notification.UserId, ct);
             if (user.DeletedAt is not null || !string.Equals(user.Status, "Active", StringComparison.OrdinalIgnoreCase))
@@ -29,9 +29,8 @@ public sealed class TicketEmailService(ITicketEmailRepository repository, ITicke
                     var body = $"Xin chào {user.FullName},\n\n{notification.Title}\n";
                     if (ticket is not null)
                         body += $"\nNgười chơi: {ticket.Holder}\nMôn: {ticket.Sport}\nSân: {ticket.Court} — {ticket.Venue}\nNgày: {ticket.SessionDate:dd/MM/yyyy}\nGiờ: {ticket.StartTime:HH:mm} – {ticket.EndTime:HH:mm}\nGiá vé: {ticket.AmountVnd:N0} VND\nMã vé: {ticket.TicketCode}\nTrạng thái vé hiện tại: {ticket.Status}\n";
-                    var webUrl = config["Email:WebUrl"];
-                    if (Uri.TryCreate(webUrl, UriKind.Absolute, out var uri) && uri.Scheme is "https" or "http")
-                        body += $"\nXem vé và QR check-in: {uri.ToString().TrimEnd('/')}/player/home?view=tickets\n";
+                    var link = Notifications.NotificationLinks.Absolute(config["Email:WebUrl"], Notifications.NotificationLinks.Ticket(notification.ReferenceId ?? 0));
+                    body += $"\nXem vé và QR check-in: {link}\n";
                     body += "\nVui lòng xem trạng thái mới nhất trong Vé của tôi. Email này không thay thế xác nhận hoàn tiền.\nTK Sport Community";
                     await sender.SendAsync(new OutgoingEmail(id, user.FullName, user.Email, notification.Title ?? "Thông báo vé TK Sport", body), ct);
                     notification.Status = "sent";

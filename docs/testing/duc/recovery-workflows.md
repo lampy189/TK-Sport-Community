@@ -1,6 +1,6 @@
 # DucTM2 — recovery workflow verification
 
-Scope: the seven recovery requirements assigned to Đức on 16 November 2026. These changes use the existing audit, approval, payment, refund, notification and stock tables. No schema upgrade or RLS disabling is required.
+Scope: the seven recovery requirements assigned to Đức on 16 November 2026. These changes use the existing audit, approval, payment, refund, notification and stock tables. The recovery additions themselves require no schema upgrade or RLS disabling; see the LamNV_cm merge prerequisites below for the integrated source.
 
 | Requirement | Implemented behaviour | Regression coverage |
 | --- | --- | --- |
@@ -48,3 +48,16 @@ To avoid replacing earlier evidence, override `DUC_EVIDENCE_DIR` and `DUC_UI_RES
 Screenshots in [the evidence folder](../../evidence/duc-recovery-20261116/) show refund approval/payout/independent verification, stock approval/execution/closure, payment recovery and unallocated-transfer return.
 
 Bank-facing tests use a deterministic gateway double. No real outgoing transfer was initiated during verification. In operation, staff records an actual bank transfer and an independent operator verifies it; a gateway outage remains explicitly pending instead of bypassing verification. Unallocated receipts/returns are kept in the exception/bank audit, outside earned ticket revenue; ordinary paid-ticket refunds continue using the existing refund revenue trigger.
+
+## LamNV_cm merge validation
+
+The conflict-resolution merge preserves the team's owner pricing/versioning, notification delivery, application center filters and goods-payment recovery alongside the DucTM2 incident/refund workflows. The shared recovery screen delegates goods transactions to the team's goods service; unallocated-transfer returns remain limited to ticket payments.
+
+Validation of the merged source:
+
+- API/backend: **809 passed, 0 failed, 16 skipped** (825 total).
+- Payment rules: **68 passed**; frontend unit checks: **10 passed**.
+- Browser UI: **37 passed**, covering both Đức's workflows and the team's goods recovery/invoice screens.
+- Backend/frontend builds and scoped lint passed.
+
+The 16 opt-in SQL tests were not run against the merged source. This source now includes LamNV_cm's database prerequisites (notably upgrades 018/019 for goods reservations and Owner policy/pricing versions). No migration, RLS setting or lab data was changed while resolving the PR. The earlier 743-case SQL-enabled result above applies to the pre-merge recovery snapshot, not to this integrated snapshot. Review the team's deployment/migration plan before running the integrated source against the existing lab database.

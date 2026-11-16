@@ -268,7 +268,7 @@ public sealed class PaymentService(IPaymentRepository repository, IPaymentGatewa
     private void Flag(SocialBookingOrder order, Payment payment, string action, string detail, long? actor = null)
     {
         Audit(payment, action, detail, actor);
-        payment.Status = "review_required";
+        if (payment.Status != "paid") payment.Status = "review_required";
         // A surplus transfer is a financial exception, not a reason to revoke an already valid ticket.
         if (order.Status != "paid")
             order.Status = "review_required";

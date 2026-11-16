@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace TKSC.Presentation.Controllers;
 [ApiController, Authorize]
 [Route("api/notifications")]
-public class NotificationsController(INotificationService service, IAntiforgery antiforgery) : ControllerBase
+public partial class NotificationsController(INotificationService service, IAntiforgery antiforgery) : ControllerBase
 {
     private long UserId => long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : -1;
 

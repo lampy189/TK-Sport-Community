@@ -4,6 +4,7 @@ namespace TKSC.Application.DTOs;
 public record PaymentSummary(long Id, string ReferenceCode, string Status, int AmountVnd);
 public record TicketSummary(long Id, long OrderId, long PlayerId, long SessionId, int AmountVnd, string Status, string? TicketCode, bool Valid, DateOnly? SessionDate, TimeOnly? StartTime, TimeOnly? EndTime, string OrderStatus, DateTimeOffset? ExpiresAt, string? PaymentStatus, string? SportName, string? CourtName, string? VenueName, string? HolderName, bool CheckedIn, string? RefundStatus, int? RefundAmountVnd)
 {
+    public long PayerId { get; init; }
     public bool CanManage { get; init; } = true;
     public string? SessionStatus { get; init; }
     public string? VenueIssue { get; init; }

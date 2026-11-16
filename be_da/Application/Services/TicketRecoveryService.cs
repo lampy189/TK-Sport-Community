@@ -6,7 +6,7 @@ using be_da.Application.Interfaces.Services;
 using TKSC.Domain.Exceptions;
 
 namespace TKSC.Application.Services;
-public sealed class TicketRecoveryService(IIncidentRepository repository, IPaymentGateway gateway, IPaymentService payments, ITicketAftercareService aftercare) : ITicketRecoveryService
+public sealed class TicketRecoveryService(IIncidentRepository repository, IPaymentGateway gateway, IPaymentService payments, ITicketAftercareService aftercare, IPaymentRecoveryService? goodsRecovery = null) : ITicketRecoveryService
 {
     public async Task<object> List(long actor)
     {
@@ -19,6 +19,12 @@ public sealed class TicketRecoveryService(IIncidentRepository repository, IPayme
                 list.Add(p);
         }
 
+        if (goodsRecovery != null)
+            foreach (var item in (await goodsRecovery.ListAsync(default)).Where(p => p.Kind == "goods"))
+            {
+                var resource = await repository.Resource("reviews", item.Id);
+                if (resource != null && (a.Role == "owner" || a.VenueId == resource.VenueId)) list.Add(item);
+            }
         return list;
     }
 
@@ -28,7 +34,15 @@ public sealed class TicketRecoveryService(IIncidentRepository repository, IPayme
         var r = await repository.Resource("reviews", id);
         if (r == null || a.Role != "owner" && a.VenueId != r.VenueId)
             throw new PaymentException(404, "Không tìm thấy giao dịch tại cơ sở.");
-        var p = await repository.RecoveryPayment(id) ?? throw new PaymentException(404, "Không tìm thấy giao dịch vé.");
+        var p = await repository.RecoveryPayment(id);
+        if (p == null)
+        {
+            var stateForGoods = await repository.State("reviews", id);
+            if (action != "note" && (stateForGoods.AssignedTo == null || stateForGoods.AssignedTo != actor && a.Role == "staff"))
+                throw new PaymentException(409, "Nhận xử lý sự cố trước khi đối soát.");
+            if (goodsRecovery == null) throw new PaymentException(404, "Không tìm thấy giao dịch.");
+            return await goodsRecovery.ActAsync(id, actor, action, input, default);
+        }
         if (p.PayerId == actor || p.Order?.PayerId == actor)
             throw new PaymentException(403, "Không tự đối soát thanh toán của mình.");
         var evidence = TicketAftercareRules.Evidence(input.Evidence);

@@ -24,7 +24,7 @@ export default function PaymentRecoveryPage({role='staff',initialPaymentId=null}
  }
  const canAct=!busy&&evidence.trim().length>=10&&evidence.trim().length<=1000;
  return <section className="workflow payment-recovery" aria-label="Xử lý lại giao dịch">
-  <div className="workflow-actions"><h2>Đối soát thanh toán vé</h2><button className="button button-secondary" disabled={busy} onClick={()=>run()}>Tải lại</button></div>
+  <div className="workflow-actions"><h2>Đối soát vé & hàng hóa</h2><button className="button button-secondary" disabled={busy} onClick={()=>run()}>Tải lại</button></div>
   {error&&<p role="alert" className="workflow-error">{error}</p>}{notice&&<p role="status">{notice}</p>}
   {loading?<p role="status">Đang tải giao dịch…</p>:<div className="recovery-grid">
    <div className="recovery-list" aria-label="Giao dịch cần kiểm tra">{!rows.length&&<p>Không có giao dịch cần kiểm tra.</p>}
@@ -44,7 +44,7 @@ export default function PaymentRecoveryPage({role='staff',initialPaymentId=null}
      <button className="button button-primary" disabled={!canAct} onClick={()=>run('recheck')}>Kiểm tra lại payOS</button>
      <button className="button button-secondary" disabled={!canAct||!bank||current.status!=='review_required'} onClick={()=>run('approve')}>Duyệt khoản đủ tiền</button>
      <button className="button button-secondary" disabled={!canAct||current.status==='paid'||current.transactions.length>0} onClick={()=>run('close-unpaid')}>Đóng khi chưa thu tiền</button>
-     {role!=='owner'&&<button className="button button-secondary" disabled={!canAct||!bank} onClick={proposeReturn}>Đề nghị hoàn toàn bộ khoản chưa phân bổ</button>}
+     {role!=='owner'&&current.kind!=='goods'&&<button className="button button-secondary" disabled={!canAct||!bank} onClick={proposeReturn}>Đề nghị hoàn toàn bộ khoản chưa phân bổ</button>}
      <button className="button button-secondary" disabled={!canAct} onClick={()=>run('note')}>Lưu ghi chú</button>
     </div>
     <p>Khoản thiếu/thừa hoặc chưa rõ kết quả cần tiếp tục đối soát. Tiếp tục theo dõi trong Sự cố và gửi ngoại lệ nếu vượt quyền.</p>

@@ -10,6 +10,9 @@ public sealed class RevenueRepository(IConfiguration configuration, be_da.Applic
     {
         await using var connection = new SqlConnection(configuration.GetConnectionString("Sep490"));
         await SportCenterConnection.OpenAsync(connection, ct, dataScope);
+        var assigned = CenterAccess.PersonnelVenue(dataScope);
+        if (assigned.HasValue && venueId.HasValue && venueId != assigned) return null;
+        venueId = assigned ?? venueId;
         if (venueId.HasValue)
         {
             await using var exists = new SqlCommand("SELECT COUNT(*) FROM dbo.venues WHERE id=@venue", connection);

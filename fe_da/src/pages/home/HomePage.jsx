@@ -23,6 +23,7 @@ export default function HomePage({
     ["owner", "manager", "staff"].includes(role) && new URLSearchParams(window.location.search).get("view") === "revenue" ? (role === "owner" ? "Kinh doanh" : "Thống kê doanh số") :
     role !== "guest" && ["messages", "notifications"].includes(new URLSearchParams(window.location.search).get("view")) ? "Thông báo" :
     role === "staff" && new URLSearchParams(window.location.search).has("goodsOrderId") ? "Bán hàng" :
+    role === "player" && new URLSearchParams(window.location.search).get("view") === "goods" ? "Cửa hàng" :
     role === "player" &&
     new URLSearchParams(window.location.search).has("orderId")
       ? "Thanh toán"
@@ -68,7 +69,7 @@ export default function HomePage({
     setActive(label);
     if (!preview && label !== "Thanh toán") {
       const url = new URL(window.location.href);
-      ["orderId", "code", "id", "cancel", "status", "view"].forEach((key) =>
+      ["orderId", "ticketId", "goodsOrderId", "code", "id", "cancel", "status", "view"].forEach((key) =>
         url.searchParams.delete(key),
       );
       if (label === "Thông báo" || label === "Tin nhắn") url.searchParams.set("view", "messages");

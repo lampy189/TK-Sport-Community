@@ -33,7 +33,10 @@ public sealed class StoreService(IStoreRepository repository) : IStoreService
             var quantityOnHand = product.StockItem?.QuantityOnHand ?? 0;
             if (item.Quantity > quantityOnHand)
                 return OperationResult.Conflict(new { code = "stock_unavailable", message = $"Sản phẩm '{product.Name}' chỉ còn {quantityOnHand} trong kho. Vui lòng giảm số lượng đặt hàng." });
-            var subtotal = item.Quantity * product.UnitPriceVnd;
+            var rawSubtotal = (long)item.Quantity * product.UnitPriceVnd;
+            if (rawSubtotal <= 0 || rawSubtotal > int.MaxValue || (long)totalAmount + rawSubtotal > int.MaxValue)
+                return OperationResult.Invalid(new { code="invalid_total", message="Giá hoặc tổng đơn vượt giới hạn cho phép." });
+            var subtotal = (int)rawSubtotal;
             totalAmount += subtotal;
             orderItems.Add(new StoreCartItemResult(product.Id, product.Name, item.Quantity, product.UnitPriceVnd, subtotal));
         }

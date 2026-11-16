@@ -18,6 +18,9 @@ public sealed partial class GoodsPaymentService
             return await ViewAsync(order, ct);
         if (GoodsHandoverRules.ValidateDeliver(order.Status, order.PaymentState, await InvoiceRecordAsync(id, ct) != null)is { } error)
             throw Error(409, error);
+        var invoice = await InvoiceRecordAsync(id, ct) ?? throw Error(409,"Thiếu hóa đơn.");
+        if (!Lines(order).SequenceEqual(invoice.Lines)) throw Error(409,"Dòng hàng khác hóa đơn.");
+        await repository.ConsumeHoldAsync(order, actorId, ct);
         order.HandoverState = Delivered;
         Audit(id, actorId, "goods_delivered", new { at = clock.GetUtcNow() });
         await repository.SaveAsync(ct);
@@ -55,19 +58,10 @@ public sealed partial class GoodsPaymentService
         var invoice = await InvoiceRecordAsync(id, ct) ?? throw Error(409, "Thiếu hóa đơn của đơn hàng. Cần đối soát.");
         if (!Lines(order).SequenceEqual(invoice.Lines))
             throw Error(409, "Dòng hàng khác với hóa đơn. Cần đối soát trước khi trừ kho.");
-        // A retried request must not post the sale twice.
-        var posted = await repository.ConfirmReceiptStockMovementsExistsAsync(ct, id);
-        if (!posted)
-        {
-            foreach (var line in GoodsHandoverRules.StockLines(invoice.Lines))
-            {
-                var stockItemId = await repository.ConfirmReceiptStockItemsAsync(ct, line) ?? throw Error(409, $"{line.Name} chưa có trong kho. Cần nhập kho trước khi chốt đơn.");
-                var updated = await repository.ConfirmReceiptDatabaseUpdateAsync(ct, line, stockItemId);
-                if (updated == 0)
-                    throw Error(409, $"Không đủ tồn kho {line.Name} để chốt đơn. Cần kiểm kho/đối soát.");
-                repository.AddStockMovements(new StockMovement { StockItemId = stockItemId, MovementType = SaleOut, Quantity = -line.Quantity, ReferenceType = "GoodsOrder", ReferenceId = id, CreatedBy = actorId });
-            }
-        }
+        // Delivery already atomically converted the reservation to SaleOut.
+        // Legacy Delivered orders without a movement require reconciliation; never deduct blindly.
+        if (!await repository.ConfirmReceiptStockMovementsExistsAsync(ct, id))
+            await repository.ConsumeHoldAsync(order, actorId, ct);
 
         order.HandoverState = Received;
         order.Status = "Completed";

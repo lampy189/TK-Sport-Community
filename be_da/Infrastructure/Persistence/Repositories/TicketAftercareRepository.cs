@@ -32,8 +32,8 @@ public sealed partial class TicketAftercareRepository(Sep490Context db, TimeProv
     private IQueryable<Ticket> Occupied(long sessionId, long except = 0) => db.Tickets.Where(t => t.SessionId == sessionId && t.Id != except && (new[] { "confirmed", "checkedin", "valid", "paid" }.Contains(t.Status.ToLower()) || (new[] { "pending", "reserved" }.Contains(t.Status.ToLower()) && t.Order.ExpiresAt > Now)));
     public void AddAuditLogs(AuditLog value) => db.AuditLogs.Add(value);
     public void AddNotifications(IEnumerable<Notification> value) => db.Notifications.AddRange(value);
-    public Task<Session?> SessionSessionsAsync(long id) => db.Sessions.FromSqlInterpolated($"SELECT * FROM sessions WITH (UPDLOCK,HOLDLOCK) WHERE id={id}").SingleOrDefaultAsync();
-    public Task<Session?> GetSessionDetailsAsync(long id) => db.Sessions.Include(s => s.TimeSlot).Include(s => s.Sport).Include(s => s.Court).ThenInclude(c => c.Venue).SingleOrDefaultAsync(s => s.Id == id);
+    public Task<Session?> SessionSessionsAsync(long id) => be_da.Infrastructure.Persistence.OwnerPrice.Resolve(db, db.Sessions.FromSqlInterpolated($"SELECT * FROM sessions WITH (UPDLOCK,HOLDLOCK) WHERE id={id}").SingleOrDefaultAsync());
+    public Task<Session?> GetSessionDetailsAsync(long id) => be_da.Infrastructure.Persistence.OwnerPrice.Resolve(db, db.Sessions.Include(s => s.TimeSlot).Include(s => s.Sport).Include(s => s.Court).ThenInclude(c => c.Venue).SingleOrDefaultAsync(s => s.Id == id));
     public Task<long?> TicketTicketsAsync(long id) => db.Tickets.Where(t => t.Id == id).Select(t => (long? )t.OrderId).SingleOrDefaultAsync();
     public Task<Ticket> GetTicketDetailsAsync(long id) => db.Tickets.Include(t => t.Order).ThenInclude(o => o.Payments).Include(t => t.Player).ThenInclude(p => p.User).Include(t => t.Refunds).SingleAsync(t => t.Id == id);
     public Task<bool> EligibilityPlayersExistsAsync(long playerId) => db.Players.AnyAsync(p => p.Id == playerId && p.User.DeletedAt == null && p.User.Status.ToLower() == "active");
@@ -44,13 +44,19 @@ public sealed partial class TicketAftercareRepository(Sep490Context db, TimeProv
     public Task<Payment?> FundingPaymentsAsync(Ticket t) => db.Payments.Where(p => p.OrderId == t.OrderId && p.BankTransactions.Any(b => b.MatchStatus == "matched")).FirstOrDefaultAsync();
     public void AddTicketFunding(TicketFunding value) => db.TicketFunding.Add(value);
     public Task<Payment> RefundPaymentsAsync(long paymentId) => db.Payments.SingleAsync(p => p.Id == paymentId);
-    public Task<long?> RefundRefundsTotalAsync(long paymentId) => db.Refunds.Where(r => r.PaymentId == paymentId && r.Status != "failed").SumAsync(r => (long? )r.AmountVnd);
+    public Task<long?> RefundRefundsTotalAsync(long paymentId) => db.Refunds.Where(r => r.PaymentId == paymentId && r.Status != "rejected").SumAsync(r => (long? )r.AmountVnd);
     public long RefundChangeTrackerSum(long paymentId) => db.ChangeTracker.Entries<Refund>().Where(e => e.State == EntityState.Added && e.Entity.PaymentId == paymentId).Sum(e => (long)(e.Entity.AmountVnd ?? 0));
     public void AddRefunds(Refund value) => db.Refunds.Add(value);
     public Task<List<AftercareSessionSummary>> SessionsSessionsListAsync(bool issuesOnly, DateOnly today) => db.Sessions.AsNoTracking().Where(s => issuesOnly ? s.Status.ToLower() == "suspended" || s.Status.ToLower() == "cancelled" : s.SessionDate >= today.AddDays(-1)).OrderBy(s => s.SessionDate).ThenBy(s => s.TimeSlot.StartTime).Select(s => new AftercareSessionSummary { Id = s.Id, SessionDate = s.SessionDate, Status = s.Status, StartTime = s.TimeSlot.StartTime, EndTime = s.TimeSlot.EndTime, Sport = s.Sport.Name, Court = s.Court.Name, Venue = s.Court.Venue.Name, Reason = db.AuditLogs.Where(a => a.EntityType == "Session" && a.EntityId == s.Id && a.Action == "venue_condition_issue").OrderByDescending(a => a.Id).Select(a => a.NewValue).FirstOrDefault() }).ToListAsync();
     public Task<List<Ticket>> ReportTicketsListAsync(long id) => db.Tickets.Include(t => t.Player).Include(t => t.Order).Where(t => t.SessionId == id && (t.Status.ToLower() == "confirmed" || t.Status.ToLower() == "pending" || t.Status.ToLower() == "reserved")).ToListAsync();
     public Task<Ticket?> OptionsTicketsAsync(long id, long user) => db.Tickets.Include(t => t.Player).Include(t => t.Order).Include(t => t.Refunds).Include(t => t.Session).ThenInclude(s => s.TimeSlot).Include(t => t.Session).ThenInclude(s => s.Court).SingleOrDefaultAsync(t => t.Id == id && (t.Player.UserId == user || t.Order.PayerId == user));
-    public Task<List<Session>> OptionsSessionsListAsync(Ticket ticket, DateOnly today) => db.Sessions.Include(s => s.TimeSlot).Include(s => s.Court).Include(s => s.Sport).Where(s => s.Id != ticket.SessionId && s.Court.VenueId==ticket.Session.Court.VenueId && s.SportId == ticket.Session.SportId && s.SessionDate >= today && (s.Status.ToLower() == "open" || s.Status.ToLower() == "published")).OrderBy(s => s.SessionDate).ThenBy(s => s.TimeSlot.StartTime).Take(100).ToListAsync();
+    private Task<List<Session>> LoadOptionsSessionsAsync(Ticket ticket, DateOnly today) => db.Sessions.Include(s => s.TimeSlot).Include(s => s.Court).Include(s => s.Sport).Where(s => s.Id != ticket.SessionId && s.Court.VenueId == ticket.Session.Court.VenueId && s.SportId == ticket.Session.SportId && s.SessionDate >= today && (s.Status.ToLower() == "open" || s.Status.ToLower() == "published")).OrderBy(s => s.SessionDate).ThenBy(s => s.TimeSlot.StartTime).Take(100).ToListAsync();
+    public async Task<List<Session>> OptionsSessionsListAsync(Ticket ticket, DateOnly today)
+    {
+        var sessions=await LoadOptionsSessionsAsync(ticket,today);
+        foreach(var session in sessions) await be_da.Infrastructure.Persistence.OwnerPrice.Resolve(db,Task.FromResult<Session?>(session));
+        return sessions;
+    }
     public Task<int> OptionsCountAsync(Session target) => Occupied(target.Id).CountAsync();
     public Task<bool> RequestChangeTicketChangesExistsAsync(long id) => db.TicketChanges.AnyAsync(c => c.TicketId == id && c.Status == "requested");
     public Task<int> RequestChangeCountAsync(long targetId) => Occupied(targetId).CountAsync();
@@ -99,7 +105,7 @@ public sealed partial class TicketAftercareRepository(Sep490Context db, TimeProv
     public Task<List<FlaggedTicketPayment>> ReviewsPaymentsListAsync() => db.Payments.AsNoTracking().Where(p => p.Status == "review_required" && p.OrderId != null).OrderByDescending(p => p.Id).Select(p => new FlaggedTicketPayment { Id = p.Id, OrderId = p.OrderId, ReferenceCode = p.ReferenceCode, AmountVnd = p.AmountVnd, Payer = db.Users.Where(u=>u.Id==p.PayerId).Select(u=>u.FullName).FirstOrDefault() ?? "Người thanh toán gốc", Transactions = p.BankTransactions.Where(b => b.MatchStatus == "review_required").Select(b => new FlaggedBankTransaction { Id = b.Id, ExternalId = b.ExternalId, AmountVnd = b.AmountVnd, ReferenceCode = b.ReferenceCode }).ToList() }).ToListAsync();
     public Task<Payment?> ApprovePaymentPaymentsAsync(long id) => db.Payments.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id && p.OrderId != null && p.GoodsOrderId == null);
     public Task<SocialBookingOrder> ApprovePaymentSocialBookingOrdersAsync(Payment lookup) => db.SocialBookingOrders.Include(o => o.Payments).SingleAsync(o => o.Id == lookup.OrderId);
-    public Task<BankTransaction?> ApprovePaymentBankTransactionsAsync(long id, long bankId) => db.BankTransactions.SingleOrDefaultAsync(b => b.Id == bankId && b.MatchedPaymentId == id && b.MatchStatus == "review_required");
+    public Task<BankTransaction?> ApprovePaymentBankTransactionsAsync(long id, long bankId) => db.BankTransactions.SingleOrDefaultAsync(b => b.Id == bankId && b.MatchedPaymentId == id);
     public Task<List<Ticket>> ApprovePaymentTicketsListAsync(SocialBookingOrder order) => db.Tickets.Include(t => t.Player).Where(t => t.OrderId == order.Id && t.Status.ToLower() != "cancelled").ToListAsync();
     public Task<int> ApprovePaymentCountAsync(SocialBookingOrder order, Session session) => Occupied(session.Id).Where(t => t.OrderId != order.Id).CountAsync();
 }

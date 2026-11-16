@@ -11,8 +11,9 @@ public sealed class SportCenterRepository(IConfiguration configuration, be_da.Ap
     {
         await using var connection = Connection();
         await SportCenterConnection.OpenAsync(connection, ct, dataScope);
-        await using var command = new SqlCommand("SELECT id,name,is_active FROM dbo.venues ORDER BY name", connection);
+        await using var command = new SqlCommand("SELECT id,name,is_active FROM dbo.venues WHERE (@accessVenue IS NULL OR id=@accessVenue) ORDER BY name", connection);
         var rows = new List<object>();
+        CenterAccess.Bind(command, dataScope);
         await using var reader = await command.ExecuteReaderAsync(ct);
         while (await reader.ReadAsync(ct))
             rows.Add(new { id = reader.GetInt64(0), name = reader.IsDBNull(1) ? "Sport Center" : reader.GetString(1), active = !reader.IsDBNull(2) && reader.GetBoolean(2) });

@@ -1,3 +1,4 @@
+using TKSC.Application.Interfaces.Services;
 using be_da.Application.DTOs;
 using TKSC.Application.DTOs;
 using be_da.Application.Interfaces.Services;
@@ -63,7 +64,6 @@ public class TicketAftercareController(ITicketAftercareService service, ITicketS
     [HttpPost("reviews/{id:long}/approve"), Authorize(Roles = "Staff,staff,Manager,manager,Owner,owner")]
     public Task<IActionResult> Approve(long id, FlaggedPaymentApprovalRequest input) => Write(() => recovery.Act(Actor,id,"approve",new PaymentRecoveryInput(input.Evidence,input.BankTransactionId)));
     private bool IsStaff => User.IsInRole("Staff") || User.IsInRole("staff") || User.IsInRole("Manager") || User.IsInRole("manager") || User.IsInRole("Owner") || User.IsInRole("owner");
-
     [HttpGet("inbox"), Authorize(Roles = "Staff,staff,Manager,manager,Owner,owner")]
     public async Task<IActionResult> Inbox() => Ok(await support.Inbox());
     [HttpGet("tickets/{id:long}/messages")]

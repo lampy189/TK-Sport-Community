@@ -35,6 +35,7 @@ public class FutureTicketFundingTests
         var session = new Session
         {
             Id = 4,
+            Court = new Court { Id = 1, VenueId = 1, Name = "Fixture court", Venue = new Venue { Id = 1, Name = "Fixture venue" } },
             SportId = 1,
             SessionDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(3)),
             TimeSlot = new TimeSlot
@@ -71,6 +72,7 @@ public class FutureTicketFundingTests
             db.TicketFunding.Add(new() { Id = 2, TicketId = 7, PaymentId = 20, AmountVnd = price - 100 });
         }
 
+        db.Tickets.Add(new Ticket { Id = 999, Player = player, Session = session, Order = ticket.Order, Status = "cancelled", AmountVnd = 100 });
         await db.SaveChangesAsync();
         return (db, profile, ticket);
     }

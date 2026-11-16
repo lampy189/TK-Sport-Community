@@ -547,7 +547,9 @@ public sealed class SqlFriendshipStore(string connectionString, be_da.Applicatio
         await using var connection = new SqlConnection(connectionString);
         await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
         const string sql = """
-            IF EXISTS (SELECT 1 FROM dbo.user_fcm_tokens WHERE fcm_token = @token)
+            SET XACT_ABORT ON;
+            BEGIN TRANSACTION;
+            IF EXISTS (SELECT 1 FROM dbo.user_fcm_tokens WITH (UPDLOCK, HOLDLOCK) WHERE fcm_token = @token)
             BEGIN
                 UPDATE dbo.user_fcm_tokens
                 SET user_id = @userId, device_type = @deviceType, updated_at = SYSDATETIMEOFFSET()
@@ -558,6 +560,7 @@ public sealed class SqlFriendshipStore(string connectionString, be_da.Applicatio
                 INSERT INTO dbo.user_fcm_tokens (user_id, fcm_token, device_type)
                 VALUES (@userId, @token, @deviceType);
             END
+            COMMIT;
             """;
         await using var cmd = new SqlCommand(sql, connection);
         cmd.Parameters.Add("@userId", SqlDbType.BigInt).Value = userId;

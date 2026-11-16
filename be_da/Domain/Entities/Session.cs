@@ -7,6 +7,9 @@ public partial class Session
 {
     public long Id { get; set; }
 
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public long? QuotedPriceVersionId { get; set; }
+
     public long SportId { get; set; }
 
     public long CourtId { get; set; }

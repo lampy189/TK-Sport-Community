@@ -26,11 +26,12 @@ public class TicketNotificationTests
     public void PayerAndHolderEachReceiveWebAndEmailWithoutSelfDuplicates()
     {
         var self = TicketNotifications.Create("ticket_paid", 100, 7, 7).ToList();
-        Assert.Equal(2, self.Count);
+        Assert.Equal(3, self.Count);
         Assert.Single(self, n => n.Channel == "web" && n.Status == "unread");
         Assert.Single(self, n => n.Channel == "email" && n.Status == "pending");
+        Assert.Single(self, n => n.Channel == "push" && n.Status == "pending");
         var friends = TicketNotifications.Create("ticket_paid", 100, 7, 8).ToList();
-        Assert.Equal(4, friends.Count);
+        Assert.Equal(6, friends.Count);
         Assert.All(friends, n => Assert.Equal(100L, n.ReferenceId));
     }
     [Fact]
