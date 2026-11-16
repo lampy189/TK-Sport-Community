@@ -47,4 +47,3 @@ fe_da/test-results/
 /docs/testing/duc/sql-verification.json
 /docs/testing/duc/round1/*
 !/docs/testing/duc/round1/README.md
-be_da/Controllers/appsettings.Development.json

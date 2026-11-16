@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Check, PackageOpen, Undo2, X } from "lucide-react";
+import { CalendarDays, PackageOpen, Undo2 } from "lucide-react";
 import SectionLayout from "../../components/layout/SectionLayout";
 import StatePanel from "../../components/ui/StatePanel";
-import { requestStatusLabels, stockClient } from "./stockClient";
+import { stockClient } from "./stockClient";
 
 const number = (value) => new Intl.NumberFormat("vi-VN").format(value);
 const vietnamToday = () =>
   new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
 
-// UC-41 / UC-42: referee requests -> Staff issues to the session -> referee reports use and returns
-// -> Staff confirms what physically came back. readOnly: the Manager follows without changing stock.
-export default function SessionSuppliesView({ readOnly = false }) {
+// UC-41 / UC-42: issue supplies to one session, then close with the unused quantity returned.
+export default function SessionSuppliesView() {
   const [date, setDate] = useState(vietnamToday);
   const [sessions, setSessions] = useState({ loading: true, items: [], error: "" });
   const [sessionId, setSessionId] = useState(null);
@@ -71,9 +70,6 @@ export default function SessionSuppliesView({ readOnly = false }) {
                   <span>
                     {s.sportName} · {s.courtName}
                   </span>
-                  {s.pendingRequests > 0 && (
-                    <span className="stock-badge-warning">{s.pendingRequests} yêu cầu chờ cấp</span>
-                  )}
                   {s.outstandingItems > 0 ? (
                     <span className="stock-badge-warning">{s.outstandingItems} vật tư chưa chốt</span>
                   ) : s.reconciledItems > 0 ? (
@@ -86,7 +82,7 @@ export default function SessionSuppliesView({ readOnly = false }) {
             ))}
           </ul>
           {sessionId ? (
-            <SupplyDetails key={sessionId} sessionId={sessionId} onSummary={updateSummary} readOnly={readOnly} />
+            <SupplyDetails key={sessionId} sessionId={sessionId} onSummary={updateSummary} />
           ) : (
             <StatePanel title="Chọn một buổi chơi" description="Chọn ca ở danh sách để cấp hoặc chốt vật tư." />
           )}
@@ -96,7 +92,7 @@ export default function SessionSuppliesView({ readOnly = false }) {
   );
 }
 
-function SupplyDetails({ sessionId, onSummary, readOnly }) {
+function SupplyDetails({ sessionId, onSummary }) {
   const [details, setDetails] = useState(null);
   const [products, setProducts] = useState([]);
   const [error, setError] = useState("");
@@ -104,7 +100,6 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ productId: "", unitName: "", quantity: "", recipientId: "" });
   const [closing, setClosing] = useState(null);
-  const [rejecting, setRejecting] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -155,27 +150,11 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
     if (ok) setForm((f) => ({ ...f, quantity: "" }));
   }
 
-  async function issueRequest(r) {
-    await apply(
-      () => stockClient.issueSupplyRequest(sessionId, r.id),
-      `Đã cấp ${number(r.enteredQuantity ?? r.quantity)} ${r.enteredUnit ?? r.baseUnit} × ${r.name} cho ${r.requestedByName}.`,
-    );
-  }
-
-  async function rejectRequest(e) {
-    e.preventDefault();
-    const ok = await apply(
-      () => stockClient.rejectSupplyRequest(sessionId, rejecting.id, rejecting.note),
-      `Đã từ chối yêu cầu ${rejecting.name} của ${rejecting.requestedByName}.`,
-    );
-    if (ok) setRejecting(null);
-  }
-
   async function reconcile(e) {
     e.preventDefault();
     const ok = await apply(
       () => stockClient.reconcileSupply(sessionId, closing.productId, Number(closing.returned)),
-      `Đã xác nhận thu hồi ${closing.name}: nhận lại ${number(closing.returned)}.`,
+      `Đã chốt ${closing.name}: trả lại ${number(closing.returned)}.`,
     );
     if (ok) setClosing(null);
   }
@@ -188,7 +167,6 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
     );
 
   const { session, recipients, allocations } = details;
-  const requests = details.requests ?? [];
   const closed = new Set(allocations.filter((a) => a.isReconciled).map((a) => a.productId));
   const selected = products.find((p) => p.id === Number(form.productId));
   const selectedUnits = [...(selected?.units ?? [])].sort((a, b) => a.factorToBase - b.factorToBase);
@@ -210,68 +188,6 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
         </p>
       )}
 
-      {requests.length > 0 && (
-        <div className="supply-requests">
-          <h4>Yêu cầu vật tư của trọng tài</h4>
-          <ul>
-            {requests.map((r) => (
-              <li key={r.id}>
-                <span>
-                  <strong>
-                    {r.name}: {number(r.enteredQuantity ?? r.quantity)} {r.enteredUnit ?? r.baseUnit}
-                    {r.enteredUnit && r.enteredUnit !== r.baseUnit ? ` (= ${number(r.quantity)} ${r.baseUnit})` : ""}
-                  </strong>
-                  <small>
-                    {r.requestedByName}
-                    {r.note ? ` · Ghi chú: ${r.note}` : ""}
-                    {r.handledByName ? ` · ${requestStatusLabels[r.status]} bởi ${r.handledByName}` : ""}
-                    {r.status === "Issued" && r.issuedQuantity != null ? ` · cấp ${number(r.issuedQuantity)} ${r.baseUnit}` : ""}
-                    {r.decisionNote ? ` · ${r.decisionNote}` : ""}
-                  </small>
-                </span>
-                {r.status === "Pending" && !readOnly ? (
-                  <span className="stock-actions">
-                    <button className="button button-primary" disabled={busy} onClick={() => issueRequest(r)}>
-                      <Check size={15} aria-hidden="true" /> Cấp
-                    </button>
-                    <button className="button button-secondary" disabled={busy} onClick={() => setRejecting({ ...r, note: "" })}>
-                      <X size={15} aria-hidden="true" /> Từ chối
-                    </button>
-                  </span>
-                ) : (
-                  <span className={r.status === "Pending" ? "stock-badge-warning" : r.status === "Issued" ? "badge-lime" : "badge-gray"}>
-                    {requestStatusLabels[r.status] || r.status}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {rejecting && (
-        <form className="stock-form supply-close" onSubmit={rejectRequest}>
-          <label>
-            Lý do từ chối yêu cầu {rejecting.name} của {rejecting.requestedByName}
-            <input
-              maxLength={300}
-              value={rejecting.note}
-              onChange={(e) => setRejecting({ ...rejecting, note: e.target.value })}
-              required
-              autoFocus
-            />
-          </label>
-          <div className="stock-form-actions">
-            <button type="button" className="button button-secondary" onClick={() => setRejecting(null)}>
-              Hủy
-            </button>
-            <button className="button button-primary" disabled={busy}>
-              Xác nhận từ chối
-            </button>
-          </div>
-        </form>
-      )}
-
       {allocations.length === 0 ? (
         <p className="stock-hint">Chưa cấp vật tư cho buổi này.</p>
       ) : (
@@ -282,10 +198,8 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
                 <th scope="col">Vật tư</th>
                 <th scope="col" className="num">Đã cấp</th>
                 <th scope="col" className="num">TT báo dùng</th>
-                <th scope="col" className="num">TT trả lại</th>
-                <th scope="col" className="num">Thực nhận lại</th>
+                <th scope="col" className="num">Trả lại</th>
                 <th scope="col" className="num">Đã dùng</th>
-                <th scope="col" className="num">Chênh lệch</th>
                 <th scope="col">Người nhận</th>
                 <th scope="col"><span className="sr-only">Thao tác</span></th>
               </tr>
@@ -299,22 +213,12 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
                   </td>
                   <td data-label="Đã cấp" className="num">{number(a.issued)} {a.baseUnit}</td>
                   <td data-label="TT báo dùng" className="num">{a.reportedUsed ?? "—"}</td>
-                  <td data-label="TT trả lại" className="num">{a.returnOffered ?? "—"}</td>
-                  <td data-label="Thực nhận lại" className="num">{a.isReconciled ? number(a.returned) : "—"}</td>
+                  <td data-label="Trả lại" className="num">{a.isReconciled ? number(a.returned) : "—"}</td>
                   <td data-label="Đã dùng" className="num">{a.used ?? "—"}</td>
-                  <td data-label="Chênh lệch" className="num">
-                    {a.difference == null ? "—" : (
-                      <span className={a.difference > 0 ? "is-out" : ""} title={a.difference > 0 ? "Thiếu so với báo cáo của trọng tài: cần kiểm kê" : undefined}>
-                        {a.difference > 0 ? `Thiếu ${number(a.difference)}` : a.difference < 0 ? `Dư ${number(-a.difference)}` : "0"}
-                      </span>
-                    )}
-                  </td>
                   <td data-label="Người nhận">{a.recipientName || "—"}</td>
                   <td className="stock-actions">
                     {a.isReconciled ? (
                       <span className="badge-lime">Đã chốt</span>
-                    ) : readOnly ? (
-                      <span className="stock-badge-warning">Chưa thu hồi</span>
                     ) : (
                       <button
                         className="button button-secondary"
@@ -325,12 +229,11 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
                             productId: a.productId,
                             name: a.name,
                             max: a.outstanding,
-                            reportedUsed: a.reportedUsed,
-                            returned: String(a.returnOffered ?? (a.reportedUsed == null ? 0 : a.outstanding - a.reportedUsed)),
+                            returned: String(a.reportedUsed == null ? 0 : a.outstanding - a.reportedUsed),
                           })
                         }
                       >
-                        <Undo2 size={15} aria-hidden="true" /> Xác nhận thu hồi
+                        <Undo2 size={15} aria-hidden="true" /> Chốt cuối buổi
                       </button>
                     )}
                   </td>
@@ -344,7 +247,7 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
       {closing && (
         <form className="stock-form supply-close" onSubmit={reconcile}>
           <label>
-            Số {closing.name} thực nhận lại về kho (còn ở buổi {number(closing.max)})
+            Số {closing.name} còn dư trả lại kho (đã cấp {number(closing.max)})
             <input
               type="number"
               inputMode="numeric"
@@ -357,11 +260,7 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
             />
           </label>
           <p className="stock-hint">
-            Đã dùng = {number(closing.max - (Number(closing.returned) || 0))}.
-            {closing.reportedUsed != null && closing.max - (Number(closing.returned) || 0) - closing.reportedUsed > 0
-              ? ` Thiếu ${number(closing.max - (Number(closing.returned) || 0) - closing.reportedUsed)} so với số trọng tài báo dùng: chênh lệch được ghi lại để kiểm kê.`
-              : ""}{" "}
-            Sau khi chốt không cấp thêm vật tư này cho buổi.
+            Đã dùng = {number(closing.max - (Number(closing.returned) || 0))}. Sau khi chốt không cấp thêm vật tư này cho buổi.
           </p>
           <div className="stock-form-actions">
             <button type="button" className="button button-secondary" onClick={() => setClosing(null)}>
@@ -374,7 +273,7 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
         </form>
       )}
 
-      {!readOnly && <form className="stock-form supply-issue" onSubmit={issue}>
+      <form className="stock-form supply-issue" onSubmit={issue}>
         <h4>
           <PackageOpen size={16} aria-hidden="true" /> Cấp vật tư cho buổi
         </h4>
@@ -395,8 +294,8 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
               {products
                 .filter((p) => !closed.has(p.id))
                 .map((p) => (
-                  <option key={p.id} value={p.id} disabled={p.availableQuantity <= 0}>
-                    {p.name} (khả dụng {number(p.availableQuantity)} {p.baseUnit})
+                  <option key={p.id} value={p.id} disabled={p.quantityOnHand === 0}>
+                    {p.name} (tồn {number(p.quantityOnHand)} {p.baseUnit})
                   </option>
                 ))}
             </select>
@@ -424,7 +323,7 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
               type="number"
               inputMode="numeric"
               min="1"
-              max={Math.max(1, Math.floor((selected?.availableQuantity ?? 1) / selectedFactor))}
+              max={Math.max(1, Math.floor((selected?.quantityOnHand ?? 1) / selectedFactor))}
               value={form.quantity}
               onChange={(e) => setForm({ ...form, quantity: e.target.value })}
               required
@@ -451,7 +350,7 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
             {busy ? "Đang ghi…" : "Cấp vật tư"}
           </button>
         </div>
-      </form>}
+      </form>
     </div>
   );
 }

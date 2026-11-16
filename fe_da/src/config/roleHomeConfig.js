@@ -75,7 +75,6 @@ export const roleHomeConfig = {
       "Sự cố",
       "Đổi & hoàn vé",
       "Thanh toán",
-      "Kho & vật tư",
     ],
     stats: [
       ["06", "Buổi chơi hôm nay"],
