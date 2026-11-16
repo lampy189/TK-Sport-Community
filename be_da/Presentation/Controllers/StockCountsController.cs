@@ -75,7 +75,7 @@ public sealed class StockCountsController(IStockCountService counts, IAntiforger
 
     // Supply and stock figures of the signed-in center for a period (for the operations and revenue report).
     [HttpGet("reports/supplies")]
-    [ProducesResponseType(typeof(SupplyReport), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(StockSupplyReport), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SupplyReport([FromQuery] DateOnly? from, [FromQuery] DateOnly? to, CancellationToken cancellationToken) =>
         (await counts.GetSupplyReportAsync(from, to, cancellationToken)).ToResponse();

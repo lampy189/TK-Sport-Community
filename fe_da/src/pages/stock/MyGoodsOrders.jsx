@@ -8,9 +8,6 @@ const root = "/api/v1/commerce/my-goods-orders";
 const money = (value) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
 
-const time = (value) =>
-  new Date(value).toLocaleTimeString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit" });
-
 function orderState(order) {
   if (order.status === "Cancelled") return { label: "Đã hủy", className: "badge-gray" };
   if (order.status === "Expired") return { label: "Hết hạn giữ hàng", className: "badge-gray" };
@@ -87,9 +84,6 @@ export default function MyGoodsOrders() {
                   <span className={state.className}>{state.label}</span>
                 </div>
                 <p>{order.lines.map((l) => `${l.quantity} × ${l.name}`).join(", ")}</p>
-                {order.holdExpiresAt && order.paymentState !== "Paid" && (
-                  <p className="stock-hint">Hàng được giữ cho bạn đến {time(order.holdExpiresAt)}. Quá hạn chưa thanh toán, đơn tự hủy.</p>
-                )}
                 <div className="my-order-foot">
                   <strong>{money(order.totalAmount)}</strong>
                   {order.canCancel && (

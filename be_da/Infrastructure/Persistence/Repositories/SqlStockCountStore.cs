@@ -22,7 +22,10 @@ public sealed class SqlStockCountStore(string connectionString, be_da.Applicatio
         LEFT JOIN dbo.product_units bu ON bu.product_id = p.id AND bu.factor_to_base = 1
         WHERE (@venue IS NULL OR p.venue_id = @venue)
         """;
-    private long? Venue => dataScope?.VenueId;
+    // Staff/Manager: their assigned center (CenterAccess); Owner: the selected center or every center.
+    private long? Venue => be_da.Infrastructure.Persistence.CenterAccess.PersonnelVenue(dataScope) ?? dataScope?.VenueId;
+    // Goods held for orders (goods_stock_reservations, upgrade 018).
+    private static readonly string Held = be_da.Infrastructure.Persistence.StockHoldSql.HeldFor("si.id");
 
     public async Task<StockCountSheet?> GetSheetAsync(long productId, CancellationToken cancellationToken)
     {
@@ -161,7 +164,7 @@ public sealed class SqlStockCountStore(string connectionString, be_da.Applicatio
             DECLARE @posted TABLE (id bigint);
             UPDATE dbo.stock_items SET quantity_on_hand = quantity_on_hand + @difference
             OUTPUT inserted.id INTO @posted
-            WHERE id = @si AND quantity_on_hand + @difference >= reserved_quantity;
+            WHERE id = @si AND quantity_on_hand + @difference >= @@HELD_SELF@@;
             IF NOT EXISTS (SELECT 1 FROM @posted) BEGIN SELECT 5; RETURN; END;
             DECLARE @movement TABLE (id bigint);
             INSERT dbo.stock_movements (stock_item_id, movement_type, quantity, reference_type, reference_id, created_by)
@@ -176,7 +179,7 @@ public sealed class SqlStockCountStore(string connectionString, be_da.Applicatio
             VALUES (@deciderId, 'stock_adjustment_applied', 'StockCount', @id, CONCAT('{"difference":', @difference, '}'));
             SELECT 0;
             """;
-        await using var command = new SqlCommand(sql, connection, transaction);
+        await using var command = new SqlCommand(sql.Replace("@@HELD_SELF@@", be_da.Infrastructure.Persistence.StockHoldSql.HeldFor("dbo.stock_items.id")), connection, transaction);
         command.Parameters.Add("@lockName", SqlDbType.NVarChar, 255).Value = $"TKSC:stock-count:{id}";
         command.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
         command.Parameters.Add("@deciderId", SqlDbType.BigInt).Value = deciderId;
@@ -214,7 +217,7 @@ public sealed class SqlStockCountStore(string connectionString, be_da.Applicatio
         return StockCountResult.Ok(view!);
     }
 
-    public async Task<SupplyReport> GetSupplyReportAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken)
+    public async Task<StockSupplyReport> GetSupplyReportAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken)
     {
         await using var connection = await OpenAsync(cancellationToken);
         // Movements without a timestamp (before upgrade 010) cannot be placed in a period and are left out.
@@ -242,7 +245,7 @@ public sealed class SqlStockCountStore(string connectionString, be_da.Applicatio
                    ISNULL(SUM(CASE WHEN mv.movement_type = 'Adjustment' AND mv.quantity > 0 THEN mv.quantity END), 0),
                    ISNULL(-SUM(CASE WHEN mv.movement_type = 'Adjustment' AND mv.quantity < 0 THEN mv.quantity END), 0),
                    ISNULL(MAX(gap.unaccounted), 0),
-                   ISNULL(MAX(si.quantity_on_hand), 0), ISNULL(MAX(si.reserved_quantity), 0)
+                   ISNULL(MAX(si.quantity_on_hand), 0), ISNULL(MAX(CASE WHEN si.id IS NULL THEN 0 ELSE @@HELD@@ END), 0)
             FROM dbo.products p
             LEFT JOIN dbo.stock_items si ON si.product_id = p.id
             LEFT JOIN mv ON mv.product_id = p.id
@@ -252,7 +255,7 @@ public sealed class SqlStockCountStore(string connectionString, be_da.Applicatio
             GROUP BY p.id, p.sku, p.name, p.category, bu.unit_name
             ORDER BY p.name;
             """;
-        await using var command = new SqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql.Replace("@@HELD@@", Held), connection);
         command.Parameters.Add("@from", SqlDbType.Date).Value = from.ToDateTime(TimeOnly.MinValue);
         command.Parameters.Add("@to", SqlDbType.Date).Value = to.ToDateTime(TimeOnly.MinValue);
         AddVenue(command, Venue);
@@ -266,7 +269,7 @@ public sealed class SqlStockCountStore(string connectionString, be_da.Applicatio
                 reader.GetInt32(5), reader.GetInt32(6), issued, returned, issued - returned, reader.GetInt32(9), reader.GetInt32(10), reader.GetInt32(11), reader.GetInt32(12), reader.GetInt32(13), reader.GetInt32(14)));
         }
 
-        return new SupplyReport(from, to, Venue, lines);
+        return new StockSupplyReport(from, to, Venue, lines);
     }
 
     public async Task<IReadOnlyList<StockReconciliationLine>> GetReconciliationAsync(CancellationToken cancellationToken)
@@ -275,13 +278,16 @@ public sealed class SqlStockCountStore(string connectionString, be_da.Applicatio
         await using var command = new SqlCommand("""
             SELECT p.id, p.sku, p.name, ISNULL(si.quantity_on_hand, 0),
                    ISNULL((SELECT SUM(m.quantity) FROM dbo.stock_movements m WHERE m.stock_item_id = si.id), 0),
-                   ISNULL(si.reserved_quantity, 0),
-                   ISNULL((SELECT SUM(CAST(oi.quantity AS int)) FROM dbo.order_items oi JOIN dbo.orders o ON o.id = oi.order_id
-                           WHERE oi.product_id = p.id AND o.reservation_state = 'Held'), 0)
+                   CASE WHEN si.id IS NULL THEN 0 ELSE @@HELD@@ END,
+                   ISNULL((SELECT SUM(CAST(oi.quantity AS int)) FROM dbo.order_items oi
+                           WHERE oi.product_id = p.id AND EXISTS (
+                               SELECT 1 FROM dbo.goods_stock_reservations r
+                               WHERE r.order_id = oi.order_id AND r.stock_item_id = si.id
+                                 AND (r.state = 'Committed' OR (r.state = 'Held' AND r.expires_at > SYSUTCDATETIME())))), 0)
             FROM dbo.products p LEFT JOIN dbo.stock_items si ON si.product_id = p.id
             WHERE (@venue IS NULL OR p.venue_id = @venue)
             ORDER BY p.name;
-            """, connection);
+            """.Replace("@@HELD@@", Held), connection);
         AddVenue(command, Venue);
         var lines = new List<StockReconciliationLine>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -301,13 +307,13 @@ public sealed class SqlStockCountStore(string connectionString, be_da.Applicatio
     {
         StockCountSheet? sheet;
         await using (var command = new SqlCommand("""
-            SELECT p.id, p.sku, p.name, si.quantity_on_hand, si.reserved_quantity,
+            SELECT p.id, p.sku, p.name, si.quantity_on_hand, @@HELD@@,
                    (SELECT ISNULL(MAX(m.id), 0) FROM dbo.stock_movements m WHERE m.stock_item_id = si.id),
                    ISNULL(bu.unit_name, N'Cái')
             FROM dbo.products p JOIN dbo.stock_items si ON si.product_id = p.id
             LEFT JOIN dbo.product_units bu ON bu.product_id = p.id AND bu.factor_to_base = 1
             WHERE p.id = @productId AND (@venue IS NULL OR p.venue_id = @venue);
-            """, connection, transaction))
+            """.Replace("@@HELD@@", Held), connection, transaction))
         {
             command.Parameters.Add("@productId", SqlDbType.BigInt).Value = productId;
             AddVenue(command, venue);

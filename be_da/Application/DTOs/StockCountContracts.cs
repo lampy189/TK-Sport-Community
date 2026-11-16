@@ -31,9 +31,9 @@ public sealed record StockCountResult(bool Success, string? ErrorCode, string? M
 public sealed record SupplyReportLine(long ProductId, string Sku, string Name, string? Category, string BaseUnit,
     int Received, int SoldOut, int SessionIssued, int SessionReturned, int SessionUsed, int ManualIssued, int AdjustedIn, int AdjustedOut,
     int UnaccountedSupply, int QuantityOnHand, int ReservedQuantity);
-public sealed record SupplyReport(DateOnly From, DateOnly To, long? VenueId, IReadOnlyList<SupplyReportLine> Lines);
+public sealed record StockSupplyReport(DateOnly From, DateOnly To, long? VenueId, IReadOnlyList<SupplyReportLine> Lines);
 
-// Stock = sum of movements and reserved = sum of held order lines must always hold; any row here needs a count.
+// On hand = sum of movements, and held (goods_stock_reservations) = lines of the orders holding it; any mismatch needs a count.
 public sealed record StockReconciliationLine(long ProductId, string Sku, string Name, int QuantityOnHand, int MovementTotal, int ReservedQuantity, int HeldOrderQuantity)
 {
     public bool OnHandMatches => QuantityOnHand == MovementTotal;

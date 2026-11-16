@@ -189,14 +189,6 @@ public static class Sep490ModelConfiguration
             entity.Property(e => e.CustomerName).HasMaxLength(255).HasColumnName("customer_name");
             entity.Property(e => e.HandoverState).HasMaxLength(100).IsUnicode(false).HasColumnName("handover_state");
             entity.Property(e => e.BuyerId).HasColumnName("buyer_id");
-            entity.Property(e => e.VenueId).HasColumnName("venue_id").HasDefaultValueSql("(TRY_CAST(session_context(N'tksc_venue') AS bigint))");
-            entity.Property(e => e.CreatedAt).HasPrecision(0).HasColumnName("created_at").HasDefaultValueSql("(sysdatetimeoffset())");
-            entity.Property(e => e.ExpiresAt).HasPrecision(0).HasColumnName("expires_at");
-            entity.Property(e => e.ReservationState).HasMaxLength(20).IsUnicode(false).HasColumnName("reservation_state");
-            entity.Property(e => e.CancelledBy).HasColumnName("cancelled_by");
-            entity.Property(e => e.CancelledAt).HasPrecision(0).HasColumnName("cancelled_at");
-            entity.Property(e => e.DeliveredBy).HasColumnName("delivered_by");
-            entity.Property(e => e.DeliveredAt).HasPrecision(0).HasColumnName("delivered_at");
             entity.Property(e => e.OrderCode).HasMaxLength(100).IsUnicode(false).HasColumnName("order_code");
             entity.Property(e => e.PaymentState).HasMaxLength(100).IsUnicode(false).HasColumnName("payment_state");
             entity.Property(e => e.StaffId).HasColumnName("staff_id");
@@ -313,7 +305,6 @@ public static class Sep490ModelConfiguration
             entity.Property(e => e.Name).HasMaxLength(255).HasColumnName("name");
             entity.Property(e => e.Sku).HasMaxLength(100).IsUnicode(false).HasColumnName("sku");
             entity.Property(e => e.UnitPriceVnd).HasColumnName("unit_price_vnd");
-            entity.Property(e => e.VenueId).HasColumnName("venue_id");
         });
         modelBuilder.Entity<RatingAppeal>(entity =>
         {
@@ -509,7 +500,6 @@ public static class Sep490ModelConfiguration
             entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.QuantityOnHand).HasColumnName("quantity_on_hand");
             entity.Property(e => e.ReorderLevel).HasColumnName("reorder_level");
-            entity.Property(e => e.ReservedQuantity).HasColumnName("reserved_quantity");
             entity.HasOne(d => d.Product).WithOne(p => p.StockItem).HasForeignKey<StockItem>(d => d.ProductId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK_stock_items_product_id");
         });
         modelBuilder.Entity<StockMovement>(entity =>
