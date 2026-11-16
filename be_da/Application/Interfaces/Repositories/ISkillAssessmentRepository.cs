@@ -39,4 +39,6 @@ public interface ISkillAssessmentRepository
     void AddAuditLogs(AuditLog value);
     Task<long?> RevisionAuditLogsMaxAsync(long id, CancellationToken ct);
     Task<string?> EvidenceAuditLogsAsync(long id, CancellationToken ct);
+    Task<List<FutureRefundSource>> FutureRefundSourcesAsync(Ticket ticket, CancellationToken ct);
+    void AddNotifications(IEnumerable<Notification> values);
 }

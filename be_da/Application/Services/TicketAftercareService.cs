@@ -8,7 +8,7 @@ using TKSC.Application.Services.Notifications;
 using TKSC.Domain.Entities;
 
 namespace TKSC.Application.Services;
-public sealed class TicketAftercareService(ITicketAftercareRepository repository, TimeProvider clock) : ITicketAftercareService
+public sealed partial class TicketAftercareService(ITicketAftercareRepository repository, TimeProvider clock) : ITicketAftercareService
 {
     private DateTimeOffset Now => clock.GetUtcNow();
 
@@ -56,7 +56,7 @@ public sealed class TicketAftercareService(ITicketAftercareRepository repository
     {
         Require(Paid(t.Order.Status) && t.Status.ToLowerInvariant() == "confirmed" && t.CheckedInBy == null, "Chỉ xử lý vé đã thanh toán, chưa check-in và chưa hủy/đổi.");
         Require(TicketAftercareRules.Disrupted(t.Session.Status), "Buổi chơi chưa được báo sự cố.");
-        Require(!t.Refunds.Any(r => r.Status != "failed"), "Vé đang có yêu cầu hoàn tiền.");
+        Require(!t.Refunds.Any(r => r.Status != "rejected"), "Vé đang có yêu cầu hoàn tiền.");
     }
 
     private async Task<List<TicketFunding>> Funding(Ticket t)
@@ -80,11 +80,13 @@ public sealed class TicketAftercareService(ITicketAftercareRepository repository
 
     private async Task Refund(Ticket t, long paymentId, int amount, long actor)
     {
+        await repository.LockRefundPaymentAsync(paymentId);
         var p = await repository.RefundPaymentsAsync(paymentId);
+        Require(p.PayerId.HasValue && Paid(p.Status), "Chưa xác định được người trả gốc và thanh toán đã xác nhận.");
         var already = await repository.RefundRefundsTotalAsync(paymentId) ?? 0;
         already += repository.RefundChangeTrackerSum(paymentId);
         Require(amount > 0 && already + amount <= p.AmountVnd, "Số tiền hoàn vượt khoản đã thanh toán.");
-        repository.AddRefunds(new Refund { TicketId = t.Id, PaymentId = paymentId, RecipientId = t.Order.PayerId, AmountVnd = amount, Status = "requested", InitiatedBy = actor });
+        repository.AddRefunds(new Refund { TicketId = t.Id, PaymentId = paymentId, RecipientId = p.PayerId!.Value, AmountVnd = amount, Status = "requested", InitiatedBy = actor });
     }
 
     public async Task<object> SessionsAsync(bool issuesOnly = false)
@@ -222,7 +224,7 @@ public sealed class TicketAftercareService(ITicketAftercareRepository repository
         {
             bankReference = bankReference?.Trim();
             Require(bankReference is { Length: >= 6 and <= 100 }, "Nhập mã giao dịch khoản thu thêm.", 400);
-            Require(!await repository.CompleteChangeBankTransactionsExistsAsync(bankReference) && !await repository.CompleteChangePaymentsExistsAsync(bankReference), "Mã giao dịch đã được sử dụng.");
+            Require(!await repository.CompleteChangeBankTransactionsExistsAsync(bankReference) && !await repository.CompleteChangePaymentsExistsAsync(bankReference) && !await repository.CompleteRefundAuditLogsExistsAsync(bankReference), "Mã giao dịch đã được sử dụng.");
         }
 
         var order = new SocialBookingOrder
@@ -241,6 +243,7 @@ public sealed class TicketAftercareService(ITicketAftercareRepository repository
             Player = t.Player,
             Status = "confirmed",
             AmountVnd = target.PriceVnd,
+            PriceVersionId = target.QuotedPriceVersionId,
             TicketCode = $"TK-{Guid.NewGuid():N}"};
         repository.AddTickets(replacement);
         await repository.SaveAsync();
@@ -292,30 +295,6 @@ public sealed class TicketAftercareService(ITicketAftercareRepository repository
         };
     });
     public async Task<object> RefundsAsync() => await repository.RefundsRefundsListAsync();
-    public Task<object> CompleteRefundAsync(long id, long actor, string? evidence, string? reference) => repository.Transaction<object>(async () =>
-    {
-        var note = Evidence(evidence);
-        reference = reference?.Trim();
-        Require(reference is { Length: >= 6 and <= 100 }, "Nhập mã giao dịch hoàn tiền.", 400);
-        var snapshot = await repository.CompleteRefundRefundsAsync(id) ?? throw new PaymentException(404, "Không tìm thấy khoản hoàn.");
-        var ticket = await Ticket(snapshot.TicketId);
-        var r = await repository.GetTrackedRefundForSettlementAsync(id);
-        Require(r.Status is "requested" or "processing", "Khoản hoàn đã được xử lý.");
-        Require(actor != r.RecipientId && actor != r.InitiatedBy, "Không tự xác nhận hoàn tiền của chính mình.", 403);
-        Require(!await repository.CompleteRefundAuditLogsExistsAsync(reference), "Mã hoàn tiền đã được dùng cho khoản khác.");
-        var payment = await repository.CompleteRefundPaymentsAsync(r);
-        var total = await repository.CompleteRefundRefundsTotalAsync(r) ?? 0;
-        Require(r.AmountVnd > 0 && total <= payment.AmountVnd, "Số tiền hoàn không hợp lệ.");
-        r.Status = "completed";
-        r.ApprovedBy = actor;
-        repository.AddAuditLogs(new AuditLog { ActorId = actor, Action = "refund_transfer_reference", EntityType = "Refund", EntityId = id, NewValue = reference });
-        Audit(actor, "refund_completed", "Refund", id, "requested", $"amount={r.AmountVnd}; recipient={r.RecipientId}; {note}");
-        Notify(ticket, "ticket_refund_completed");
-        return new
-        {
-            status = "completed"
-        };
-    });
     public async Task<object> ReviewsAsync() => await repository.ReviewsPaymentsListAsync();
     public Task<object> ApprovePaymentAsync(long id, long bankId, long actor, string? evidence) => repository.Transaction<object>(async () =>
     {
@@ -324,10 +303,13 @@ public sealed class TicketAftercareService(ITicketAftercareRepository repository
         await repository.LockOrder(lookup.OrderId!.Value);
         var order = await repository.ApprovePaymentSocialBookingOrdersAsync(lookup);
         var payment = order.Payments.Single(p => p.Id == id);
+        var existingBank = await repository.ApprovePaymentBankTransactionsAsync(id, bankId);
+        if (payment.Status=="paid" && order.Status.ToLower()=="paid" && existingBank?.MatchStatus=="matched")
+            return new { status="paid" };
         Require(payment.Status == "review_required" && order.Status.ToLower() == "review_required", "Đơn không còn chờ duyệt hoặc đã thanh toán.");
         Require(actor != order.PayerId, "Không tự duyệt thanh toán của mình.", 403);
         var bank = await repository.ApprovePaymentBankTransactionsAsync(id, bankId);
-        Require(bank != null && bank.AmountVnd == order.TotalAmount && payment.AmountVnd == order.TotalAmount, "Chọn đúng giao dịch đã đối soát và đủ số tiền. Không tự duyệt khoản thiếu/thừa.");
+        Require(bank != null && bank.MatchStatus == "review_required" && bank.AmountVnd == order.TotalAmount && payment.AmountVnd == order.TotalAmount, "Chọn đúng giao dịch đã đối soát và đủ số tiền. Không tự duyệt khoản thiếu/thừa.");
         var tickets = await repository.ApprovePaymentTicketsListAsync(order);
         Require(tickets.Count > 0 && tickets.All(t => t.Status.ToLower()is "pending" or "reserved") && tickets.Sum(t => t.AmountVnd) == order.TotalAmount, "Vé không còn đủ điều kiện kích hoạt.");
         foreach (var group in tickets.GroupBy(t => t.SessionId).OrderBy(g => g.Key))
@@ -362,7 +344,7 @@ public sealed class TicketAftercareService(ITicketAftercareRepository repository
             Notify(t, "ticket_paid");
         }
 
-        Audit(actor, "flagged_payment_approved", "Payment", id, "review_required", $"bank={bankId}; {note}");
+        Audit(actor, "flagged_payment_approved", "Payment", id, "review_required", $"at={Now:O}; bank={bankId}; {note}");
         return new
         {
             status = "paid"

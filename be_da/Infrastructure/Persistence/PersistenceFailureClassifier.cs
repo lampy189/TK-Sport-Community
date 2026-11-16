@@ -9,6 +9,7 @@ public sealed class PersistenceFailureClassifier : IPersistenceFailureClassifier
         var sql = error as SqlException ?? error.InnerException as SqlException;
         return sql?.Number switch
         {
+            51010 => PersistenceFailure.ReservedStockConflict,
             33504 => PersistenceFailure.OutsideAssignedCenter,
             >= 51031 and <= 51034 => PersistenceFailure.RevenueReconciliationRequired,
             _ => null

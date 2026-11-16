@@ -206,6 +206,7 @@ public static class Sep490ModelConfiguration
         });
         modelBuilder.Entity<OrderItem>(entity =>
         {
+            entity.Property(e => e.PriceVersionId).HasColumnName("price_version_id");
             entity.ToTable("order_items");
             entity.HasIndex(e => new { e.OrderId, e.ProductId }, "UX_order_items_order_id_product_id").IsUnique();
             entity.Property(e => e.Id).HasColumnName("id");
@@ -303,6 +304,7 @@ public static class Sep490ModelConfiguration
         });
         modelBuilder.Entity<Product>(entity =>
         {
+            entity.Property(e => e.RequiresPriceApproval).HasColumnName("requires_price_approval");
             entity.ToTable("products");
             entity.HasIndex(e => e.Sku, "UX_products_sku").IsUnique();
             entity.Property(e => e.Id).HasColumnName("id");
@@ -501,7 +503,7 @@ public static class Sep490ModelConfiguration
         });
         modelBuilder.Entity<StockItem>(entity =>
         {
-            entity.ToTable("stock_items");
+            entity.ToTable("stock_items", t => t.UseSqlOutputClause(false));
             entity.HasIndex(e => e.ProductId, "UX_stock_items_product_id").IsUnique();
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.ProductId).HasColumnName("product_id");
@@ -525,6 +527,7 @@ public static class Sep490ModelConfiguration
         });
         modelBuilder.Entity<Ticket>(entity =>
         {
+            entity.Property(e => e.PriceVersionId).HasColumnName("price_version_id");
             entity.ToTable("tickets");
             entity.HasIndex(e => e.TicketCode, "UX_tickets_ticket_code").IsUnique().HasFilter("([ticket_code] IS NOT NULL)");
             entity.Property(e => e.Id).HasColumnName("id");

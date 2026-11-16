@@ -6,6 +6,7 @@ import { resolveHomeRoute, loginPaths } from './config/homeRoutes';
 import { api } from './api';
 import HomePage from './pages/home/HomePage';
 import { CenterSwitcher } from './components/CenterSelection';
+import { enablePush, disablePush, pushConfigured } from './push';
 
 function Redirect({ to }) {
   useEffect(() => {
@@ -19,18 +20,26 @@ function Redirect({ to }) {
 function ApplicationApp() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let active = true;
-    api.getMe().then(account => { if (active) setUser(account); }).catch(() => { if (active) setUser(null); }).finally(() => { if (active) setLoading(false); });
+    api.getMe().then(account => { if (active) { setUser(account); setError(''); } }).catch(e => { if (active) setError(e.message || 'Chưa kết nối được hệ thống.'); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, []);
+  }, [attempt]);
   async function logout() {
     try {
+      await disablePush();
       if (!await api.logout()) throw new Error('logout_failed');
       window.location.replace(loginPaths[portalForRole(user.role)]);
     } catch { window.alert('Đăng xuất chưa thành công. Vui lòng thử lại.'); }
   }
+  useEffect(() => {
+    if (user && pushConfigured && localStorage.getItem('tksc-push-enabled') === 'true' && 'Notification' in window && Notification.permission === 'granted')
+      enablePush(false).catch(() => {});
+  }, [user]);
   if (loading) return <div className="home-loading" role="status"><strong>↗ TKSC</strong><span>Đang kết nối hệ thống…</span></div>;
+  if (error) return <main className="home-loading" role="alert"><p>{error}</p><button className="button" onClick={() => { setLoading(true); setAttempt(value => value + 1); }}>Thử lại</button></main>;
   if (user && !roleKeys[user.role]) return <p>Vai trò không được hỗ trợ. <button onClick={logout}>Đăng xuất</button></p>;
   const route = !user && window.location.pathname === '/' && new URLSearchParams(window.location.search).has('loginError')
     ? { redirect: '/player/login' } : resolveHomeRoute(window.location.pathname, user?.role);

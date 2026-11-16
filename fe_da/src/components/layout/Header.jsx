@@ -7,6 +7,7 @@ export default function Header({
   onLogout,
   onLogin,
   onHome,
+  onNotifications,
 }) {
   return (
     <header className="site-header">
@@ -26,7 +27,7 @@ export default function Header({
         </a>
         <span className="header-tagline">Cùng đam mê. Cùng ra sân.</span>
         <div className="account">
-          {onLogout && <NotificationBell />}
+          {onLogout && <NotificationBell onNotifications={onNotifications} />}
           <span className="avatar" aria-hidden="true">
             {accountName
               ? accountName

@@ -12,6 +12,11 @@ using TKSC.Application.Services;
 namespace be_da.Application.Interfaces.Services;
 public interface IGoodsPaymentService
 {
+    Task<GoodsOrderView> ReadForBuyerAsync(long id, long buyerId, CancellationToken ct);
+    Task<GoodsOrderView> CheckoutForBuyerAsync(long id, long buyerId, CancellationToken ct);
+    Task<GoodsOrderView> RefreshForBuyerAsync(long id, long buyerId, CancellationToken ct);
+    Task<GoodsInvoice> InvoiceForBuyerAsync(long id, long buyerId, CancellationToken ct);
+    Task<GoodsOrderView> CancelAsync(long id, long actorId, long? buyerId, CancellationToken ct);
     Task<object> ListAsync(CancellationToken ct);
     Task<GoodsOrderView> ReadAsync(long id, CancellationToken ct);
     Task<GoodsOrderView> CashAsync(long id, long actorId, int receivedAmount, CancellationToken ct);

@@ -10,5 +10,6 @@ namespace be_da.Application.Interfaces.Services;
 public interface ITicketCheckInService
 {
     Task<IReadOnlyList<AssignedSessionSummary>> GetAssignedSessionsAsync(long actorId);
-    Task<CheckInResult> ExecuteAsync(string? ticketCode, long actorId, bool manager, bool confirm);
+    Task<IReadOnlyList<CheckInRosterEntry>> GetSessionRosterAsync(long sessionId, long actorId);
+    Task<CheckInResult> ExecuteAsync(string? ticketCode, long actorId, bool manager, bool confirm, long? expectedSessionId = null);
 }

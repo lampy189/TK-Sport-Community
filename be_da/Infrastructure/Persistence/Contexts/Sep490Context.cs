@@ -10,8 +10,9 @@ public partial class Sep490Context : Microsoft.EntityFrameworkCore.DbContext
     {
     }
 
-    public Sep490Context(DbContextOptions<Sep490Context> options) : base(options)
+    public Sep490Context(DbContextOptions<Sep490Context> options, be_da.Application.Interfaces.External.IDataAccessContext? dataScope = null) : base(options)
     {
+        this.dataScope = dataScope;
     }
 
     public DbSet<TicketSupportMessage> TicketSupportMessages { get; set; }
@@ -67,6 +68,8 @@ public partial class Sep490Context : Microsoft.EntityFrameworkCore.DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasDbFunction(typeof(be_da.Infrastructure.Persistence.OwnerPrice).GetMethod(nameof(be_da.Infrastructure.Persistence.OwnerPrice.Effective))!);
+        modelBuilder.HasDbFunction(typeof(be_da.Infrastructure.Persistence.OwnerPrice).GetMethod(nameof(be_da.Infrastructure.Persistence.OwnerPrice.Version))!);
         TKSC.Infrastructure.Persistence.Configurations.Sep490ModelConfiguration.Configure(modelBuilder);
         OnModelCreatingPartial(modelBuilder);
     }

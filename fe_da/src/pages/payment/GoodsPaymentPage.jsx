@@ -3,13 +3,14 @@ import { QRCodeSVG } from "qrcode.react";
 import SectionLayout from "../../components/layout/SectionLayout";
 import { workflowRequest } from "../workflowClient";
 import "../workflow.css";
+import "./recovery.css";
 import GoodsHandoverPanel from "../stock/GoodsHandoverPanel";
 
 const root = "/api/v1/commerce/goods-orders";
 const money = n => `${Number(n).toLocaleString("vi-VN")} ₫`;
-const stateLabel = { Cart: "Giỏ hàng", PendingPayment: "Chờ chuyển khoản", Paid: "Đã thanh toán", Invoiced: "Đã xuất hóa đơn", Completed: "Hoàn tất",NeedsReview: "Cần đối soát", Pending: "Chờ thanh toán", Unpaid: "Chưa thanh toán" };
+const stateLabel = { Cart: "Giỏ hàng", PendingPayment: "Chờ chuyển khoản", Paid: "Đã thanh toán", Invoiced: "Đã xuất hóa đơn", Completed: "Hoàn tất",NeedsReview: "Cần đối soát", Pending: "Chờ thanh toán", Unpaid: "Chưa thanh toán", Cancelled:"Đã hủy",Expired:"Hết hạn",Failed:"Thất bại" };
 
-export default function GoodsPaymentPage() {
+export default function GoodsPaymentPage({ initialOrderId }) {
   const [orders, setOrders] = useState([]);
   const [order, setOrder] = useState(null);
   const [received, setReceived] = useState("");
@@ -23,7 +24,7 @@ export default function GoodsPaymentPage() {
       try {
         const list = await workflowRequest(root);
         if (active) setOrders(list);
-        const id = new URLSearchParams(window.location.search).get("goodsOrderId");
+        const id = initialOrderId ?? new URLSearchParams(window.location.search).get("goodsOrderId");
         if (id && /^\d+$/.test(id)) {
           const detail = await workflowRequest(`${root}/${id}`);
           if (active) setOrder(detail);
@@ -32,7 +33,7 @@ export default function GoodsPaymentPage() {
     }
     load();
     return () => { active = false; };
-  }, []);
+  }, [initialOrderId]);
 
   async function run(action) {
     setBusy(true); setError(""); setMessage("");
@@ -72,6 +73,8 @@ export default function GoodsPaymentPage() {
         <div className="workflow-table"><table><thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead><tbody>
           {order.lines.map((line, i) => <tr key={i}><td>{line.name}</td><td>{line.quantity}</td><td>{money(line.unitPriceVnd)}</td><td>{money(line.subtotalVnd)}</td></tr>)}
         </tbody></table></div><strong>Tổng thanh toán: {money(order.totalAmount)}</strong>
+        {order.expiresAt && !paid && <p>Hạn giữ hàng: {new Date(order.expiresAt).toLocaleString('vi-VN')}</p>}
+        {!paid && order.paymentState!=='NeedsReview' && order.status!=='Cancelled' && <button className="button button-secondary" disabled={busy} onClick={()=>mutate('cancel')}>Hủy đơn / trả hàng giữ về kho</button>}
         {cart && <>
           <button className="button button-primary" disabled={busy} onClick={() => mutate("payment-instructions")}>Tạo mã chuyển khoản</button>
           <fieldset disabled={busy}><legend>Thanh toán tiền mặt</legend>
@@ -92,12 +95,14 @@ export default function GoodsPaymentPage() {
           <button className="button button-primary" disabled={busy || order.paymentState === "NeedsReview"} onClick={() => mutate("confirm-transfer")}>Kiểm tra chuyển khoản</button>
         </div>}
         {paid && !order.invoice && <button className="button button-primary" disabled={busy} onClick={() => mutate("invoice")}>Xuất hóa đơn</button>}
-        {order.invoice && <article aria-label="Hóa đơn bán hàng">
+        {order.invoice && <article className="goods-invoice" aria-label="Hóa đơn bán hàng">
           <h3>Hóa đơn {order.invoice.code}</h3>
+          <p>Đơn: {order.invoice.orderCode} · Mã thanh toán: {order.invoice.paymentReference}</p>
           <p>Ngày xuất: {new Date(order.invoice.issuedAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</p>
           <p>Khách hàng: {order.invoice.customerName || "Khách tại quầy"}</p>
           <p>Đã thanh toán {money(order.invoice.totalAmount)} · {order.invoice.method === "cash" ? "Tiền mặt" : "Chuyển khoản"}</p>
           <div className="workflow-table"><table><thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Thành tiền</th></tr></thead><tbody>{order.invoice.lines.map((line, i) => <tr key={i}><td>{line.name}</td><td>{line.quantity}</td><td>{money(line.subtotalVnd)}</td></tr>)}</tbody></table></div>
+          <button className="button button-secondary" onClick={()=>window.print()}>In lại hóa đơn</button>
           <button className="button button-secondary" onClick={() => {
             const invoice = order.invoice;
             const text = [`TKSC — HÓA ĐƠN ${invoice.code}`, `Đơn: ${invoice.orderCode}`, `Ngày: ${new Date(invoice.issuedAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}`, `Khách: ${invoice.customerName || "Khách tại quầy"}`,

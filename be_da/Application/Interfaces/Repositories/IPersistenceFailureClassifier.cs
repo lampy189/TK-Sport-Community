@@ -2,6 +2,7 @@ namespace TKSC.Application.Interfaces.Repositories;
 public enum PersistenceFailure
 {
     OutsideAssignedCenter,
+    ReservedStockConflict,
     RevenueReconciliationRequired
 }
 

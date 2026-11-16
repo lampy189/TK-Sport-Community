@@ -1,4 +1,5 @@
 import { request } from '../../api';
+import { workflowRequest } from '../workflowClient';
 
 export const storeClient = {
   getProducts: async () => {
@@ -12,26 +13,12 @@ export const storeClient = {
     }
     return response.json();
   },
-  lookupBarcode: async (code) => {
-    const value = (code || '').trim();
-    if (!value) {
-      throw new Error('Vui lòng nhập mã vạch hoặc mã hàng để kiểm tra.');
-    }
-    const response = await request(`/api/stock/lookup?code=${encodeURIComponent(value)}`, {
-      cache: 'no-store',
-      credentials: 'same-origin',
-    });
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.message || 'Không tìm thấy mặt hàng phù hợp với mã này.');
-    }
-    return response.json();
-  },
-  createCart: async (items) => {
+  lookupBarcode: code => workflowRequest(`/api/stock/lookup?code=${encodeURIComponent(code)}`),
+  createCart: async (items, idempotencyKey) => {
     const response = await request('/api/v1/store/orders/cart', {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
       body: JSON.stringify({ items }),
     });
     if (!response.ok) {

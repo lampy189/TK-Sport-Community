@@ -1,79 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  CalendarPlus,
+
   CalendarDays,
   Clock,
-  MapPin,
+
   ArrowUpRight,
-  UserPlus,
+
   Send,
   Check,
   X
 } from 'lucide-react';
 import { api } from '../api';
-import { openFloatingChatWith } from './FloatingChatBubble';
+import { invitationClient } from '../pages/player/invitationClient';
 
-const SESSION_TAG_PREFIX = '[TKSC_SESSION:';
-const SESSION_TAG_SUFFIX = ']';
+import { buildSessionInviteMessage, parseSessionInviteMessage, openSessionDetailById } from './sessionInviteMessage';
 
-export function openSessionDetailById(sessionId) {
-  if (!sessionId) return;
-  window.dispatchEvent(new CustomEvent('tksc:close-chat'));
-  window.dispatchEvent(
-    new CustomEvent('tksc:open-session', {
-      detail: { sessionId: Number(sessionId), ts: Date.now() }
-    })
-  );
-}
-
-export function buildSessionInviteMessage(session, customNote = '') {
-  const sportVi =
-    session.sportName === 'Badminton' || session.sportCode === 'badminton'
-      ? 'Cầu lông'
-      : 'Pickleball';
-  const timeRange =
-    session.timeLabel ||
-    `${(session.startTime || '').slice(0, 5)} - ${(session.endTime || '').slice(0, 5)}`;
-  const bandLabel = session.band ? `Band ${session.band}` : 'Tự do';
-  const payload = {
-    id: session.id,
-    sport: sportVi,
-    court: session.courtName || 'Sân TKSC',
-    venue: session.venueName || '',
-    date: session.sessionDate || '',
-    time: timeRange,
-    band: bandLabel,
-    price: session.priceVnd || 0
-  };
-  const intro =
-    customNote.trim() ||
-    `Mình rủ bạn cùng đặt sân buổi ${sportVi} ngày ${session.sessionDate} (${timeRange}) tại ${session.courtName}!`;
-  return `${intro} ${SESSION_TAG_PREFIX}${JSON.stringify(payload)}${SESSION_TAG_SUFFIX}`;
-}
-
-export function parseSessionInviteMessage(content) {
-  if (!content || typeof content !== 'string') {
-    return { text: content || '', session: null };
-  }
-  const startIdx = content.indexOf(SESSION_TAG_PREFIX);
-  if (startIdx === -1) {
-    return { text: content, session: null };
-  }
-  const endIdx = content.lastIndexOf(SESSION_TAG_SUFFIX);
-  if (endIdx === -1 || endIdx <= startIdx) {
-    return { text: content, session: null };
-  }
-  const rawJson = content.slice(startIdx + SESSION_TAG_PREFIX.length, endIdx);
-  try {
-    const parsed = JSON.parse(rawJson);
-    const cleanText = content.slice(0, startIdx).trim();
-    return { text: cleanText, session: parsed };
-  } catch {
-    return { text: content, session: null };
-  }
-}
-
-export function ChatMessageContent({ content, isMine }) {
+export function ChatMessageContent({ content }) {
   const { text, session } = parseSessionInviteMessage(content);
 
   if (!session) {
@@ -116,7 +58,7 @@ export function ChatMessageContent({ content, isMine }) {
             }}
           >
             <span className={`comm-dot ${isBadminton ? 'badminton' : 'pickleball'}`} />
-            Lời mời đặt sân · {session.sport}
+            {session.invitationId ? 'Lời mời buổi chơi' : 'Chia sẻ buổi chơi'} · {session.sport}
           </span>
           <span
             style={{
@@ -154,9 +96,9 @@ export function ChatMessageContent({ content, isMine }) {
           type="button"
           className="comm-btn comm-btn-primary"
           style={{ width: '100%', justifyContent: 'center', marginTop: '4px', padding: '7px 10px', fontSize: '12.5px' }}
-          onClick={() => openSessionDetailById(session.id)}
+          onClick={() => session.invitationId ? (window.dispatchEvent(new CustomEvent('tksc:close-chat')), window.dispatchEvent(new CustomEvent('tksc:open-invitations'))) : openSessionDetailById(session.id)}
         >
-          <span>Xem &amp; Đặt sân ngay</span>
+          <span>{session.invitationId ? 'Xem lời mời' : 'Xem buổi chơi'}</span>
           <ArrowUpRight size={13} />
         </button>
       </div>
@@ -173,15 +115,14 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState(null);
   const [sentIds, setSentIds] = useState([]);
-  const [customNote, setCustomNote] = useState('');
+  const [paymentChoice, setPaymentChoice] = useState('separate');
   const [error, setError] = useState(null);
 
   useEffect(() => {
     let active = true;
-    api
-      .getFriends()
-      .then((res) => {
-        if (active) setFriends(Array.isArray(res) ? res : []);
+    Promise.all([api.getFriends(), invitationClient.candidates(sessionSummary.id)])
+      .then(([res, candidates]) => {
+        if (active) setFriends((Array.isArray(res) ? res : []).map(friend => ({ ...friend, eligibility: candidates.find(c => c.playerId === friend.friendPlayerId) })));
       })
       .catch(() => {
         if (active) setError('Không thể tải danh sách bạn bè.');
@@ -192,7 +133,7 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [sessionSummary.id]);
 
   if (!sessionSummary) return null;
 
@@ -203,10 +144,8 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
     setSendingId(friend.friendPlayerId);
     setError(null);
     try {
-      const msgContent = buildSessionInviteMessage(sessionSummary, customNote);
-      await api.sendMessage(friend.friendPlayerId, msgContent);
+      await invitationClient.send(sessionSummary.id, friend.friendPlayerId, paymentChoice);
       setSentIds((prev) => [...prev, friend.friendPlayerId]);
-      openFloatingChatWith(friend);
     } catch (err) {
       setError(err.message || 'Không thể gửi lời mời đặt sân.');
     } finally {
@@ -239,6 +178,8 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
         </div>
 
         <div className="comm-modal-body">
+          <label>Người thanh toán<select value={paymentChoice} disabled={sendingId !== null} onChange={e => setPaymentChoice(e.target.value)}><option value="separate">Mỗi người tự trả</option><option value="inviter">Tôi trả cho bạn</option></select></label>
+          <p>Gửi lời mời chưa giữ chỗ. Bạn nhận lời mới được giữ chỗ và tạo đơn thanh toán.</p>
           {error && (
             <div
               style={{
@@ -253,28 +194,6 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
               {error}
             </div>
           )}
-
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '12px',
-                fontWeight: 700,
-                color: '#4d5d53',
-                marginBottom: '6px'
-              }}
-            >
-              Lời nhắn kèm theo (tùy chọn)
-            </label>
-            <input
-              type="text"
-              className="comm-form-input"
-              style={{ width: '100%' }}
-              placeholder="Ví dụ: Tối nay ra sân làm vài set cầu lông với mình nhé!"
-              value={customNote}
-              onChange={(e) => setCustomNote(e.target.value)}
-            />
-          </div>
 
           <div>
             <div
@@ -344,6 +263,7 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
                           <div style={{ fontSize: '12px', color: '#4d5d53' }}>
                             Trình độ {sessionSummary.sportName === 'Badminton' ? 'Cầu lông' : 'Pickleball'}:{' '}
                             <strong style={{ color: '#1b6f50' }}>{friendBand}</strong>
+                            {fr.eligibility?.reason && <p>{fr.eligibility.reason}</p>}
                           </div>
                         </div>
                       </div>
@@ -351,7 +271,7 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
                       <button
                         type="button"
                         className={`comm-btn ${isSent ? 'comm-btn-outline' : 'comm-btn-primary'}`}
-                        disabled={sendingId === fr.friendPlayerId || isSent}
+                        disabled={sendingId !== null || isSent || !fr.eligibility?.eligible}
                         onClick={() => handleInviteFriend(fr)}
                       >
                         {isSent ? (
@@ -382,10 +302,12 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
  * Modal dùng ngay trong khung Tin nhắn:
  * Cho phép chọn một buổi chơi đang mở để gửi lời mời đặt sân cho người bạn đang chat.
  */
-export function PickSessionToInviteModal({ friendName, onSelectSessionToSend, onClose }) {
+export function PickSessionToInviteModal({ friendName, friendPlayerId, onSelectSessionToSend, onClose }) {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState(null);
+  const [error, setError] = useState('');
+  const [paymentChoice, setPaymentChoice] = useState('separate');
 
   useEffect(() => {
     let active = true;
@@ -400,7 +322,7 @@ export function PickSessionToInviteModal({ friendName, onSelectSessionToSend, on
         });
         setSessions(openOnes.slice(0, 20));
       })
-      .catch(() => {})
+      .catch(e => { if (active) setError(e.message || 'Không tải được lịch.'); })
       .finally(() => {
         if (active) setLoading(false);
       });
@@ -411,10 +333,14 @@ export function PickSessionToInviteModal({ friendName, onSelectSessionToSend, on
 
   const handlePick = async (s) => {
     setSendingId(s.id);
+    setError('');
     try {
-      const msgText = buildSessionInviteMessage(s);
-      await onSelectSessionToSend(msgText);
+      const invitation = await invitationClient.send(s.id, friendPlayerId, paymentChoice);
+      const msgText = buildSessionInviteMessage(s, '', invitation.id);
+      await onSelectSessionToSend(msgText).catch(() => {});
       onClose();
+    } catch (e) {
+      setError(e.message || 'Không gửi được lời mời.');
     } finally {
       setSendingId(null);
     }
@@ -434,7 +360,7 @@ export function PickSessionToInviteModal({ friendName, onSelectSessionToSend, on
               Rủ {friendName} cùng đặt sân
             </h2>
             <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#4d5d53' }}>
-              Chọn một buổi chơi đang còn chỗ trống để gửi thẻ mời đặt sân vào cuộc trò chuyện.
+              Chọn buổi chơi để mời. Người nhận trả lời trong mục Lời mời buổi chơi.
             </p>
           </div>
           <button type="button" className="comm-modal-close" onClick={onClose} title="Đóng">
@@ -443,6 +369,10 @@ export function PickSessionToInviteModal({ friendName, onSelectSessionToSend, on
         </div>
 
         <div className="comm-modal-body">
+          {loading ? (
+            <div role="status">Đang tải danh sách buổi chơi đang mở…</div>
+          ) : error ? <p role="alert">{error}</p> : <label>Người thanh toán<select value={paymentChoice} disabled={sendingId !== null} onChange={e => setPaymentChoice(e.target.value)}><option value="separate">Mỗi người tự trả</option><option value="inviter">Tôi trả cho bạn</option></select></label>}
+          {!loading && error && sessions.length > 0 && <p>Chưa gửi lời mời. Kiểm tra điều kiện rồi thử lại.</p>}
           {loading ? (
             <div style={{ padding: '24px', textAlign: 'center', color: '#4d5d53', fontSize: '13px' }}>
               Đang tải danh sách buổi chơi đang mở...
@@ -489,7 +419,7 @@ export function PickSessionToInviteModal({ friendName, onSelectSessionToSend, on
                     <button
                       type="button"
                       className="comm-btn comm-btn-primary"
-                      disabled={sendingId === s.id}
+                        disabled={sendingId !== null}
                       onClick={() => handlePick(s)}
                     >
                       <Send size={13} />

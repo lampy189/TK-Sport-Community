@@ -26,7 +26,7 @@ public sealed class DucAftercareAuthorizationTests
   Assert.Equal(HttpStatusCode.BadRequest,response.StatusCode);
  }
  [Theory]
- [InlineData("Player")] [InlineData("Referee")] [InlineData("Owner")]
+ [InlineData("Player")] [InlineData("Referee")] [InlineData("SystemAdmin")]
  public async Task OtherRolesCannotReadCentralVenueIncidents(string role)
  {
   await using var app=new SkillAuthorizationApp();
@@ -35,7 +35,7 @@ public sealed class DucAftercareAuthorizationTests
   Assert.Equal(HttpStatusCode.Forbidden,(await client.GetAsync("/api/ticket-aftercare/incidents")).StatusCode);
  }
  [Theory]
- [InlineData("Player")] [InlineData("Referee")] [InlineData("Owner")]
+ [InlineData("Player")] [InlineData("Referee")] [InlineData("SystemAdmin")]
  public async Task OtherRolesCannotReadStaffInbox(string role)
  {
   await using var app=new SkillAuthorizationApp();

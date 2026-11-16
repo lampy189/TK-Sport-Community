@@ -29,6 +29,10 @@ public static class TicketNotifications
         "ticket_change_requested" => $"Đã nhận yêu cầu đổi vé #{ticketId}. Staff sẽ kiểm tra chỗ và chênh lệch giá trước khi xác nhận.",
         "ticket_changed" => $"Đổi vé thành công. Vé mới #{ticketId} và QR mới đã sẵn sàng.",
         "ticket_difference_refund" => $"Đã tạo yêu cầu hoàn chênh lệch giá của vé #{ticketId}. Tiền chưa được hoàn ngay.",
+        "ticket_refund_approved" => $"Khoản hoàn của vé #{ticketId} đã được duyệt, chờ chuyển tiền và xác minh.",
+        "ticket_refund_rejected" => $"Khoản hoàn của vé #{ticketId} đã bị từ chối. Mở trao đổi hỗ trợ để xem căn cứ và phản hồi.",
+        "ticket_refund_failed" => $"Khoản hoàn của vé #{ticketId} đang gặp lỗi, nhân sự đang đối soát. Chưa xác nhận hoàn tất.",
+        "ticket_refund_payout_pending" => $"Đã ghi chứng từ chuyển tiền cho vé #{ticketId}, đang chờ người kiểm tra độc lập xác minh.",
         "ticket_refund_completed" => $"Một khoản hoàn của vé #{ticketId} đã được Staff xác nhận chuyển trả. Xem vé để theo dõi các khoản còn lại.",
         "ticket_reserved" => $"Đã giữ chỗ vé #{ticketId}. Vui lòng thanh toán trong thời hạn giữ chỗ.",
         "ticket_paid" => $"Thanh toán thành công. Vé #{ticketId} đã được xác nhận, QR vào sân đã sẵn sàng.",
@@ -37,5 +41,5 @@ public static class TicketNotifications
         "ticket_checked_in" => $"Vé #{ticketId} đã check-in. Chúc bạn có buổi chơi vui vẻ!",
         "ticket_expired" => $"Vé #{ticketId} đã hết thời gian giữ chỗ.",
         _ => $"Thanh toán của vé #{ticketId} đang được kiểm tra. Vui lòng không thanh toán lại."};
-    public static IEnumerable<Notification> Create(string kind, long ticketId, params long[] recipients) => recipients.Distinct().SelectMany(userId => new[] { "web", "email" }.Select(channel => new Notification { UserId = userId, Channel = channel, ReferenceType = kind, ReferenceId = ticketId, Title = Title(kind, ticketId), Status = channel == "web" ? "unread" : "pending" }));
+    public static IEnumerable<Notification> Create(string kind, long ticketId, params long[] recipients) => recipients.Distinct().SelectMany(userId => new[] { "web", "email", "push" }.Select(channel => new Notification { UserId = userId, Channel = channel, ReferenceType = kind, ReferenceId = ticketId, Title = Title(kind, ticketId), Status = channel == "web" ? "unread" : "pending" }));
 }

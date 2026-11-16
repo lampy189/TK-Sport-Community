@@ -1,24 +1,40 @@
 using TKSC.Domain.Exceptions;
 using TKSC.Application.DTOs;
-using TKSC.Application.Validators;
 using TKSC.Domain.Entities;
 using be_da.Application.DTOs;
 using be_da.Application.Interfaces.Services;
 using TKSC.Application.Interfaces.Repositories;
-using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace TKSC.Application.Services;
-// RP3 UC-36: a goods order holds its items from the moment it is created (task split 13/11/2026, Dũng).
-public sealed class StoreService(IStoreRepository repository, TimeProvider? clock = null, IOptions<GoodsOrderOptions>? options = null) : IStoreService
+public sealed class StoreService(IStoreRepository repository, TimeProvider clock) : IStoreService
 {
     public Task<IReadOnlyList<StoreProductItem>> ProductsAsync(bool scoped, long? venueId, CancellationToken ct) => repository.ProductsAsync(scoped, venueId, ct);
-    public async Task<OperationResult> CreateCartAsync(CreateCartRequest request, long userId, bool isPlayer, string? customerName, bool scoped, long? venueId, CancellationToken ct)
+    public async Task<OperationResult> CreateCartAsync(CreateCartRequest request, long userId, bool isPlayer, string? customerName, bool scoped, long? venueId, string? idempotencyKey, CancellationToken ct)
     {
-        var items = request.Items ?? [];
-        if (GoodsReservationRules.ValidateCart(items) is { } invalid)
-            return OperationResult.Invalid(new { code = items.Count == 0 ? "empty_cart" : "invalid_quantity", message = invalid });
-        var lines = GoodsReservationRules.MergeCartLines(items);
-        var productIds = lines.Select(line => line.ProductId).ToList();
+        var rawItems = request.Items ?? [];
+        if (string.IsNullOrWhiteSpace(idempotencyKey) || idempotencyKey.Length is < 16 or > 100
+            || idempotencyKey.Any(ch => !char.IsAsciiLetterOrDigit(ch) && ch is not '-' and not '_' and not '.'))
+            return OperationResult.Invalid(new { code = "IDEMPOTENCY_KEY_REQUIRED", message = "Thiếu khóa tạo đơn. Vui lòng thử lại." });
+        if (rawItems.Any(item => item.ProductId <= 0 || item.Quantity <= 0))
+            return OperationResult.Invalid(new { code = "INVALID_QUANTITY", message = "Sản phẩm và số lượng phải hợp lệ." });
+        var items = rawItems.GroupBy(item => item.ProductId).Select(group =>
+        {
+            var quantity = group.Sum(item => (int)item.Quantity);
+            return new CreateCartLine(group.Key, quantity <= short.MaxValue ? (short)quantity : (short)0);
+        }).ToList();
+        if (items.Any(item => item.Quantity <= 0))
+            return OperationResult.Invalid(new { code = "INVALID_QUANTITY", message = "Tổng số lượng của một sản phẩm vượt giới hạn." });
+        if (items.Count == 0)
+            return OperationResult.Invalid(new { code = "empty_cart", message = "Vui lòng chọn ít nhất một món hàng." });
+        var stableItems = string.Join(';', items.OrderBy(item => item.ProductId).Select(item => $"{item.ProductId}:{item.Quantity}"));
+        var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(stableItems)));
+        var previous = await repository.FindIdempotentCartAsync(userId, idempotencyKey.Trim(), fingerprint, ct);
+        if (previous is not null)
+            return previous;
+
+        var productIds = items.Select(item => item.ProductId).Distinct().ToList();
         var allowed = await repository.CenterProductIdsAsync(scoped, venueId, ct);
         if (scoped && venueId is null)
             return OperationResult.Invalid(new { code = "center_required", message = "Chọn một cơ sở trước khi tạo đơn hàng." });
@@ -28,47 +44,38 @@ public sealed class StoreService(IStoreRepository repository, TimeProvider? cloc
         if (products.Count != productIds.Count)
             return OperationResult.Missing(new { code = "product_not_found", message = "Một số sản phẩm không còn mở bán hoặc không tồn tại." });
         var orderItems = new List<StoreCartItemResult>();
-        var totalAmount = 0L;
-        foreach (var line in lines)
+        long totalAmount = 0;
+        foreach (var item in items)
         {
-            var product = products.Single(candidate => candidate.Id == line.ProductId);
-            var available = Available(product);
-            if (line.Quantity > available)
-                return Unavailable(product.Name, available);
-            var quantity = (short)line.Quantity; // ValidateCart: at most short.MaxValue (order_items.quantity is smallint)
-            var subtotal = (long)quantity * product.UnitPriceVnd;
+            if (item.Quantity <= 0)
+                return OperationResult.Invalid(new { code = "invalid_quantity", message = "Số lượng phải lớn hơn 0." });
+            var product = products.SingleOrDefault(candidate => candidate.Id == item.ProductId) ?? throw new InvalidOperationException("Product not found while building cart.");
+            var quantityOnHand = product.StockItem?.QuantityOnHand ?? 0;
+            if (item.Quantity > quantityOnHand)
+                return OperationResult.Conflict(new { code = "stock_unavailable", message = $"Sản phẩm '{product.Name}' chỉ còn {quantityOnHand} trong kho. Vui lòng giảm số lượng đặt hàng." });
+            var rawSubtotal = (long)item.Quantity * product.UnitPriceVnd;
+            if (rawSubtotal <= 0 || rawSubtotal > int.MaxValue || (long)totalAmount + rawSubtotal > int.MaxValue)
+                return OperationResult.Invalid(new { code="invalid_total", message="Giá hoặc tổng đơn vượt giới hạn cho phép." });
+            var subtotal = (int)rawSubtotal;
             totalAmount += subtotal;
-            if (subtotal > int.MaxValue || totalAmount > int.MaxValue)
-                return OperationResult.Invalid(new { code = "invalid_quantity", message = "Tổng tiền đơn hàng vượt giới hạn cho phép." });
-            orderItems.Add(new StoreCartItemResult(product.Id, product.Name, quantity, product.UnitPriceVnd, (int)subtotal));
+            if (totalAmount > int.MaxValue)
+                return OperationResult.Invalid(new { code = "ORDER_TOTAL_TOO_LARGE", message = "Tổng tiền vượt giới hạn cho phép." });
+            orderItems.Add(new StoreCartItemResult(product.Id, product.Name, item.Quantity, product.UnitPriceVnd, subtotal));
         }
 
-        var now = (clock ?? TimeProvider.System).GetUtcNow();
+        var expiresAt = clock.GetUtcNow().AddMinutes(15);
+        var orderCode = $"ORD-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}";
         var order = new Order
         {
-            OrderCode = $"ORD-{now:yyyyMMddHHmmss}-{Guid.NewGuid():N}",
+            OrderCode = orderCode,
             StaffId = userId,
             BuyerId = isPlayer ? userId : null,
             CustomerName = customerName ?? "Khách hàng",
             TotalAmount = (int)totalAmount,
             Status = "Cart",
             PaymentState = "Unpaid",
-            HandoverState = "Pending",
-            CreatedAt = now,
-            ExpiresAt = GoodsReservationRules.HoldUntil(now, options?.Value.HoldMinutes ?? new GoodsOrderOptions().HoldMinutes),
-            ReservationState = GoodsReservationRules.Held
+            HandoverState = "Pending"
         };
-        // Someone may have taken the last items since the check above; the reservation decides.
-        var shortProduct = await repository.SaveCartAsync(order, orderItems, products, scoped, venueId);
-        if (shortProduct is long id)
-        {
-            var product = products.Single(p => p.Id == id);
-            return Unavailable(product.Name, Available(product));
-        }
-
-        return OperationResult.Success(new StoreCartOrderResult(order.Id, order.OrderCode, order.TotalAmount, order.Status, order.PaymentState, order.HandoverState, orderItems, order.ExpiresAt));
+        return await repository.SaveCartAsync(order, orderItems, products, userId, scoped, venueId, idempotencyKey.Trim(), fingerprint, expiresAt, ct);
     }
-
-    private static int Available(Product product) => product.StockItem is null ? 0 : product.StockItem.QuantityOnHand - product.StockItem.ReservedQuantity;
-    private static OperationResult Unavailable(string name, int available) => OperationResult.Conflict(new { code = "stock_unavailable", message = $"Sản phẩm '{name}' chỉ còn {Math.Max(available, 0)} có thể bán (đã trừ hàng đang giữ cho đơn khác). Vui lòng giảm số lượng." });
 }

@@ -11,15 +11,17 @@ using TKSC.Domain.Entities;
 using TKSC.Infrastructure.Persistence.Contexts;
 using TKSC.Application.Services;
 using TKSC.Application.DTOs.Persistence;
-using TKSC.Application.Validators;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace TKSC.Infrastructure.Persistence.Repositories;
-public sealed class GoodsPaymentRepository(Sep490Context db, TimeProvider clock, be_da.Application.Interfaces.External.IDataAccessContext? scope = null) : IGoodsPaymentRepository
+public sealed class GoodsPaymentRepository(Sep490Context db, TimeProvider clock) : IGoodsPaymentRepository
 {
-    // Staff and Managers work on their own center's orders; buyers and background jobs are not limited by center.
-    // Row-Level Security may be disabled on a database, so the filter is applied here as well.
-    private long? StaffVenue => scope?.Role?.ToLowerInvariant() is "staff" or "manager" or "referee" ? scope.VenueId : null;
+    public Task<Payment?> RecoveryPaymentAsync(long id, CancellationToken ct) => db.Payments.AsNoTracking().SingleOrDefaultAsync(p=>p.Id==id && p.GoodsOrderId!=null && p.OrderId==null,ct);
+    public Task<BankTransaction?> RecoveryBankAsync(long paymentId,long bankId,CancellationToken ct) => db.BankTransactions.SingleOrDefaultAsync(b=>b.Id==bankId && b.MatchedPaymentId==paymentId,ct);
+    public Task ReserveAsync(Order order, DateTimeOffset expiresAt, bool reacquire, CancellationToken ct) => GoodsStockHolds.Reserve(db, order, expiresAt, reacquire, ct);
+    public Task<DateTimeOffset?> HoldExpiryAsync(long id, CancellationToken ct) => GoodsStockHolds.Expiry(db, id, ct);
+    public Task<bool> CommitHoldAsync(Order order, CancellationToken ct) => GoodsStockHolds.Commit(db, order, ct);
+    public Task ReleaseHoldAsync(long id, CancellationToken ct) => GoodsStockHolds.Release(db, id, ct);
+    public Task ConsumeHoldAsync(Order order, long actorId, CancellationToken ct) => GoodsStockHolds.Consume(db, order, actorId, ct);
     private DateTimeOffset Now => clock.GetUtcNow();
 
     private static TKSC.Domain.Exceptions.PaymentException Error(int status, string message) => new(status, message);
@@ -33,11 +35,12 @@ public sealed class GoodsPaymentRepository(Sep490Context db, TimeProvider clock,
             if (eventKey != null)
                 await LockAsync(eventKey, ct);
             await LockAsync("TKSC:goods-payments", ct);
+            await LockAsync("TKSC:goods-stock", ct);
             var result = await action();
             await transaction.CommitAsync(ct);
             return result;
         }
-        catch (SqlException e)when (e.Number is 1205 or 51000)
+        catch (SqlException e)when (e.Number is 1205 or 51000 or 51010)
         {
             throw Error(409, "Đơn đang được cập nhật. Tải lại và thử lại.");
         }
@@ -48,13 +51,26 @@ public sealed class GoodsPaymentRepository(Sep490Context db, TimeProvider clock,
         EXEC @result = sys.sp_getapplock @Resource={resource}, @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000;
         IF @result < 0 THROW 51000, 'Goods payment is busy.', 1;
         """, ct);
-    public Task<List<GoodsOrderListItem>> ListOrdersListAsync(CancellationToken ct) => db.Orders.AsNoTracking().Where(o => StaffVenue == null || o.VenueId == StaffVenue).OrderByDescending(o => o.Id).Take(100).Select(o => new GoodsOrderListItem { Id = o.Id, OrderCode = o.OrderCode, CustomerName = o.CustomerName, TotalAmount = o.TotalAmount, Status = o.Status, PaymentState = o.PaymentState, HandoverState = o.HandoverState, ReservationState = o.ReservationState, ExpiresAt = o.ExpiresAt }).ToListAsync(ct);
-    public Task<Order?> LoadOrdersAsync(long id, CancellationToken ct)
+    public Task<List<GoodsOrderListItem>> ListOrdersListAsync(CancellationToken ct) => db.Orders.AsNoTracking().OrderByDescending(o => o.Id).Take(100).Select(o => new GoodsOrderListItem { Id = o.Id, OrderCode = o.OrderCode, CustomerName = o.CustomerName, TotalAmount = o.TotalAmount, Status = o.Status, PaymentState = o.PaymentState }).ToListAsync(ct);
+    public Task<Order?> LoadOrdersAsync(long id, CancellationToken ct) => db.Orders.Include(o => o.OrderItems).ThenInclude(i => i.Product).Include(o => o.Payments).SingleOrDefaultAsync(o => o.Id == id, ct);
+    public async Task<int> SaveAsync(CancellationToken ct)
     {
-        var venue = StaffVenue;
-        return db.Orders.Include(o => o.OrderItems).ThenInclude(i => i.Product).Include(o => o.Payments).SingleOrDefaultAsync(o => o.Id == id && (venue == null || o.VenueId == venue), ct);
+        db.ChangeTracker.DetectChanges();
+        var events = db.ChangeTracker.Entries<Order>().Where(e => e.State == EntityState.Modified && e.Entity.BuyerId != null)
+            .Select(e => (Order: e.Entity, Kind:
+                e.Property(o => o.HandoverState).IsModified ? "goods_handover" :
+                e.Property(o => o.PaymentState).IsModified ? "goods_payment" : null))
+            .Where(e => e.Kind != null).ToList();
+        foreach (var (order, kind) in events)
+        {
+            var title = $"Đơn hàng {order.OrderCode}: thanh toán {order.PaymentState}, giao hàng {order.HandoverState}.";
+            db.Notifications.AddRange(new[] { "web", "push" }.Select(channel => new Notification {
+                UserId = order.BuyerId!.Value, Channel = channel, ReferenceId = order.Id, ReferenceType = kind,
+                Title = title, Status = channel == "web" ? "unread" : "pending"
+            }));
+        }
+        return await db.SaveChangesAsync(ct);
     }
-    public Task<int> SaveAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
     public void ClearTracking() => db.ChangeTracker.Clear();
     public Task<bool> TryWebhookPaymentsExistsAsync(CancellationToken ct, VerifiedBankEvent data) => db.Payments.AsNoTracking().AnyAsync(p => p.Id == data.OrderCode && p.GoodsOrderId != null && p.OrderId == null && p.Method == "payos", ct);
     public Task<bool> ApplyBankTransactionsExistsAsync(CancellationToken ct, string? externalId) => db.BankTransactions.AnyAsync(b => b.ExternalId == externalId, ct);
@@ -63,14 +79,23 @@ public sealed class GoodsPaymentRepository(Sep490Context db, TimeProvider clock,
     public Task<string?> AuditValueAuditLogsAsync(long id, string action, CancellationToken ct) => db.AuditLogs.Where(a => a.EntityType == "GoodsOrder" && a.EntityId == id && a.Action == action).OrderByDescending(a => a.Id).Select(a => a.NewValue).FirstOrDefaultAsync(ct);
     public void AddAuditLogs(AuditLog value) => db.AuditLogs.Add(value);
     public Task<List<Order>> ListForBuyerOrdersListAsync(long buyerId, CancellationToken ct) => db.Orders.AsNoTracking().Include(o => o.OrderItems).ThenInclude(i => i.Product).Where(o => o.BuyerId == buyerId).OrderByDescending(o => o.Id).Take(50).ToListAsync(ct);
-    public Task<long?> ReserveStockAsync(long orderId, CancellationToken ct) => StockReservationSql.ReserveAsync(Connection, Transaction, orderId, ct);
-    public Task ReleaseStockAsync(long orderId, CancellationToken ct) => StockReservationSql.ReleaseAsync(Connection, Transaction, orderId, ct);
-    public Task<long> ConsumeStockAsync(long orderId, long actorId, bool held, CancellationToken ct) => StockReservationSql.ConsumeAsync(Connection, Transaction, orderId, actorId, held, ct);
-    public Task<string?> ProductNameAsync(long productId, CancellationToken ct) => db.Products.AsNoTracking().Where(p => p.Id == productId).Select(p => p.Name).SingleOrDefaultAsync(ct);
-    public Task<List<long>> DueForExpiryAsync(DateTimeOffset now, int take, CancellationToken ct) => db.Orders.AsNoTracking()
-        .Where(o => o.ReservationState == GoodsReservationRules.Held && o.ExpiresAt != null && o.ExpiresAt <= now
-            && (o.Status == "Cart" || o.Status == "PendingPayment") && o.PaymentState != "Paid" && o.PaymentState != "NeedsReview")
-        .OrderBy(o => o.ExpiresAt).Select(o => o.Id).Take(take).ToListAsync(ct);
-    private System.Data.Common.DbConnection Connection => db.Database.GetDbConnection();
-    private System.Data.Common.DbTransaction? Transaction => db.Database.CurrentTransaction?.GetDbTransaction();
+    public Task<bool> ConfirmReceiptStockMovementsExistsAsync(CancellationToken ct, long id) => db.StockMovements.AnyAsync(m => m.ReferenceType == "GoodsOrder" && m.ReferenceId == id && m.MovementType == "SaleOut", ct);
+    public Task<long?> ConfirmReceiptStockItemsAsync(CancellationToken ct, GoodsStockLine line) => db.StockItems.Where(s => s.ProductId == line.ProductId).Select(s => (long? )s.Id).SingleOrDefaultAsync(ct);
+        public Task<int> ConfirmReceiptDatabaseUpdateAsync(CancellationToken ct, GoodsStockLine line, long stockItemId, long orderId) => db.Database.ExecuteSqlInterpolatedAsync($"""
+                                        UPDATE si SET quantity_on_hand = quantity_on_hand - {line.Quantity}
+                                        FROM dbo.stock_items si
+                                        WHERE si.id = {stockItemId}
+                                            AND si.quantity_on_hand - {line.Quantity} >= (
+                                                SELECT ISNULL(SUM(lines.quantity),0)
+                                                FROM dbo.audit_logs a
+                                                JOIN dbo.orders reserved_order ON reserved_order.id=a.entity_id
+                                                CROSS APPLY OPENJSON(a.new_value,'$.lines') WITH (productId bigint '$.productId',quantity int '$.quantity') lines
+                                                WHERE a.entity_type='GoodsOrder' AND a.action='goods_stock_reserved' AND lines.productId=si.product_id
+                                                    AND reserved_order.id<>{orderId}
+                                                    AND (LOWER(ISNULL(reserved_order.payment_state,''))='paid'
+                                                             OR TRY_CONVERT(datetimeoffset,JSON_VALUE(a.new_value,'$.expiresAt'))>SYSUTCDATETIME())
+                                                    AND NOT EXISTS(SELECT 1 FROM dbo.stock_movements m WHERE m.reference_type='GoodsOrder' AND m.reference_id=reserved_order.id AND m.movement_type='SaleOut')
+                                            );
+                                        """, ct);
+    public void AddStockMovements(StockMovement value) => db.StockMovements.Add(value);
 }
