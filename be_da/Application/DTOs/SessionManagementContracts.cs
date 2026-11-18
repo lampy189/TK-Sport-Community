@@ -30,12 +30,13 @@ public sealed record ManagedSession(
     IReadOnlyList<SessionAssignee> Staff);
 
 public sealed record SaveManagedSessionRequest(
-    [property: Range(1, long.MaxValue)] long SportId,
-    [property: Range(1, long.MaxValue)] long CourtId,
-    [property: Range(1, long.MaxValue)] long TimeSlotId,
+    [Range(1, long.MaxValue)] long SportId,
+    [Range(1, long.MaxValue)] long CourtId,
+    [Range(1, long.MaxValue)] long TimeSlotId,
     DateOnly SessionDate,
-    [property: StringLength(100)] string? Band,
-    [property: Range(1, 8)] short Capacity,
-    [property: Range(0, int.MaxValue)] int PriceVnd);
+    [StringLength(100)] string? Band,
+    [Range(1, 8)] short Capacity,
+    [Range(0, int.MaxValue)] int PriceVnd);
 
 public sealed record SessionAssignmentsRequest(long[]? RefereeIds, long[]? StaffIds);
+
