@@ -46,6 +46,19 @@ export default function MyGoodsOrders() {
     };
   }, []);
 
+  async function cancel(id) {
+    setBusyId(id);
+    setError("");
+    try {
+      const updated = await workflowRequest(`${root}/${id}/cancel`, "POST");
+      setOrders((list) => list.map((o) => (o.id === updated.id ? updated : o)));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function receive(id) {
     setBusyId(id);
     setError("");
@@ -96,6 +109,11 @@ export default function MyGoodsOrders() {
                 </section>}
                 <div className="my-order-foot">
                   <strong>{money(order.totalAmount)}</strong>
+                  {order.canCancel && (
+                    <button className="button button-secondary" disabled={busyId === order.id} onClick={() => cancel(order.id)}>
+                      {busyId === order.id ? "Đang hủy…" : "Hủy đơn"}
+                    </button>
+                  )}
                   {order.handoverState === "Delivered" && (
                     <button className="button button-primary" disabled={busyId === order.id} onClick={() => receive(order.id)}>
                       <PackageCheck size={16} aria-hidden="true" />

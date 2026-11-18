@@ -478,6 +478,16 @@ public static class Sep490ModelConfiguration
             entity.Property(e => e.Difference).HasColumnName("difference");
             entity.Property(e => e.StockItemId).HasColumnName("stock_item_id");
             entity.Property(e => e.SystemQuantity).HasColumnName("system_quantity");
+            entity.Property(e => e.Status).HasMaxLength(20).IsUnicode(false).HasColumnName("status").HasDefaultValue("Pending");
+            entity.Property(e => e.Reason).HasMaxLength(500).HasColumnName("reason");
+            entity.Property(e => e.Evidence).HasMaxLength(500).HasColumnName("evidence");
+            entity.Property(e => e.EnteredUnit).HasMaxLength(50).HasColumnName("entered_unit");
+            entity.Property(e => e.EnteredQuantity).HasColumnName("entered_quantity");
+            entity.Property(e => e.StockVersion).HasColumnName("stock_version");
+            entity.Property(e => e.CountedAt).HasPrecision(0).HasColumnName("counted_at").HasDefaultValueSql("(sysdatetimeoffset())");
+            entity.Property(e => e.DecidedAt).HasPrecision(0).HasColumnName("decided_at");
+            entity.Property(e => e.DecisionNote).HasMaxLength(500).HasColumnName("decision_note");
+            entity.Property(e => e.AppliedMovementId).HasColumnName("applied_movement_id");
             entity.HasOne(d => d.ApprovedByNavigation).WithMany(p => p.StockCountApprovedByNavigations).HasForeignKey(d => d.ApprovedBy).HasConstraintName("FK_stock_counts_approved_by");
             entity.HasOne(d => d.CountedByNavigation).WithMany(p => p.StockCountCountedByNavigations).HasForeignKey(d => d.CountedBy).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK_stock_counts_counted_by");
             entity.HasOne(d => d.StockItem).WithMany(p => p.StockCounts).HasForeignKey(d => d.StockItemId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK_stock_counts_stock_item_id");

@@ -7,11 +7,13 @@ using be_da.Application.Validators;
 namespace be_da.Infrastructure.Persistence.Repositories;
 public sealed class SqlStockStore(string connectionString, be_da.Application.Interfaces.External.IDataAccessContext? dataScope = null) : IStockStore
 {
-    private const string ProductSelect = """
+    // reserved_quantity: held for goods orders (upgrade 018), so available = on hand - reserved (task 13/11/2026).
+    private static readonly string ProductSelect = $"""
         SELECT p.id, p.sku, p.name, p.category, dbo.OwnerEffectivePrice('product',p.id,p.unit_price_vnd,SYSDATETIMEOFFSET()), ISNULL(p.is_active, 0) AS is_active,
                ISNULL(si.quantity_on_hand, 0) AS quantity_on_hand, ISNULL(si.reorder_level, 0) AS reorder_level,
                CAST(CASE WHEN ISNULL(si.quantity_on_hand, 0) > 0 OR EXISTS (
-                   SELECT 1 FROM dbo.stock_movements m WHERE m.stock_item_id = si.id) THEN 1 ELSE 0 END AS bit) AS units_locked
+                   SELECT 1 FROM dbo.stock_movements m WHERE m.stock_item_id = si.id) THEN 1 ELSE 0 END AS bit) AS units_locked,
+               CASE WHEN si.id IS NULL THEN 0 ELSE {be_da.Infrastructure.Persistence.StockHoldSql.HeldFor("si.id")} END AS reserved_quantity
         FROM dbo.products p
         LEFT JOIN dbo.stock_items si ON si.product_id = p.id
         """;
@@ -179,7 +181,7 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
         await CenterAccess.RequireAsync(connection, transaction, dataScope, "product", productId, cancellationToken);
         // Status: 0 posted, 1 product missing, 2 inactive, 3 insufficient stock, 4 unknown unit, 5 too large to post.
-        const string sql = """
+        var sql = $"""
             DECLARE @active bit;
             SELECT @active = ISNULL(is_active, 0) FROM dbo.products WITH (UPDLOCK, HOLDLOCK) WHERE id = @productId;
             IF @@ROWCOUNT = 0 BEGIN SELECT 1; RETURN; END;
@@ -199,7 +201,8 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
             UPDATE dbo.stock_items
             SET quantity_on_hand = quantity_on_hand + @delta
             OUTPUT inserted.id INTO @posted
-            WHERE product_id = @productId AND quantity_on_hand + @delta >= 0;
+            WHERE product_id = @productId AND quantity_on_hand + @delta >= 0
+              AND (@delta >= 0 OR quantity_on_hand + @delta >= {be_da.Infrastructure.Persistence.StockHoldSql.HeldFor("dbo.stock_items.id")});
             IF NOT EXISTS (SELECT 1 FROM @posted) BEGIN SELECT 3; RETURN; END;
             INSERT dbo.stock_movements (stock_item_id, movement_type, quantity, reference_type, reference_id, created_by, entered_unit, entered_quantity)
             SELECT id, @movementType, @delta, @referenceType, NULL, @staffUserId, @unit, @quantity FROM @posted;
@@ -226,7 +229,7 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
                 2 => StockResult.Fail("PRODUCT_INACTIVE", "Mặt hàng đã ngừng kinh doanh, không thể nhập/xuất."),
                 4 => StockResult.Fail("UNIT_NOT_FOUND", "Mặt hàng không có đơn vị này."),
                 5 => StockResult.Fail("QUANTITY_TOO_LARGE", "Số lượng quy đổi vượt giới hạn cho phép."),
-                _ => StockResult.Fail("INSUFFICIENT_STOCK", "Số lượng xuất vượt quá tồn kho hiện có.")};
+                _ => StockResult.Fail("INSUFFICIENT_STOCK", "Số lượng xuất vượt quá số còn khả dụng (tồn kho trừ hàng đang giữ cho đơn).")};
         }
 
         var product = await LoadProductAsync(connection, transaction, productId, cancellationToken);
@@ -274,9 +277,10 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
     {
         await using var connection = new SqlConnection(connectionString);
         await SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
-        const string sql = """
+        var sql = $"""
             SELECT TOP (1) p.id, p.sku, p.name, ISNULL(p.is_active, 0), p.unit_price_vnd, ISNULL(si.quantity_on_hand, 0),
-                   ISNULL(b.unit_name, u.unit_name), u.unit_name, u.factor_to_base, u.barcode
+                   ISNULL(b.unit_name, u.unit_name), u.unit_name, u.factor_to_base, u.barcode,
+                   CASE WHEN si.id IS NULL THEN 0 ELSE {be_da.Infrastructure.Persistence.StockHoldSql.HeldFor("si.id")} END
             FROM dbo.product_units u
             JOIN dbo.products p ON p.id = u.product_id
             LEFT JOIN dbo.stock_items si ON si.product_id = p.id
@@ -290,7 +294,7 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
             return null;
-        return new StockCodeLookup(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.GetBoolean(3), reader.GetInt32(4), reader.GetInt32(5), reader.GetString(6), reader.GetString(7), reader.GetInt32(8), reader.IsDBNull(9) ? null : reader.GetString(9));
+        return new StockCodeLookup(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.GetBoolean(3), reader.GetInt32(4), reader.GetInt32(5), reader.GetString(6), reader.GetString(7), reader.GetInt32(8), reader.IsDBNull(9) ? null : reader.GetString(9), reader.GetInt32(10));
     }
 
     public async Task<BatchReceiptResult> PostBatchReceiptAsync(BatchReceiptRequest request, long staffUserId, CancellationToken cancellationToken)
@@ -465,6 +469,6 @@ public sealed class SqlStockStore(string connectionString, be_da.Application.Int
         return product is null ? null : WithUnits(product, await LoadUnitsAsync(connection, transaction, productId, cancellationToken));
     }
 
-    private static StockProduct ReadProduct(SqlDataReader reader) => new(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.IsDBNull(3) ? null : reader.GetString(3), reader.GetInt32(4), reader.GetBoolean(5), reader.GetInt32(6), reader.GetInt32(7), UnitsLocked: reader.GetBoolean(8));
+    private static StockProduct ReadProduct(SqlDataReader reader) => new(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.IsDBNull(3) ? null : reader.GetString(3), reader.GetInt32(4), reader.GetBoolean(5), reader.GetInt32(6), reader.GetInt32(7), UnitsLocked: reader.GetBoolean(8), ReservedQuantity: reader.GetInt32(9));
     private static string EscapeLike(string value) => value.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]");
 }

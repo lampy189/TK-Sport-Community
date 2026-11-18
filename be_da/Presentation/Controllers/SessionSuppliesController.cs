@@ -47,6 +47,37 @@ public sealed class SessionSuppliesController(ISessionSupplyService store, IAnti
         return ToResponse(await store.IssueAsync(sessionId, request, staffUserId, cancellationToken));
     }
 
+    // A referee request: issue to the requester (body may lower the quantity when stock is short).
+    [HttpPost("{sessionId:long:min(1)}/requests/{requestId:long:min(1)}/issue")]
+    [Authorize(Roles = "Staff")]
+    [ProducesResponseType(typeof(SessionSupplyDetails), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> IssueRequest(long sessionId, long requestId, [FromBody] IssueSupplyFromRequest? request, CancellationToken cancellationToken)
+    {
+        if (!await HasValidCsrf())
+            return BadRequest(new { code = "invalid_csrf_token" });
+        if (!TryGetUserId(out var staffUserId))
+            return Unauthorized();
+        return ToResponse(await store.IssueRequestAsync(sessionId, requestId, request ?? new IssueSupplyFromRequest(), staffUserId, cancellationToken));
+    }
+
+    [HttpPost("{sessionId:long:min(1)}/requests/{requestId:long:min(1)}/reject")]
+    [Authorize(Roles = "Staff")]
+    [ProducesResponseType(typeof(SessionSupplyDetails), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RejectRequest(long sessionId, long requestId, [FromBody] SupplyDecisionRequest request, CancellationToken cancellationToken)
+    {
+        if (!await HasValidCsrf())
+            return BadRequest(new { code = "invalid_csrf_token" });
+        if (!TryGetUserId(out var staffUserId))
+            return Unauthorized();
+        return ToResponse(await store.RejectRequestAsync(sessionId, requestId, request, staffUserId, cancellationToken));
+    }
+
     [HttpPost("{sessionId:long:min(1)}/products/{productId:long:min(1)}/reconcile")]
     [Authorize(Roles = "Staff")]
     [ProducesResponseType(typeof(SessionSupplyDetails), StatusCodes.Status200OK)]
@@ -61,7 +92,7 @@ public sealed class SessionSuppliesController(ISessionSupplyService store, IAnti
         return ToResponse(await store.ReconcileAsync(sessionId, productId, request, staffUserId, cancellationToken));
     }
 
-    private IActionResult ToResponse(SupplyResult result) => result.Success ? Ok(result.Details) : result.ErrorCode is "SESSION_NOT_FOUND" or "PRODUCT_NOT_FOUND" or "ALLOCATION_NOT_FOUND" ? NotFound(new { code = result.ErrorCode, message = result.Message }) : result.ErrorCode is "VALIDATION_FAILED" or "UNIT_NOT_FOUND" or "QUANTITY_TOO_LARGE" ? BadRequest(new { code = result.ErrorCode, message = result.Message }) : Conflict(new { code = result.ErrorCode, message = result.Message });
+    private IActionResult ToResponse(SupplyResult result) => SupplyResponses.ToResponse(this, result);
     private bool TryGetUserId(out long userId)
     {
         var rawId = User.FindFirstValue(ClaimTypes.NameIdentifier);

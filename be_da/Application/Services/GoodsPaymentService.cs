@@ -223,7 +223,7 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
         var payment = order.Payments.OrderByDescending(p => p.Id).FirstOrDefault();
         var json = await AuditValueAsync(order.Id, "goods_checkout", ct) ?? await AuditValueAsync(order.Id, "goods_hold", ct);
         var expiry = json == null ? (DateTimeOffset? )null : JsonDocument.Parse(json).RootElement.GetProperty("ExpiresAt").GetDateTimeOffset();
-        return new(order.Id, order.OrderCode, order.CustomerName, order.TotalAmount, order.Status, order.PaymentState, order.HandoverState, Lines(order), payment?.Method, payment?.ReferenceCode, order.PaymentState == "Pending" && payment?.Status == "pending" && expiry > clock.GetUtcNow() ? payment.CheckoutUrl : null, expiry, await InvoiceRecordAsync(order.Id, ct)) { History = await repository.HistoryAsync(order.Id, ct) };
+        return new(order.Id, order.OrderCode, order.CustomerName, order.TotalAmount, order.Status, order.PaymentState, order.HandoverState, Lines(order), payment?.Method, payment?.ReferenceCode, order.PaymentState == "Pending" && payment?.Status == "pending" && expiry > clock.GetUtcNow() ? payment.CheckoutUrl : null, expiry, await InvoiceRecordAsync(order.Id, ct), CanCancel(order)) { History = await repository.HistoryAsync(order.Id, ct) };
     }
 
     private async Task<GoodsInvoice?> InvoiceRecordAsync(long id, CancellationToken ct)

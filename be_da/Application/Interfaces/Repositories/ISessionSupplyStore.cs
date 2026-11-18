@@ -10,7 +10,13 @@ public interface ISessionSupplyStore
     Task<bool> IsRefereeAssignedAsync(long sessionId, long refereeId, CancellationToken cancellationToken);
     // Atomic: posts one SessionIssue movement, decreases on-hand stock and records the recipient.
     Task<SupplyResult> IssueAsync(long sessionId, IssueSupplyRequest request, long staffUserId, CancellationToken cancellationToken);
-    // The assigned referee reports observed use; stock does not move until Staff confirms the return.
+    // Atomic: issues a pending referee request to its requester and marks the request Issued.
+    Task<SupplyResult> IssueRequestAsync(long sessionId, long requestId, IssueSupplyFromRequest request, long staffUserId, CancellationToken cancellationToken);
+    Task<SupplyResult> RejectRequestAsync(long sessionId, long requestId, string note, long staffUserId, CancellationToken cancellationToken);
+    // The assigned referee asks for supplies; stock does not move until Staff issues.
+    Task<SupplyResult> CreateRequestAsync(long sessionId, CreateSupplyRequest request, long refereeId, CancellationToken cancellationToken);
+    Task<SupplyResult> CancelRequestAsync(long sessionId, long requestId, long refereeId, CancellationToken cancellationToken);
+    // The assigned referee reports observed use and unused returns; stock does not move until Staff confirms the return.
     Task<SupplyResult> ReportUseAsync(long sessionId, long productId, ReportSupplyUseRequest request, long refereeId, CancellationToken cancellationToken);
     // Atomic: posts the unused return (if any) and closes the allocation; used = issued - returned.
     Task<SupplyResult> ReconcileAsync(long sessionId, long productId, ReturnSupplyRequest request, long staffUserId, CancellationToken cancellationToken);
