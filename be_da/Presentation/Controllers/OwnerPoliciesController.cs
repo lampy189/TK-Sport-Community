@@ -10,6 +10,8 @@ namespace be_da.Presentation.Controllers;
 public sealed class OwnerPoliciesController(IOwnerPolicyService service) : ControllerBase
 {
     private long Actor => long.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : -1;
+    [HttpGet("options")]
+    public Task<object> Options(CancellationToken ct) => service.OptionsAsync(ct);
     [HttpGet]
     public async Task<IActionResult> History(string? code, long? venueId, CancellationToken ct) => Ok(await service.HistoryAsync(code, venueId, ct));
     [HttpPost]

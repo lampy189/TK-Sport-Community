@@ -1,5 +1,14 @@
 # TK Sport Community — Project Context
 
+## Operations UI completion (18 Nov 2026)
+
+Owner policies/prices, business reports, approval navigation, live role metrics and SystemAdmin technical settings/incidents now have connected screens. Technical overrides/incidents use existing audit logs with revision checks, no schema change. The user selected **UI only** for cash overpayment/change, free sessions and missing/damaged/discrepant supplies: show pending/manual handling, do not add automatic settlement, free-ticket issuance or stock-adjustment rules. See `docs/operations-ui-20261118.md` for scope and test limits. Keep the assessment/payment isolation decision below.
+
+## Assessment without ticket or payment side effects (18 Nov 2026)
+
+The user explicitly removed future-ticket cancellation and refund handling from skill assessment and Manager rating corrections. Publishing or correcting a rating updates the assessment/profile, rating history and audit only. Existing tickets, payment allocations and refunds are unchanged. This supersedes the older rating-change future-ticket rule below and UC-21/JOB-02 for this workflow. Keep attendance/paid-registration checks and new-booking eligibility rules; other payment and voluntary ticket-aftercare workflows remain separate. Diagrams 01 and 02 show assessment only, with no payment, cancellation or refund branch.
+
+
 ## Approved goods reservation rollout (16 Nov 2026)
 
 The user explicitly approved migration 018 after test validation. COPY_ONLY backup verified, restored to TKSC_PAY018_Test_20261116, concurrent last-item/expiry/exactly-once sale test passed, migration rerun passed, then Sep490 upgraded successfully. Four Committed rows protect two previously paid unposted orders; trigger enabled, no stock violations. GoodsReservations:ExpiryWorkerEnabled is true in Development user-secrets and takes effect on next backend start. See docs/pay-04-07-sales-stock-recovery.md for backup and rollout evidence. Do not restore the old receipt-time stock deduction: delivery consumes the committed reservation once.

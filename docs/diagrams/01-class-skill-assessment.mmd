@@ -1,0 +1,99 @@
+classDiagram
+direction LR
+
+class Sport {
+  +long Id
+  +string Code
+  +string Name
+}
+class Rubric {
+  <<SportSkillScheme>>
+  +long Id
+  +long SportId
+  +string Version
+  +string Name
+  +bool IsActive
+}
+class RubricDimension {
+  +long Id
+  +long RubricId
+  +string Code
+  +string Name
+  +short WeightPercent
+}
+class PlayerSportProfile {
+  +long Id
+  +long PlayerId
+  +long SportId
+  +short CurrentScore
+  +string CurrentBand
+  +string RatingStatus
+}
+class Assessment {
+  +long Id
+  +long PlayerSportProfileId
+  +long SessionId
+  +long RubricId
+  +long AssessorId
+  +string AssessmentType
+  +string Status
+  +short TotalScore
+  +string BandResult
+}
+class AssessmentScore {
+  +long Id
+  +long AssessmentId
+  +long DimensionId
+  +short Score
+}
+class PlayerRatingHistory {
+  +long Id
+  +long PlayerSportProfileId
+  +short OldScore
+  +short NewScore
+  +string OldBand
+  +string NewBand
+  +long ChangedBy
+  +long AssessmentId
+}
+class RatingAppeal {
+  +long Id
+  +long AssessmentId
+  +long PlayerSportProfileId
+}
+class Session {
+  +long Id
+  +long SportId
+  +string Band
+  +short Capacity
+  +int PriceVnd
+  +string Status
+}
+class SportAssessmentScoring {
+  <<static domain rules>>
+  +CriterionPoints(score, sliderScores) short
+  +CalculatePoints(points) short
+  +Band(total) string
+  +ReviewScore(current, prior) short
+  +Supports(rubric) bool
+}
+class SkillAssessmentService {
+  <<application service>>
+  +OpenAsync(sessionId, playerId, actorId)
+  +SaveAsync(id, actorId, request)
+  +PublishAsync(id, actorId, request)
+}
+
+Sport "1" --> "*" Rubric : defines
+Rubric "1" *-- "*" RubricDimension : has criteria
+Sport "1" --> "*" PlayerSportProfile : per sport
+PlayerSportProfile "1" --> "*" Assessment : evaluated by
+Rubric "1" --> "*" Assessment : scored with
+Session "1" --> "*" Assessment : observed in
+Assessment "1" *-- "*" AssessmentScore : marks
+RubricDimension "1" --> "*" AssessmentScore : criterion
+PlayerSportProfile "1" --> "*" PlayerRatingHistory : rating log
+Assessment "0..1" --> "*" PlayerRatingHistory : produces
+Assessment "1" --> "*" RatingAppeal : may be appealed
+SkillAssessmentService ..> SportAssessmentScoring : uses
+SkillAssessmentService ..> Assessment : creates / publishes

@@ -1,4 +1,6 @@
 import OperationalExceptions from '../payment/OperationalExceptions';
+import { PolicyPage, BusinessReportPage, ApprovalHub } from '../operations/BusinessConsole';
+import TechnicalPage from '../operations/TechnicalPage';
 import { useState } from 'react';
 import RevenuePage from "../revenue/RevenuePage";
 import OperationsPage from '../operations/OperationsPage';
@@ -39,6 +41,10 @@ export default function HomeWorkspace({
   onBrowseSport,
 }) {
   const [createdGoodsOrder,setCreatedGoodsOrder]=useState(null);
+  if (!preview && role === 'system-admin' && ['Cấu hình kỹ thuật','Sự cố'].includes(active)) return <TechnicalPage key={active} incidentsOnly={active === 'Sự cố'} />;
+  if (!preview && ['owner','manager'].includes(role) && active === 'Chính sách & giá') return <PolicyPage role={role} user={user} />;
+  if (!preview && ['owner','manager','staff'].includes(role) && active === 'Báo cáo tổng hợp') return <BusinessReportPage />;
+  if (!preview && role === 'owner' && active === 'Phê duyệt') return <ApprovalHub onOpen={onOpen} />;
   if (preview && import.meta.env.DEV && import.meta.env.VITE_PAYMENT_MODE === 'demo'
     && role === 'player' && ['Thanh toán', 'Vé của tôi'].includes(active))
     return <PaymentPage key={active} initialView={active === 'Vé của tôi' ? 'tickets' : 'payment'} />;

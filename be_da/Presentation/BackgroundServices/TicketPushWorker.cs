@@ -4,7 +4,7 @@ using TKSC.Infrastructure.Persistence.Contexts;
 
 namespace TKSC.Presentation.BackgroundServices;
 
-public sealed class TicketPushWorker(IServiceScopeFactory scopes, IConfiguration config, ILogger<TicketPushWorker> logger) : BackgroundService
+public sealed class TicketPushWorker(IServiceScopeFactory scopes, ILogger<TicketPushWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
@@ -12,7 +12,7 @@ public sealed class TicketPushWorker(IServiceScopeFactory scopes, IConfiguration
         {
             try
             {
-                if (config.GetValue<bool>("Firebase:Enabled"))
+                if (await be_da.Application.Services.TechnicalSettingsService.RuntimeEnabledAsync(scopes, "Firebase:Enabled", ct))
                 {
                     using var scope = scopes.CreateScope();
                     var db = scope.ServiceProvider.GetRequiredService<Sep490Context>();

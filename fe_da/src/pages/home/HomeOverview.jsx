@@ -1,8 +1,9 @@
 import SectionLayout from "../../components/layout/SectionLayout";
 import { ArrowUpRight, Layers3, Activity, ShieldCheck } from "lucide-react";
 import ModuleIcon from "../../components/ui/ModuleIcon";
+import RuntimeDashboard from '../operations/RuntimeDashboard';
 
-export default function HomeOverview({ config, preview, onOpen }) {
+export default function HomeOverview({ config, preview, onOpen, role }) {
   const facts = preview
     ? config.stats
     : [
@@ -15,7 +16,8 @@ export default function HomeOverview({ config, preview, onOpen }) {
       ];
   return (
     <>
-      <div
+      {!preview && <RuntimeDashboard role={role} />}
+      {preview && <div
         className="stats-grid"
         aria-label={preview ? "Số liệu minh họa" : "Thông tin không gian"}
       >
@@ -38,7 +40,7 @@ export default function HomeOverview({ config, preview, onOpen }) {
             <span>{label}</span>
           </div>
         ))}
-      </div>
+      </div>}
       <div className="workspace-grid" id="workspace">
         <SectionLayout
           title={config.section}

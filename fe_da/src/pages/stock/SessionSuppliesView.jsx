@@ -173,6 +173,7 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
 
   async function reconcile(e) {
     e.preventDefault();
+    if (closing.problem || (closing.reportedUsed != null && Number(closing.returned) + closing.reportedUsed !== closing.max)) return;
     const ok = await apply(
       () => stockClient.reconcileSupply(sessionId, closing.productId, Number(closing.returned)),
       `Đã xác nhận thu hồi ${closing.name}: nhận lại ${number(closing.returned)}.`,
@@ -358,16 +359,18 @@ function SupplyDetails({ sessionId, onSummary, readOnly }) {
           </label>
           <p className="stock-hint">
             Đã dùng = {number(closing.max - (Number(closing.returned) || 0))}.
-            {closing.reportedUsed != null && closing.max - (Number(closing.returned) || 0) - closing.reportedUsed > 0
-              ? ` Thiếu ${number(closing.max - (Number(closing.returned) || 0) - closing.reportedUsed)} so với số trọng tài báo dùng: chênh lệch được ghi lại để kiểm kê.`
+            {closing.reportedUsed != null && Number(closing.returned) + closing.reportedUsed !== closing.max
+              ? ' Chênh lệch so với báo cáo trọng tài: chờ xử lý, chưa nhập kho.'
               : ""}{" "}
             Sau khi chốt không cấp thêm vật tư này cho buổi.
           </p>
+          <label><span><input type="checkbox" checked={!!closing.problem} onChange={e => setClosing({ ...closing, problem: e.target.checked })} /> Có vật tư thiếu hoặc hỏng</span></label>
+          {closing.problem && <p role="status">Chờ thống nhất quy trình với Manager. Chưa chốt cấp phát hoặc điều chỉnh tồn kho. Ghi nhận sự việc tại mục Ngoại lệ vận hành.</p>}
           <div className="stock-form-actions">
             <button type="button" className="button button-secondary" onClick={() => setClosing(null)}>
               Hủy
             </button>
-            <button className="button button-primary" disabled={busy || Number(closing.returned) > closing.max}>
+            <button className="button button-primary" disabled={busy || closing.problem || Number(closing.returned) > closing.max || (closing.reportedUsed != null && Number(closing.returned) + closing.reportedUsed !== closing.max)}>
               Xác nhận chốt
             </button>
           </div>
