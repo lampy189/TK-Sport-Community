@@ -10,7 +10,7 @@ public sealed record SessionManagementOptions(
     IReadOnlyList<SessionCourtOption> Courts,
     IReadOnlyList<TimeSlotSummary> TimeSlots,
     IReadOnlyList<SessionPersonnelOption> Personnel);
-public sealed record SessionAssignee(long Id, string Name);
+public sealed record SessionAssignee(long Id, string Name, bool Accepted = false);
 public sealed record ManagedSession(
     long Id,
     long SportId,
