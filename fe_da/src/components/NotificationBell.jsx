@@ -1,3 +1,4 @@
+import PaginatedList from './ui/PaginatedList';
 import { createPortal } from 'react-dom';
 import TicketSupport from '../pages/payment/TicketSupport';
 import { useEffect, useRef, useState } from 'react';
@@ -105,7 +106,7 @@ export default function NotificationBell({ onTickets, onInvitations, onCommunity
       {error && <p role="alert">{error}</p>}
       <div className="notification-heading" aria-label="Lọc thông báo"><button aria-pressed={!messageOnly} onClick={()=>setMessageOnly(false)}>Tất cả</button><button aria-pressed={messageOnly} onClick={()=>setMessageOnly(true)}>Thông báo hỗ trợ</button></div>
       {!items.filter(item=>!messageOnly||isMessage(item)).length && <p>{messageOnly?'Chưa có thông báo hỗ trợ vé.':'Chưa có thông báo.'}</p>}
-      <div className="notification-items">{items.filter(item=>!messageOnly||isMessage(item)).map(item => <button disabled={busy} className={`notification-item ${item.status === 'unread' ? 'is-unread' : ''}`} key={item.id} onClick={() => mark(item.id)}><span>{item.title}</span><small>{item.status === 'unread' ? 'Chưa đọc' : 'Đã đọc'}{isMessage(item)?' · Xem trao đổi vé':(onTickets || onNotifications) ? ' · ' + actionLabel(item) : ''}</small></button>)}</div>
+      <div className="notification-items">{<PaginatedList items={items.filter(item=>!messageOnly||isMessage(item))}>{item => <button disabled={busy} className={`notification-item ${item.status === 'unread' ? 'is-unread' : ''}`} key={item.id} onClick={() => mark(item.id)}><span>{item.title}</span><small>{item.status === 'unread' ? 'Chưa đọc' : 'Đã đọc'}{isMessage(item)?' · Xem trao đổi vé':(onTickets || onNotifications) ? ' · ' + actionLabel(item) : ''}</small></button>}</PaginatedList>}</div>
       <a className="notification-inbox-link" href="?view=notifications">Mở màn hình Thông báo →</a>
       <NotificationDelivery />
       {items.length === 50 && <small>Hiển thị 50 thông báo gần nhất.</small>}

@@ -1,3 +1,4 @@
+import PaginatedList from './ui/PaginatedList';
 import { useState, useEffect, useMemo } from "react";
 import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, LayoutGrid, MapPin, Users, Sparkles, ArrowRight, SlidersHorizontal, Ticket, Zap } from "lucide-react";
 import StatePanel from "./ui/StatePanel";
@@ -604,7 +605,7 @@ export function BrowseSessionsView({
       }}>
               Xóa bộ lọc
             </button>} /> : <div className="session-grid">
-          {openListSessions.map(s => {
+          {<PaginatedList items={openListSessions}>{s => {
           const isEligible = s.isEligibleSuggestion;
           const availableSlots = s.availableSlots ?? s.capacity - s.occupiedPlaces;
           const isFull = availableSlots <= 0;
@@ -667,7 +668,7 @@ export function BrowseSessionsView({
                   </button>
                 </div>
               </article>;
-        })}
+        }}</PaginatedList>}
         </div>}
       </>}
       <aside className="tickets-callout">

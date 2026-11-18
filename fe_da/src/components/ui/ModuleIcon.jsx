@@ -26,6 +26,8 @@ const icons = {
   "Bộ môn": Activity,
   "Hướng dẫn tham gia": CircleHelp,
   "Phân công": CalendarDays,
+  "Ca của tôi": CalendarDays,
+  "Chia ca": Users,
   "Điểm danh": ClipboardCheck,
   "Đánh giá kỹ năng": ChartNoAxesCombined,
   "Vật tư buổi chơi": Package,

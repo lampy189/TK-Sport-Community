@@ -9,7 +9,7 @@ using be_da.Infrastructure.Persistence;
 
 namespace be_da.Infrastructure.Persistence.Repositories;
 
-public sealed class SqlSessionManagementRepository(IConfiguration configuration, IDataAccessContext? dataScope = null) : ISessionManagementRepository
+public sealed partial class SqlSessionManagementRepository(IConfiguration configuration, IDataAccessContext? dataScope = null) : ISessionManagementRepository, IShiftRepository
 {
     private readonly string connectionString = configuration.GetConnectionString("Sep490")
         ?? throw new InvalidOperationException("Configure ConnectionStrings:Sep490.");
@@ -143,6 +143,8 @@ public sealed class SqlSessionManagementRepository(IConfiguration configuration,
                 AddSessionParameters(update, venueId, request);
                 update.Parameters.Add("@id", SqlDbType.BigInt).Value = sessionId.Value;
                 await update.ExecuteNonQueryAsync(ct);
+                if (existing.Value.CourtId != request.CourtId || existing.Value.SlotId != request.TimeSlotId || existing.Value.Date != request.SessionDate)
+                    await AuditAsync(connection, transaction, actorId, sessionId.Value, "shift_schedule_changed", null, request, ct);
                 await AuditAsync(connection, transaction, actorId, sessionId.Value, "session_updated", existing.Value, request, ct);
                 await transaction.CommitAsync(ct);
                 return OperationResult.Success((await FindAsync(connection, sessionId.Value, ct)));
@@ -178,8 +180,13 @@ public sealed class SqlSessionManagementRepository(IConfiguration configuration,
             if (slot is null) return await RollbackAsync(transaction, NotFound("Không tìm thấy buổi chơi tại cơ sở này."), ct);
             if (!IsFuture(slot.Value.Date, slot.Value.Start))
                 return await RollbackAsync(transaction, Conflict("SESSION_STARTED", "Không thể thay đổi nhân sự sau khi buổi bắt đầu."), ct);
+            var current = await ReadExistingAsync(connection, transaction, venueId, sessionId, ct);
+            if (current?.Status.ToLowerInvariant() is "cancelled" or "canceled" or "completed" or "ended")
+                return await RollbackAsync(transaction, Conflict("SESSION_NOT_EDITABLE", "Buổi đã hủy hoặc kết thúc."), ct);
             var referees = request.RefereeIds ?? [];
             var staff = request.StaffIds ?? [];
+            if (current?.Status.ToLowerInvariant() is "open" or "published" && referees.Length == 0)
+                return await RollbackAsync(transaction, Conflict("REFEREE_REQUIRED", "Buổi đang mở phải có ít nhất một trọng tài."), ct);
             var hasVenueColumn = await HasUserVenueColumnAsync(connection, ct, transaction);
             if (!await ValidatePersonnelAsync(connection, transaction, venueId, "Referee", referees, hasVenueColumn, ct)
                 || !await ValidatePersonnelAsync(connection, transaction, venueId, "Staff", staff, hasVenueColumn, ct))
@@ -189,10 +196,13 @@ public sealed class SqlSessionManagementRepository(IConfiguration configuration,
                 return await RollbackAsync(transaction, Conflict("PERSONNEL_CONFLICT", "Nhân sự đã được phân công vào buổi khác trùng giờ."), ct);
 
             var before = new { referees = await AssignedIdsAsync(connection, transaction, "session_referees", "referee_id", sessionId, ct), staff = await AssignedIdsAsync(connection, transaction, "session_staff", "staff_id", sessionId, ct) };
-            await ExecuteAsync(connection, transaction, "DELETE dbo.session_referees WHERE session_id=@id; DELETE dbo.session_staff WHERE session_id=@id;", ct, ("@id", sessionId));
-            foreach (var id in referees)
+            foreach (var id in before.referees.Except(referees))
+                await ExecuteAsync(connection, transaction, "DELETE dbo.session_referees WHERE session_id=@session AND referee_id=@user;", ct, ("@session", sessionId), ("@user", id));
+            foreach (var id in before.staff.Except(staff))
+                await ExecuteAsync(connection, transaction, "DELETE dbo.session_staff WHERE session_id=@session AND staff_id=@user;", ct, ("@session", sessionId), ("@user", id));
+            foreach (var id in referees.Except(before.referees))
                 await ExecuteAsync(connection, transaction, "INSERT dbo.session_referees(session_id,referee_id,assigned_by) VALUES(@session,@user,@actor);", ct, ("@session", sessionId), ("@user", id), ("@actor", actorId));
-            foreach (var id in staff)
+            foreach (var id in staff.Except(before.staff))
                 await ExecuteAsync(connection, transaction, "INSERT dbo.session_staff(session_id,staff_id) VALUES(@session,@user);", ct, ("@session", sessionId), ("@user", id));
             await AuditAsync(connection, transaction, actorId, sessionId, "session_assignments_updated", before, new { referees, staff }, ct);
             await transaction.CommitAsync(ct);
@@ -253,7 +263,7 @@ public sealed class SqlSessionManagementRepository(IConfiguration configuration,
     {
         var result = new Dictionary<long, IReadOnlyList<SessionAssignee>>();
         var idList = string.Join(",", ids);
-        var sql = $"SELECT a.session_id,u.id,u.full_name FROM dbo.{table} a JOIN dbo.users u ON u.id=a.{userColumn} WHERE a.session_id IN ({idList}) ORDER BY u.full_name,u.id;";
+        var sql = $"SELECT a.session_id,u.id,u.full_name,CASE WHEN EXISTS({AcceptanceQuery(table, userColumn)}) THEN 1 ELSE 0 END FROM dbo.{table} a JOIN dbo.users u ON u.id=a.{userColumn} JOIN dbo.sessions s ON s.id=a.session_id WHERE a.session_id IN ({idList}) ORDER BY u.full_name,u.id;";
         var grouped = new Dictionary<long, List<SessionAssignee>>();
         await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(ct);
@@ -261,7 +271,7 @@ public sealed class SqlSessionManagementRepository(IConfiguration configuration,
         {
             var sessionId = reader.GetInt64(0);
             if (!grouped.TryGetValue(sessionId, out var people)) grouped[sessionId] = people = [];
-            people.Add(new(reader.GetInt64(1), reader.GetString(2)));
+            people.Add(new(reader.GetInt64(1), reader.GetString(2), reader.GetInt32(3) == 1));
         }
         foreach (var item in grouped) result[item.Key] = item.Value;
         return result;

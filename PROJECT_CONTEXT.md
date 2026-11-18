@@ -1,5 +1,9 @@
 # TK Sport Community — Project Context
 
+## Current Acer database and acceptance checks (16 Nov 2026)
+
+For UI-01/HIS-01/QA-01, the user explicitly confirmed localhost / Sep490 in D:\code_da\TK-Sport-Community as the current target, and requested reporting failures. Read-only checks confirm upgrade 019 columns/functions are absent; personal ticket/goods history queries fail on price_version_id / requires_price_approval. No schema change was applied or approved in this task. Use docs/ui-his-qa-20261116.md for implemented UI/history changes, test evidence and outstanding acceptance gates. Do not treat the historical shogu checkout/database name below as the current Acer environment.
+
 ## Approved goods reservation rollout (16 Nov 2026)
 
 The user explicitly approved migration 018 after test validation. COPY_ONLY backup verified, restored to TKSC_PAY018_Test_20261116, concurrent last-item/expiry/exactly-once sale test passed, migration rerun passed, then Sep490 upgraded successfully. Four Committed rows protect two previously paid unposted orders; trigger enabled, no stock violations. GoodsReservations:ExpiryWorkerEnabled is true in Development user-secrets and takes effect on next backend start. See docs/pay-04-07-sales-stock-recovery.md for backup and rollout evidence. Do not restore the old receipt-time stock deduction: delivery consumes the committed reservation once.

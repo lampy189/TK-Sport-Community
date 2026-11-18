@@ -41,6 +41,23 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
         var held = await db.Tickets.Where(t => ids.Contains(t.Id) && t.Player.UserId == userId).Select(t => t.Id).ToListAsync();
         var changes = await db.TicketChanges.AsNoTracking().Where(c => ids.Contains(c.TicketId) && c.Status == "requested").ToListAsync();
         var issues = await db.AuditLogs.AsNoTracking().Where(a => a.EntityType == "Session" && a.Action == "venue_condition_issue" && a.EntityId != null && sessions.Contains(a.EntityId.Value)).OrderByDescending(a => a.Id).ToListAsync();
+        // Whole-order amounts and payment references belong to the payer only.
+        var orderIds = tickets.Select(t => t.OrderId).Distinct().ToList();
+        var payments = await db.Payments.AsNoTracking().Where(p => p.OrderId != null && owned.Contains(p.OrderId.Value) && orderIds.Contains(p.OrderId.Value))
+            .Select(p => new { p.OrderId, Summary = new PaymentSummary(p.Id, p.ReferenceCode, p.Status, p.AmountVnd) }).ToListAsync();
+        var visiblePayments = await db.Payments.AsNoTracking().Where(p => p.OrderId != null && orderIds.Contains(p.OrderId.Value)).Select(p=>new { p.Id, p.OrderId }).ToListAsync();
+        var paymentIds = visiblePayments.Select(p=>p.Id).ToList();
+        var refunds = await db.Refunds.AsNoTracking().Where(r => ids.Contains(r.TicketId)).Select(r => new { r.Id, r.TicketId, r.AmountVnd, r.Status, Recipient = r.Recipient.FullName }).ToListAsync();
+        var refundIds = refunds.Select(r => r.Id).ToList();
+        var events = await db.AuditLogs.AsNoTracking().Where(a => a.EntityId != null &&
+            ((a.EntityType == "Ticket" && ids.Contains(a.EntityId.Value)) || (a.EntityType == "Refund" && refundIds.Contains(a.EntityId.Value)) || (a.EntityType == "Payment" && paymentIds.Contains(a.EntityId.Value))))
+            .OrderBy(a => a.Id).Select(a => new { a.Id, a.EntityType, a.EntityId, a.Action }).ToListAsync();
+        // Never expose raw audit payloads containing payout accounts or private notes.
+        var labels = new Dictionary<string, string> {
+            ["ticket_cancelled"] = "Đã hủy vé", ["ticket_checked_in"] = "Đã check-in", ["payos_payment_confirmed"] = "Đã xác nhận thanh toán đơn", ["refund_decision"] = "Đã duyệt khoản hoàn",
+            ["refund_rejected"] = "Đã từ chối khoản hoàn", ["refund_payout"] = "Đã ghi chứng từ tiền ra, chờ xác minh",
+            ["refund_completed"] = "Đã xác minh hoàn tiền", ["refund_failed"] = "Hoàn tiền thất bại"
+        };
         var lateEnds = new Dictionary<long, DateTimeOffset>();
         if (tickets.Any(t => TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode)))
         {
@@ -63,7 +80,9 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
             }
         }
 
-        return tickets.Select(t => t with { CanManage = owned.Contains(t.OrderId), CanResolveIssue = owned.Contains(t.OrderId) || held.Contains(t.Id), PendingChangeId = changes.FirstOrDefault(c => c.TicketId == t.Id)?.Id, VenueIssue = issues.FirstOrDefault(a => a.EntityId == t.SessionId)?.NewValue?.Split(" | ", 2).Last(), TicketKind = TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode) ? "remaining" : "social", ValidUntil = lateEnds.TryGetValue(t.Id, out var until) ? until : null, Valid = t.Valid && (!TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode) || (lateEnds.TryGetValue(t.Id, out var end) && end > DateTimeOffset.UtcNow)) }).ToList();
+        return tickets.Select(t => t with { Refunds = refunds.Where(r=>r.TicketId==t.Id).Select(r=>new PersonalRefundSummary(r.Id,r.AmountVnd,r.Status,r.Recipient,events.Any(a=>a.EntityType=="Refund" && a.EntityId==r.Id && a.Action=="refund_payout"))).ToList(), Payments = payments.Where(p => p.OrderId == t.OrderId).Select(p => p.Summary).ToList(),
+            History = events.Where(a => (a.EntityType == "Ticket" ? a.EntityId == t.Id : a.EntityType == "Payment" ? visiblePayments.Any(p=>p.Id==a.EntityId && p.OrderId==t.OrderId) : refunds.Any(r => r.Id == a.EntityId && r.TicketId == t.Id)) && labels.ContainsKey(a.Action ?? ""))
+                .Select(a => new TicketHistoryEntry(a.Id, labels[a.Action!])).ToList(), CanManage = owned.Contains(t.OrderId), CanResolveIssue = owned.Contains(t.OrderId) || held.Contains(t.Id), PendingChangeId = changes.FirstOrDefault(c => c.TicketId == t.Id)?.Id, VenueIssue = issues.FirstOrDefault(a => a.EntityId == t.SessionId)?.NewValue?.Split(" | ", 2).Last(), TicketKind = TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode) ? "remaining" : "social", ValidUntil = lateEnds.TryGetValue(t.Id, out var until) ? until : null, Valid = t.Valid && (!TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode) || (lateEnds.TryGetValue(t.Id, out var end) && end > DateTimeOffset.UtcNow)) }).ToList();
     }
 
     public async Task<IReadOnlyList<ReviewSummary>> GetReviewsAsync()

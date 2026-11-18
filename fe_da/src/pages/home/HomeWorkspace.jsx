@@ -22,6 +22,7 @@ import RefereeSuppliesView from "../stock/RefereeSuppliesView";
 import MyGoodsOrders from "../stock/MyGoodsOrders";
 import StorePage from "../store/StorePage";
 import SessionManagementPage from "../sessions/SessionManagementPage";
+import ShiftsPage from "../sessions/ShiftsPage";
 import { Construction, ArrowLeft } from "lucide-react";
 import { LateEntryManagement } from '../late-entry/LateEntrySales';
 
@@ -39,6 +40,7 @@ export default function HomeWorkspace({
   onBrowseSport,
 }) {
   const [createdGoodsOrder,setCreatedGoodsOrder]=useState(null);
+  if (!preview && ((role === 'manager' && ['Chia ca', 'Phân công nhân sự'].includes(active)) || (['referee', 'staff'].includes(role) && ['Ca của tôi', 'Phân công'].includes(active)))) return <ShiftsPage role={role} user={user} />;
   if (preview && import.meta.env.DEV && import.meta.env.VITE_PAYMENT_MODE === 'demo'
     && role === 'player' && ['Thanh toán', 'Vé của tôi'].includes(active))
     return <PaymentPage key={active} initialView={active === 'Vé của tôi' ? 'tickets' : 'payment'} />;

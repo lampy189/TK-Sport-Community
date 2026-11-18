@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from 'react';
 import { workflowRequest } from '../workflowClient';
 import './operations.css';
@@ -19,7 +20,7 @@ export default function OperationsOverview({ role }) {
     {!data ? !error && <p role="status">Đang tải tổng quan…</p> : <>
       {role !== 'system-admin' && [['sessions', 'Buổi chơi'], ['tickets', 'Vé']].map(([key, title]) => <div key={key}><h2>{title}</h2><div className="ops-grid">{data[key].map(row => <article className="ops-card" key={row.status}><strong className="ops-stat">{row.count}</strong><p>{labels[row.status] || row.status}</p></article>)}</div>{!data[key].length && <p>Chưa có dữ liệu hôm nay trong phạm vi của bạn.</p>}</div>)}
       <form className="ops-form" onSubmit={submit}><label>Phản hồi chạy thử<textarea required maxLength={2000} value={content} onChange={e => setContent(e.target.value)} /></label><button type="submit" disabled={busy}>{busy ? 'Đang gửi…' : 'Gửi phản hồi'}</button></form>
-      <h2>Phản hồi gần đây</h2>{!data.feedback.length && <p>Chưa có phản hồi.</p>}{data.feedback.map(item => { let detail = {}; try { detail = JSON.parse(item.detail); } catch { /* retain readable fallback */ } return <article className="ops-card" key={item.id}><strong>{item.actor}</strong><p>{detail.Content || item.detail}</p><small>{detail.at && new Date(detail.at).toLocaleString('vi-VN')}</small></article>; })}
+      <h2>Phản hồi gần đây</h2>{!data.feedback.length && <p>Chưa có phản hồi.</p>}{<PaginatedList items={data.feedback}>{item => { let detail = {}; try { detail = JSON.parse(item.detail); } catch { /* retain readable fallback */ } return <article className="ops-card" key={item.id}><strong>{item.actor}</strong><p>{detail.Content || item.detail}</p><small>{detail.at && new Date(detail.at).toLocaleString('vi-VN')}</small></article>; }}</PaginatedList>}
     </>}
   </section>;
 }

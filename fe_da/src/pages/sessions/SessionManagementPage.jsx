@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarPlus, CircleCheck, RefreshCw, Save, UserRound } from 'lucide-react';
 import SectionLayout from '../../components/layout/SectionLayout';
@@ -106,13 +107,13 @@ export default function SessionManagementPage() {
       <div className="manager-session-layout">
         <section className="manager-session-list" aria-label="Lịch buổi chơi">
           <h3>Lịch tại cơ sở</h3>
-          {loading ? <p>Đang tải lịch…</p> : sessions.length === 0 ? <p>Chưa có buổi chơi.</p> : sessions.map(session => (
+          {loading ? <p>Đang tải lịch…</p> : sessions.length === 0 ? <p>Chưa có buổi chơi.</p> : <PaginatedList items={sessions}>{session => (
             <button type="button" key={session.id} className={`manager-session-row ${selectedId === session.id ? 'is-selected' : ''}`} onClick={() => choose(session)} aria-pressed={selectedId === session.id}>
               <span className="manager-session-row-top"><strong>{session.sportName} · {session.courtName}</strong><span>{statusNames[session.status] || session.status}</span></span>
               <span>{session.sessionDate} · {session.startTime.slice(0, 5)}–{session.endTime.slice(0, 5)}</span>
               <small>{session.occupiedPlaces}/{session.capacity} chỗ · {money(session.priceVnd)} · {session.referees.length} Referee · {session.staff.length} Staff</small>
             </button>
-          ))}
+          )}</PaginatedList>}
         </section>
         <form className="manager-session-form" onSubmit={save}>
           <div className="manager-session-form-heading"><div><h3>{selectedId ? `Buổi #${selectedId}` : 'Thông tin buổi'}</h3><p>{selected ? statusNames[selected.status] || selected.status : 'Buổi mới được lưu ở trạng thái nháp.'}</p></div></div>

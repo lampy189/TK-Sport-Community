@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from 'react';
 import { request } from '../../api';
 import './revenue-demo.css';
@@ -58,7 +59,7 @@ export default function RevenuePage() {
     {data && <>
       <section className="revenue-demo-metrics" aria-label="Tổng số liệu">{[['Thu buổi chơi / giải', data.totals.social], ['Thu bán hàng', data.totals.goods], ['Đã hoàn tiền', data.totals.refunds], ['Thu ròng', data.totals.net]].map(([name, amount]) => <article key={name}><span>{name}</span><strong>{money(amount)}</strong></article>)}</section>
       {data.unpostedPayments > 0 && <p role="status" className="revenue-demo-banner">{data.unpostedPayments} khoản đã thu cần đối soát, chưa tính vào báo cáo (mọi ngày trong phạm vi cơ sở đang xem).</p>}
-      <div className="revenue-demo-panel"><h2>Doanh số từng ngày</h2><div className="revenue-demo-table"><table><caption>{venue ? scope.centers.find(c => String(c.id) === venue)?.name : 'Tổng hợp toàn bộ chuỗi'} · {label(data.from)} — {label(data.to)}</caption><thead><tr><th>Ngày</th><th>Buổi chơi / giải</th><th>Bán hàng</th><th>Đã hoàn</th><th>Thu ròng</th></tr></thead><tbody>{data.days.map(day => <tr key={day.date}><th scope="row">{label(day.date)}</th><td>{money(day.social)}</td><td>{money(day.goods)}</td><td>{money(day.refunds)}</td><td><strong>{money(day.net)}</strong></td></tr>)}</tbody><tfoot><tr><th>Tổng</th><td>{money(data.totals.social)}</td><td>{money(data.totals.goods)}</td><td>{money(data.totals.refunds)}</td><td>{money(data.totals.net)}</td></tr></tfoot></table></div></div>
+      <div className="revenue-demo-panel"><h2>Doanh số từng ngày</h2><div className="revenue-demo-table"><table><caption>{venue ? scope.centers.find(c => String(c.id) === venue)?.name : 'Tổng hợp toàn bộ chuỗi'} · {label(data.from)} — {label(data.to)}</caption><thead><tr><th>Ngày</th><th>Buổi chơi / giải</th><th>Bán hàng</th><th>Đã hoàn</th><th>Thu ròng</th></tr></thead><tbody>{<PaginatedList items={data.days} columns={5}>{day => <tr key={day.date}><th scope="row">{label(day.date)}</th><td>{money(day.social)}</td><td>{money(day.goods)}</td><td>{money(day.refunds)}</td><td><strong>{money(day.net)}</strong></td></tr>}</PaginatedList>}</tbody><tfoot><tr><th>Tổng</th><td>{money(data.totals.social)}</td><td>{money(data.totals.goods)}</td><td>{money(data.totals.refunds)}</td><td>{money(data.totals.net)}</td></tr></tfoot></table></div></div>
     </>}
   </section>;
 }

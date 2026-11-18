@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from "react";
 import SectionLayout from "../../components/layout/SectionLayout";
 import { workflowRequest } from "../workflowClient";
@@ -38,6 +39,14 @@ const pilotDescriptions = {
 
 function previewBandFromScore(score) {
   return score == null ? null : 'B' + Math.min(5, Math.floor(score / 20) + 1);
+}
+
+// Structured observations are authoritative; legacy evidence remains the fallback.
+function observation(code, mark) {
+  const parsed = parseSubSkillEvidence(code, mark.evidence, mark.score);
+  if (mark.score == null || mark.sliderScores?.length !== parsed.subSkillList.length) return parsed;
+  const subSkillList = parsed.subSkillList.map((sk,i)=>({...sk,value10:mark.sliderScores[i]}));
+  return {...parsed,hasRecordedSliders:true,subSkillList,subSkillMap:Object.fromEntries(subSkillList.map(sk=>[sk.code,sk.value10]))};
 }
 
 export default function AssessmentPage() {
@@ -181,7 +190,7 @@ export default function AssessmentPage() {
       ...current,
       marks: current.marks.map((m) => {
         if (m.dimensionId !== dimensionId) return m;
-        const parsed = parseSubSkillEvidence(criterionCode, m.evidence, m.score);
+        const parsed = observation(criterionCode, m);
         const nextMap = {
           ...parsed.subSkillMap,
           [subSkillCode]: clamped,
@@ -213,7 +222,7 @@ export default function AssessmentPage() {
       ...current,
       marks: current.marks.map((m) => {
         if (m.dimensionId !== dimensionId) return m;
-        const parsed = parseSubSkillEvidence(criterionCode, m.evidence, m.score);
+        const parsed = observation(criterionCode, m);
         if (!parsed.hasRecordedSliders && m.score == null) {
           return { ...m, evidence: newNote };
         }
@@ -235,7 +244,7 @@ export default function AssessmentPage() {
     if (m.score == null) return null;
     if (m.sliderScores?.length === 4) return m.sliderScores;
     // Recalculate old drafts only when the referee saves; published results remain historical.
-    const parsed = parseSubSkillEvidence(c.code, m.evidence, m.score);
+    const parsed = observation(c.code, m);
     return !published && parsed.hasRecordedSliders && parsed.subSkillList.length === 4
       ? parsed.subSkillList.map(sk => sk.value10) : null;
   }
@@ -313,7 +322,7 @@ export default function AssessmentPage() {
           </p>
         )}
         <div className="workflow-actions">
-          {players.map((p) => (
+          {<PaginatedList items={players}>{(p) => (
             <button
               key={p.playerId}
               aria-pressed={form?.playerId === p.playerId}
@@ -325,14 +334,14 @@ export default function AssessmentPage() {
               {p.assessmentId ? " · Có phiếu" : " · Chưa chấm"}
               {!p.profileId && " · Thiếu hồ sơ môn"}
             </button>
-          ))}
+          )}</PaginatedList>}
         </div>
 
         {players.length > 0 && (
           <section className="assessment-protocol">
             <h3>Hồ sơ người chơi trong sân</h3>
             <div className="workflow-actions">
-              {players.map((p) => (
+              {<PaginatedList items={players}>{(p) => (
                 <button
                   key={p.playerId}
                   className="button button-secondary"
@@ -350,7 +359,7 @@ export default function AssessmentPage() {
                 >
                   Xem hồ sơ · {p.name}
                 </button>
-              ))}
+              )}</PaginatedList>}
             </div>
             {playerContext && (
               <div className="assessment-player-context">
@@ -376,12 +385,12 @@ export default function AssessmentPage() {
                   </summary>
                   {playerContext.participation.length ? (
                     <ul>
-                      {playerContext.participation.map((p) => (
+                      {<PaginatedList items={playerContext.participation} listItem>{(p) => (
                         <li key={p.sessionId}>
                           {p.sessionDate} · {p.startTime} · {p.court} · Đã điểm
                           danh
                         </li>
-                      ))}
+                      )}</PaginatedList>}
                     </ul>
                   ) : (
                     <p>Chưa có buổi tham gia trước đó.</p>
@@ -397,7 +406,7 @@ export default function AssessmentPage() {
                   </summary>
                   {playerContext.ratings.length ? (
                     <ul>
-                      {playerContext.ratings.map((r) => (
+                      {<PaginatedList items={playerContext.ratings} listItem>{(r) => (
                         <li key={r.id}>
                           {r.sessionDate} · {r.oldScore ?? "—"} /{" "}
                           {r.oldBand || "Chưa xếp hạng"} →{" "}
@@ -406,7 +415,7 @@ export default function AssessmentPage() {
                           </strong>{" "}
                           · {r.rubric}
                         </li>
-                      ))}
+                      )}</PaginatedList>}
                     </ul>
                   ) : (
                     <p>Chưa có kết quả chấm chính thức.</p>
@@ -551,11 +560,7 @@ export default function AssessmentPage() {
                         desc: pilotDescriptions[c.code][i],
                       })),
                     });
-                  const parsed = parseSubSkillEvidence(
-                    c.code,
-                    m.evidence,
-                    m.score
-                  );
+                  const parsed = observation(c.code, m);
                   const subSkills = parsed.subSkillList || [];
                   const isObserved = m.score != null;
 

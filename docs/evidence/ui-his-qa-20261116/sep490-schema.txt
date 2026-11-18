@@ -1,0 +1,9 @@
+database_name ticket_price_version order_item_price_version requires_price_approval effective_price_function
+------------- -------------------- ------------------------ ----------------------- ------------------------
+Sep490 NULL NULL NULL NULL
+name is_enabled
+---- ----------
+SportCenterIsolation 0
+venue_count
+-----------
+2

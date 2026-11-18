@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from 'react';
 import { workflowRequest } from '../workflowClient';
 import './operations.css';
@@ -40,7 +41,7 @@ export default function AccessPage({ role, user }) {
         <label>Lý do<textarea required maxLength={2000} value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} /></label><button type="submit" disabled={busy}>{busy ? 'Đang lưu…' : 'Gửi đề xuất'}</button>
       </form>
       <h2>Yêu cầu</h2>{!data.requests.length && <p>Chưa có yêu cầu.</p>}
-      <div className="ops-grid">{data.requests.map(item => {
+      <div className="ops-grid">{<PaginatedList items={data.requests}>{item => {
         const payload = parse(item.payload); const request = payload.Request || {};
         const canDecide = ['owner', 'manager'].includes(role) && ['pending', 'approved'].includes(item.status) && item.requestedBy !== id && item.targetUserId !== id;
         return <article className="ops-card" key={item.id}><h2>#{item.id} · {item.target}</h2><p>{request.Role} · {({ grant: 'Cấp quyền', revoke: 'Thu hồi', handover: 'Bàn giao' })[request.Action]}</p><strong>{statuses[item.status] || item.status}</strong><p>Người đề xuất: {item.requester}</p><p>{request.Reason}</p><p>{payload.At && new Date(payload.At).toLocaleString('vi-VN')}</p>
@@ -48,7 +49,7 @@ export default function AccessPage({ role, user }) {
           {role === 'system-admin' && ['approved', 'verified'].includes(item.status) && <button disabled={busy} onClick={() => run(`/${item.id}/execute`)}>{item.status === 'verified' ? 'Hoàn tất và thu hồi truy cập cũ' : 'Triển khai quyền đã duyệt'}</button>}
           {role === 'system-admin' && item.status === 'provisioned' && request.TargetUserId === id && <><p>Xác nhận sau khi đã kiểm tra quyền cấu hình và hỗ trợ bằng tài khoản của bạn.</p><button disabled={busy} onClick={() => run(`/${item.id}/verify`)}>Tôi đã kiểm tra quyền truy cập</button></>}
         </article>;
-      })}</div>
+      }}</PaginatedList>}</div>
     </>}
   </section>;
 }

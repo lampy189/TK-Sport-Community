@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from "react";
 import { CalendarDays, PackagePlus } from "lucide-react";
 import SectionLayout from "../../components/layout/SectionLayout";
@@ -62,7 +63,7 @@ export default function RefereeSuppliesView() {
       ) : (
         <div className="supply-layout">
           <ul className="supply-sessions" aria-label="Buổi được phân công">
-            {sessions.items.map((s) => (
+            {<PaginatedList items={sessions.items} listItem>{(s) => (
               <li key={s.id}>
                 <button
                   className={s.id === sessionId ? "is-active" : ""}
@@ -75,7 +76,7 @@ export default function RefereeSuppliesView() {
                   </span>
                 </button>
               </li>
-            ))}
+            )}</PaginatedList>}
           </ul>
           {sessionId && <RefereeSupplyDetails key={sessionId} sessionId={sessionId} />}
         </div>
@@ -230,7 +231,7 @@ function RefereeSupplyDetails({ sessionId }) {
               </tr>
             </thead>
             <tbody>
-              {allocations.map((a) => {
+              {<PaginatedList items={allocations} columns={4}>{(a) => {
                 const d = draft(a);
                 const over = (Number(d.used) || 0) + (Number(d.returned) || 0) > a.outstanding;
                 return (
@@ -286,7 +287,7 @@ function RefereeSupplyDetails({ sessionId }) {
                     </td>
                   </tr>
                 );
-              })}
+              }}</PaginatedList>}
             </tbody>
           </table>
         </div>

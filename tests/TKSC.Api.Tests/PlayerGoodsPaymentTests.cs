@@ -258,6 +258,7 @@ public sealed class PlayerGoodsPaymentTests
     }
     private sealed class Repo : IGoodsPaymentRepository
     {
+        public Task<IReadOnlyList<TicketHistoryEntry>> HistoryAsync(long id,CancellationToken ct) => Task.FromResult<IReadOnlyList<TicketHistoryEntry>>([]);
         public Task<Payment?> RecoveryPaymentAsync(long id,CancellationToken ct) => Task.FromResult(Order.Payments.SingleOrDefault(p=>p.Id==id));
         public Task<BankTransaction?> RecoveryBankAsync(long id,long bank,CancellationToken ct) => Task.FromResult(Events.SingleOrDefault(b=>b.MatchedPaymentId==id && b.Id==bank));
         public Task ReserveAsync(Order order, DateTimeOffset expiry, bool reacquire, CancellationToken ct) => Task.CompletedTask;

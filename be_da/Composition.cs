@@ -25,6 +25,8 @@ public static class Composition
         services.AddScoped<ISessionService, be_da.Application.Services.SessionService>();
         services.AddScoped<ISessionManagementService, be_da.Application.Services.SessionManagementService>();
         services.AddScoped<ISessionManagementRepository, be_da.Infrastructure.Persistence.Repositories.SqlSessionManagementRepository>();
+        services.AddScoped<IShiftRepository, be_da.Infrastructure.Persistence.Repositories.SqlSessionManagementRepository>();
+        services.AddScoped<IShiftService, be_da.Application.Services.ShiftService>();
         services.AddScoped<ISessionSupplyService, be_da.Application.Services.SessionSupplyService>();
         services.AddScoped<ISkillProfileService, be_da.Application.Services.SkillProfileService>();
         services.AddScoped<IStockService, be_da.Application.Services.StockService>();

@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useMemo, useState } from 'react';
 import { useRef } from 'react';
 import { ScanLine } from 'lucide-react';
@@ -151,7 +152,7 @@ export default function StorePage({ role = 'staff', user, onCreated }) {
               <p>Hiện chưa có mặt hàng nào đang được mở bán trong kho.</p>
             </div>
           ) : (
-            products.map((product) => (
+            <PaginatedList items={products}>{(product) => (
               <div className="store-card" key={product.productId}>
                 <div className="store-card-header">
                   <div>
@@ -182,7 +183,7 @@ export default function StorePage({ role = 'staff', user, onCreated }) {
                   </div>
                 </div>
               </div>
-            ))
+            )}</PaginatedList>
           )}
         </div>
       )}

@@ -15,6 +15,21 @@ using TKSC.Application.DTOs.Persistence;
 namespace TKSC.Infrastructure.Persistence.Repositories;
 public sealed class GoodsPaymentRepository(Sep490Context db, TimeProvider clock) : IGoodsPaymentRepository
 {
+    public async Task<IReadOnlyList<TicketHistoryEntry>> HistoryAsync(long orderId, CancellationToken ct)
+    {
+        // Caller first loads the order through center/ownership authorization.
+        var labels = new Dictionary<string,string> {
+            ["goods_checkout"]="Đã tạo yêu cầu thanh toán", ["goods_cash_confirmed"]="Đã xác nhận tiền mặt",
+            ["goods_transfer_confirmed"]="Đã xác nhận chuyển khoản", ["goods_transfer_review"]="Chuyển khoản cần đối soát",
+            ["goods_review_approved"]="Đã duyệt đối soát", ["goods_invoice_issued"]="Đã xuất hóa đơn",
+            ["goods_delivered"]="Đã giao hàng", ["goods_received"]="Người mua đã nhận hàng",
+            ["goods_cancelled"]="Đã hủy đơn", ["goods_checkout_closed"]="Đã đóng yêu cầu thanh toán"
+        };
+        var actions=labels.Keys.ToList();
+        var rows = await db.AuditLogs.AsNoTracking().Where(a=>a.EntityType=="GoodsOrder" && a.EntityId==orderId && actions.Contains(a.Action!))
+            .OrderBy(a=>a.Id).Select(a=>new { a.Id, a.Action }).ToListAsync(ct);
+        return rows.Select(a=>new TicketHistoryEntry(a.Id,labels[a.Action!])).ToList();
+    }
     public Task<Payment?> RecoveryPaymentAsync(long id, CancellationToken ct) => db.Payments.AsNoTracking().SingleOrDefaultAsync(p=>p.Id==id && p.GoodsOrderId!=null && p.OrderId==null,ct);
     public Task<BankTransaction?> RecoveryBankAsync(long paymentId,long bankId,CancellationToken ct) => db.BankTransactions.SingleOrDefaultAsync(b=>b.Id==bankId && b.MatchedPaymentId==paymentId,ct);
     public Task ReserveAsync(Order order, DateTimeOffset expiresAt, bool reacquire, CancellationToken ct) => GoodsStockHolds.Reserve(db, order, expiresAt, reacquire, ct);

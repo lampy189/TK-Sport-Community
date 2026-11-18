@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import PaymentRecoveryPage from './PaymentRecoveryPage';
 import OperationalExceptions from './OperationalExceptions';
 import IssueWorkflowControls from './IssueWorkflowControls';
@@ -48,9 +49,9 @@ export default function IssueHub({role='staff'}) {
   {loading?<p role="status">Đang tải sự cố…</p>:<div className="issue-hub-layout">
    <div className="issue-hub-list" aria-label="Danh sách sự cố">
     {!displayed.length&&<p>Không có sự cố cần xử lý.</p>}
-    {displayed.map(row=><button key={row.key} className="issue-row" aria-pressed={selected===row.key} onClick={()=>{setSelected(row.key);setNotice('');}}>
+    {<PaginatedList items={displayed}>{row=><button key={row.key} className="issue-row" aria-pressed={selected===row.key} onClick={()=>{setSelected(row.key);setNotice('');}}>
      <span className="payment-badge">{row.type} · {row.status}</span><strong>{row.title}</strong><span>{row.summary}</span><span>{issueLabels[states.find(s=>s.key===row.key)?.state.status]||'Chưa nhận xử lý'} · {states.find(s=>s.key===row.key)?.state.assignedName||'Chưa phân công'}</span>
-    </button>)}
+    </button>}</PaginatedList>}
    </div>
    <section className="issue-hub-detail" aria-label="Chi tiết sự cố" aria-live="polite">
     {current?<><h2>{current.title}</h2>{current.kind!=='reviews'&&<IssueWorkflowControls key={'flow-'+current.key} kind={current.kind} id={current.item.id} role={role} onUpdated={()=>refresh()}/>}<p>{current.type} · {current.status}</p>

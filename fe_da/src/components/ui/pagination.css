@@ -1,0 +1,26 @@
+.tksc-pagination {
+  grid-column: 1 / -1;
+  flex: 0 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 0;
+  margin-top: 12px;
+  border-top: 1px solid #dce3eb;
+  color: #475569;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+.tksc-pagination label { display: flex; flex-direction: row; align-items: center; gap: 8px; margin: 0; font-size: inherit; }
+.tksc-pagination select { width: auto; min-width: 64px; margin: 0; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; color: #334155; }
+.tksc-pagination-pages, .tksc-pagination-number { display: flex; align-items: center; gap: 6px; }
+.tksc-pagination .tksc-pagination-pages button { width: auto; min-width: 36px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; padding: 6px 10px; margin: 0; border: 1px solid #cbd5e1; border-radius: 8px; background: white; color: #334155; font: inherit; cursor: pointer; box-shadow: none; }
+.tksc-pagination .tksc-pagination-pages button[aria-current="page"] { background: #166534; color: white; border-color: #166534; font-weight: 700; }
+.tksc-pagination .tksc-pagination-pages button:disabled { opacity: .45; cursor: default; }
+.tksc-pagination button:focus-visible, .tksc-pagination select:focus-visible { outline: 2px solid #15803d; outline-offset: 3px; }
+.tksc-pagination-list-item { list-style: none; grid-column: 1 / -1; }
+.tksc-pagination-row > td { padding: 0 12px; }
+@media (max-width: 600px) { .tksc-pagination { justify-content: center; } .tksc-pagination-summary { flex-basis: 100%; text-align: center; } .tksc-pagination-pages { flex-wrap: wrap; justify-content: center; } }

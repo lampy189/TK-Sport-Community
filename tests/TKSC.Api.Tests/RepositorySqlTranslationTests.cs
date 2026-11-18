@@ -45,6 +45,16 @@ public sealed class RepositorySqlTranslationTests
     }
 
     [Fact]
+    public async Task PersonalHistoryQueriesTranslateBeforeOpeningSql()
+    {
+        await using var db = new Sep490Context(new DbContextOptionsBuilder<Sep490Context>()
+            .UseSqlServer("Server=unused;Database=translation_only;Integrated Security=True;TrustServerCertificate=True")
+            .AddInterceptors(new StopBeforeOpen()).Options);
+        await Assert.ThrowsAsync<TranslationCompleteException>(() => new PaymentRepository(db).GetTicketsAsync(1));
+        await Assert.ThrowsAsync<TranslationCompleteException>(() => new GoodsPaymentRepository(db,TimeProvider.System).HistoryAsync(1,default));
+    }
+
+    [Fact]
     public void FluentMappingsPreserveFormerEntityAnnotations()
     {
         using var db = new Sep490Context(new DbContextOptionsBuilder<Sep490Context>()

@@ -11,6 +11,7 @@ using TKSC.Application.DTOs.Persistence;
 namespace TKSC.Application.Interfaces.Repositories;
 public interface IGoodsPaymentRepository
 {
+    Task<IReadOnlyList<TicketHistoryEntry>> HistoryAsync(long orderId, CancellationToken ct);
     Task<Payment?> RecoveryPaymentAsync(long id, CancellationToken ct);
     Task<BankTransaction?> RecoveryBankAsync(long paymentId, long bankId, CancellationToken ct);
     Task ReserveAsync(Order order, DateTimeOffset expiresAt, bool reacquire, CancellationToken ct);

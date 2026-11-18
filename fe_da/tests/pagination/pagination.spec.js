@@ -1,0 +1,27 @@
+import { test, expect } from '@playwright/test';
+test('paging, original indices, filters, deletion and independent tables',async({page})=>{
+ const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.goto('/tests/pagination/index.html');
+ const cards=page.getByRole('region',{name:'Thẻ'});
+ await expect(cards.locator('article')).toHaveCount(10);
+ await cards.getByRole('button',{name:'Trang 6',exact:true}).click();
+ await expect(cards.locator('article')).toHaveCount(3);
+ await expect(cards.locator('article').first()).toHaveText('Mục 51 · vị trí 50');
+ await expect(cards.getByRole('button',{name:'Trang sau'})).toBeDisabled();
+ await expect(page.locator('tbody > tr')).toHaveCount(11);
+ await page.getByRole('button',{name:'Lọc',exact:true}).click();
+ await expect(cards.getByRole('button',{name:'Trang 1',exact:true})).toHaveAttribute('aria-current','page');
+ await page.getByRole('button',{name:'Lọc',exact:true}).click();
+ await expect(cards.locator('article').first()).toHaveText('Mục 1 · vị trí 0');
+ await cards.getByRole('combobox').selectOption('20');
+ await expect(cards.locator('article')).toHaveCount(20);
+ await cards.getByRole('button',{name:'Trang 3',exact:true}).click();
+ await page.getByRole('button',{name:'Xóa cuối',exact:true}).click();
+ await expect(cards.locator('article')).toHaveCount(20);
+ await page.setViewportSize({width:375,height:812});
+ await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+ await page.getByRole('button',{name:'Xóa hết',exact:true}).click();
+ await expect(cards.locator('article')).toHaveCount(0);
+ await expect(cards.getByRole('navigation')).toHaveCount(0);
+ expect(errors).toEqual([]);
+});
