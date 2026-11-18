@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from "react";
 import SectionLayout from "../../components/layout/SectionLayout";
 import { workflowRequest } from "../workflowClient";
@@ -321,7 +322,7 @@ export default function AssessmentPage() {
           </p>
         )}
         <div className="workflow-actions">
-          {players.map((p) => (
+          {<PaginatedList items={players}>{(p) => (
             <button
               key={p.playerId}
               aria-pressed={form?.playerId === p.playerId}
@@ -333,14 +334,14 @@ export default function AssessmentPage() {
               {p.assessmentId ? " · Có phiếu" : " · Chưa chấm"}
               {!p.profileId && " · Thiếu hồ sơ môn"}
             </button>
-          ))}
+          )}</PaginatedList>}
         </div>
 
         {players.length > 0 && (
           <section className="assessment-protocol">
             <h3>Hồ sơ người chơi trong sân</h3>
             <div className="workflow-actions">
-              {players.map((p) => (
+              {<PaginatedList items={players}>{(p) => (
                 <button
                   key={p.playerId}
                   className="button button-secondary"
@@ -358,7 +359,7 @@ export default function AssessmentPage() {
                 >
                   Xem hồ sơ · {p.name}
                 </button>
-              ))}
+              )}</PaginatedList>}
             </div>
             {playerContext && (
               <div className="assessment-player-context">
@@ -384,12 +385,12 @@ export default function AssessmentPage() {
                   </summary>
                   {playerContext.participation.length ? (
                     <ul>
-                      {playerContext.participation.map((p) => (
+                      {<PaginatedList items={playerContext.participation} listItem>{(p) => (
                         <li key={p.sessionId}>
                           {p.sessionDate} · {p.startTime} · {p.court} · Đã điểm
                           danh
                         </li>
-                      ))}
+                      )}</PaginatedList>}
                     </ul>
                   ) : (
                     <p>Chưa có buổi tham gia trước đó.</p>
@@ -405,7 +406,7 @@ export default function AssessmentPage() {
                   </summary>
                   {playerContext.ratings.length ? (
                     <ul>
-                      {playerContext.ratings.map((r) => (
+                      {<PaginatedList items={playerContext.ratings} listItem>{(r) => (
                         <li key={r.id}>
                           {r.sessionDate} · {r.oldScore ?? "—"} /{" "}
                           {r.oldBand || "Chưa xếp hạng"} →{" "}
@@ -414,7 +415,7 @@ export default function AssessmentPage() {
                           </strong>{" "}
                           · {r.rubric}
                         </li>
-                      ))}
+                      )}</PaginatedList>}
                     </ul>
                   ) : (
                     <p>Chưa có kết quả chấm chính thức.</p>

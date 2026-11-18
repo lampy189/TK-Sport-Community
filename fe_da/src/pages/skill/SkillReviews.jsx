@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from "react";
 import { workflowRequest } from "../workflowClient";
 import "../workflow.css";
@@ -140,7 +141,7 @@ function ReviewList({ role, kind, sportId }) {
         }} />}
       </> : <p>Chưa có kết quả Trọng tài đã công bố cho môn này để khiếu nại.</p>)}
       {!rows.length && <p>{role === "referee" && kind === "exceptions" ? "Chưa có yêu cầu trong các buổi bạn được phân công. Nếu Player đã gửi đơn, hãy nhờ Quản lý kiểm tra phân công Trọng tài của buổi đó." : "Chưa có yêu cầu."}</p>}
-      {rows.map(row => <article className="detail-card" key={row.id}>
+      {<PaginatedList items={rows}>{row => <article className="detail-card" key={row.id}>
         <h3>#{row.id} · {row.player} · {row.sport}</h3><p><strong>{labels[row.status] || row.status}</strong></p>
         {kind === "exceptions" ? <p>Buổi #{row.sessionId} · {row.sessionDate} · Band yêu cầu: {row.sessionBand} · Band hiện tại: {row.currentBand}</p>
           : <p>Kết quả bị khiếu nại: {row.disputedScore} / {row.disputedBand} · Hiện tại: {row.currentScore} / {row.currentBand}</p>}
@@ -149,7 +150,7 @@ function ReviewList({ role, kind, sportId }) {
         {row.history?.length > 0 && <details><summary>Lịch sử kết quả</summary>{row.history.map(h => <p key={h.id}>#{h.id}: {h.oldScore ?? "—"} / {h.oldBand ?? "—"} → {h.newScore} / {h.newBand}</p>)}</details>}
         {role !== "player" && row.evidence && <details><summary>Bằng chứng chấm điểm (nội bộ)</summary>{(row.evidence.Marks || []).map(m => <p key={m.DimensionId}>Tiêu chí #{m.DimensionId}: {m.Score ?? "Chưa quan sát"} — {m.Evidence || "Chưa có ghi chú"}</p>)}</details>}
         <Decision row={row} kind={kind} role={role} reload={reload} />
-      </article>)}
+      </article>}</PaginatedList>}
     </>}
   </section>;
 }

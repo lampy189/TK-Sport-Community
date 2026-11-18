@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from 'react';
 import { aftercare } from './aftercareClient';
 import { OperationItem } from './TicketOperationCards';
@@ -29,7 +30,7 @@ export default function TicketOperations({initialTab='reviews',role='staff'}) {
   {tab==='reviews'?<PaymentRecoveryPage role={role}/>:tab==='issues'?<IssueHub role={role}/>:<>
    {error&&<p className="payment-error" role="alert">{error}</p>}
    {notice&&<p className="payment-notice" role="status">{notice}</p>}
-   {loading?<p role="status">Đang tải…</p>:!items.length?<p>Không có mục cần xử lý.</p>:items.map(item=><OperationItem key={item.id} role={role} tab={tab} item={item} busy={busy} run={run}/>)}
+   {loading?<p role="status">Đang tải…</p>:!items.length?<p>Không có mục cần xử lý.</p>:<PaginatedList items={items}>{item=><OperationItem key={item.id} role={role} tab={tab} item={item} busy={busy} run={run}/>}</PaginatedList>}
   </>}
  </section>;
 }

@@ -1,3 +1,4 @@
+import PaginatedList from './ui/PaginatedList';
 import { useState, useEffect } from 'react';
 import {
 
@@ -227,7 +228,7 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
-                {friends.map((fr) => {
+                {<PaginatedList items={friends}>{(fr) => {
                   const sp = (fr.sportProfiles || []).find(
                     (s) => s.sportCode?.toLowerCase() === targetSportCode
                   );
@@ -288,7 +289,7 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
                       </button>
                     </div>
                   );
-                })}
+                }}</PaginatedList>}
               </div>
             )}
           </div>
@@ -320,7 +321,7 @@ export function PickSessionToInviteModal({ friendName, friendPlayerId, onSelectS
           const avail = s.availableSlots ?? s.capacity - s.occupiedPlaces;
           return avail > 0;
         });
-        setSessions(openOnes.slice(0, 20));
+        setSessions(openOnes);
       })
       .catch(e => { if (active) setError(e.message || 'Không tải được lịch.'); })
       .finally(() => {
@@ -383,7 +384,7 @@ export function PickSessionToInviteModal({ friendName, friendPlayerId, onSelectS
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '340px', overflowY: 'auto' }}>
-              {sessions.map((s) => {
+              {<PaginatedList items={sessions}>{(s) => {
                 const isBadminton = s.sportName === 'Badminton';
                 const avail = s.availableSlots ?? s.capacity - s.occupiedPlaces;
                 const timeRange = s.timeLabel || `${(s.startTime || '').slice(0, 5)} - ${(s.endTime || '').slice(0, 5)}`;
@@ -427,7 +428,7 @@ export function PickSessionToInviteModal({ friendName, friendPlayerId, onSelectS
                     </button>
                   </div>
                 );
-              })}
+              }}</PaginatedList>}
             </div>
           )}
         </div>

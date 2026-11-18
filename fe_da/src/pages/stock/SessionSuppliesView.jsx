@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from "react";
 import { CalendarDays, PackageOpen, Undo2 } from "lucide-react";
 import SectionLayout from "../../components/layout/SectionLayout";
@@ -59,7 +60,7 @@ export default function SessionSuppliesView() {
       ) : (
         <div className="supply-layout">
           <ul className="supply-sessions" aria-label="Buổi chơi trong ngày">
-            {sessions.items.map((s) => (
+            {<PaginatedList items={sessions.items} listItem>{(s) => (
               <li key={s.id}>
                 <button
                   className={s.id === sessionId ? "is-active" : ""}
@@ -79,7 +80,7 @@ export default function SessionSuppliesView() {
                   )}
                 </button>
               </li>
-            ))}
+            )}</PaginatedList>}
           </ul>
           {sessionId ? (
             <SupplyDetails key={sessionId} sessionId={sessionId} onSummary={updateSummary} />
@@ -205,7 +206,7 @@ function SupplyDetails({ sessionId, onSummary }) {
               </tr>
             </thead>
             <tbody>
-              {allocations.map((a) => (
+              {<PaginatedList items={allocations} columns={7}>{(a) => (
                 <tr key={a.productId}>
                   <td data-label="Vật tư">
                     <strong>{a.name}</strong>
@@ -238,7 +239,7 @@ function SupplyDetails({ sessionId, onSummary }) {
                     )}
                   </td>
                 </tr>
-              ))}
+              )}</PaginatedList>}
             </tbody>
           </table>
         </div>

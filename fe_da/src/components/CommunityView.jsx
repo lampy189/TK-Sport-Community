@@ -1,3 +1,4 @@
+import PaginatedList from './ui/PaginatedList';
 import { parseSessionInviteMessage } from './sessionInviteMessage';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
@@ -433,7 +434,7 @@ export function CommunityView({ user }) {
             </div>
           ) : (
             <div className="comm-members-grid">
-              {filteredMembers.map((member) => {
+              {<PaginatedList items={filteredMembers}>{(member) => {
                 const bm = getSportItem(member.sportProfiles, 'badminton');
                 const pk = getSportItem(member.sportProfiles, 'pickleball');
                 return (
@@ -569,7 +570,7 @@ export function CommunityView({ user }) {
                     </div>
                   </article>
                 );
-              })}
+              }}</PaginatedList>}
             </div>
           )}
         </>
@@ -597,7 +598,7 @@ export function CommunityView({ user }) {
             </div>
           ) : (
             <div className="comm-members-grid">
-              {suggestions.map((sg) => {
+              {<PaginatedList items={suggestions}>{(sg) => {
                 const bm = getSportItem(sg.sportProfiles, 'badminton');
                 const pk = getSportItem(sg.sportProfiles, 'pickleball');
                 return (
@@ -736,7 +737,7 @@ export function CommunityView({ user }) {
                     </div>
                   </article>
                 );
-              })}
+              }}</PaginatedList>}
             </div>
           )}
         </div>
@@ -767,7 +768,7 @@ export function CommunityView({ user }) {
             </div>
           ) : (
             <div className="comm-members-grid">
-              {friends.map((fr) => {
+              {<PaginatedList items={friends}>{(fr) => {
                 const bm = getSportItem(fr.sportProfiles, 'badminton');
                 const pk = getSportItem(fr.sportProfiles, 'pickleball');
                 return (
@@ -821,7 +822,7 @@ export function CommunityView({ user }) {
                     </div>
                   </div>
                 );
-              })}
+              }}</PaginatedList>}
             </div>
           )}
         </div>
@@ -840,7 +841,7 @@ export function CommunityView({ user }) {
               </div>
             ) : (
               <div className="comm-members-grid">
-                {incomingRequests.map((req) => {
+                {<PaginatedList items={incomingRequests}>{(req) => {
                   const bm = getSportItem(req.sportProfiles, 'badminton');
                   const pk = getSportItem(req.sportProfiles, 'pickleball');
                   return (
@@ -896,7 +897,7 @@ export function CommunityView({ user }) {
                       </div>
                     </div>
                   );
-                })}
+                }}</PaginatedList>}
               </div>
             )}
           </div>
@@ -911,7 +912,7 @@ export function CommunityView({ user }) {
               </div>
             ) : (
               <div className="comm-members-grid">
-                {outgoingRequests.map((req) => (
+                {<PaginatedList items={outgoingRequests}>{(req) => (
                   <div key={req.friendshipId} className="comm-member-card">
                     <div className="comm-member-top">
                       <div
@@ -949,7 +950,7 @@ export function CommunityView({ user }) {
                       </button>
                     </div>
                   </div>
-                ))}
+                )}</PaginatedList>}
               </div>
             )}
           </div>
@@ -967,7 +968,7 @@ export function CommunityView({ user }) {
                   Kết bạn với người chơi khác để bắt đầu nhắn tin.
                 </div>
               ) : (
-                friends.map((fr) => (
+                <PaginatedList items={friends}>{(fr) => (
                   <div
                     key={fr.friendPlayerId}
                     className={`comm-chat-friend-item ${
@@ -994,7 +995,7 @@ export function CommunityView({ user }) {
                       </div>
                     </div>
                   </div>
-                ))
+                )}</PaginatedList>
               )}
             </div>
           </div>

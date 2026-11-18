@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useId, useMemo, useState } from "react";
 import {
   ArrowDownToLine,
@@ -222,7 +223,7 @@ function StockCatalog() {
               </tr>
             </thead>
             <tbody>
-              {visible.map((p) => (
+              {<PaginatedList items={visible} columns={6}>{(p) => (
                 <tr key={p.id} className={p.isActive ? "" : "is-inactive"}>
                   <td data-label="Mặt hàng">
                     <strong>{p.name}</strong>
@@ -300,7 +301,7 @@ function StockCatalog() {
                     </button>
                   </td>
                 </tr>
-              ))}
+              )}</PaginatedList>}
             </tbody>
           </table>
         </div>
@@ -749,7 +750,7 @@ function HistoryDialog({ product, onClose }) {
         <p className="stock-hint">Chưa có phiếu nhập/xuất nào cho mặt hàng này.</p>
       ) : (
         <ol className="stock-history">
-          {state.items.map((m) => (
+          {<PaginatedList items={state.items} listItem>{(m) => (
             <li key={m.id}>
               <span>
                 <strong>{movementLabels[m.movementType] || m.movementType}</strong>
@@ -770,7 +771,7 @@ function HistoryDialog({ product, onClose }) {
                 {number(m.quantity)} {product.baseUnit}
               </strong>
             </li>
-          ))}
+          )}</PaginatedList>}
         </ol>
       )}
     </Dialog>

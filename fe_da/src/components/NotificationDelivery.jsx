@@ -1,3 +1,4 @@
+import PaginatedList from './ui/PaginatedList';
 import { useEffect, useState } from 'react';
 import { request } from '../api';
 import { enablePush, disablePush, pushConfigured } from '../push';
@@ -29,12 +30,12 @@ export default function NotificationDelivery() {
     <button disabled={busy} onClick={() => run(async () => { await disablePush(); setNotice('Đã tắt thông báo trên thiết bị.'); })}>Tắt thông báo thiết bị</button>
     <button disabled={busy} onClick={() => run(load)}>Cập nhật email</button>
     {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
-    {items.map(item => <div key={item.id}><p>{item.title}</p><small>{statusLabel[item.status] || (item.status?.startsWith('retry') ? 'Đang thử gửi lại' : item.status)}</small>
+    {<PaginatedList items={items}>{item => <div key={item.id}><p>{item.title}</p><small>{statusLabel[item.status] || (item.status?.startsWith('retry') ? 'Đang thử gửi lại' : item.status)}</small>
       {item.canRetry && <button disabled={busy} onClick={() => run(async () => {
         const response = await request(`/api/notifications/email/${item.id}/retry`, { method: 'POST' });
         if (!response.ok) throw new Error('Không thể gửi lại thư này. Hãy cập nhật trạng thái.');
         await load(); setNotice('Đã xếp hàng gửi lại.');
       })}>Gửi lại email</button>}
-    </div>)}
+    </div>}</PaginatedList>}
   </details>;
 }

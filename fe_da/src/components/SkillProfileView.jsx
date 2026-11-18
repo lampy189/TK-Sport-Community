@@ -1,3 +1,4 @@
+import PaginatedList from './ui/PaginatedList';
 import { detailedCriterionPoints, formatCriterionPoints } from "../pages/skill/criterionPoints";
 import {
   DIMENSION_ANCHORS,
@@ -1045,7 +1046,7 @@ export default function SkillProfileView({ onBrowseSport }) {
 
           {availableAssessments.length > 1 && (
             <div className="sp-assessment-switcher" role="tablist">
-              {availableAssessments.map((ass) => {
+              {<PaginatedList items={availableAssessments}>{(ass) => {
                 const isRef = isOnCourtType(
                   ass.assessmentType,
                   ass.assessorRole,
@@ -1074,7 +1075,7 @@ export default function SkillProfileView({ onBrowseSport }) {
                     </span>
                   </button>
                 );
-              })}
+              }}</PaginatedList>}
             </div>
           )}
 
@@ -1605,7 +1606,7 @@ export default function SkillProfileView({ onBrowseSport }) {
             </div>
           ) : (
             <div className="sp-history-timeline">
-              {ratingHistory.map((item, idx) => {
+              {<PaginatedList items={ratingHistory}>{(item, idx) => {
                 const isReferee = isOnCourtType(
                   item.assessmentType,
                   item.changedByRole,
@@ -1721,7 +1722,7 @@ export default function SkillProfileView({ onBrowseSport }) {
                     </div>
                   </article>
                 );
-              })}
+              }}</PaginatedList>}
             </div>
           )}
         </section>

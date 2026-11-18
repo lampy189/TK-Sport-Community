@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from 'react';
 import { request } from '../../api';
 import TicketSupport from '../payment/TicketSupport';
@@ -50,10 +51,10 @@ export default function MessagesPage({ preview = false, onOpen, role }) {
         <h2>Thông báo gần đây</h2>
         <small>Hiển thị 50 thông báo gần nhất, giống danh sách ở chuông.</small>
         {loading ? <p role="status">Đang tải thông báo…</p> : !items.length && <p>{preview ? 'Thông báo sẽ hiển thị khi bạn đăng nhập.' : 'Chưa có thông báo.'}</p>}
-        {items.map(item => <button key={item.id} className={`messages-entry ${selected?.id === item.id ? 'is-selected' : ''}`} aria-pressed={selected?.id === item.id} onClick={() => select(item)}>
+        {<PaginatedList items={items}>{item => <button key={item.id} className={`messages-entry ${selected?.id === item.id ? 'is-selected' : ''}`} aria-pressed={selected?.id === item.id} onClick={() => select(item)}>
           <strong>{item.title}</strong>
           <small>{item.referenceId > 0 && item.referenceType?.startsWith('ticket_') ? `Vé #${item.referenceId} · ` : ''}{item.status === 'unread' ? 'Chưa đọc' : 'Đã đọc'}</small>
-        </button>)}
+        </button>}</PaginatedList>}
       </aside>
       <article className="messages-detail" aria-label="Chi tiết thông báo">
         {selected ? <>

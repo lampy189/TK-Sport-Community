@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from "react";
 import { PackageCheck } from "lucide-react";
 import SectionLayout from "../../components/layout/SectionLayout";
@@ -76,7 +77,7 @@ export default function MyGoodsOrders() {
         <p className="stock-hint">{orders.length ? 'Không có đơn hàng phù hợp.' : 'Bạn chưa có đơn hàng nào.'}</p>
       ) : (
         <ul className="my-order-list">
-          {visible.map((order) => {
+          {<PaginatedList items={visible} listItem>{(order) => {
             const state = orderState(order);
             return (
               <li key={order.id} id={`goods-order-${order.id}`} ref={node => { if (node && String(order.id) === new URLSearchParams(window.location.search).get('goodsOrderId')) node.scrollIntoView({ block: 'center' }); }}>
@@ -104,7 +105,7 @@ export default function MyGoodsOrders() {
                 </div>
               </li>
             );
-          })}
+          }}</PaginatedList>}
         </ul>
       )}
     </SectionLayout>

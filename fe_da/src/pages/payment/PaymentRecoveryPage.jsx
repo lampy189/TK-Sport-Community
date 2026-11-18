@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { incidents } from './incidentClient';
 import IssueWorkflowControls from './IssueWorkflowControls';
 import { useEffect, useState } from 'react';
@@ -28,9 +29,9 @@ export default function PaymentRecoveryPage({role='staff',initialPaymentId=null}
   {error&&<p role="alert" className="workflow-error">{error}</p>}{notice&&<p role="status">{notice}</p>}
   {loading?<p role="status">Đang tải giao dịch…</p>:<div className="recovery-grid">
    <div className="recovery-list" aria-label="Giao dịch cần kiểm tra">{!rows.length&&<p>Không có giao dịch cần kiểm tra.</p>}
-    {rows.map(row=><button key={row.id} disabled={busy} aria-pressed={selected===row.id} onClick={()=>{setSelected(row.id);setEvidence('');setBank('');setNotice('');}}>
+    {<PaginatedList items={rows}>{row=><button key={row.id} disabled={busy} aria-pressed={selected===row.id} onClick={()=>{setSelected(row.id);setEvidence('');setBank('');setNotice('');}}>
       <strong>{row.kind==='goods'?'Hàng hóa':'Vé'} · {row.reference}</strong><span>{money(row.amountVnd)} · {labels[row.status]||row.status}</span>
-    </button>)}
+    </button>}</PaginatedList>}
    </div>
    <div aria-live="polite">{current?<>
     <h3>{current.reference}</h3><IssueWorkflowControls key={current.id} kind="reviews" id={current.id} role={role}/><p>Đơn #{current.orderId} · {labels[current.status]||current.status}</p>
@@ -49,11 +50,11 @@ export default function PaymentRecoveryPage({role='staff',initialPaymentId=null}
     </div>
     <p>Khoản thiếu/thừa hoặc chưa rõ kết quả cần tiếp tục đối soát. Tiếp tục theo dõi trong Sự cố và gửi ngoại lệ nếu vượt quyền.</p>
     <h4>Lịch sử và nguyên nhân</h4>{!current.history.length&&<p>Chưa có lịch sử xử lý. Dùng kiểm tra lại payOS để xác minh.</p>}
-    {current.history.map((h,i)=>{const detail=historyDetails(h);return <article className="recovery-history" key={i}>
+    {<PaginatedList items={current.history}>{(h,i)=>{const detail=historyDetails(h);return <article className="recovery-history" key={i}>
      <strong>{detail.title}</strong><p>Người xử lý: {h.actorId??'Hệ thống'}{detail.at&&<> · {new Date(detail.at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})}</>}</p>
      {detail.evidence&&<p>{detail.evidence}</p>}{detail.reason&&<p>{detail.reason}</p>}{detail.status&&<p>{detail.status}</p>}
      {detail.reference&&<p>Mã ngân hàng: {detail.reference}</p>}{detail.received!=null&&<p>Thực nhận: {money(detail.received)} · Cần thu: {money(detail.expected)}</p>}
-    </article>;})}
+    </article>;}}</PaginatedList>}
    </>:<p>Chọn một giao dịch để xem nguyên nhân và xử lý.</p>}</div>
   </div>}
  </section>;

@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from 'react';
 import { MapPin, Clock3, Users, Zap, ArrowRight, RefreshCw } from 'lucide-react';
 import { workflowRequest } from '../workflowClient';
@@ -40,7 +41,7 @@ export function LateEntryOffers({ sport, sessionIds, showEmpty = false, onSelect
   const allowedIds = sessionIds == null ? null : new Set(sessionIds.map(String));
   const offers = data.filter(o => (!sport || sport === 'ALL' || o.sportName.toLowerCase() === sport.toLowerCase()) && (!allowedIds || allowedIds.has(String(o.sessionId))) && remainingMinutes(o.endsAt) > 0);
   if (!showEmpty && (loading || (!error && !offers.length))) return null;
-  return <section className="le-section" aria-label="Vé giờ lẻ"><div className="le-heading"><div><h2><Zap size={22}/>Vé giờ lẻ</h2></div><button className="button button-secondary" onClick={reload} aria-label="Tải lại vé giờ lẻ"><RefreshCw size={16}/></button></div>{error && <p role="alert" className="payment-error">{error}</p>}{loading && <p role="status">Đang tải vé giờ lẻ…</p>}{!loading && !error && !offers.length && <p>Chưa có vé giờ lẻ phù hợp.</p>}<div className="le-grid">{offers.map(o => <article className="le-card" key={o.sessionId}><span className="le-badge">ĐANG RAO · {o.sportName === 'Badminton' ? 'Cầu lông' : 'Pickleball'}</span><h3>{o.courtName} · Vé giờ lẻ</h3><OfferFacts offer={o}/><div className="le-actions"><Price offer={o}/><button className="button button-primary" onClick={() => onSelectSession?.(o.sessionId)}>Xem & mua vé <ArrowRight size={16}/></button></div></article>)}</div></section>;
+  return <section className="le-section" aria-label="Vé giờ lẻ"><div className="le-heading"><div><h2><Zap size={22}/>Vé giờ lẻ</h2></div><button className="button button-secondary" onClick={reload} aria-label="Tải lại vé giờ lẻ"><RefreshCw size={16}/></button></div>{error && <p role="alert" className="payment-error">{error}</p>}{loading && <p role="status">Đang tải vé giờ lẻ…</p>}{!loading && !error && !offers.length && <p>Chưa có vé giờ lẻ phù hợp.</p>}<div className="le-grid">{<PaginatedList items={offers}>{o => <article className="le-card" key={o.sessionId}><span className="le-badge">ĐANG RAO · {o.sportName === 'Badminton' ? 'Cầu lông' : 'Pickleball'}</span><h3>{o.courtName} · Vé giờ lẻ</h3><OfferFacts offer={o}/><div className="le-actions"><Price offer={o}/><button className="button button-primary" onClick={() => onSelectSession?.(o.sessionId)}>Xem & mua vé <ArrowRight size={16}/></button></div></article>}</PaginatedList>}</div></section>;
 }
 export function LateEntryPurchase({ sessionId, user, onLogin, onPayment }) {
   const { data, error, reload } = useOffers(`${root}?sessionId=${sessionId}`);
@@ -83,6 +84,6 @@ export function LateEntryManagement() {
     {error && <p role="alert" className="payment-error">{error}</p>}
     {loading && <p>Đang tải buổi chơi…</p>}
     {!loading && !error && !data.length && <p>Chưa có vé giờ lẻ đang mở bán.</p>}
-    <div className="le-grid">{data.map(o => <AutomaticOffer key={o.sessionId} offer={o}/>)}</div>
+    <div className="le-grid">{<PaginatedList items={data}>{o => <AutomaticOffer key={o.sessionId} offer={o}/>}</PaginatedList>}</div>
   </section>;
 }

@@ -1,3 +1,4 @@
+import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from 'react';
 import { api } from '../../api';
 import { invitationClient, invitationState, invitationPayable } from './invitationClient';
@@ -46,7 +47,7 @@ export default function InvitationsView({ user, onPayment, onSelectSession }) {
     <div className="ops-actions">{[['received', 'Đã nhận'], ['sent', 'Đã gửi']].map(([id, label]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}<button onClick={() => { setLoading(true); setReload(value => value + 1); }}>Tải lại</button></div>
     {error && <p role="alert">{error}</p>}
     {loading ? <p role="status">Đang tải lời mời…</p> : !shown.length && <p>Chưa có lời mời.</p>}
-    <div className="ops-grid">{shown.map(item => {
+    <div className="ops-grid">{<PaginatedList items={shown}>{item => {
       const state = invitationState(item, now);
       const received = item.inviteeUserId === userId;
       const needsCenter = Number(user.selectedVenueId) !== item.venueId;
@@ -63,6 +64,6 @@ export default function InvitationsView({ user, onPayment, onSelectSession }) {
           {!needsCenter && <button onClick={() => onSelectSession(item.sessionId)}>Xem buổi chơi</button>}
         </div>
       </article>;
-    })}</div>
+    }}</PaginatedList>}</div>
   </section>;
 }
