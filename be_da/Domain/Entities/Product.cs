@@ -7,6 +7,11 @@ public partial class Product
 {
     public long Id { get; set; }
 
+    public bool RequiresPriceApproval { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public long? QuotedPriceVersionId { get; set; }
+
     public string Sku { get; set; } = null!;
 
     public string Name { get; set; } = null!;

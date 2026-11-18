@@ -9,6 +9,8 @@ public partial class User
 
     public long RoleId { get; set; }
 
+    public long? VenueId { get; set; }
+
     public string Email { get; set; } = null!;
 
     public string FullName { get; set; } = null!;

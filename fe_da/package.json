@@ -7,10 +7,13 @@
     "dev": "node --use-system-ca ./node_modules/vite/bin/vite.js",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:duc": "node --test tests/duc/*.test.js",
+    "test:duc:ui": "playwright test --config tests/duc/playwright.config.js"
   },
   "dependencies": {
     "@zxing/browser": "^0.2.1",
+    "firebase": "^13.3.0",
     "lucide-react": "^1.60.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
@@ -19,6 +22,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",

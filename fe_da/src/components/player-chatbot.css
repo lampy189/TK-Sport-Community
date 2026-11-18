@@ -16,6 +16,11 @@
 .player-chatbot-message summary { cursor: pointer; font-weight: 600; }
 .player-chatbot-source { padding-top: 12px; }
 .player-chatbot-source small { color: #657267; }
+.player-chatbot-contact { margin-top: 12px; }
+.player-chatbot-contact label { display: block; font-size: 12px; }
+.player-chatbot-contact textarea { display: block; width: 100%; box-sizing: border-box; resize: vertical; margin: 8px 0; padding: 10px; border: 1px solid #dce5d8; border-radius: 8px; font: inherit; line-height: 1.5; }
+.player-chatbot-contact button, .player-chatbot-contact-links a { display: inline-block; padding: 10px 12px; border: 1px solid #dce5d8; border-radius: 9px; background: #f1f6e9; color: #173f35; text-decoration: none; }
+.player-chatbot-contact-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .player-chatbot-form { padding: 14px 16px; border-top: 1px solid #dfe7dc; background: white; max-height: 55%; overflow-y: auto; flex-shrink: 0; }
 .player-chatbot-form label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
 .player-chatbot-form > div { display: flex; gap: 8px; }

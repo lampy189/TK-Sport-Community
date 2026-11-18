@@ -1,6 +1,8 @@
+using be_da.Infrastructure.Persistence;
+using be_da.Application.DTOs;
 using System.Security.Claims;
-using be_da.Authorization;
-using be_da.Controllers;
+using be_da.Presentation.Authorization;
+using be_da.Presentation.Controllers;
 using be_da.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;

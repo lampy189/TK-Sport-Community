@@ -58,3 +58,18 @@ Thu social/giải 24.160.000 VND; hàng hóa 5.145.000; hoàn đã hoàn thành 
 192 kiểm thử backend đã đạt, gồm kiểm tra EF ghi bút toán cùng transaction. Kiểm tra API thật đạt: Owner toàn chuỗi, Staff đúng cơ sở và trả 403 khi yêu cầu doanh số cơ sở khác. SQL kiểm tra chặn đọc/sửa/thêm chéo cơ sở và chống ghi lặp; các bản ghi kiểm thử được rollback.
 
 Nguồn nghiệp vụ: yêu cầu UC-34/35 hiện tại, FR-19.3 và BR-44. Mã UC trong SRS snapshot có phần đánh số không nhất quán; dùng mô tả chức năng người dùng đã chốt.
+
+## Upgrade 014 — ngoại lệ trước khi có vé
+
+Áp dụng 014-skill-exception-player-visibility.sql sau 011/013 khi đã được người dùng chấp thuận.
+Lỗi cũ: policy chỉ cho nhân sự thấy Player thông qua tickets; yêu cầu ngoại lệ được gửi trước khi có ticket nên phép JOIN tới Player trả rỗng.
+
+014 bổ sung các predicate cho Player, user, profile và lịch sử liên quan:
+- Giữ nguyên đường truy cập theo vé hiện có.
+- Cho Referee/Manager thấy Player có yêu cầu ngoại lệ thuộc cơ sở của mình.
+- API vẫn kiểm tra Referee được phân công đúng buổi trước khi liệt kê/duyệt.
+- Không mở thêm quyền ngoại lệ cho Staff và không mở dữ liệu cơ sở khác.
+- Không thay đổi điểm, yêu cầu, vé hoặc quyết định. Policy vẫn bật; chuyển predicate trong một transaction.
+
+Chạy hồi quy: SkillExceptionVisibilityDatabaseTests.NoTicketPlayerIsVisibleOnlyForReviewInTheRequestVenue.
+Test tạo dữ liệu tạm rồi rollback: thấy Player chưa có vé qua yêu cầu, đọc đúng tên/Band/lịch sử, chặn cơ sở khác, chặn Player không liên quan và Staff.

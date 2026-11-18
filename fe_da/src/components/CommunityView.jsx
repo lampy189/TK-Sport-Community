@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { parseSessionInviteMessage } from './sessionInviteMessage';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Search,
   Users,
@@ -13,11 +14,10 @@ import {
 } from 'lucide-react';
 import { api } from '../api';
 import { PublicPlayerProfileModal } from './PublicPlayerProfileModal';
-import { openFloatingChatWith } from './FloatingChatBubble';
+import { openFloatingChatWith } from './sessionInviteMessage';
 import {
   ChatMessageContent,
-  PickSessionToInviteModal,
-  parseSessionInviteMessage
+  PickSessionToInviteModal
 } from './SessionInviteCard';
 import '../styles/community.css';
 
@@ -73,6 +73,8 @@ export function CommunityView({ user }) {
   const [messageText, setMessageText] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [showPickSessionModal, setShowPickSessionModal] = useState(false);
+  const communityRequest = useRef(0);
+  const chatRequest = useRef(0);
 
   const loadCommunityAll = useCallback(
     async (queryOverride) => {
@@ -81,14 +83,16 @@ export function CommunityView({ user }) {
         return;
       }
       setLoadingData(true);
+      const generation = ++communityRequest.current;
       try {
         const q = queryOverride !== undefined ? queryOverride : searchQuery;
         const [membersRes, suggestionsRes, friendsRes, reqRes] = await Promise.all([
           api.searchCommunityMembers(q, 50),
-          api.getFriendSuggestions().catch(() => []),
+          api.getFriendSuggestions(),
           api.getFriends(),
           api.getFriendRequests()
         ]);
+        if (generation !== communityRequest.current) return;
         setMembers(Array.isArray(membersRes) ? membersRes : []);
         setSuggestions(Array.isArray(suggestionsRes) ? suggestionsRes : []);
         const friendList = Array.isArray(friendsRes) ? friendsRes : [];
@@ -98,47 +102,51 @@ export function CommunityView({ user }) {
         setActiveChatFriend((prev) => {
           if (prev) {
             const updated = friendList.find((f) => f.friendPlayerId === prev.friendPlayerId);
-            return updated || prev;
+            return updated || null;
           }
           return friendList[0] || null;
         });
       } catch (err) {
+        if (generation !== communityRequest.current) return;
         setFeedback({ type: 'error', text: err.message || 'Không thể tải dữ liệu cộng đồng.' });
       } finally {
-        setLoadingData(false);
+        if (generation === communityRequest.current) setLoadingData(false);
       }
     },
     [user, searchQuery]
   );
 
   useEffect(() => {
-    loadCommunityAll('');
+    const initial = setTimeout(() => void loadCommunityAll(''), 0);
+    return () => { clearTimeout(initial); ++communityRequest.current; };
   }, []);
 
   const loadActiveConversation = useCallback(async (friendPlayerId, silent = false) => {
     if (!friendPlayerId) return;
+    const generation = ++chatRequest.current;
     if (!silent) setLoadingChat(true);
     try {
       const msgs = await api.getConversation(friendPlayerId, 80);
+      if (generation !== chatRequest.current) return;
       setConversation(Array.isArray(msgs) ? msgs : []);
       await api.markMessagesAsRead(friendPlayerId);
       setFriends((prev) =>
         prev.map((f) => (f.friendPlayerId === friendPlayerId ? { ...f, unreadCount: 0 } : f))
       );
-    } catch {
-      // ignore
+    } catch (e) {
+      if (generation === chatRequest.current) setFeedback({ type: 'error', text: e.message || 'Chưa tải được tin nhắn. Vui lòng thử lại.' });
     } finally {
-      if (!silent) setLoadingChat(false);
+      if (generation === chatRequest.current) setLoadingChat(false);
     }
   }, []);
 
   useEffect(() => {
     if (activeSubTab === 'chat' && activeChatFriend?.friendPlayerId) {
-      loadActiveConversation(activeChatFriend.friendPlayerId);
+      const initial = setTimeout(() => void loadActiveConversation(activeChatFriend.friendPlayerId), 0);
       const timer = setInterval(() => {
         loadActiveConversation(activeChatFriend.friendPlayerId, true);
       }, 5000);
-      return () => clearInterval(timer);
+      return () => { clearTimeout(initial); clearInterval(timer); ++chatRequest.current; };
     }
   }, [activeSubTab, activeChatFriend?.friendPlayerId, loadActiveConversation]);
 
@@ -1111,6 +1119,7 @@ export function CommunityView({ user }) {
       {showPickSessionModal && activeChatFriend && (
         <PickSessionToInviteModal
           friendName={activeChatFriend.fullName}
+          friendPlayerId={activeChatFriend.friendPlayerId}
           onClose={() => setShowPickSessionModal(false)}
           onSelectSessionToSend={async (msgContent) => {
             const msg = await api.sendMessage(activeChatFriend.friendPlayerId, msgContent);

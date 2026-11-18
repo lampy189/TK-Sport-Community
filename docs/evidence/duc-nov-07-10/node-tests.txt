@@ -1,0 +1,16 @@
+
+> fe_da@0.0.0 test:duc
+> node --test tests/duc/*.test.js
+
+✔ buildIssues: empty source produces no incident (0.915708ms)
+✔ buildIssues: only disrupted sessions enter hub (0.212917ms)
+✔ buildIssues: same numeric IDs across sources remain unique and retain original records (14.275458ms)
+✔ buildIssues: staff response changes queue label without marking refund completed (0.109042ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 67.952584

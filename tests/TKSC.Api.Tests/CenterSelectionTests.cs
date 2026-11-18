@@ -1,8 +1,9 @@
+using be_da.Application.DTOs;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using be_da.Application.Abstractions;
-using be_da.Authorization;
+using be_da.Application.Interfaces.Repositories;
+using be_da.Presentation.Authorization;
 using be_da.Domain.Entities;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;

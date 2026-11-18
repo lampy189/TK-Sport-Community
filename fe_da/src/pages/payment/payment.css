@@ -506,3 +506,28 @@
 .payment-workspace .button { font-size: 15px; }
 .payment-workspace input, .payment-workspace select, .payment-workspace textarea { font-size: 16px; }
 .payment-tabs { max-width: 100%; flex-wrap: wrap; }
+
+.ticket-operations { font-size:17px; }
+.ticket-operations .payment-heading { margin-bottom:12px; gap:12px; flex-wrap:wrap; }
+.ticket-operations .payment-heading h1 { font-size:26px; }
+.ticket-operations .ticket-filters { margin-bottom:12px; gap:8px; }
+.ticket-operations .payment-card { padding:16px; margin-bottom:12px; }
+.ticket-operations .payment-card h4 { font-size:19px; margin:0 0 6px; }
+.ticket-operations .payment-card p { margin:6px 0; line-height:1.5; }
+.ticket-operations .aftercare-form { margin-top:10px; gap:10px; }
+.ticket-operations .button { font-size:16px; min-height:44px; }
+.ticket-operations .payment-badge { font-size:14px; white-space:normal; }
+.ticket-operations .aftercare-form textarea,
+.ticket-support .aftercare-form textarea {
+ width:100%; min-height:80px; padding:10px 12px; border:1px solid #a8b5b0;
+ border-radius:8px; font:inherit; color:#183b30; background:#fff; resize:vertical;
+}
+.ticket-operations .aftercare-form .checkin-verify { margin-top:4px; }
+.ticket-operations .workflow-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.ticket-operations .issue-hub-detail .payment-card { padding:12px; margin:10px 0 0; }
+.ticket-operations .issue-row { font-size:16px; }
+.ticket-operations .issue-row > span:last-child { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+@media(max-width:600px) {
+ .ticket-operations .payment-card,.ticket-operations .issue-hub-detail { padding:12px; }
+ .ticket-operations .workflow-actions .button { flex:1; }
+}

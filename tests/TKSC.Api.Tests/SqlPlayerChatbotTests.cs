@@ -1,9 +1,12 @@
+using be_da.Application.DTOs;
+using be_da.Application.Interfaces.External;
+using be_da.Application.Interfaces.Repositories;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using be_da.Application.Chatbot;
+using be_da.Application.Services.Chatbot;
 using be_da.Domain.Entities;
-using be_da.Infrastructure.Persistence;
+using be_da.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +18,7 @@ using Xunit;
 
 namespace TKSC.Api.Tests;
 
+[Collection("SQL Server")]
 public sealed class SqlPlayerChatbotTests
 {
     private static readonly DateTimeOffset Now = new(2026, 11, 9, 18, 0, 0, TimeSpan.Zero);

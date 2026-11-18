@@ -1,3 +1,5 @@
+using be_da.Domain.Exceptions;
+using be_da.Application.DTOs;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -9,8 +11,8 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using be_da.Application.Abstractions;
-using be_da.Application.Accounts;
+using be_da.Application.Interfaces.Repositories;
+using be_da.Application.Services.Accounts;
 using be_da.Domain.Entities;
 using Xunit;
 
@@ -84,6 +86,73 @@ public class GoogleLoginTests
         using var client = app.Client();
         Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsJsonAsync("/api/auth/dev-login",
             new { email = "payment.test@tksc.local" })).StatusCode);
+    }
+
+    [Fact]
+    public async Task DevelopmentLoginRequiresValidCsrfWithoutCreatingSession()
+    {
+        await using var app = new LoginApp();
+        app.Store.Account = Existing();
+        using var client = app.Client();
+
+        var missingToken = await client.PostAsJsonAsync("/api/auth/dev-login",
+            new { email = app.Store.Account.Email });
+        Assert.Equal(HttpStatusCode.BadRequest, missingToken.StatusCode);
+
+        await client.GetAsync("/api/auth/csrf");
+        using var forgedRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/dev-login")
+        {
+            Content = JsonContent.Create(new { email = app.Store.Account.Email })
+        };
+        forgedRequest.Headers.Add("X-CSRF-TOKEN", "forged-token");
+        var forgedToken = await client.SendAsync(forgedRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, forgedToken.StatusCode);
+        Assert.Equal("invalid_csrf_token", (await forgedToken.Content.ReadFromJsonAsync<JsonElement>())
+            .GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/auth/me")).StatusCode);
+        Assert.Equal(0, app.Store.Created);
+    }
+
+    [Fact]
+    public async Task DevelopmentLoginReturnsNotFoundForUnknownEmailWithoutCreatingSession()
+    {
+        await using var app = new LoginApp();
+        using var client = app.Client();
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/dev-login")
+        {
+            Content = JsonContent.Create(new { email = "missing@example.test" })
+        };
+        var csrf = await client.GetFromJsonAsync<JsonElement>("/api/auth/csrf");
+        request.Headers.Add("X-CSRF-TOKEN", csrf.GetProperty("token").GetString());
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("user_not_found", (await response.Content.ReadFromJsonAsync<JsonElement>())
+            .GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/auth/me")).StatusCode);
+        Assert.Equal(0, app.Store.Created);
+    }
+
+    [Fact]
+    public async Task DevelopmentLoginRejectsInvalidPortalWithoutCreatingSession()
+    {
+        await using var app = new LoginApp();
+        app.Store.Account = Existing();
+        using var client = app.Client();
+        var csrf = await client.GetFromJsonAsync<JsonElement>("/api/auth/csrf");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/dev-login")
+        {
+            Content = JsonContent.Create(new { email = app.Store.Account.Email, portal = "unknown" })
+        };
+        request.Headers.Add("X-CSRF-TOKEN", csrf.GetProperty("token").GetString());
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("invalid_login_portal", (await response.Content.ReadFromJsonAsync<JsonElement>())
+            .GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/auth/me")).StatusCode);
+        Assert.Equal(0, app.Store.Created);
     }
 
     [Fact]
@@ -349,6 +418,7 @@ internal sealed class LoginApp : WebApplicationFactory<Program>
         {
             ["Email:Enabled"] = "false",
             ["SportCenters:Enabled"] = "false",
+            ["Chatbot:ApiKey"] = null,
             ["Authentication:Google:ClientId"] = Configured ? "test-client" : null,
             ["Authentication:Google:ClientSecret"] = Configured ? "test-secret-not-real" : null,
             ["Payments:PayOS:ClientId"] = null,

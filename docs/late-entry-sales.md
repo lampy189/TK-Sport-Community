@@ -27,7 +27,7 @@ Script chạy trong transaction và có thể chạy lại. Không sửa cột h
 
 Cập nhật ngày 10/11/2026: người dùng chọn tạm gác nhiều cơ sở và kích hoạt vé giờ lẻ độc lập. Database cũ chưa có `users.venue_id` và chưa có policy `SportCenterIsolation` chỉ cần script 014 để tạo hai bảng riêng cho vé giờ lẻ. Không thêm cột gán nhân sự, bảng doanh số hoặc trigger hạch toán; thanh toán vẫn dùng luồng social hiện có.
 
-Chế độ local: `LateEntry:Standalone=true` và `SportCenters:RequireAssignment=false` trong `be_da/Controllers/appsettings.Local.json` (không commit). Chỉ Development cho phép Staff/Manager xem màn vận hành không cần gán cơ sở; SQL store kiểm tra lại database chưa triển khai schema/policy nhiều cơ sở. Nếu database đã có cột gán nhân sự hoặc policy nhiều cơ sở, vẫn bắt buộc bộ 010–012 đầy đủ; không tự bỏ qua phân quyền/hạch toán.
+Chế độ local: `LateEntry:Standalone=true` và `SportCenters:RequireAssignment=false` trong `be_da/appsettings.Local.json` (không commit). Chỉ Development cho phép Staff/Manager xem màn vận hành không cần gán cơ sở; SQL store kiểm tra lại database chưa triển khai schema/policy nhiều cơ sở. Nếu database đã có cột gán nhân sự hoặc policy nhiều cơ sở, vẫn bắt buộc bộ 010–012 đầy đủ; không tự bỏ qua phân quyền/hạch toán.
 
 Đã sao lưu và xác minh backup trước khi áp dụng 014 lên Sep490 local. Không tạo tài khoản, lịch, vé hoặc thanh toán mẫu. Tại thời điểm kiểm tra chưa có buổi nào từ ngày hiện tại trở đi, nên danh sách vé đang rao có thể rỗng cho tới khi có buổi đang diễn ra đủ điều kiện.
 

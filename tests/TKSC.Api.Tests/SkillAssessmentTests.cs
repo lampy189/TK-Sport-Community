@@ -1,3 +1,4 @@
+using be_da.Infrastructure.Persistence;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -153,7 +154,7 @@ internal sealed class SkillTestAuth(IOptionsMonitor<AuthenticationSchemeOptions>
     protected override Task<AuthenticateResult> HandleAuthenticateAsync() => Task.FromResult(AuthenticateResult.Success(
         new AuthenticationTicket(new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
-            new Claim(be_da.Authorization.SportCenterConnection.VenueClaim, "1"),
+            new Claim(be_da.Infrastructure.Persistence.SportCenterConnection.VenueClaim, "1"),
             new Claim(ClaimTypes.NameIdentifier, "10"), new Claim(ClaimTypes.Role, Request.Headers["Test-Role"].ToString())
         }, Scheme.Name)), Scheme.Name)));
 }
