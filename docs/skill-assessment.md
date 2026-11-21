@@ -33,7 +33,7 @@ Không seed thang điểm Pickleball bằng quy tắc Cầu lông. Khi có rubri
 
 ID trong ví dụ chỉ minh họa; sử dụng ID trả về từ rubric. Điểm Cầu lông 0–4; null là chưa quan sát. Thiếu một quan sát thì totalScore/bandResult là null. Nháp không đổi hồ sơ hay vé. Ghi chú mỗi tiêu chí tối đa 2000 ký tự, lưu dạng JSON trong audit_logs hiện có để giữ lịch sử, không thêm cột ngầm vào database.
 
-6. `POST /api/v1/skill/assessments/{id}/publish` với `{ "revision": 124, "expectedScore": 50, "expectedBand": "B3" }`. Hai giá trị expected phải khớp hồ sơ tại lần đọc trước (có thể null). Phải đủ 5 điểm và bằng chứng cho điểm 0/4. Công bố lặp trả lại kết quả, không tạo thêm lịch sử/hoàn tiền.
+6. `POST /api/v1/skill/assessments/{id}/publish` với `{ "revision": 124, "expectedScore": 50, "expectedBand": "B3" }`. Hai giá trị expected phải khớp hồ sơ tại lần đọc trước (có thể null). Phải đủ 5 điểm và bằng chứng cho điểm 0/4. Công bố lặp trả lại kết quả, không tạo thêm lịch sử.
 7. Player gọi `GET /api/v1/skill/my-results?sportId=...` để xem lịch sử điểm đã công bố của chính mình. Không trả ghi chú nội bộ.
 
 ## Công thức và giới hạn công bố
@@ -41,8 +41,8 @@ ID trong ví dụ chỉ minh họa; sử dụng ID trả về từ rubric. Đi�
 - Chỉ version `badminton-pilot-r1`, môn `badminton`, đúng D1–D5 và trọng số 20% được dùng công thức Report 1: tổng 5 điểm × 5. B1: 0–19; B2: 20–39; B3: 40–59; B4: 60–79; B5: 80–100.
 - Lần xác nhận đầu: dùng quan sát đầy đủ thay mức provisional. Các lần định kỳ: cần quan sát đầy đủ khác buổi, cùng rubric; dùng trung bình hai lần và làm tròn .5 lên. `Assessment.totalScore/bandResult` giữ kết quả quan sát gốc; `PlayerRatingHistory` và hồ sơ giữ kết quả công bố.
 - Đổi hạng đã xác nhận trả 409 và giữ nháp. Phụ lục A yêu cầu review, hai quan sát hỗ trợ và kiểm tra năng lực di chuyển/phối hợp đôi, nhưng chưa xác định ngưỡng bắt buộc cụ thể. Chưa triển khai luồng quyết định/correction của Manager; không tự phê duyệt thay Manager.
-- Khi xác nhận lần đầu làm đổi hạng provisional, chỉ hủy vé paid/confirmed tương lai cùng môn không còn hợp lệ, trừ vé có exception được duyệt. Tạo refund `requested` cho người trả tiền gốc, không đánh dấu đã chuyển tiền. Không đổi vé đã điểm danh, vé quá khứ, vé cùng hạng hoặc đơn hàng hóa.
-- Ghi lịch sử, cập nhật hồ sơ, audit và xử lý vé trong một transaction Serializable. Application lock tuần tự hóa các lần sửa/công bố trên nhiều API instance. Phiếu đã công bố không chỉnh sửa.
+- Theo yêu cầu ngày 18/11/2026, công bố đánh giá và quyết định điều chỉnh điểm chỉ cập nhật điểm, band, trạng thái và lịch sử. Không kiểm tra vé tương lai, không hủy vé, không tạo hoàn tiền hoặc thông báo hoàn tiền do thay đổi hạng. Các vé đã mua giữ nguyên; kiểm tra điều kiện cho đăng ký mới vẫn áp dụng riêng.
+- Ghi lịch sử, cập nhật hồ sơ và audit trong một transaction Serializable. Application lock tuần tự hóa các lần sửa/công bố trên nhiều API instance. Phiếu đã công bố không chỉnh sửa.
 - Chặn tự chấm dựa trên liên kết `players.user_id`. Database chưa có định danh người thật dùng chung nhiều tài khoản, nên không thể phát hiện tài khoản khác của cùng một người.
 
 ## Kiểm thử

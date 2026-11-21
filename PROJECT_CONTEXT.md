@@ -3,6 +3,14 @@
 ## Current Acer database and acceptance checks (16 Nov 2026)
 
 For UI-01/HIS-01/QA-01, the user explicitly confirmed localhost / Sep490 in D:\code_da\TK-Sport-Community as the current target, and requested reporting failures. Read-only checks confirm upgrade 019 columns/functions are absent; personal ticket/goods history queries fail on price_version_id / requires_price_approval. No schema change was applied or approved in this task. Use docs/ui-his-qa-20261116.md for implemented UI/history changes, test evidence and outstanding acceptance gates. Do not treat the historical shogu checkout/database name below as the current Acer environment.
+## Operations UI completion (18 Nov 2026)
+
+Owner policies/prices, business reports, approval navigation, live role metrics and SystemAdmin technical settings/incidents now have connected screens. Technical overrides/incidents use existing audit logs with revision checks, no schema change. The user selected **UI only** for cash overpayment/change, free sessions and missing/damaged/discrepant supplies: show pending/manual handling, do not add automatic settlement, free-ticket issuance or stock-adjustment rules. See `docs/operations-ui-20261118.md` for scope and test limits. Keep the assessment/payment isolation decision below.
+
+## Assessment without ticket or payment side effects (18 Nov 2026)
+
+The user explicitly removed future-ticket cancellation and refund handling from skill assessment and Manager rating corrections. Publishing or correcting a rating updates the assessment/profile, rating history and audit only. Existing tickets, payment allocations and refunds are unchanged. This supersedes the older rating-change future-ticket rule below and UC-21/JOB-02 for this workflow. Keep attendance/paid-registration checks and new-booking eligibility rules; other payment and voluntary ticket-aftercare workflows remain separate. Diagrams 01 and 02 show assessment only, with no payment, cancellation or refund branch.
+
 
 ## Approved goods reservation rollout (16 Nov 2026)
 

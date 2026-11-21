@@ -225,7 +225,7 @@ export default function HomePage({
     >
       {!preview && ["owner", "manager", "staff", "referee"].includes(role) && <SportCenterBadge />}
       {active === "overview" ? (
-        <>{!preview && <OperationsOverview role={role} />}<HomeOverview config={config} preview={preview} onOpen={open} /></>
+        <>{!preview && <OperationsOverview role={role} />}<HomeOverview config={config} preview={preview} onOpen={open} role={role} /></>
       ) : (
         <div className="home-workspace">
           <div className="home-breadcrumb">

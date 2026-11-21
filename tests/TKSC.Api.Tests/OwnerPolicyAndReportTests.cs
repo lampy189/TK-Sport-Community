@@ -71,6 +71,7 @@ public sealed class OwnerPolicyAndReportTests
     private sealed class FixedClock:TimeProvider { public override DateTimeOffset GetUtcNow()=>Now; }
     private sealed class PolicyStub:IOwnerPolicyRepository
     {
+        public Task<object> OptionsAsync(CancellationToken ct) => Task.FromResult<object>(new { });
         public bool Called;
         public Task<OperationResult> SubmitAsync(SubmitPolicyRequest r,long a,CancellationToken ct) { Called=true;return Task.FromResult(OperationResult.Success(null)); }
         public Task<OperationResult> DecideAsync(long id,DecidePolicyRequest r,long a,CancellationToken ct) { Called=true;return Task.FromResult(OperationResult.Success(null)); }

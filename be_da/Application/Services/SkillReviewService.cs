@@ -11,7 +11,7 @@ using TKSC.Domain.Entities;
 namespace TKSC.Application.Services;
 // The baseline has no request metadata columns. Append-only AuditLogs retain reasons,
 // referee discussion and decision times without rewriting the original request/evidence.
-public sealed class SkillReviewService(ISkillReviewRepository repository, TimeProvider clock, ISkillAssessmentService assessments) : ISkillReviewService
+public sealed class SkillReviewService(ISkillReviewRepository repository, TimeProvider clock) : ISkillReviewService
 {
     private static AssessmentException Error(int status, string message) => new(status, message);
     private static string Reason(string? value) => SkillReviewRules.Reason(value);
@@ -164,7 +164,6 @@ public sealed class SkillReviewService(ISkillReviewRepository repository, TimePr
             profile.CurrentScore = input.Score;
             profile.CurrentBand = band;
             profile.RatingStatus = "Rated";
-            await assessments.CheckFutureTicketsAsync(profile, actor, ct);
         }
 
         row.Status = input.Correct ? "Corrected" : "Kept";

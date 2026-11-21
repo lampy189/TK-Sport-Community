@@ -32,13 +32,7 @@ public interface ISkillAssessmentRepository
     Task<Assessment?> PublishAssessmentsAsync(CancellationToken ct, Assessment a, PlayerSportProfile profile, DateOnly observedDate, TimeOnly observedTime);
     Task<bool> PublishPlayerRatingHistoriesExistsAsync(CancellationToken ct, PlayerSportProfile profile);
     void AddPlayerRatingHistories(PlayerRatingHistory value);
-    Task<List<Ticket>> ListFuturePaidTicketsAsync(PlayerSportProfile profile, CancellationToken ct, DateOnly today, TimeOnly time);
-    Task<bool> CheckFutureTicketsSessionExceptionsExistsAsync(PlayerSportProfile profile, CancellationToken ct, Ticket ticket);
-    Task<bool> CheckFutureTicketsRefundsExistsAsync(CancellationToken ct, Ticket ticket);
-    void AddRefunds(Refund value);
     void AddAuditLogs(AuditLog value);
     Task<long?> RevisionAuditLogsMaxAsync(long id, CancellationToken ct);
     Task<string?> EvidenceAuditLogsAsync(long id, CancellationToken ct);
-    Task<List<FutureRefundSource>> FutureRefundSourcesAsync(Ticket ticket, CancellationToken ct);
-    void AddNotifications(IEnumerable<Notification> values);
 }
