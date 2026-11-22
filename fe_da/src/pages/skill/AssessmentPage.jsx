@@ -1,3 +1,4 @@
+import SkillReviews from "./SkillReviews";
 import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from "react";
 import SectionLayout from "../../components/layout/SectionLayout";
@@ -74,15 +75,18 @@ export default function AssessmentPage() {
 
   useEffect(() => {
     let active = true;
-    workflowRequest("/api/v1/skill/sessions")
+    const refresh = () => workflowRequest("/api/v1/skill/sessions")
       .then((data) => {
         if (active) setSessions(data);
       })
       .catch((e) => {
         if (active) setError(e.message);
       });
+    refresh();
+    const timer = window.setInterval(refresh, 30000);
     return () => {
       active = false;
+      window.clearInterval(timer);
     };
   }, []);
 
@@ -299,7 +303,7 @@ export default function AssessmentPage() {
         </ol>
 
         <label>
-          Buổi được phân công
+          Slot đang diễn ra được phân công
           <select
             value={sessionId}
             disabled={busy || dirty}
@@ -314,7 +318,7 @@ export default function AssessmentPage() {
           </select>
         </label>
         {!sessions.length && !error && (
-          <p>Chưa có buổi được phân công còn trong ngày đánh giá hoặc sắp tới.</p>
+          <p>Không có slot đang diễn ra mà bạn được phân công.</p>
         )}
         {sessionId && !busy && players.length === 0 && (
           <p>
@@ -967,6 +971,7 @@ export default function AssessmentPage() {
           </>
         )}
       </div>
+      <SkillReviews role="referee" kind="appeals" openOnly />
     </SectionLayout>
   );
 }

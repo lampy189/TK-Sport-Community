@@ -14,6 +14,11 @@ namespace TKSC.Api.Tests;
 
 public class RatingTicketIsolationTests
 {
+    private sealed class AssessmentClock : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => new(2026, 11, 17, 12, 0, 0, TimeSpan.Zero);
+    }
+    private static readonly TimeProvider Clock = new AssessmentClock();
     [Theory]
     [InlineData("paid")]
     [InlineData("review_required")]
@@ -52,8 +57,8 @@ public class RatingTicketIsolationTests
         });
         await db.SaveChangesAsync();
         var repository = TransactionlessRepository<ISkillReviewRepository>.Create(
-            new SkillReviewRepository(db, TimeProvider.System), db);
-        var service = new SkillReviewService(repository, TimeProvider.System);
+            new SkillReviewRepository(db, Clock), db);
+        var service = new SkillReviewService(repository, Clock);
 
         await service.DecideAppeal(1, 30, new AppealDecision("Correct observed result", true, 85, history.Id), default);
 
@@ -66,7 +71,7 @@ public class RatingTicketIsolationTests
 
     private static SkillAssessmentService AssessmentService(Sep490Context db) => new(
         TransactionlessRepository<ISkillAssessmentRepository>.Create(
-            new SkillAssessmentRepository(db, TimeProvider.System), db), TimeProvider.System);
+            new SkillAssessmentRepository(db, Clock), db), Clock);
 
     private static async Task<Sep490Context> Setup(string paymentStatus)
     {
@@ -91,7 +96,7 @@ public class RatingTicketIsolationTests
         var slot = new TimeSlot { Id = 1, StartTime = new(18, 0), EndTime = new(20, 0) };
         var observed = new Session
         {
-            Id = 1, Sport = sport, Court = court, TimeSlot = slot, SessionDate = new(2026, 11, 17), Status = "Closed",
+            Id = 1, Sport = sport, Court = court, TimeSlot = slot, SessionDate = new(2026, 11, 17), Status = "Open",
             SessionReferees = new List<SessionReferee> { new() { RefereeId = 10 } }
         };
         db.Assessments.Add(new Assessment
@@ -110,7 +115,7 @@ public class RatingTicketIsolationTests
             Session = new Session
             {
                 Id = 2, Sport = sport, Court = court, TimeSlot = slot,
-                SessionDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)), Band = "B2", Status = "Open"
+                SessionDate = new DateOnly(2026, 12, 17), Band = "B2", Status = "Open"
             }
         });
         db.Payments.Add(new Payment

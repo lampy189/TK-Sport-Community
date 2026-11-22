@@ -109,11 +109,11 @@ function Decision({ row, kind, role, reload }) {
   </ReasonForm>;
 }
 
-export default function SkillReviews({ role, kind = "appeals", sportId }) {
-  return <ReviewList key={`${role}-${kind}-${sportId}`} role={role} kind={kind} sportId={sportId} />;
+export default function SkillReviews({ role, kind = "appeals", sportId, openOnly = false }) {
+  return <ReviewList key={`${role}-${kind}-${sportId}`} role={role} kind={kind} sportId={sportId} openOnly={openOnly} />;
 }
 
-function ReviewList({ role, kind, sportId }) {
+function ReviewList({ role, kind, sportId, openOnly }) {
   const [rows, setRows] = useState([]);
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState("");
@@ -129,7 +129,7 @@ function ReviewList({ role, kind, sportId }) {
     return () => { active = false; };
   }, [role, kind, sportId]);
   return <section className="workflow-page skill-reviews">
-    <h2>{kind === "exceptions" ? "Ngoại lệ trình độ" : "Khiếu nại đánh giá"}</h2>
+    <h2>{kind === "exceptions" ? "Ngoại lệ trình độ" : openOnly ? "Yêu cầu xem xét lại điểm" : "Khiếu nại đánh giá"}</h2>
     {role === "referee" && kind === "exceptions" && <p>Danh sách yêu cầu của các buổi bạn được phân công làm Trọng tài.</p>}
     {loading ? <p role="status">Đang tải…</p> : error ? <p role="alert">{error}</p> : <>
       <button className="button button-secondary" onClick={() => reload().catch(err => setError(err.message))}>Tải lại danh sách</button>
@@ -140,8 +140,8 @@ function ReviewList({ role, kind, sportId }) {
           await workflowRequest(`${base}/assessments/${selected}/appeals`, "POST", { reason }); await reload(); setSelected("");
         }} />}
       </> : <p>Chưa có kết quả Trọng tài đã công bố cho môn này để khiếu nại.</p>)}
-      {!rows.length && <p>{role === "referee" && kind === "exceptions" ? "Chưa có yêu cầu trong các buổi bạn được phân công. Nếu Player đã gửi đơn, hãy nhờ Quản lý kiểm tra phân công Trọng tài của buổi đó." : "Chưa có yêu cầu."}</p>}
-      {<PaginatedList items={rows}>{row => <article className="detail-card" key={row.id}>
+      {!(openOnly ? rows.filter(row => ["Pending", "UnderReview"].includes(row.status)) : rows).length && <p>{role === "referee" && kind === "exceptions" ? "Chưa có yêu cầu trong các buổi bạn được phân công. Nếu Player đã gửi đơn, hãy nhờ Quản lý kiểm tra phân công Trọng tài của buổi đó." : "Chưa có yêu cầu."}</p>}
+      {<PaginatedList items={openOnly ? rows.filter(row => ["Pending", "UnderReview"].includes(row.status)) : rows}>{row => <article className="detail-card" key={row.id}>
         <h3>#{row.id} · {row.player} · {row.sport}</h3><p><strong>{labels[row.status] || row.status}</strong></p>
         {kind === "exceptions" ? <p>Buổi #{row.sessionId} · {row.sessionDate} · Band yêu cầu: {row.sessionBand} · Band hiện tại: {row.currentBand}</p>
           : <p>Kết quả bị khiếu nại: {row.disputedScore} / {row.disputedBand} · Hiện tại: {row.currentScore} / {row.currentBand}</p>}

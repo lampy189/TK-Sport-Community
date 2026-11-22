@@ -12,6 +12,7 @@
     <Content Remove="**/obj/**;**/bin/**" />
     <Content Update="appsettings*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Update="appsettings.Local.json;appsettings.Development.json" CopyToPublishDirectory="Never" />
+    <Content Update="firebase-admin.Development.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
     <None Remove="**/obj/**;**/bin/**" />
   </ItemGroup>
 

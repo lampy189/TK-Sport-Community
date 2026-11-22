@@ -1,5 +1,22 @@
 # TKSC backend — Google sign-in
 
+## Shared local configuration (23 November 2026)
+
+The repository includes the owner's explicitly approved shared PayOS, Gmail,
+Google OAuth and Firebase credentials in `appsettings.Development.json` and
+`firebase-admin.Development.json`. These files are for Development and are excluded
+from publish output. `appsettings.Local.json`, user secrets and environment variables
+can override the shared settings; remove stale overrides when testing them.
+
+After pulling branch `LamNV_cm`, restore the team's database as `Sep490` on local
+SQL Server with Windows Authentication, then run `dotnet run --project be_da --launch-profile https`
+from the repository root. Run the frontend at `http://localhost:5173`.
+The database is not downloaded or created by these configuration files.
+Firebase uses a project-relative credential file, so no Acer-specific path is needed.
+Google sign-in uses `https://localhost:7207/signin-google` as its callback.
+Shared service operations use the owner's accounts. Production deployment needs
+its own server-side configuration and public callback/webhook addresses.
+
 Implementation on branch `NhatLT`, based on the existing `main` backend `be_da` (.NET 8).
 Open `be_da.slnx` with a recent Visual Studio / .NET 10 SDK, or open/build `be_da.csproj` with the .NET 8 SDK.
 The frontend and the old local four-project scaffold are not changed by this implementation.
@@ -25,7 +42,7 @@ The frontend and the old local four-project scaffold are not changed by this imp
 | Infrastructure/ExternalServices | payOS, OpenAI, SMTP and local avatar storage |
 | Program.cs, Composition.cs | Application startup and dependency injection |
 
-These are folders within the **same `be_da.csproj`**, targeting .NET 8. The existing EF Core and ADO.NET paths are retained; startup does not apply migrations. `Program.cs` and all appsettings files now live at the project root. Local/development configuration is still ignored by Git and excluded from publishing. See [the refactor report](../docs/architecture-refactor.md) for the file map, checks and EF commands.
+These are folders within the **same `be_da.csproj`**, targeting .NET 8. The existing EF Core and ADO.NET paths are retained; startup does not apply migrations. `Program.cs` and all appsettings files now live at the project root. Local configuration remains ignored by Git; shared Development configuration is tracked. Both are excluded from publishing. See [the refactor report](../docs/architecture-refactor.md) for the file map, checks and EF commands.
 
 ## Database
 

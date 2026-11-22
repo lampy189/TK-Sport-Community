@@ -30,7 +30,7 @@ public sealed class RepositorySqlTranslationTests
         await Assert.ThrowsAsync<TranslationCompleteException>(() => repository.GetAttendeesTicketsListAsync(1, 2, default));
         await Assert.ThrowsAsync<TranslationCompleteException>(() => repository.PlayerContextTicketsListAsync(1, 2, default,
             new Session { SportId = 1, SessionDate = new DateOnly(2026, 11, 11) }, 1));
-        await Assert.ThrowsAsync<TranslationCompleteException>(() => repository.SessionsSessionsListAsync(1, default, new DateOnly(2026, 11, 11)));
+        await Assert.ThrowsAsync<TranslationCompleteException>(() => repository.SessionsSessionsListAsync(1, default, new DateTimeOffset(2026, 11, 11, 10, 0, 0, TimeSpan.Zero)));
     }
 
     [Fact]
