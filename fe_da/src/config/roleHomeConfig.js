@@ -9,9 +9,6 @@ export const roleHomeConfig = {
     label: "Người chơi",
     modules: [
       "Lịch social",
-      "Lời mời buổi chơi",
-      "Hồ sơ cá nhân",
-      "Hồ sơ kỹ năng",
       "Cửa hàng",
       "Thanh toán",
       "Vé của tôi",

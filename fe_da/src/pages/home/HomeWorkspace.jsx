@@ -56,7 +56,18 @@ export default function HomeWorkspace({
   if (!preview && ['owner', 'manager'].includes(role) && ['Cơ sở & sân', 'Phân quyền Sport Center'].includes(active)) return <OperationsPage key={active} role={role} initialTab={active === 'Phân quyền Sport Center' ? 'people' : 'venues'} />;
   if (!preview && role === 'manager' && active === 'Quản lý buổi chơi') return <SessionManagementPage />;
   if (!preview && ['owner', 'manager', 'system-admin'].includes(role) && ['Bổ nhiệm quản lý', 'Phê duyệt nhân sự', 'Tài khoản & truy cập', 'Bàn giao hỗ trợ'].includes(active)) return <AccessPage role={role} user={user} />;
-  if (!preview && role === 'player' && active === 'Lời mời buổi chơi') return <InvitationsView user={user} onPayment={onPayment} onSelectSession={onSelectSession} />;
+  if (!preview && role === 'player' && ['Thông báo', 'Tin nhắn', 'Lời mời buổi chơi'].includes(active)) {
+    const invitations = active === 'Lời mời buổi chơi';
+    return <section className="player-inbox">
+      <h1>Thông báo</h1>
+      <nav aria-label="Mục thông báo" className="messages-sections">
+        <button aria-pressed={!invitations} onClick={() => onOpen('Thông báo')}>Tất cả</button>
+        <button aria-pressed={invitations} onClick={() => onOpen('Lời mời buổi chơi')}>Lời mời buổi chơi</button>
+      </nav>
+      {invitations ? <InvitationsView user={user} onPayment={onPayment} onSelectSession={onSelectSession} />
+        : <MessagesPage embedded onOpen={onOpen} role={role} />}
+    </section>;
+  }
   if ((active === "Thông báo" || active === "Tin nhắn") && role !== "guest") return <MessagesPage preview={preview} onOpen={onOpen} role={role} />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Ngoại lệ trình độ") return <SkillReviews role={role} kind="exceptions" />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Khiếu nại đánh giá") return <SkillReviews role={role} />;

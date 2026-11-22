@@ -5,7 +5,7 @@ import { ScanLine } from 'lucide-react';
 import { storeClient } from './storeClient';
 import './store.css';
 
-export default function StorePage({ role = 'staff', user, onCreated }) {
+export default function StorePage({ role = 'staff', onCreated }) {
   const [products, setProducts] = useState([]);
   const [quantities, setQuantities] = useState({});
   const [error, setError] = useState('');
@@ -121,7 +121,6 @@ export default function StorePage({ role = 'staff', user, onCreated }) {
           <h2>{title}</h2>
           <p>{subtitle}</p>
         </div>
-        <span className="payment-badge pending">{user?.fullName || 'Người dùng'}</span>
       </div>
 
       {error && <div className="store-error" role="alert">{error}</div>}
@@ -157,7 +156,6 @@ export default function StorePage({ role = 'staff', user, onCreated }) {
                 <div className="store-card-header">
                   <div>
                     <h4>{product.name}</h4>
-                    <small>{product.sku}</small>
                   </div>
                   <div className="store-price">
                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.unitPriceVnd)}
@@ -165,9 +163,7 @@ export default function StorePage({ role = 'staff', user, onCreated }) {
                 </div>
 
                 <div className="store-meta">
-                  <span>{product.category || 'Chưa phân loại'}</span>
-                  <span>Tồn kho: {product.quantityOnHand}</span>
-                  <span>Đặt lại: {product.reorderLevel}</span>
+                  <span>Kho: {product.quantityOnHand}</span>
                 </div>
 
                 <div className="store-qty">

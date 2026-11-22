@@ -43,23 +43,23 @@ export default function InvitationsView({ user, onPayment, onSelectSession }) {
     finally { setBusy(null); }
   }
   const shown = items.filter(item => tab === 'received' ? item.inviteeUserId === userId : item.inviterUserId === userId);
-  return <section className="ops-page"><h1>Lời mời buổi chơi</h1>
-    <div className="ops-actions">{[['received', 'Đã nhận'], ['sent', 'Đã gửi']].map(([id, label]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}<button onClick={() => { setLoading(true); setReload(value => value + 1); }}>Tải lại</button></div>
+  return <section className="invite-inbox" aria-label="Lời mời buổi chơi">
+    <div className="invite-filters">{[['received', 'Đã nhận'], ['sent', 'Đã gửi']].map(([id, label]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}<button onClick={() => { setLoading(true); setReload(value => value + 1); }}>Tải lại</button></div>
     {error && <p role="alert">{error}</p>}
     {loading ? <p role="status">Đang tải lời mời…</p> : !shown.length && <p>Chưa có lời mời.</p>}
-    <div className="ops-grid">{<PaginatedList items={shown}>{item => {
+    <div className="invite-list">{<PaginatedList hideShortPager items={shown}>{item => {
       const state = invitationState(item, now);
       const received = item.inviteeUserId === userId;
       const needsCenter = Number(user.selectedVenueId) !== item.venueId;
       const paymentExpired = state === 'accepted' && String(item.paymentStatus).toLowerCase() === 'pending' && new Date(item.paymentDeadline).getTime() <= now;
-      return <article className="ops-card" key={item.id}><h2>{received ? item.inviter : item.invitee}</h2>
-        <p>{item.sport} · {item.date} · {item.startsAt.slice(0, 5)}</p><p>{item.venue} · {item.court}</p>
-        <strong>{item.amountVnd.toLocaleString('vi-VN')} ₫ · {labels[state] || state}</strong>
+      return <article className="invite-row" key={item.id}><header><h2>{received ? item.inviter : item.invitee}</h2><small>{labels[state] || state}</small></header>
+        <p>{item.sport === 'Badminton' ? 'Cầu lông' : item.sport} · {item.date.split('-').reverse().join('/')} · {item.startsAt.slice(0, 5)}</p><p>{item.venue} · {item.court}</p>
+        <strong>{item.amountVnd.toLocaleString('vi-VN')} ₫</strong>
         <p>Người trả: {item.payerUserId === item.inviterUserId ? item.inviter : item.invitee}</p>
         {state === 'pending' && <p>Hạn trả lời: {new Date(item.expiresAt).toLocaleString('vi-VN')}</p>}
         {state === 'accepted' && <p>{paymentExpired ? 'Đã hết hạn giữ chỗ' : ({ pending: 'Chờ thanh toán', paid: 'Đã thanh toán', cancelled: 'Đã hủy', expired: 'Hết hạn thanh toán', review_required: 'Cần đối soát' }[String(item.paymentStatus).toLowerCase()] || item.paymentStatus)}{item.paymentDeadline && !paymentExpired && ` · hạn ${new Date(item.paymentDeadline).toLocaleString('vi-VN')}`}</p>}
-        <div className="ops-actions">
-          {received && state === 'pending' && <><button disabled={busy !== null} onClick={() => reply(item, true)}>{busy === item.id ? 'Đang xử lý…' : needsCenter ? 'Chuyển cơ sở để nhận lời' : 'Nhận lời và giữ chỗ'}</button><button disabled={busy !== null} onClick={() => reply(item, false)}>Từ chối</button></>}
+        <div className="invite-actions">
+          {received && state === 'pending' && <><button className="invite-primary" disabled={busy !== null} onClick={() => reply(item, true)}>{busy === item.id ? 'Đang xử lý…' : needsCenter ? 'Chuyển cơ sở để nhận lời' : 'Nhận lời và giữ chỗ'}</button><button disabled={busy !== null} onClick={() => reply(item, false)}>Từ chối</button></>}
           {invitationPayable(item, userId, now) && <button onClick={() => onPayment(item.orderId)}>Thanh toán</button>}
           {!needsCenter && <button onClick={() => onSelectSession(item.sessionId)}>Xem buổi chơi</button>}
         </div>

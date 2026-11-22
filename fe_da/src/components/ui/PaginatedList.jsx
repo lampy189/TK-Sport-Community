@@ -2,7 +2,7 @@ import { useState } from 'react';
 import './pagination.css';
 
 // Keep paging local to each list; totals and business operations retain the full dataset.
-export default function PaginatedList({ items = [], children, columns, listItem = false, label = 'Phân trang danh sách' }) {
+export default function PaginatedList({ items = [], children, columns, hideShortPager = false, listItem = false, label = 'Phân trang danh sách' }) {
   const identity = JSON.stringify(items.map((item, index) => item.id ?? item.key ?? item.playerId ?? item.friendPlayerId ?? item.item?.id ?? item.date ?? index));
   const [state, setState] = useState({ identity, page: 1, size: 10 });
   if (state.identity !== identity) setState({ ...state, identity, page: 1 });
@@ -11,7 +11,7 @@ export default function PaginatedList({ items = [], children, columns, listItem 
   const start = (page - 1) * state.size;
   const change = (next, size = state.size) => setState({ identity, page: next, size });
   const numbers = [...new Set([1, page - 1, page, page + 1, pages])].filter(value => value >= 1 && value <= pages).sort((a, b) => a - b);
-  const controls = items.length > 0 && <nav className="tksc-pagination" aria-label={label}>
+  const controls = items.length > (hideShortPager ? 10 : 0) && <nav className="tksc-pagination" aria-label={label}>
     <span className="tksc-pagination-summary" aria-live="polite">{start + 1}–{Math.min(start + state.size, items.length)} / {items.length} mục</span>
     <label>Số mục / trang<select value={state.size} onChange={event => change(1, Number(event.target.value))}>{[10, 20, 50].map(size => <option key={size} value={size}>{size}</option>)}</select></label>
     <div className="tksc-pagination-pages">

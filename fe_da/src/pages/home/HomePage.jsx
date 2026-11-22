@@ -64,6 +64,7 @@ export default function HomePage({
       label !== "Thông báo" &&
       label !== "Hồ sơ cá nhân" &&
       label !== "Hồ sơ kỹ năng" &&
+      !(role === "player" && label === "Lời mời buổi chơi") &&
       !config.modules.includes(label)
     )
       return;
@@ -157,7 +158,7 @@ export default function HomePage({
     return (
       <PlayerLayout
         navigation={navigation}
-        activeId={active === "Chi tiết buổi chơi" ? "Lịch social" : active}
+        activeId={active === "Chi tiết buổi chơi" ? "Lịch social" : active === "Lời mời buổi chơi" ? "Thông báo" : active}
         onNavigate={open}
         onLogout={onLogout}
         accountName={user?.fullName}
@@ -204,7 +205,7 @@ export default function HomePage({
       onLogin={onLogin}
       onHome={() => open("overview")}
       navigation={navigation}
-      activeId={active === "Chi tiết buổi chơi" ? "Lịch social" : active}
+      activeId={active === "Chi tiết buổi chơi" ? "Lịch social" : active === "Lời mời buổi chơi" ? "Thông báo" : active}
       onNavigate={open}
       hero={
         active === "overview"

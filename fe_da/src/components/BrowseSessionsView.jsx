@@ -463,10 +463,10 @@ export function BrowseSessionsView({
             </button>} /> : viewMode === "timetable" ? <section className="timetable-section" aria-label="Thời gian biểu theo tuần của sân">
           <div className="timetable-toolbar">
             <div className="timetable-week-picker">
-              <label htmlFor="timetable-week-date">Select week / Chọn tuần</label>
+              <label htmlFor="timetable-week-date">Chọn tuần</label>
               <div className="timetable-week-input-row">
                 <span className="timetable-week-badge">
-                  Week {weekInfo.week}, {weekInfo.year} (
+                  Tuần {weekInfo.week}, {weekInfo.year} (
                   {weekDays[0].dayMonth} - {weekDays[6].dayMonth})
                 </span>
                 <input id="timetable-week-date" type="date" aria-label="Chọn ngày bất kỳ để xem tuần tương ứng" value={toIsoDateString(weekMonday)} onChange={e => {
@@ -477,14 +477,14 @@ export function BrowseSessionsView({
             <div className="timetable-nav-buttons">
               <button type="button" className="timetable-nav-btn" onClick={() => shiftWeek(-1)}>
                 <ChevronLeft size={15} />
-                <span>Previous week</span>
+                <span>Tuần trước</span>
               </button>
               <button type="button" className={isViewingCurrentWeek ? "timetable-nav-btn is-current" : "timetable-nav-btn"} onClick={jumpToCurrentWeek}>
                 <CalendarDays size={15} />
-                <span>Current week</span>
+                <span>Tuần này</span>
               </button>
               <button type="button" className="timetable-nav-btn" onClick={() => shiftWeek(1)}>
-                <span>Next week</span>
+                <span>Tuần sau</span>
                 <ChevronRight size={15} />
               </button>
             </div>
@@ -503,9 +503,9 @@ export function BrowseSessionsView({
           <div className="timetable-card">
             <div className="timetable-card-header">
               <div>
-                <h3>Weekly timetable · Lịch theo khung giờ sân</h3>
+                <h3>Lịch theo khung giờ sân</h3>
                 <p>
-                  Week ({weekDays[0].dayMonth} - {weekDays[6].dayMonth}/
+                  Tuần ({weekDays[0].dayMonth} - {weekDays[6].dayMonth}/
                   {weekDays[6].dateObj.getFullYear()})
                 </p>
               </div>
@@ -527,13 +527,13 @@ export function BrowseSessionsView({
                 <thead>
                   <tr>
                     <th scope="col" className="timetable-slot-col">
-                      Slot / Khung giờ
+                      Khung giờ
                     </th>
                     {weekDays.map(day => <th scope="col" key={day.iso} className={day.isToday || day.isSelectedDate ? "timetable-day-col is-today" : "timetable-day-col"}>
                         <span className="day-title">
-                          {day.short} ({day.dayMonth})
+                          {day.vi}
                         </span>
-                        <small className="day-subtitle">{day.vi}</small>
+                        <small className="day-subtitle">{day.dayMonth}</small>
                       </th>)}
                   </tr>
                 </thead>
@@ -544,17 +544,15 @@ export function BrowseSessionsView({
                   return <tr key={slot.id}>
                         <th scope="row" className="timetable-slot-cell">
                           <span className="slot-number">
-                            Slot {slot.id ?? slotIdx + 1}
+                            Khung {slotIdx + 1}
                           </span>
                           <span className="slot-range">{rangeLabel}</span>
                           {periodTag && <small className="slot-period">Ca {periodTag}</small>}
                         </th>
                         {weekDays.map(day => {
                       const cellSessions = displayedSessions.filter(s => s.sessionDate === day.iso && (Number(s.timeSlotId) === Number(slot.id) || !s.timeSlotId && s.timeLabel === rangeLabel));
-                      return <td key={`${slot.id}-${day.iso}`} className={day.isToday || day.isSelectedDate ? "timetable-cell is-today-col" : "timetable-cell"}>
-                              {cellSessions.length === 0 ? <span className="timetable-empty" aria-label="Trống">
-                                  -
-                                </span> : <div className="timetable-cell-list">
+                      const available = cellSessions.filter(s => !isSessionFull(s) && !isSessionPastStart(s)).length;
+                      const cards = <div className="timetable-cell-list">
                                   {cellSessions.map(s => {
                             const availableSlots = s.availableSlots ?? s.capacity - s.occupiedPlaces;
                             const isFull = availableSlots <= 0;
@@ -587,7 +585,17 @@ export function BrowseSessionsView({
                                         </div>
                                       </button>;
                           })}
-                                </div>}
+                                </div>;
+                      return <td key={day.iso} className={day.isToday || day.isSelectedDate ? "timetable-cell is-today-col" : "timetable-cell"}>
+                        {cellSessions.length === 0 ? <span className="timetable-empty" aria-label="Trống">–</span>
+                          : cellSessions.length === 1 ? cards
+                          : <details className="timetable-group">
+                              <summary>
+                                <strong>{cellSessions.length} buổi chơi</strong>
+                                <small>{available ? `${available} buổi còn chỗ` : "Đã khóa đăng ký"}</small>
+                              </summary>
+                              {cards}
+                            </details>}
                             </td>;
                     })}
                       </tr>;
