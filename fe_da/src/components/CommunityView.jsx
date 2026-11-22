@@ -962,7 +962,7 @@ export function CommunityView({ user }) {
         <div className="comm-chat-layout">
           <div className="comm-chat-sidebar">
             <div className="comm-chat-sidebar-head">Hội thoại ({friends.length})</div>
-            <div className="comm-chat-friend-list">
+            <div className="comm-chat-friend-list comm-compact-pager">
               {friends.length === 0 ? (
                 <div style={{ padding: '20px 16px', fontSize: '13px', color: '#55685d' }}>
                   Kết bạn với người chơi khác để bắt đầu nhắn tin.

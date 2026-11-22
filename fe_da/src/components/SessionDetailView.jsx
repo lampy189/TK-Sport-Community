@@ -300,33 +300,14 @@ export function SessionDetailView({
               </strong>
             </div>
           </div>
-          <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "14px",
-          flexWrap: "wrap",
-          marginTop: "24px",
-          marginBottom: "12px"
-        }}>
-            <h3 className="participants-heading" style={{
-            margin: 0
-          }}>
-              Cùng ra sân{" "}
-              <small style={{
-              fontSize: "14px",
-              fontWeight: 500,
-              color: "#64748b",
-              marginLeft: "6px"
-            }}>
-                (Bấm vào người chơi để xem Hồ sơ công khai, kết bạn &amp; nhắn tin)
-              </small>
-            </h3>
-            {user && !isSessionLocked && <button type="button" className="comm-btn comm-btn-outline" onClick={() => setShowInviteFriendModal(true)}>
+          {user && !isSessionLocked && (
+            <div style={{ display: "flex", justifyContent: "flex-end", margin: "24px 0 12px" }}>
+              <button type="button" className="comm-btn comm-btn-outline" onClick={() => setShowInviteFriendModal(true)}>
                 <UserPlus size={15} />
                 <span>Rủ bạn bè cùng đặt sân</span>
-              </button>}
-          </div>
+              </button>
+            </div>
+          )}
           {publicParticipants.length === 0 ? <p className="participants-empty">
               Chưa có người chơi nào tham gia buổi này. Một kết nối mới đang chờ
               bạn.

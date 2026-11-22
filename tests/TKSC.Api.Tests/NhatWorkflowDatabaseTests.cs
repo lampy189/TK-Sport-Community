@@ -1,5 +1,6 @@
 using System.Text.Json;
 using be_da.Application.DTOs;
+using be_da.Application.Services;
 using be_da.Application.Interfaces.External;
 using be_da.Infrastructure.Persistence.Repositories;
 using Microsoft.Data.SqlClient;
@@ -48,6 +49,11 @@ public sealed class NhatWorkflowDatabaseTests
             PlayerB=await Sql("INSERT dbo.players(user_id) VALUES(@u); SELECT CONVERT(bigint,SCOPE_IDENTITY());",("@u",B));
             await Sql("INSERT dbo.friendships(requester_id,addressee_id,status) VALUES(@me,@a,'Accepted'),(@me,@b,'Accepted'); SELECT 1;",("@me",InviterPlayer),("@a",PlayerA),("@b",PlayerB));
         }
+        public Task<long> SetInvitationSkillProfiles() => Sql("""
+            INSERT dbo.player_sport_profiles(player_id,sport_id,current_score,current_band,rating_status)
+            VALUES(@a,@sport,30,'B2','Provisional'),(@b,@sport,30,'B2','Provisional');
+            SELECT 1;
+            """, ("@a",PlayerA), ("@b",PlayerB), ("@sport",Sport));
         public Task<long> Session(int capacity=8,string? band=null)=>Sql("INSERT dbo.sessions(sport_id,court_id,time_slot_id,session_date,band,capacity,price_vnd,status,created_by) VALUES(@sport,@court,@slot,DATEADD(day,40,CONVERT(date,SYSDATETIMEOFFSET())),@band,@capacity,100000,'Open',@owner); SELECT CONVERT(bigint,SCOPE_IDENTITY());",("@sport",Sport),("@court",Court),("@slot",Slot),("@band",band),("@capacity",capacity),("@owner",Owner));
         public InvitationRepository Invitations()=>new(Config,new Scope("Player",Venue));
         public SqlSessionStore Sessions()=>new(Connection,new Scope("Player",Venue));
@@ -55,13 +61,19 @@ public sealed class NhatWorkflowDatabaseTests
     }
     private static long Id(OperationResult result)=>JsonSerializer.SerializeToElement(result.Value).GetProperty("id").GetInt64();
     [WorkflowDatabaseFact]
-    public async Task InvitationDoesNotHoldUntilConsentAndUsesTheChosenPayerIdempotently()
+    public async Task InvitationDoesNotHoldUntilConsentAndUsesTheInviteeAsPayerIdempotently()
     {
         var f=new Fixture(); await f.Init(); var session=await f.Session();
         var repo=f.Invitations();
-        var invitation=Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerA,"inviter"),default));
+        await f.SetInvitationSkillProfiles();
+        var service = new InvitationService(repo, f.Sessions());
+        Assert.Equal(OperationOutcome.Invalid, (await service.SendAsync(f.Inviter, session, new(f.PlayerA, "inviter"), default)).Outcome);
+        var invitation=Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerA),default));
+        await f.Sql("UPDATE dbo.invitations SET payer_user_id=@payer WHERE id=@id; SELECT 1;", ("@payer",f.Inviter), ("@id",invitation));
+        Assert.Equal("INVITATION_PAYMENT_UNAVAILABLE", (await f.Sessions().AcceptInvitationAsync(f.A, invitation, default)).ErrorCode);
+        await f.Sql("UPDATE dbo.invitations SET payer_user_id=@payer WHERE id=@id; SELECT 1;", ("@payer",f.A), ("@id",invitation));
         Assert.Equal(0,await f.Sql("SELECT COUNT(*) FROM dbo.tickets WHERE session_id=@s",("@s",session)));
-        Assert.Equal(invitation,Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerA,"inviter"),default)));
+        Assert.Equal(invitation,Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerA),default)));
         Assert.Empty(await repo.ListAsync(f.Owner,default));
         Assert.False((await f.Sessions().AcceptInvitationAsync(f.B,invitation,default)).Success);
         var accepted=await f.Sessions().AcceptInvitationAsync(f.A,invitation,default);
@@ -69,7 +81,7 @@ public sealed class NhatWorkflowDatabaseTests
         var retry=await f.Sessions().AcceptInvitationAsync(f.A,invitation,default);
         Assert.Equal(accepted.TicketId,retry.TicketId);
         Assert.Equal(1,await f.Sql("SELECT COUNT(*) FROM dbo.tickets WHERE session_id=@s",("@s",session)));
-        Assert.Equal(f.Inviter,await f.Sql("SELECT payer_id FROM dbo.social_booking_orders WHERE id=@id",("@id",accepted.OrderId)));
+        Assert.Equal(f.A,await f.Sql("SELECT payer_id FROM dbo.social_booking_orders WHERE id=@id",("@id",accepted.OrderId)));
         Assert.Equal("accepted",Assert.Single(await repo.ListAsync(f.A,default)).Status);
         var second=Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerB,"separate"),default));
         Assert.Equal(OperationOutcome.Completed,(await repo.DeclineAsync(f.B,second,default)).Outcome);
@@ -79,7 +91,7 @@ public sealed class NhatWorkflowDatabaseTests
     [WorkflowDatabaseFact]
     public async Task ConcurrentAcceptsNeverOverbookTheLastPlace()
     {
-        var f=new Fixture(); await f.Init();var session=await f.Session(1);
+        var f=new Fixture(); await f.Init();await f.SetInvitationSkillProfiles();var session=await f.Session(1);
         var repo=f.Invitations();
         var a=Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerA),default));
         var b=Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerB),default));

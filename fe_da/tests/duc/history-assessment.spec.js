@@ -34,7 +34,7 @@ test('ticket history filters type, payer and refund without overflow',async({pag
   await page.route('**/api/**',r=>r.fulfill({json:[]}));
   await page.goto('/tests/duc/?screen=ticket-history');
   await expect(page.locator('.ticket-stub')).toHaveCount(2);
-  for(const kind of ['remaining','paidForOther','refund']){await page.getByLabel('Loại vé').selectOption(kind);await expect(page.locator('.ticket-stub')).toHaveCount(1);}
+  for(const kind of ['remaining','refund']){await page.getByLabel('Loại vé').selectOption(kind);await expect(page.locator('.ticket-stub')).toHaveCount(1);}
   await page.getByRole('button',{name:'Chi tiết vé'}).click();
   await expect(page.getByLabel('Diễn biến trạng thái')).toContainText('chờ xác minh');
   await expect(page.getByLabel('Chứng từ thanh toán')).toContainText('FIXTURE-REFERENCE');

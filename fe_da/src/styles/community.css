@@ -723,22 +723,22 @@
 }
 
 
-.comm-chat-friend-list .tksc-pagination {
+.comm-compact-pager .tksc-pagination {
   justify-content: center;
   margin-top: 0;
   padding: 8px;
 }
 
-.comm-chat-friend-list .tksc-pagination-summary {
+.comm-compact-pager .tksc-pagination-summary {
   display: none;
 }
 
-.comm-chat-friend-list .tksc-pagination-pages {
+.comm-compact-pager .tksc-pagination-pages {
   flex-wrap: wrap;
   justify-content: center;
 }
 
-.comm-chat-friend-list .tksc-pagination-pages button {
+.comm-compact-pager .tksc-pagination-pages button {
   min-width: 30px;
   min-height: 32px;
   padding: 4px 7px;
