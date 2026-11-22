@@ -722,6 +722,28 @@
   overflow-y: auto;
 }
 
+
+.comm-chat-friend-list .tksc-pagination {
+  justify-content: center;
+  margin-top: 0;
+  padding: 8px;
+}
+
+.comm-chat-friend-list .tksc-pagination-summary {
+  display: none;
+}
+
+.comm-chat-friend-list .tksc-pagination-pages {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.comm-chat-friend-list .tksc-pagination-pages button {
+  min-width: 30px;
+  min-height: 32px;
+  padding: 4px 7px;
+}
+
 .comm-chat-friend-item {
   display: flex;
   align-items: center;

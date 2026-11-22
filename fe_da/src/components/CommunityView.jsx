@@ -968,7 +968,7 @@ export function CommunityView({ user }) {
                   Kết bạn với người chơi khác để bắt đầu nhắn tin.
                 </div>
               ) : (
-                <PaginatedList items={friends}>{(fr) => (
+                <PaginatedList items={friends} pageSize={5} label="Phân trang hội thoại">{(fr) => (
                   <div
                     key={fr.friendPlayerId}
                     className={`comm-chat-friend-item ${
