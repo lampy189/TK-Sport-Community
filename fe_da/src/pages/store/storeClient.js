@@ -23,6 +23,9 @@ export const storeClient = {
     });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
+      if (response.status === 503) {
+        throw new Error('Tính năng tạo giỏ hàng đang tạm gián đoạn do giữ tồn kho chưa sẵn sàng. Vui lòng thử lại sau hoặc liên hệ quản trị viên.');
+      }
       throw new Error(data.message || 'Không thể tạo giỏ hàng / đơn hàng mới.');
     }
     return response.json();
