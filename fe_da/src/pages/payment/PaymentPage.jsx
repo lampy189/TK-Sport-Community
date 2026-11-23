@@ -174,7 +174,8 @@ export default function PaymentPage({
   const state = order
     ? deriveState(order.status, latest?.status, order.expiresAt, now)
     : "";
-  const canPay = !order?.tickets?.some(t => ["suspended", "cancelled"].includes(norm(t.sessionStatus))) && ["pending", "processing", "failed"].includes(state) && orderStatus === "pending" && seconds > 0 && payStatus !== "paid";
+  const freePending = order && Number(order.totalAmount) === 0 && orderStatus === 'pending';
+  const canPay = !freePending && !order?.tickets?.some(t => ["suspended", "cancelled"].includes(norm(t.sessionStatus))) && ["pending", "processing", "failed"].includes(state) && orderStatus === "pending" && seconds > 0 && payStatus !== "paid";
   const timeLeft = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
   const statusMessage = {
@@ -406,6 +407,7 @@ export default function PaymentPage({
                   <span>Tổng cộng</span>
                   <strong>{money(order.totalAmount)}</strong>
                 </div>
+                {freePending && <p role="status">Buổi miễn phí đang chờ quy trình xác nhận. Chưa phát hành vé; không tạo thanh toán payOS.</p>}
                 {canPay && (
                   <p className="checkout-timer" role="timer">
                     <Timer size={16} />

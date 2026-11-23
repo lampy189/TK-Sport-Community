@@ -1,8 +1,9 @@
 import SectionLayout from "../../components/layout/SectionLayout";
 import { ArrowUpRight, Layers3, Activity, ShieldCheck } from "lucide-react";
 import ModuleIcon from "../../components/ui/ModuleIcon";
+import RuntimeDashboard from '../operations/RuntimeDashboard';
 
-export default function HomeOverview({ config, preview, onOpen }) {
+export default function HomeOverview({ config, preview, onOpen, role }) {
   const facts = preview
     ? config.stats
     : [
@@ -15,7 +16,8 @@ export default function HomeOverview({ config, preview, onOpen }) {
       ];
   return (
     <>
-      <div
+      {!preview && <RuntimeDashboard role={role} />}
+      {preview && <div
         className="stats-grid"
         aria-label={preview ? "Số liệu minh họa" : "Thông tin không gian"}
       >
@@ -38,8 +40,8 @@ export default function HomeOverview({ config, preview, onOpen }) {
             <span>{label}</span>
           </div>
         ))}
-      </div>
-      <div className="workspace-grid" id="workspace">
+      </div>}
+      {role !== 'manager' && <div className="workspace-grid" id="workspace">
         <SectionLayout
           title={config.section}
           description="Chọn công việc bạn muốn thực hiện."
@@ -80,7 +82,7 @@ export default function HomeOverview({ config, preview, onOpen }) {
             </p>
           </div>
         </SectionLayout>
-      </div>
+      </div>}
       {preview && (
         <p className="demo-note">
           Bản mẫu giao diện · Số liệu chỉ để minh họa.

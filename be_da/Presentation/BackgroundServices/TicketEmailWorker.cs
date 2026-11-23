@@ -7,7 +7,7 @@ public sealed class TicketEmailWorker(IServiceScopeFactory scopes, IConfiguratio
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            if (config.GetValue<bool>("Email:Enabled") && !string.IsNullOrWhiteSpace(config["Email:Password"]))
+            if (await be_da.Application.Services.TechnicalSettingsService.RuntimeEnabledAsync(scopes, "Email:Enabled", stoppingToken) && !string.IsNullOrWhiteSpace(config["Email:Password"]))
             {
                 try
                 {

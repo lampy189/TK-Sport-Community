@@ -19,6 +19,8 @@ using be_da.Infrastructure.ExternalServices;
 using be_da.Infrastructure.Persistence.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddScoped<be_da.Application.Interfaces.Repositories.ITechnicalStore, be_da.Infrastructure.Persistence.Repositories.TechnicalStore>();
+builder.Services.AddScoped<be_da.Application.Interfaces.Services.ITechnicalSettingsService, be_da.Application.Services.TechnicalSettingsService>();
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 if (builder.Environment.IsDevelopment()) builder.Configuration.AddUserSecrets<Program>(optional: true);

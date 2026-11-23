@@ -1,0 +1,43 @@
+sequenceDiagram
+autonumber
+actor Ref as Referee
+participant UI as Referee Web App
+participant API as AssessmentsController
+participant SVC as SkillAssessmentService
+participant SC as SportAssessmentScoring
+participant DB as SQL Server
+
+Ref->>UI: Open assessment for attendee
+UI->>API: POST open (sessionId, playerId)
+API->>SVC: OpenAsync
+SVC->>DB: Check referee assigned to session (session_referees)
+SVC->>DB: Check ticket paid and checked-in, not self-assessment
+SVC->>DB: Load active Rubric + RubricDimensions of the sport
+SVC->>DB: INSERT Assessment (draft) + AssessmentScore per dimension
+SVC-->>UI: AssessmentView (rubric, marks, revision)
+
+loop each criterion (score / detailed sliders, optional comment)
+  Ref->>UI: Enter mark
+  UI->>API: PUT save (revision, marks)
+  API->>SVC: SaveAsync
+  SVC->>DB: Check status = draft and revision unchanged
+  SVC->>SC: CriterionPoints / CalculatePoints / Band
+  SVC->>DB: UPDATE AssessmentScore, TotalScore, BandResult + audit
+  SVC-->>UI: AssessmentView
+end
+
+Ref->>UI: Publish result
+UI->>API: POST publish (revision, expectedProfileScore, expectedProfileBand)
+API->>SVC: PublishAsync
+SVC->>DB: Verify profile unchanged and no newer observation
+alt Profile already rated (periodic review)
+  SVC->>SC: ReviewScore(total, previous total)
+  Note over SVC: If confirmed band would change: return 409 and STOP; Manager review required
+end
+SVC->>SC: Band(total)
+SVC->>DB: INSERT PlayerRatingHistory (old/new score and band)
+SVC->>DB: UPDATE PlayerSportProfile (CurrentScore, CurrentBand, Rated)
+SVC->>DB: UPDATE Assessment status = published
+
+SVC->>DB: SaveChanges (single transaction)
+SVC-->>UI: Published AssessmentView

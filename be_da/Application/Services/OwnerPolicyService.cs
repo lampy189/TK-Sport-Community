@@ -4,6 +4,7 @@ namespace be_da.Application.Services;
 
 public sealed class OwnerPolicyService(IOwnerPolicyRepository repository, TimeProvider clock) : be_da.Application.Interfaces.Services.IOwnerPolicyService
 {
+    public Task<object> OptionsAsync(CancellationToken ct) => repository.OptionsAsync(ct);
     public static string? Validate(SubmitPolicyRequest r, DateTimeOffset now)
     {
         if (string.IsNullOrWhiteSpace(r.Code) || r.Code.Length > 100 || !System.Text.RegularExpressions.Regex.IsMatch(r.Code, "^[A-Za-z0-9_-]+$")

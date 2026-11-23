@@ -19,5 +19,4 @@ public interface ISkillAssessmentService
     Task<AssessmentView> ReadAsync(long id, long actorId, CancellationToken ct);
     Task<AssessmentView> SaveAsync(long id, long actorId, SaveAssessmentRequest request, CancellationToken ct);
     Task<AssessmentView> PublishAsync(long id, long actorId, PublishAssessmentRequest request, CancellationToken ct);
-    Task CheckFutureTicketsAsync(PlayerSportProfile profile, long actorId, CancellationToken ct);
 }

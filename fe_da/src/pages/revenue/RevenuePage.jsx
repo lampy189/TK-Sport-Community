@@ -15,7 +15,7 @@ function dates() {
   const now = new Date(Date.now() + 7 * 3600000);
   return { to: now.toISOString().slice(0, 10), from: new Date(now.getTime() - 6 * 86400000).toISOString().slice(0, 10) };
 }
-export default function RevenuePage() {
+export default function RevenuePage({ role }) {
   const [scope, setScope] = useState(null);
   const [venue, setVenue] = useState('');
   const [range, setRange] = useState(dates);
@@ -51,7 +51,7 @@ export default function RevenuePage() {
       </select></label>
       <label>Từ ngày<input type="date" value={range.from} onChange={e => setRange({ ...range, from: e.target.value })} /></label>
       <label>Đến ngày<input type="date" value={range.to} onChange={e => setRange({ ...range, to: e.target.value })} /></label>
-      <button className="button button-secondary" onClick={() => setRetry(n => n + 1)}>Tải lại</button>
+      {(role !== 'manager' || error) && <button className="button button-secondary" onClick={() => setRetry(n => n + 1)}>Tải lại</button>}
     </div>
     <details className="revenue-demo-note"><summary>Cách tính doanh số</summary><p>Ngày hạch toán theo giờ Việt Nam (UTC+7). Thu ròng = tiền đã thu − tiền đã hoàn, chưa trừ chi phí. Không tính các khoản đang chờ thanh toán hoặc hoàn tiền.</p></details>
     {error && <p role="alert">{error}</p>}

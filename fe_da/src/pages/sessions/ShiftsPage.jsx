@@ -60,7 +60,7 @@ export default function ShiftsPage({ role, user }) {
       <div className="workflow-actions">
         <label>Ngày <input type="date" value={date} onChange={e => setDate(e.target.value)} /></label>
         <label>Hiển thị <select value={filter} onChange={e => setFilter(e.target.value)}><option value="upcoming">Ca sắp tới</option>{!manager && <option value="pending">Chờ nhận</option>}<option value="all">Tất cả</option></select></label>
-        <button className="button button-secondary" disabled={busy || loading} onClick={async () => { setLoading(true); setError(''); try { await load(); setSelected(null); } catch (e) { setError(e.message); } finally { setLoading(false); } }}>Tải lại</button>
+        {(!manager || error) && <button className="button button-secondary" disabled={busy || loading} onClick={async () => { setLoading(true); setError(''); try { await load(); setSelected(null); } catch (e) { setError(e.message); } finally { setLoading(false); } }}>Tải lại</button>}
       </div>
       {error && <p className="workflow-error" role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}

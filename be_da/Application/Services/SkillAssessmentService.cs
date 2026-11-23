@@ -1,4 +1,3 @@
-using TKSC.Application.Services.Notifications;
 using TKSC.Application.DTOs;
 using TKSC.Domain.Exceptions;
 using be_da.Application.Interfaces.Services;
@@ -146,7 +145,7 @@ public sealed class SkillAssessmentService(ISkillAssessmentRepository repository
     public Task<AssessmentView> PublishAsync(long id, long actorId, PublishAssessmentRequest request, CancellationToken ct) => repository.MutateAsync(async () =>
     {
         var a = await LoadAsync(id, actorId, ct);
-        // Retry after a lost response must never append history or refund twice.
+        // Retry after a lost response must never append rating history twice.
         if (a.Status == "published")
             return await ViewAsync(a, ct);
         await EditableAsync(a, request.Revision, ct);
@@ -186,30 +185,10 @@ public sealed class SkillAssessmentService(ISkillAssessmentRepository repository
         // Keep the raw observation on Assessment; the smoothed published value lives in history/profile.
         a.TotalScore = CalculateTotal(await MarksAsync(a, ct));
         a.BandResult = SportAssessmentScoring.Band(a.TotalScore!.Value);
-        if (!string.Equals(oldBand, band, StringComparison.OrdinalIgnoreCase))
-            await CheckFutureTicketsAsync(profile, actorId, ct);
         Audit(a, "assessment_published", new { at = clock.GetUtcNow(), oldScore, oldBand, score = total, band, reason = "Published complete on-court observation", supportingAssessmentId = confirmed ? previous?.Id : null });
         await repository.SaveAsync(ct);
         return await ViewAsync(a, ct);
     }, ct);
-    public async Task CheckFutureTicketsAsync(PlayerSportProfile profile, long actorId, CancellationToken ct)
-    {
-        var now = clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7));
-        var today = DateOnly.FromDateTime(now.DateTime);
-        var time = TimeOnly.FromDateTime(now.DateTime);
-        var tickets = await repository.ListFuturePaidTicketsAsync(profile, ct, today, time);
-        foreach (var ticket in tickets)
-        {
-            if (string.IsNullOrWhiteSpace(ticket.Session.Band) || string.Equals(ticket.Session.Band, profile.CurrentBand, StringComparison.OrdinalIgnoreCase) || await repository.CheckFutureTicketsSessionExceptionsExistsAsync(profile, ct, ticket))
-                continue;
-            foreach (var source in await repository.FutureRefundSourcesAsync(ticket,ct))
-                repository.AddRefunds(new Refund { PaymentId=source.PaymentId, TicketId=ticket.Id, RecipientId=source.RecipientId, AmountVnd=source.AmountVnd, Status="requested", InitiatedBy=actorId });
-            repository.AddNotifications(TicketNotifications.Create("ticket_refund_requested",ticket.Id,ticket.Player.UserId,ticket.Order.PayerId));
-            repository.AddAuditLogs(new AuditLog { ActorId = actorId, Action = "rating_ticket_invalidated", EntityType = "Ticket", EntityId = ticket.Id, OldValue = ticket.Status, NewValue = JsonSerializer.Serialize(new { at = clock.GetUtcNow(), band = profile.CurrentBand, refund = "requested" }) });
-            ticket.Status = "cancelled";
-        }
-    }
-
     private void EnsureOngoing(Session session)
     {
         if (!AssessmentSessionRules.Ongoing(clock.GetUtcNow()).Compile()(session))

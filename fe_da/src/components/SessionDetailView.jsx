@@ -107,6 +107,7 @@ export function SessionDetailView({
     }
   }
   async function handleRegister() {
+    if (details?.summary?.priceVnd === 0) return;
     if (!user) {
       setRegistrationFeedback({
         type: "NEED_LOGIN",
@@ -366,7 +367,8 @@ export function SessionDetailView({
           <p className="booking-note">
             {isPastStart ? "Khung giờ này đã qua thời điểm bắt đầu và đã khóa đăng ký." : isFull ? "Khung giờ này đã đủ số lượng người đặt và đã khóa đăng ký." : "Hệ thống kiểm tra trình độ và chỗ trống trước khi giữ chỗ."}
           </p>
-          <button className="button button-primary booking-action" disabled={registering || isSessionLocked || registrationFeedback?.type === "SUCCESS_PENDING"} onClick={handleRegister}>
+          {summary.priceVnd === 0 && <p role="status">Buổi miễn phí đang chờ quy trình xác nhận. Chưa mở đăng ký trực tuyến.</p>}
+          <button className="button button-primary booking-action" disabled={summary.priceVnd === 0 || registering || isSessionLocked || registrationFeedback?.type === "SUCCESS_PENDING"} onClick={handleRegister}>
             {registering ? "Đang xử lý…" : isPastStart ? "Đã khóa (Qua giờ bắt đầu)" : isFull ? "Đã khóa (Đủ chỗ)" : "Đăng ký buổi chơi"}
           </button>
           {registrationFeedback?.type === "SUCCESS_PENDING" && <button className="button button-accent booking-action" onClick={() => onPayment(registrationFeedback.data.orderId)}>

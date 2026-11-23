@@ -64,42 +64,8 @@ public sealed class SkillAssessmentRepository(Sep490Context db, TimeProvider clo
     public Task<Assessment?> PublishAssessmentsAsync(CancellationToken ct, Assessment a, PlayerSportProfile profile, DateOnly observedDate, TimeOnly observedTime) => db.Assessments.Where(x => x.PlayerSportProfileId == profile.Id && x.Id != a.Id && x.SessionId != a.SessionId && x.RubricId == a.RubricId && x.SessionId != null && (x.Session!.SessionDate < observedDate || (x.Session.SessionDate == observedDate && x.Session.TimeSlot.StartTime < observedTime)) && x.AssessmentType == "on_court" && x.TotalScore != null).OrderByDescending(x => x.Session!.SessionDate).ThenByDescending(x => x.Session!.TimeSlot.StartTime).ThenByDescending(x => x.Id).FirstOrDefaultAsync(ct);
     public Task<bool> PublishPlayerRatingHistoriesExistsAsync(CancellationToken ct, PlayerSportProfile profile) => db.PlayerRatingHistories.Where(RatingPublicationRules.OfficialHistory).AnyAsync(h => h.PlayerSportProfileId == profile.Id, ct);
     public void AddPlayerRatingHistories(PlayerRatingHistory value) => db.PlayerRatingHistories.Add(value);
-    public Task<List<Ticket>> ListFuturePaidTicketsAsync(PlayerSportProfile profile, CancellationToken ct, DateOnly today, TimeOnly time) => db.Tickets.Include(t => t.Player).Include(t => t.Session).ThenInclude(s => s.TimeSlot).Include(t => t.Order).ThenInclude(o => o.Payments).Where(t => t.PlayerId == profile.PlayerId && t.Session.SportId == profile.SportId && t.Status == "confirmed" && t.CheckedInBy == null && t.Order.Status == "paid" && (t.Session.SessionDate > today || (t.Session.SessionDate == today && t.Session.TimeSlot.StartTime > time))).ToListAsync(ct);
-    public Task<bool> CheckFutureTicketsSessionExceptionsExistsAsync(PlayerSportProfile profile, CancellationToken ct, Ticket ticket) => db.SessionExceptions.AnyAsync(e => e.SessionId == ticket.SessionId && e.PlayerId == profile.PlayerId && e.ApprovedBy != null, ct);
-    public Task<bool> CheckFutureTicketsRefundsExistsAsync(CancellationToken ct, Ticket ticket) => db.Refunds.AnyAsync(r => r.TicketId == ticket.Id, ct);
-    public void AddRefunds(Refund value) => db.Refunds.Add(value);
     public void AddAuditLogs(AuditLog value) => db.AuditLogs.Add(value);
     public Task<long?> RevisionAuditLogsMaxAsync(long id, CancellationToken ct) => db.AuditLogs.Where(l => l.EntityType == "Assessment" && l.EntityId == id).Select(l => (long? )l.Id).MaxAsync(ct);
     public Task<string?> EvidenceAuditLogsAsync(long id, CancellationToken ct) => db.AuditLogs.Where(l => l.EntityType == "Assessment" && l.EntityId == id && l.Action == "assessment_saved").OrderByDescending(l => l.Id).Select(l => l.NewValue).FirstOrDefaultAsync(ct);
 
-    public void AddNotifications(IEnumerable<Notification> values) => db.Notifications.AddRange(values);
-    public async Task<List<FutureRefundSource>> FutureRefundSourcesAsync(Ticket ticket, CancellationToken ct)
-    {
-        var funds = await db.TicketFunding.Where(f => f.TicketId == ticket.Id && !f.Retired).ToListAsync(ct);
-        if (funds.Count == 0)
-        {
-            var paid = ticket.Order.Payments.Where(p => p.Status.Equals("paid",StringComparison.OrdinalIgnoreCase) && p.GoodsOrderId == null).ToList();
-            if (paid.Count == 1 && paid[0].AmountVnd >= ticket.AmountVnd)
-                funds.Add(new TicketFunding { PaymentId=paid[0].Id, AmountVnd=ticket.AmountVnd });
-            else if (paid.Sum(p => (long)p.AmountVnd) == ticket.AmountVnd)
-                funds.AddRange(paid.Select(p => new TicketFunding { PaymentId=p.Id, AmountVnd=p.AmountVnd }));
-        }
-        if (ticket.AmountVnd == 0) return [];
-        var ids=funds.Select(f=>f.PaymentId).ToArray();
-        var payments=await db.Payments.Where(p=>ids.Contains(p.Id)).ToDictionaryAsync(p=>p.Id,ct);
-        if (funds.Sum(f => (long)f.AmountVnd) != ticket.AmountVnd || funds.Any(f => f.AmountVnd<=0 || !payments.TryGetValue(f.PaymentId,out var p) || p.GoodsOrderId!=null || p.PayerId==null || !p.Status.Equals("paid",StringComparison.OrdinalIgnoreCase)))
-            throw new AssessmentException(409,"Nguồn tiền vé chưa khớp; gửi ngoại lệ đối soát, không tự tạo thanh toán.");
-        var result = new List<FutureRefundSource>();
-        foreach(var group in funds.GroupBy(f=>f.PaymentId).OrderBy(g=>g.Key))
-        {
-            var allocation=group.Sum(f=>f.AmountVnd); var payment=payments[group.Key];
-            var prior=await db.Refunds.Where(r=>r.TicketId==ticket.Id && r.PaymentId==group.Key && r.Status!="rejected").SumAsync(r=>(long?)r.AmountVnd,ct)??0;
-            var remaining=allocation-prior;
-            var reserved=await db.Refunds.Where(r=>r.PaymentId==group.Key && r.Status!="rejected").SumAsync(r=>(long?)r.AmountVnd,ct)??0;
-            reserved+=db.ChangeTracker.Entries<Refund>().Where(e=>e.State==EntityState.Added&&e.Entity.PaymentId==group.Key&&e.Entity.Status!="rejected").Sum(e=>(long)(e.Entity.AmountVnd??0));
-            if(remaining<0 || reserved+remaining>payment.AmountVnd) throw new AssessmentException(409,"Nguồn tiền đã được phân bổ hoàn vượt hạn mức; cần đối soát.");
-            if(remaining>0)result.Add(new(group.Key,payment.PayerId!.Value,checked((int)remaining)));
-        }
-        return result;
-    }
 }

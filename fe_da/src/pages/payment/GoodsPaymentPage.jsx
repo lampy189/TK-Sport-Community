@@ -78,7 +78,9 @@ export default function GoodsPaymentPage({ initialOrderId }) {
         {cart && <>
           <button className="button button-primary" disabled={busy} onClick={() => mutate("payment-instructions")}>Tạo mã chuyển khoản</button>
           <fieldset disabled={busy}><legend>Thanh toán tiền mặt</legend>
-            <label>Số tiền thực thu cho đơn (VND)<input type="number" min="1" step="1" value={received} onChange={e => setReceived(e.target.value)} /></label>
+            <label>Số tiền khách đưa (VND)<input type="number" min="1" step="1" value={received} onChange={e => setReceived(e.target.value)} /></label>
+            {received !== '' && Number(received) > order.totalAmount && <p role="status">Tiền thừa dự kiến: {money(Number(received) - order.totalAmount)}. Trường hợp trả tiền thừa đang chờ quy trình xử lý; chưa thể xác nhận thanh toán.</p>}
+            {received !== '' && Number(received) < order.totalAmount && <p role="status">Còn thiếu: {money(order.totalAmount - Number(received))}.</p>}
             <label><span><input style={{ width: "auto" }} type="checkbox" checked={cashAcknowledged} onChange={e => setCashAcknowledged(e.target.checked)} /> Tôi đã nhận đủ tiền mặt cho đơn này.</span></label>
           </fieldset>
           <button className="button button-secondary" disabled={busy || !cashAcknowledged || Number(received) !== order.totalAmount} onClick={() => mutate("confirm-cash", { receivedAmount: Number(received) })}>Xác nhận đã nhận tiền mặt</button>
