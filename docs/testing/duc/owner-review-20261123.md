@@ -61,3 +61,7 @@ The refund transfers were simulated. Google sign-in, live bank transfers, SMTP/p
 ## Typography and spacing follow-up
 
 Owner workspaces now use 16px content text, 15px labels, 24–26px page headings, 8/12/16px spacing and controls at least 44px high. Cards and collapsed proposal sections have less empty space; table identifiers stay on one line. The stylesheet is scoped to Owner. Six Owner browser regression tests and the frontend production build pass; mobile screenshots were visually reviewed.
+
+## Follow-up: serialized audit history
+
+The expanded history screenshot reported on 23 November revealed raw JSON rendering that the original collapsed-history checks missed. See [the audit-history fix and focused regression results](json-history-review-20261123.md). This follow-up adds explicit expanded-history assertions and synthetic desktop/mobile evidence.

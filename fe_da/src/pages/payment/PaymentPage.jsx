@@ -1,3 +1,4 @@
+import { AuditDetails } from '../../components/audit/AuditHistory';
 import { paymentState as deriveState } from './ticketState';
 import TicketList from "./TicketList";
 import { useEffect, useState } from "react";
@@ -249,7 +250,7 @@ export default function PaymentPage({
                   Chờ kiểm tra
                 </span>
                 {p.reasons?.map((r, i) => (
-                  <p key={i}>{r.newValue}</p>
+                  <AuditDetails key={i} value={r.newValue}/>
                 ))}
               </article>
             ))

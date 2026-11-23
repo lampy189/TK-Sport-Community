@@ -1,3 +1,7 @@
+import OperationalExceptions from '../../src/pages/payment/OperationalExceptions';
+import TicketOperations from '../../src/pages/payment/TicketOperations';
+import PaymentPage from '../../src/pages/payment/PaymentPage';
+import OperationsOverview from '../../src/pages/operations/OperationsOverview';
 import { createRoot } from 'react-dom/client';
 import { PolicyPage, BusinessReportPage } from '../../src/pages/operations/BusinessConsole';
 import OperationsPage from '../../src/pages/operations/OperationsPage';
@@ -5,4 +9,4 @@ import AccessPage from '../../src/pages/operations/AccessPage';
 import '../../src/index.css';
 import '../../src/styles/owner-operations.css';
 const screen=new URLSearchParams(location.search).get('screen');
-createRoot(document.getElementById('root')).render(<div className="home-layout" data-role="owner"><main style={{maxWidth:1100,margin:'20px auto',padding:16}}><p>TEST FIXTURES — no real transactions</p>{screen==='operations'?<OperationsPage role="owner"/>:screen==='access'?<AccessPage role="owner" user={{id:1}}/>:screen==='report'?<BusinessReportPage/>:<PolicyPage role="owner" user={{id:1}}/>}</main></div>);
+createRoot(document.getElementById('root')).render(<div className="home-layout" data-role="owner"><main style={{maxWidth:1100,margin:'20px auto',padding:16}}><p>TEST FIXTURES — no real transactions</p>{screen==='exceptions'?<OperationalExceptions role="owner"/>:screen==='refunds'?<TicketOperations role="owner" initialTab="refunds"/>:screen==='payment-review'?<PaymentPage staff/>:screen==='overview'?<OperationsOverview role="owner"/>:screen==='operations'?<OperationsPage role="owner"/>:screen==='access'?<AccessPage role="owner" user={{id:1}}/>:screen==='report'?<BusinessReportPage/>:<PolicyPage role="owner" user={{id:1}}/>}</main></div>);

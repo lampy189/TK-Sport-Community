@@ -1,3 +1,4 @@
+import { auditText, roleLabel } from '../../components/audit/auditPresentation';
 import { matchesText } from '../../components/ui/managerUiState';
 import { accessDecisionActions, accessTargets } from './ownerAccessModel';
 import PaginatedList from '../../components/ui/PaginatedList';
@@ -51,7 +52,7 @@ export default function AccessPage({ role, user }) {
         const payload = parse(item.payload); const request = payload.Request || {};
         const actions=accessDecisionActions(item,id,role,request.Role);
         const canDecide=actions.length>0;
-        return <article className="ops-card" key={item.id}><h2>#{item.id} · {item.target}</h2><p>{request.Role} · {({ grant: 'Cấp quyền', revoke: 'Thu hồi', handover: 'Bàn giao' })[request.Action]}</p><strong>{statuses[item.status] || item.status}</strong><p>Người đề xuất: {item.requester}</p><p>{request.Reason}</p><p>{payload.At && new Date(payload.At).toLocaleString('vi-VN')}</p>
+        return <article className="ops-card" key={item.id}><h2>#{item.id} · {item.target}</h2><p>{roleLabel(request.Role)} · {({ grant: 'Cấp quyền', revoke: 'Thu hồi', handover: 'Bàn giao' })[request.Action]}</p><strong>{statuses[item.status] || item.status}</strong><p>Người đề xuất: {item.requester}</p><p>{request.Reason && auditText(request.Reason)}</p><p>{payload.At && new Date(payload.At).toLocaleString('vi-VN')}</p>
           {canDecide && <><label>Lý do quyết định<textarea required maxLength={2000} value={reasons[item.id] || ''} onChange={e => setReasons({ ...reasons, [item.id]: e.target.value })} /></label><div className="ops-actions">{actions.includes('approve')&&<button disabled={busy || !reasons[item.id]?.trim()} onClick={() => run(`/${item.id}/decision`, { approve: true, reason: reasons[item.id] })}>Duyệt</button>}<button disabled={busy || !reasons[item.id]?.trim()} onClick={() => run(`/${item.id}/decision`, { approve: false, reason: reasons[item.id] })}>{item.status==='approved'?'Thu hồi phê duyệt':'Từ chối'}</button></div></>}
           {role === 'system-admin' && ['approved', 'verified'].includes(item.status) && <button disabled={busy} onClick={() => run(`/${item.id}/execute`)}>{item.status === 'verified' ? 'Hoàn tất và thu hồi truy cập cũ' : 'Triển khai quyền đã duyệt'}</button>}
           {role === 'system-admin' && item.status === 'provisioned' && request.TargetUserId === id && <><p>Xác nhận sau khi đã kiểm tra quyền cấu hình và hỗ trợ bằng tài khoản của bạn.</p><button disabled={busy} onClick={() => run(`/${item.id}/verify`)}>Tôi đã kiểm tra quyền truy cập</button></>}

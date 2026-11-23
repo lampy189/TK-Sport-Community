@@ -1,0 +1,9 @@
+.audit-history { min-width: 0; }
+.audit-entry { padding-block: 16px; border-bottom: 1px solid #d7e4dc; }
+.audit-entry h4 { font-size: 17px; line-height: 1.4; margin: 0 0 4px; }
+.audit-entry .audit-meta { font-size: 14px; color: #52675d; margin: 0 0 12px; }
+.audit-fields { display: grid; gap: 8px; margin: 0; }
+.audit-fields > div { display: grid; grid-template-columns: minmax(130px, .4fr) minmax(0, 1fr); gap: 12px; }
+.audit-fields dt { font-size: 15px; font-weight: 600; }
+.audit-fields dd, .audit-text { font-size: 16px; line-height: 1.5; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .audit-fields > div { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
