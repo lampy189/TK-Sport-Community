@@ -266,17 +266,7 @@ export function CommunityView({ user }) {
   return (
     <div className="comm-container">
       {/* Editorial Header */}
-      <header className="comm-light-hero">
-        <div>
-          <span className="comm-eyebrow">CẦU LÔNG &amp; PICKLEBALL DIRECTORY</span>
-          <h1>
-            Cộng đồng Người chơi<span>.</span>
-          </h1>
-          <p>
-            Tra cứu trình độ Band Cầu lông &amp; Pickleball của các thành viên trong câu lạc bộ, kết nối bạn tập và hẹn lịch ra sân.
-          </p>
-        </div>
-
+      <header className="comm-light-hero comm-tabs-only">
         <div className="comm-segmented-tabs" role="tablist">
           <button
             type="button"
@@ -962,13 +952,13 @@ export function CommunityView({ user }) {
         <div className="comm-chat-layout">
           <div className="comm-chat-sidebar">
             <div className="comm-chat-sidebar-head">Hội thoại ({friends.length})</div>
-            <div className="comm-chat-friend-list">
+            <div className="comm-chat-friend-list comm-compact-pager">
               {friends.length === 0 ? (
                 <div style={{ padding: '20px 16px', fontSize: '13px', color: '#55685d' }}>
                   Kết bạn với người chơi khác để bắt đầu nhắn tin.
                 </div>
               ) : (
-                <PaginatedList items={friends}>{(fr) => (
+                <PaginatedList items={friends} pageSize={5} label="Phân trang hội thoại">{(fr) => (
                   <div
                     key={fr.friendPlayerId}
                     className={`comm-chat-friend-item ${

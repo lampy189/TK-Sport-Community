@@ -17,9 +17,9 @@ function historyDetail(item, data) {
     {typeof request.Active === 'boolean' && <p>{request.Active ? 'Đang hoạt động' : 'Ngừng hoạt động'}</p>}
   </>;
 }
-export default function OperationsPage({ role = 'owner', initialTab = 'venues' }) {
+export default function OperationsPage({ role = 'owner' }) {
   const [data, setData] = useState(null);
-  const [tab, setTab] = useState(initialTab);
+  const [tab, setTab] = useState('venues');
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(null);
   const [error, setError] = useState('');

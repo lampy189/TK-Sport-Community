@@ -1,6 +1,7 @@
 import PaginatedList from '../../components/ui/PaginatedList';
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PackageCheck } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import SectionLayout from "../../components/layout/SectionLayout";
 import { workflowRequest } from "../workflowClient";
 import "./stock.css";
@@ -18,19 +19,21 @@ function orderState(order) {
   return { label: "Chờ thanh toán", className: "badge-gray" };
 }
 
+const closed = new Set(['Cancelled', 'Expired', 'Failed', 'NeedsReview']);
+function payable(order) {
+  if (!order || closed.has(order.status) || closed.has(order.paymentState)) return false;
+  if (order.paymentState === 'Paid' || order.handoverState === 'Delivered' || order.handoverState === 'Received') return false;
+  return true;
+}
+
 // Receipt confirmation follows staff handover; stock was posted at delivery.
-export default function MyGoodsOrders() {
+export default function MyGoodsOrders({ embedded = false, refreshKey = 0, highlightId = null }) {
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
-  const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [detail, setDetail] = useState(null);
-  async function inspect(id) {
-    setBusyId(id); setError(''); setDetail(null);
-    try { setDetail(await workflowRequest(root+'/'+id)); }
-    catch(e) { setError(e.message); } finally { setBusyId(null); }
-  }
+  const scrolled = useRef("");
 
   useEffect(() => {
     let active = true;
@@ -44,7 +47,7 @@ export default function MyGoodsOrders() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   async function cancel(id) {
     setBusyId(id);
@@ -57,6 +60,27 @@ export default function MyGoodsOrders() {
     } finally {
       setBusyId(null);
     }
+  }
+
+  function remember(updated) {
+    setDetail(updated);
+    setOrders((list) => list.map((o) => (o.id === updated.id ? { ...o, ...updated } : o)));
+  }
+
+  async function pay(id) {
+    setBusyId(id);
+    setError("");
+    try { remember(await workflowRequest(`${root}/${id}/payment-instructions`, "POST")); }
+    catch (e) { setError(e.message); }
+    finally { setBusyId(null); }
+  }
+
+  async function refreshPayment(id) {
+    setBusyId(id);
+    setError("");
+    try { remember(await workflowRequest(`${root}/${id}/refresh`, "POST")); }
+    catch (e) { setError(e.message); }
+    finally { setBusyId(null); }
   }
 
   async function receive(id) {
@@ -72,50 +96,69 @@ export default function MyGoodsOrders() {
     }
   }
 
+  const focusId = String(highlightId || new URLSearchParams(window.location.search).get('goodsOrderId') || '');
+  useEffect(() => {
+    if (!orders || !focusId) return;
+    const mark = `${refreshKey}:${focusId}`;
+    if (scrolled.current === mark) return;
+    const node = document.getElementById(`goods-order-${focusId}`);
+    if (!node) return;
+    scrolled.current = mark;
+    node.scrollIntoView({ block: 'nearest' });
+  }, [orders, focusId, refreshKey]);
+
   if (!orders) return <p role="status">Đang tải đơn hàng…</p>;
-  const visible=orders.filter(o=>(filter==='all'||[o.status,o.paymentState,o.handoverState].includes(filter))&&[o.orderCode,...o.lines.map(l=>l.name)].join(' ').toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi')));
-  return (
-    <SectionLayout title="Đơn hàng của tôi" description="Theo dõi đơn đã đặt và xác nhận khi nhận được hàng." className="stock-page my-orders">
+  const visible=orders.filter(o=>[o.orderCode,...o.lines.map(l=>l.name)].join(' ').toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi')));
+  const body = (
+    <>
       {error && (
         <p className="stock-error" role="alert">
           {error}
         </p>
       )}
-      <div className="workflow-actions">
+      <div className="workflow-actions store-order-tools">
         <input aria-label="Tìm đơn hàng" placeholder="Mã đơn, sản phẩm…" value={query} onChange={e=>setQuery(e.target.value)}/>
-        <select aria-label="Trạng thái đơn hàng" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">Tất cả</option><option value="Paid">Đã thanh toán</option><option value="Received">Đã nhận hàng</option><option value="Cancelled">Đã hủy</option><option value="Expired">Hết hạn</option><option value="NeedsReview">Cần đối soát</option></select>
-        <button className="button button-secondary" disabled={busyId!==null} onClick={async()=>{setBusyId(0);setError('');try{setOrders(await workflowRequest(root));}catch(e){setError(e.message);}finally{setBusyId(null);}}}>Cập nhật</button>
+        <button type="button" className="button button-secondary" disabled={busyId!==null} onClick={async()=>{setBusyId(0);setError('');try{setOrders(await workflowRequest(root));}catch(e){setError(e.message);}finally{setBusyId(null);}}}>Cập nhật</button>
       </div>
       {visible.length === 0 ? (
         <p className="stock-hint">{orders.length ? 'Không có đơn hàng phù hợp.' : 'Bạn chưa có đơn hàng nào.'}</p>
       ) : (
         <ul className="my-order-list">
-          {<PaginatedList items={visible} listItem>{(order) => {
+          {<PaginatedList items={visible} listItem pageSize={embedded ? 5 : undefined}>{(order) => {
             const state = orderState(order);
+            const open = detail?.id === order.id;
             return (
-              <li key={order.id} id={`goods-order-${order.id}`} ref={node => { if (node && String(order.id) === new URLSearchParams(window.location.search).get('goodsOrderId')) node.scrollIntoView({ block: 'center' }); }}>
+              <li key={order.id} id={`goods-order-${order.id}`} className={String(order.id) === focusId ? 'is-current' : undefined}>
                 <div className="my-order-head">
                   <strong>{order.orderCode}</strong>
                   <span className={state.className}>{state.label}</span>
                 </div>
                 <p>{order.lines.map((l) => `${l.quantity} × ${l.name}`).join(", ")}</p>
-                <button className="button button-secondary" disabled={busyId!==null} onClick={()=>inspect(order.id)}>Chi tiết / chứng từ</button>
-                {detail?.id===order.id && <section aria-label="Chi tiết đơn hàng">
-                  <p>Người mua: {detail.customerName || 'Chưa ghi nhận'} · Phương thức: {detail.paymentMethod || 'Chưa ghi nhận'}</p>
-                  {detail.referenceCode && <p>Mã thanh toán: <code>{detail.referenceCode}</code></p>}
-                  {detail.invoice ? <div><h4>Hóa đơn {detail.invoice.code}</h4><p>{new Date(detail.invoice.issuedAt).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})} · {money(detail.invoice.totalAmount)}</p></div>:<p>Chưa xuất hóa đơn.</p>}
-                  <p>{orderState(detail).label}</p>
-                  {!!detail.history?.length && <ol aria-label="Diễn biến đơn hàng">{detail.history.map(h=><li key={h.sequence}>{h.label}</li>)}</ol>}
+                {open && (detail.checkoutUrl || detail.invoice) && <section aria-label="Chứng từ thanh toán">
+                  {detail.invoice && <div><h4>Hóa đơn {detail.invoice.code}</h4><p>{new Date(detail.invoice.issuedAt).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})} · {money(detail.invoice.totalAmount)}</p></div>}
+                  {detail.checkoutUrl && <div className="store-pay-box">
+                    <QRCodeSVG value={detail.checkoutUrl} size={132} title="Mã thanh toán đơn hàng" />
+                    <a href={detail.checkoutUrl} target="_blank" rel="noreferrer">Mở trang thanh toán</a>
+                    {detail.expiresAt && <p>Hạn thanh toán: {new Date(detail.expiresAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</p>}
+                  </div>}
                 </section>}
                 <div className="my-order-foot">
                   <strong>{money(order.totalAmount)}</strong>
+                  {payable(order) && (
+                    <button type="button" className="button button-primary" disabled={busyId !== null} onClick={() => pay(order.id)}>
+                      Thanh toán
+                    </button>
+                  )}
+                  {open && detail.paymentMethod === 'payos' && detail.paymentState !== 'Paid' && (
+                    <button type="button" className="button button-secondary" disabled={busyId !== null} onClick={() => refreshPayment(order.id)}>Kiểm tra chuyển khoản</button>
+                  )}
                   {order.canCancel && (
-                    <button className="button button-secondary" disabled={busyId === order.id} onClick={() => cancel(order.id)}>
+                    <button type="button" className="button button-secondary" disabled={busyId === order.id} onClick={() => cancel(order.id)}>
                       {busyId === order.id ? "Đang hủy…" : "Hủy đơn"}
                     </button>
                   )}
                   {order.handoverState === "Delivered" && (
-                    <button className="button button-primary" disabled={busyId === order.id} onClick={() => receive(order.id)}>
+                    <button type="button" className="button button-primary" disabled={busyId === order.id} onClick={() => receive(order.id)}>
                       <PackageCheck size={16} aria-hidden="true" />
                       {busyId === order.id ? "Đang xác nhận…" : "Nhận hàng"}
                     </button>
@@ -126,6 +169,12 @@ export default function MyGoodsOrders() {
           }}</PaginatedList>}
         </ul>
       )}
+    </>
+  );
+  if (embedded) return <div className="store-orders">{body}</div>;
+  return (
+    <SectionLayout title="Đơn hàng của tôi" description="Theo dõi đơn đã đặt và xác nhận khi nhận được hàng." className="stock-page my-orders">
+      {body}
     </SectionLayout>
   );
 }

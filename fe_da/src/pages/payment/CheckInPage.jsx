@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { paymentClient } from './paymentClient';
 import { Camera, Upload, ScanLine, Ticket, UserRound, MapPin, CalendarDays, CircleCheck, ArrowLeft, ArrowRight, LoaderCircle, AlertCircle } from 'lucide-react';
 import SectionLayout from '../../components/layout/SectionLayout';
+import AssignedSessionsTimetable from './AssignedSessionsTimetable';
+import { LateEntryManagement } from '../late-entry/LateEntrySales';
 import './payment.css';
 import './checkin.css';
 import { canCheckIn, hasEnded } from '../sessions/sessionTime';
@@ -28,6 +30,7 @@ export default function CheckInPage({ managerOnly = false }) {
   const [loadingRoster, setLoadingRoster] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [loadingSessions, setLoadingSessions] = useState(true);
+  const [weekDate, setWeekDate] = useState(null);
   const video = useRef(null);
   const controls = useRef(null);
   const generation = useRef(0);
@@ -202,6 +205,7 @@ export default function CheckInPage({ managerOnly = false }) {
   return (
     <SectionLayout className="checkin-workspace" title="Điểm danh vào sân"
       description="Kiểm tra vé và đối chiếu người chơi trước khi xác nhận vào sân.">
+      {managerOnly && <LateEntryManagement role="manager" />}
 
       <ol className="checkin-steps" aria-label="Quy trình điểm danh">
         {['Kiểm tra vé', 'Đối chiếu người chơi', 'Xác nhận vào sân'].map((label, index) => (
@@ -223,6 +227,8 @@ export default function CheckInPage({ managerOnly = false }) {
             <ArrowLeft size={18} aria-hidden="true" />Chọn buổi khác
           </button>
         </div> : loadingSessions ? <p>Đang tải danh sách buổi được phân công…</p>
+          : !managerOnly ? <AssignedSessionsTimetable sessions={sessions} weekDate={weekDate}
+              onWeekDateChange={setWeekDate} onSelect={selectSession} busy={busy} />
           : displayedSessions.length === 0 ? <p>Hiện chưa có buổi nào được giao cho bạn.</p>
           : <div className="session-list">
             {<ManagerList items={displayedSessions}>{session => (

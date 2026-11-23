@@ -9,11 +9,7 @@ export const roleHomeConfig = {
     label: "Người chơi",
     modules: [
       "Lịch social",
-      "Lời mời buổi chơi",
-      "Hồ sơ cá nhân",
-      "Hồ sơ kỹ năng",
       "Cửa hàng",
-      "Thanh toán",
       "Vé của tôi",
       "Cộng đồng",
     ],
@@ -46,7 +42,7 @@ export const roleHomeConfig = {
       "Không gian làm việc cho bán hàng tại quầy, kho, kiểm tra thanh toán và đối soát ca.",
     action: "Mở công việc trong ca",
     section: "Công việc trong ca",
-    modules: ["Ca của tôi", "Thống kê doanh số", "Báo cáo tổng hợp", "Bán hàng", "Kho & vật tư", "Ngoại lệ vận hành", "Vé giờ lẻ", "Thanh toán", "Sự cố", "Đổi & hoàn vé", "Đối soát ca"],
+    modules: ["Ca của tôi", "Bán hàng", "Xử lý đơn hàng", "Kho & vật tư", "Ngoại lệ vận hành", "Sự cố", "Thống kê doanh số", "Báo cáo tổng hợp"],
     stats: [
       ["08", "Đơn trong ca"],
       ["03", "Thanh toán cần kiểm tra"],
@@ -70,7 +66,6 @@ export const roleHomeConfig = {
       "Thống kê doanh số",
       "Báo cáo tổng hợp",
       "Chính sách & giá",
-      "Bán hàng",
       "Cơ sở & sân",
       "Phê duyệt nhân sự",
       "Quản lý buổi chơi",
@@ -107,8 +102,7 @@ export const roleHomeConfig = {
     modules: [
       "Kinh doanh",
       "Báo cáo tổng hợp",
-      "Cơ sở & sân",
-      "Phân quyền Sport Center",
+      "Cơ sở, sân và nhân sự",
       "Đổi & hoàn vé",
       "Ngoại lệ vận hành",
       "Sự cố",

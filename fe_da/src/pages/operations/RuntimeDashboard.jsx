@@ -23,5 +23,5 @@ export default function RuntimeDashboard({ role }) {
     });
     return () => { live = false; };
   }, [role, revision]);
-  return <section aria-label="Số liệu thực tế"><button className="button button-secondary" disabled={state.loading} onClick={() => { setState({ loading: true }); setRevision(r => r + 1); }}>Cập nhật số liệu</button>{state.loading && <p role="status">Đang tải số liệu…</p>}{state.errors?.map(error => <p role="alert" key={error}>{error}</p>)}<div className="stats-grid">{state.metrics?.map(([label, value]) => <div className="stat-card" key={label}><strong>{value}</strong><span>{label}</span></div>)}</div>{state.at && <small>Cập nhật {state.at.toLocaleTimeString('vi-VN')}</small>}</section>;
+  return <section aria-label="Số liệu thực tế">{!['referee', 'staff'].includes(role) && <button className="button button-secondary" disabled={state.loading} onClick={() => { setState({ loading: true }); setRevision(r => r + 1); }}>Cập nhật số liệu</button>}{state.loading && <p role="status">Đang tải số liệu…</p>}{state.errors?.map(error => <p role="alert" key={error}>{error}</p>)}<div className="stats-grid">{state.metrics?.map(([label, value]) => <div className="stat-card" key={label}><strong>{value}</strong><span>{label}</span></div>)}</div>{state.at && <small>Cập nhật {state.at.toLocaleTimeString('vi-VN')}</small>}</section>;
 }

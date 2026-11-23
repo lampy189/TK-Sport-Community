@@ -11,3 +11,9 @@
 .workflow th, .workflow td { text-align: left; padding: .65rem; border-bottom: 1px solid #dce5df; }
 .workflow-table { overflow-x: auto; }
 @media(max-width: 640px) { .workflow-criterion { grid-template-columns: 1fr; } .workflow { padding: 1rem; } }
+.section-layout.goods-orders-page {
+  width: 100%;
+  max-width: 1000px;
+  min-width: 0;
+  margin-inline: auto;
+}

@@ -116,7 +116,6 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState(null);
   const [sentIds, setSentIds] = useState([]);
-  const [paymentChoice, setPaymentChoice] = useState('separate');
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -145,7 +144,7 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
     setSendingId(friend.friendPlayerId);
     setError(null);
     try {
-      await invitationClient.send(sessionSummary.id, friend.friendPlayerId, paymentChoice);
+      await invitationClient.send(sessionSummary.id, friend.friendPlayerId);
       setSentIds((prev) => [...prev, friend.friendPlayerId]);
     } catch (err) {
       setError(err.message || 'Không thể gửi lời mời đặt sân.');
@@ -179,7 +178,6 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
         </div>
 
         <div className="comm-modal-body">
-          <label>Người thanh toán<select value={paymentChoice} disabled={sendingId !== null} onChange={e => setPaymentChoice(e.target.value)}><option value="separate">Mỗi người tự trả</option><option value="inviter">Tôi trả cho bạn</option></select></label>
           <p>Gửi lời mời chưa giữ chỗ. Bạn nhận lời mới được giữ chỗ và tạo đơn thanh toán.</p>
           {error && (
             <div
@@ -227,8 +225,8 @@ export function InviteFriendsToSessionModal({ sessionSummary, onClose }) {
                 Bạn chưa có người bạn nào trong danh sách Bạn bè. Hãy kết bạn trong mục Cộng đồng hoặc bấm vào người chơi ở danh sách Cùng ra sân.
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
-                {<PaginatedList items={friends}>{(fr) => {
+              <div className="comm-compact-pager" style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+                {<PaginatedList items={friends} pageSize={5} label="Phân trang bạn bè">{(fr) => {
                   const sp = (fr.sportProfiles || []).find(
                     (s) => s.sportCode?.toLowerCase() === targetSportCode
                   );
@@ -308,7 +306,6 @@ export function PickSessionToInviteModal({ friendName, friendPlayerId, onSelectS
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState(null);
   const [error, setError] = useState('');
-  const [paymentChoice, setPaymentChoice] = useState('separate');
 
   useEffect(() => {
     let active = true;
@@ -336,7 +333,7 @@ export function PickSessionToInviteModal({ friendName, friendPlayerId, onSelectS
     setSendingId(s.id);
     setError('');
     try {
-      const invitation = await invitationClient.send(s.id, friendPlayerId, paymentChoice);
+      const invitation = await invitationClient.send(s.id, friendPlayerId);
       const msgText = buildSessionInviteMessage(s, '', invitation.id);
       await onSelectSessionToSend(msgText).catch(() => {});
       onClose();
@@ -372,7 +369,7 @@ export function PickSessionToInviteModal({ friendName, friendPlayerId, onSelectS
         <div className="comm-modal-body">
           {loading ? (
             <div role="status">Đang tải danh sách buổi chơi đang mở…</div>
-          ) : error ? <p role="alert">{error}</p> : <label>Người thanh toán<select value={paymentChoice} disabled={sendingId !== null} onChange={e => setPaymentChoice(e.target.value)}><option value="separate">Mỗi người tự trả</option><option value="inviter">Tôi trả cho bạn</option></select></label>}
+          ) : error ? <p role="alert">{error}</p> : null}
           {!loading && error && sessions.length > 0 && <p>Chưa gửi lời mời. Kiểm tra điều kiện rồi thử lại.</p>}
           {loading ? (
             <div style={{ padding: '24px', textAlign: 'center', color: '#4d5d53', fontSize: '13px' }}>
@@ -383,8 +380,8 @@ export function PickSessionToInviteModal({ friendName, friendPlayerId, onSelectS
               Hiện chưa có buổi chơi nào đang mở.
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '340px', overflowY: 'auto' }}>
-              {<PaginatedList items={sessions}>{(s) => {
+            <div className="comm-compact-pager" style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '340px', overflowY: 'auto' }}>
+              {<PaginatedList items={sessions} pageSize={5} label="Phân trang buổi chơi">{(s) => {
                 const isBadminton = s.sportName === 'Badminton';
                 const avail = s.availableSlots ?? s.capacity - s.occupiedPlaces;
                 const timeRange = s.timeLabel || `${(s.startTime || '').slice(0, 5)} - ${(s.endTime || '').slice(0, 5)}`;

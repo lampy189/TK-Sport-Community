@@ -50,6 +50,7 @@ public sealed class ShiftTests
                 CREATE TABLE session_referees(id bigint IDENTITY PRIMARY KEY,session_id bigint,referee_id bigint,assigned_by bigint,UNIQUE(session_id,referee_id));
                 CREATE TABLE session_staff(id bigint IDENTITY PRIMARY KEY,session_id bigint,staff_id bigint,role_in_session nvarchar(100),UNIQUE(session_id,staff_id));
                 CREATE TABLE audit_logs(id bigint IDENTITY PRIMARY KEY,actor_id bigint,action varchar(100),entity_type varchar(100),entity_id bigint,old_value nvarchar(max),new_value nvarchar(max));
+                CREATE TABLE notifications(user_id bigint,channel varchar(100),title nvarchar(255),reference_type varchar(100),reference_id bigint,status varchar(100));
                 CREATE TABLE tickets(id bigint,session_id bigint,order_id bigint,status varchar(30));
                 CREATE TABLE social_booking_orders(id bigint,expires_at datetime2);
                 INSERT roles VALUES(1,'Manager'),(2,'Referee'),(3,'Staff');
@@ -77,6 +78,7 @@ public sealed class ShiftTests
             Assert.Equal(2, Convert.ToInt32(await new SqlCommand("SELECT COUNT(*) FROM audit_logs WHERE action='shift_accepted'", connection).ExecuteScalarAsync()));
             Assert.Equal(OperationOutcome.Success, await Assign(1, [2], [3]));
             Assert.True(await Accepted());
+            Assert.Equal(1, Convert.ToInt32(await new SqlCommand("SELECT COUNT(*) FROM notifications WHERE user_id=2 AND channel='web' AND reference_type='referee_shift_assigned' AND reference_id=1 AND status='unread'", connection).ExecuteScalarAsync()));
             Assert.Equal(OperationOutcome.Success, await Assign(1, [2], []));
             Assert.Empty(await staff.MyShiftsAsync(1, 3, "Staff", default));
             Assert.Equal(OperationOutcome.Success, await Assign(1, [2], [3]));

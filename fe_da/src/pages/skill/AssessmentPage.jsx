@@ -1,7 +1,9 @@
 import SkillReviews from "./SkillReviews";
 import PaginatedList from '../../components/ui/PaginatedList';
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CalendarDays, ClipboardPenLine, UserRound } from "lucide-react";
 import SectionLayout from "../../components/layout/SectionLayout";
+import AssignedSessionsTimetable from "../payment/AssignedSessionsTimetable";
 import { workflowRequest } from "../workflowClient";
 import "../workflow.css";
 import "../../styles/skill-profile.css";
@@ -50,9 +52,11 @@ function observation(code, mark) {
   return {...parsed,hasRecordedSliders:true,subSkillList,subSkillMap:Object.fromEntries(subSkillList.map(sk=>[sk.code,sk.value10]))};
 }
 
-export default function AssessmentPage() {
+export default function AssessmentPage({ dirtyRef } = {}) {
   const [sessions, setSessions] = useState([]);
-  const [sessionId, setSessionId] = useState("");
+  const [sessionId, setSessionId] = useState(null);
+  const [weekDate, setWeekDate] = useState(null);
+  const selectedSession = sessions.find(session => session.id === sessionId);
   const [players, setPlayers] = useState([]);
   const [form, setForm] = useState(null);
   const [dirty, setDirty] = useState(false);
@@ -62,16 +66,26 @@ export default function AssessmentPage() {
   const [stage, setStage] = useState("score");
   const [confirmed, setConfirmed] = useState(false);
   const [playerContext, setPlayerContext] = useState(null);
+  const formHeading = useRef(null);
+  const formId = form?.id;
+
+  useEffect(() => {
+    if (formId) formHeading.current?.focus();
+  }, [formId]);
 
   useEffect(() => {
     if (!dirty) return;
+    if (dirtyRef) dirtyRef.current = true;
     const warn = (event) => {
       event.preventDefault();
       event.returnValue = "";
     };
     window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+    return () => {
+      if (dirtyRef) dirtyRef.current = false;
+      window.removeEventListener("beforeunload", warn);
+    };
+  }, [dirty, dirtyRef]);
 
   useEffect(() => {
     let active = true;
@@ -302,69 +316,76 @@ export default function AssessmentPage() {
           })}
         </ol>
 
-        <label>
-          Slot đang diễn ra được phân công
-          <select
-            value={sessionId}
-            disabled={busy || dirty}
-            onChange={(e) => selectSession(e.target.value)}
-          >
-            <option value="">Chọn buổi chơi</option>
-            {sessions.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.sessionDate} · {s.startTime} · {s.name} · {s.court}
-              </option>
-            ))}
-          </select>
-        </label>
-        {!sessions.length && !error && (
-          <p>Không có slot đang diễn ra mà bạn được phân công.</p>
+        {selectedSession ? (
+          <div className="assessment-session-summary">
+            <span className="assessment-session-icon"><CalendarDays size={21} aria-hidden="true" /></span>
+            <div>
+              <h3>{selectedSession.name === "Badminton" ? "Cầu lông" : selectedSession.name} · {selectedSession.court}</h3>
+              <p>
+                {selectedSession.sessionDate.split("-").reverse().join("/")} · {selectedSession.startTime.slice(0, 5)}
+                {selectedSession.endTime && ` – ${selectedSession.endTime.slice(0, 5)}`}
+              </p>
+            </div>
+            <button type="button" className="button button-secondary" disabled={busy || dirty} onClick={() => selectSession(null)}>
+              Chọn buổi khác
+            </button>
+          </div>
+        ) : (
+          <AssignedSessionsTimetable
+            sessions={sessions.map(session => ({ ...session, sessionId: session.id, sportName: session.name, courtName: session.court }))}
+            weekDate={weekDate}
+            onWeekDateChange={setWeekDate}
+            onSelect={selectSession}
+            busy={busy || dirty}
+            label="Lịch đánh giá theo tuần"
+            action="Chọn buổi đánh giá"
+          />
         )}
         {sessionId && !busy && players.length === 0 && (
           <p>
             Chưa có người chơi đủ điều kiện: vé đã thanh toán và đã điểm danh.
           </p>
         )}
-        <div className="workflow-actions">
-          {<PaginatedList items={players}>{(p) => (
-            <button
-              key={p.playerId}
-              aria-pressed={form?.playerId === p.playerId}
-              disabled={busy || dirty || !p.profileId}
-              onClick={() => open(p.playerId)}
-              className="button button-secondary"
-            >
-              {p.name} · {p.band || "Chưa xếp hạng"}
-              {p.assessmentId ? " · Có phiếu" : " · Chưa chấm"}
-              {!p.profileId && " · Thiếu hồ sơ môn"}
-            </button>
-          )}</PaginatedList>}
-        </div>
-
         {players.length > 0 && (
-          <section className="assessment-protocol">
-            <h3>Hồ sơ người chơi trong sân</h3>
-            <div className="workflow-actions">
-              {<PaginatedList items={players}>{(p) => (
-                <button
-                  key={p.playerId}
-                  className="button button-secondary"
-                  disabled={busy}
-                  onClick={() =>
-                    run(async () => {
-                      setPlayerContext(null);
-                      setPlayerContext(
-                        await workflowRequest(
-                          `/api/v1/skill/sessions/${sessionId}/players/${p.playerId}/context`
-                        )
-                      );
-                    })
-                  }
-                >
-                  Xem hồ sơ · {p.name}
-                </button>
-              )}</PaginatedList>}
-            </div>
+          <section className="assessment-roster" aria-labelledby="assessment-roster-title">
+            <header className="assessment-roster-heading">
+              <h3 id="assessment-roster-title">Người chơi đã điểm danh</h3>
+              <span>{players.length} người</span>
+            </header>
+            <ul className="assessment-roster-list">
+              {players.map(p => {
+                const selected = form?.playerId === p.playerId;
+                const action = p.assessmentId ? "Mở phiếu" : "Chấm điểm";
+                return (
+                  <li key={p.playerId} className={selected ? "is-selected" : undefined}>
+                    <div className="assessment-roster-player">
+                      <strong>{p.name}</strong>
+                      <small>{p.band || "Chưa xếp hạng"}</small>
+                    </div>
+                    <span className="assessment-roster-status" data-has-form={Boolean(p.assessmentId)}>
+                      {!p.profileId ? "Thiếu hồ sơ môn" : p.assessmentId ? "Có phiếu" : "Chưa chấm"}
+                    </span>
+                    <div className="assessment-roster-actions">
+                      <button type="button" className="button button-secondary" disabled={busy}
+                        aria-label={`Xem hồ sơ ${p.name}`}
+                        onClick={() => run(async () => {
+                          setPlayerContext(null);
+                          setPlayerContext(await workflowRequest(
+                            `/api/v1/skill/sessions/${sessionId}/players/${p.playerId}/context`
+                          ));
+                        })}>
+                        <UserRound size={16} aria-hidden="true" /> Xem hồ sơ
+                      </button>
+                      <button type="button" className="button button-primary"
+                        aria-label={`${action} ${p.name}`} aria-pressed={selected}
+                        disabled={busy || dirty || !p.profileId} onClick={() => open(p.playerId)}>
+                        <ClipboardPenLine size={16} aria-hidden="true" /> {action}
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
             {playerContext && (
               <div className="assessment-player-context">
                 <h4>
@@ -378,18 +399,13 @@ export default function AssessmentPage() {
                     ? "Đã xác nhận"
                     : "Chưa xác nhận"}
                 </p>
-                <p className="assessment-note">
-                  Tối đa 20 bản ghi gần nhất cho từng lịch sử, cùng môn và trung
-                  tâm. Lịch sử là thông tin tham khảo; chấm điểm dựa trên quan
-                  sát tại buổi hiện tại.
-                </p>
                 <details open>
                   <summary>
                     Buổi đã tham gia ({playerContext.participation.length})
                   </summary>
                   {playerContext.participation.length ? (
                     <ul>
-                      {<PaginatedList items={playerContext.participation} listItem>{(p) => (
+                      {<PaginatedList items={playerContext.participation} listItem hideShortPager>{(p) => (
                         <li key={p.sessionId}>
                           {p.sessionDate} · {p.startTime} · {p.court} · Đã điểm
                           danh
@@ -399,10 +415,6 @@ export default function AssessmentPage() {
                   ) : (
                     <p>Chưa có buổi tham gia trước đó.</p>
                   )}
-                  <p className="assessment-note">
-                    Hệ thống chưa ghi nhận tỷ số hoặc kết quả thắng/thua từng
-                    trận.
-                  </p>
                 </details>
                 <details open>
                   <summary>
@@ -410,7 +422,7 @@ export default function AssessmentPage() {
                   </summary>
                   {playerContext.ratings.length ? (
                     <ul>
-                      {<PaginatedList items={playerContext.ratings} listItem>{(r) => (
+                      {<PaginatedList items={playerContext.ratings} listItem hideShortPager>{(r) => (
                         <li key={r.id}>
                           {r.sessionDate} · {r.oldScore ?? "—"} /{" "}
                           {r.oldBand || "Chưa xếp hạng"} →{" "}
@@ -440,7 +452,7 @@ export default function AssessmentPage() {
           <>
             <div className="assessment-form-banner">
               <div>
-                <h3>
+                <h3 ref={formHeading} tabIndex={-1}>
                   Phiếu #{form.id} · {player?.name}
                 </h3>
                 <p>

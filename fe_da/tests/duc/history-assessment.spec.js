@@ -1,18 +1,20 @@
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
+import { env } from 'node:process';
 import { DIMENSION_ANCHORS } from '../../src/pages/skill/dimensionAnchors.js';
-const evidence='../docs/evidence/ui-his-qa-20261116';
+const evidence=env.DUC_EVIDENCE_DIR || '../docs/evidence/ui-his-qa-20261116';
 const criteria=Object.keys(DIMENSION_ANCHORS).filter(k=>k.startsWith('BM_')).slice(0,5).map((code,i)=>({id:i+1,code,name:code,weightPercent:20,maxScore:4}));
 const form={id:1,status:'draft',revision:1,playerName:'Người chơi kiểm thử',rubric:{name:'BM-CLB-V1',scoringSupported:true,criteria},marks:criteria.map(c=>({dimensionId:c.id,score:2,sliderScores:[5,5,5,5],evidence:''}))};
 for(const width of [1440,390,320]) test(`assessment large controls at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:900});
   await page.route('**/api/**',route=>{
     const path=new URL(route.request().url()).pathname;
-    return route.fulfill({json:path.endsWith('/csrf')?{token:'fixture'}:path.endsWith('/sessions')?[{id:1,name:'Cầu lông',court:'Sân kiểm thử',sessionDate:'2026-11-16',startTime:'18:00'}]:path.endsWith('/attendees')?[{playerId:1,name:'Người chơi kiểm thử',profileId:1}]:form});
+    return route.fulfill({json:path.endsWith('/csrf')?{token:'fixture'}:path.endsWith('/sessions')?[{id:1,name:'Cầu lông',court:'Sân kiểm thử',sessionDate:'2026-11-16',startTime:'18:00',endTime:'20:00'}]:path.endsWith('/attendees')?[{playerId:1,name:'Người chơi kiểm thử',profileId:1}]:form});
   });
   await page.goto('/tests/duc/?screen=assessment');
-  await page.getByLabel('Buổi được phân công').selectOption('1');
-  await page.getByRole('button',{name:/Người chơi kiểm thử.*Chưa chấm/}).click();
+  await page.getByLabel('Chọn ngày để xem tuần').fill('2026-11-16');
+  await page.getByRole('button',{name:/Chọn buổi đánh giá/}).click();
+  await page.getByRole('button',{name:/Chấm điểm Người chơi kiểm thử/}).click();
   const slider=page.getByRole('slider').first();
   await expect(slider).toBeVisible();
   await expect(slider).toHaveValue('5');
@@ -34,7 +36,7 @@ test('ticket history filters type, payer and refund without overflow',async({pag
   await page.route('**/api/**',r=>r.fulfill({json:[]}));
   await page.goto('/tests/duc/?screen=ticket-history');
   await expect(page.locator('.ticket-stub')).toHaveCount(2);
-  for(const kind of ['remaining','paidForOther','refund']){await page.getByLabel('Loại vé').selectOption(kind);await expect(page.locator('.ticket-stub')).toHaveCount(1);}
+  for(const kind of ['remaining','refund']){await page.getByLabel('Loại vé').selectOption(kind);await expect(page.locator('.ticket-stub')).toHaveCount(1);}
   await page.getByRole('button',{name:'Chi tiết vé'}).click();
   await expect(page.getByLabel('Diễn biến trạng thái')).toContainText('chờ xác minh');
   await expect(page.getByLabel('Chứng từ thanh toán')).toContainText('FIXTURE-REFERENCE');

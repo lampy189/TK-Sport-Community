@@ -512,6 +512,10 @@
   color: var(--color-muted);
   margin-bottom: 16px;
 }
+.home-breadcrumb-center {
+  margin-inline-start: auto;
+  font-size: 13px;
+}
 .home-breadcrumb button {
   color: var(--color-primary);
 }
