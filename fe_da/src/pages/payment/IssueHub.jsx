@@ -11,6 +11,7 @@ import { OperationItem } from './TicketOperationCards';
 import TicketSupport from './TicketSupport';
 
 export default function IssueHub({role='staff'}) {
+ const [kindFilter,setKindFilter]=useState('all');
  const [rows,setRows]=useState([]),[selected,setSelected]=useState(null),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[states,setStates]=useState([]),[filter,setFilter]=useState('active');
  useEffect(()=>{
   let active=true;
@@ -19,11 +20,11 @@ export default function IssueHub({role='staff'}) {
   return()=>{active=false;};
  },[]);
  async function load(){
-  const kinds=['reviews','sessions','refunds','inbox'];
+  const kinds=role==='manager'?['sessions','inbox']:['reviews','sessions','refunds','inbox'];
   const results=await Promise.allSettled([...kinds.map(kind=>aftercare[kind==='sessions'?'incidents':kind]()),incidents.states(),incidents.cases()]);
   const data={},errors=[];
-  results.slice(0,4).forEach((result,i)=>{if(result.status==='fulfilled'&&Array.isArray(result.value))data[kinds[i]]=result.value;else errors.push(result.reason?.message||'Danh sách không hợp lệ.');});
-  const stateResult=results[4],caseResult=results[5];
+  results.slice(0,kinds.length).forEach((result,i)=>{if(result.status==='fulfilled'&&Array.isArray(result.value))data[kinds[i]]=result.value;else errors.push(result.reason?.message||'Danh sách không hợp lệ.');});
+  const stateResult=results[kinds.length],caseResult=results[kinds.length+1];
   const states=stateResult.status==='fulfilled'&&Array.isArray(stateResult.value)?stateResult.value:[];
   const operations=caseResult.status==='fulfilled'&&Array.isArray(caseResult.value)?caseResult.value:[];
   if(stateResult.status==='rejected')errors.push(stateResult.reason.message);
@@ -39,10 +40,11 @@ export default function IssueHub({role='staff'}) {
    if(action)setNotice('Đã lưu kết quả xử lý.');
   }catch(e){setError(e.message);}finally{setBusy(false);}
  }
- const current=rows.find(row=>row.key===selected);
- const displayed=rows.filter(row=>{const closed=states.find(s=>s.key===row.key)?.state.status==='resolved'||['completed','rejected','closed'].includes(row.item.status);return filter==='all'||(filter==='closed'?closed:!closed);});
+ const displayed=rows.filter(row=>{if(role==='manager' && (['reviews','refunds'].includes(row.kind) || (kindFilter!=='all'&&row.kind!==kindFilter)))return false;const closed=states.find(s=>s.key===row.key)?.state.status==='resolved'||['completed','rejected','closed'].includes(row.item.status);return filter==='all'||(filter==='closed'?closed:!closed);});
+ const current=(role==='manager'?displayed:rows).find(row=>row.key===selected);
  return <section className="issue-hub" aria-label="Quản lý sự cố tập trung">
-  <div className="payment-heading"><p>Thanh toán, tình trạng sân, hoàn tiền tồn và báo cáo người chơi.</p><button className="button button-secondary" disabled={busy} onClick={()=>refresh()}>Tải lại sự cố</button></div>
+  <div className="payment-heading"><p>{role==='manager'?'Tình trạng sân, báo cáo người chơi và ngoại lệ vận hành.':'Thanh toán, tình trạng sân, hoàn tiền tồn và báo cáo người chơi.'}</p>{role!=='manager'&&<button className="button button-secondary" disabled={busy} onClick={()=>refresh()}>Tải lại sự cố</button>}</div>
+  {role==='manager'&&<label className="manager-filter">Loại sự cố<select value={kindFilter} onChange={e=>{setKindFilter(e.target.value);setSelected(null);}}><option value="all">Tất cả</option><option value="sessions">Sự cố sân</option><option value="inbox">Báo cáo người chơi</option><option value="operations">Ngoại lệ vận hành</option></select></label>}
   <label>Bộ lọc sự cố<select value={filter} onChange={e=>setFilter(e.target.value)}><option value="active">Còn việc chờ</option><option value="closed">Đã đóng / kết thúc</option><option value="all">Tất cả & lịch sử</option></select></label>
   {error&&<p className="payment-error" role="alert">{error}</p>}
   {notice&&<p role="status">{notice}</p>}

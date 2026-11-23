@@ -16,7 +16,7 @@ export default function OperationsOverview({ role }) {
     try { await workflowRequest('/api/operations/feedback', 'POST', { content }); setContent(''); setRevision(value => value + 1); setNotice('Đã ghi nhận phản hồi.'); }
     catch (e) { setError(e.message); } finally { setBusy(false); }
   }
-  return <section className="ops-page"><h1>{role === 'system-admin' ? 'Phản hồi chạy thử' : 'Tổng quan vận hành hôm nay'}</h1><button onClick={() => setRevision(value => value + 1)}>Tải lại</button>{error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
+  return <section className="ops-page"><h1>{role === 'system-admin' ? 'Phản hồi chạy thử' : 'Tổng quan vận hành hôm nay'}</h1>{(role !== 'manager' || error) && <button onClick={() => setRevision(value => value + 1)}>Tải lại</button>}{error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
     {!data ? !error && <p role="status">Đang tải tổng quan…</p> : <>
       {role !== 'system-admin' && [['sessions', 'Buổi chơi'], ['tickets', 'Vé']].map(([key, title]) => <div key={key}><h2>{title}</h2><div className="ops-grid">{data[key].map(row => <article className="ops-card" key={row.status}><strong className="ops-stat">{row.count}</strong><p>{labels[row.status] || row.status}</p></article>)}</div>{!data[key].length && <p>Chưa có dữ liệu hôm nay trong phạm vi của bạn.</p>}</div>)}
       <form className="ops-form" onSubmit={submit}><label>Phản hồi chạy thử<textarea required maxLength={2000} value={content} onChange={e => setContent(e.target.value)} /></label><button type="submit" disabled={busy}>{busy ? 'Đang gửi…' : 'Gửi phản hồi'}</button></form>

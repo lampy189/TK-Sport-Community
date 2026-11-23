@@ -68,7 +68,7 @@ export default function StockPage({ role = "staff" }) {
       {tab === "receipts" && <BulkReceiptView />}
       {tab === "supplies" && <SessionSuppliesView readOnly={role !== "staff"} />}
       {tab === "counts" && <StockCountsView role={role} />}
-      {tab === "report" && <SupplyReportView />}
+      {tab === "report" && <SupplyReportView role={role} />}
     </div>
   );
 }
