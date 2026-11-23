@@ -12,6 +12,12 @@ import PlayerLayout from "../../components/layout/PlayerLayout";
 import PlayerHome from "./PlayerHome";
 import PlayerChatbot from "../../components/PlayerChatbot";
 
+function restoreWorkspace(role, active) {
+  if (role === "manager" && ["Bán hàng", "Xử lý đơn hàng"].includes(active)) return "overview";
+  if (role === "player" && active === "Thanh toán") return "Vé của tôi";
+  return active;
+}
+
 export default function HomePage({
   role = "guest",
   user,
@@ -25,14 +31,14 @@ export default function HomePage({
     ["owner", "manager", "staff"].includes(role) && new URLSearchParams(window.location.search).get("view") === "revenue" ? (role === "owner" ? "Kinh doanh" : "Thống kê doanh số") :
     role === 'player' && new URLSearchParams(window.location.search).get('view') === 'invitations' ? 'Lời mời buổi chơi' :
     role !== "guest" && ["messages", "notifications"].includes(new URLSearchParams(window.location.search).get("view")) ? "Thông báo" :
-    ["staff", "manager"].includes(role) &&
+    role === "staff" &&
     (new URLSearchParams(window.location.search).get("view") === "goods-orders" ||
       new URLSearchParams(window.location.search).has("goodsOrderId")) ? "Xử lý đơn hàng" :
     role === "player" && new URLSearchParams(window.location.search).get("view") === "goods" ? "Cửa hàng" :
     role === "player" &&
     (new URLSearchParams(window.location.search).has("orderId") || new URLSearchParams(window.location.search).get("view") === "tickets")
       ? "Vé của tôi"
-      : window.history.state?.tkscHome?.role === role ? (window.history.state.tkscHome.active === "Thanh toán" && role === "player" ? "Vé của tôi" : window.history.state.tkscHome.active) : "overview",
+      : window.history.state?.tkscHome?.role === role ? restoreWorkspace(role, window.history.state.tkscHome.active) : "overview",
   );
   const [sessionId, setSessionId] = useState(() => window.history.state?.tkscHome?.role === role ? window.history.state.tkscHome.sessionId : null);
   const [browseSport, setBrowseSport] = useState(() => window.history.state?.tkscHome?.role === role ? window.history.state.tkscHome.browseSport : "ALL");
@@ -50,7 +56,7 @@ export default function HomePage({
     function restore(event) {
       const saved = event.state?.tkscHome;
       if (saved?.role !== role) return;
-      setActive(saved.active === "Thanh toán" && role === "player" ? "Vé của tôi" : saved.active);
+      setActive(restoreWorkspace(role, saved.active));
       setSessionId(saved.sessionId);
       setBrowseSport(saved.browseSport || "ALL");
     }

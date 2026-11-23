@@ -66,8 +66,6 @@ export const roleHomeConfig = {
       "Thống kê doanh số",
       "Báo cáo tổng hợp",
       "Chính sách & giá",
-      "Bán hàng",
-      "Xử lý đơn hàng",
       "Cơ sở & sân",
       "Phê duyệt nhân sự",
       "Quản lý buổi chơi",

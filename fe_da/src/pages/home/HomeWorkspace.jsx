@@ -69,7 +69,7 @@ export default function HomeWorkspace({
   if (!preview && ["referee", "manager"].includes(role) && active === "Ngoại lệ trình độ") return <SkillReviews role={role} kind="exceptions" />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Khiếu nại đánh giá") return <SkillReviews role={role} />;
   if (!preview && role === "referee" && active === "Đánh giá kỹ năng") return <AssessmentPage dirtyRef={assessmentDirty} />;
-  if (!preview && ["staff", "manager"].includes(role)) {
+  if (!preview && role === "staff") {
     if (active === "Bán hàng")
       return <StorePage role="staff" onOpenOrders={orderId => onOpen("Xử lý đơn hàng", orderId)} />;
     if (active === "Xử lý đơn hàng") {
