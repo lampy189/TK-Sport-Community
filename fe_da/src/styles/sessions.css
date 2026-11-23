@@ -1298,3 +1298,40 @@
   font-weight: 700;
   color: var(--color-text);
 }
+
+.assigned-timetable .timetable-toolbar {
+  margin: 16px 0 12px;
+}
+
+.assigned-timetable .timetable-week-input-row {
+  flex-wrap: nowrap;
+  max-width: 100%;
+}
+
+.assigned-timetable .timetable-week-input-row input[type="date"] {
+  width: auto;
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .assigned-timetable .timetable-toolbar {
+    padding-inline: 12px;
+  }
+
+  .assigned-timetable .timetable-week-badge,
+  .assigned-timetable .timetable-week-input-row input[type="date"] {
+    padding-inline: 8px;
+  }
+}
+
+.assigned-timetable .timetable-table {
+  min-width: 850px;
+}
+
+.assigned-timetable .timetable-slot-col {
+  width: 108px;
+}
+
+.assigned-timetable .timetable-event-meta {
+  overflow-wrap: anywhere;
+}

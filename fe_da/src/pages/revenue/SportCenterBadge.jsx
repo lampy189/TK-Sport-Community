@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { workflowRequest } from '../workflowClient';
 
-export default function SportCenterBadge() {
+export default function SportCenterBadge({ inline = false }) {
   const [text, setText] = useState('');
   useEffect(() => {
     let active = true;
@@ -11,5 +11,7 @@ export default function SportCenterBadge() {
     return () => { active = false; };
   }, []);
   if (!text) return null;
+  if (inline) return <span className="home-breadcrumb-center"><strong>Cơ sở </strong>{text}</span>;
+
   return <p style={{ margin: '16px 32px 0', fontSize: 13, color: '#53645b' }}><strong>Sport Center: </strong>{text}</p>;
 }

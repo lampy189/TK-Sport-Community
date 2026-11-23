@@ -57,9 +57,20 @@ export default function ShiftsPage({ role, user }) {
   }
   return <SectionLayout title={manager ? 'Chia ca' : 'Ca của tôi'} description={manager ? 'Phân công theo buổi chơi và theo dõi nhận ca.' : 'Xem lịch được phân công và xác nhận nhận ca.'}>
     <div className="workflow manager-sessions" aria-busy={loading || busy}>
-      <div className="workflow-actions">
-        <label>Ngày <input type="date" value={date} onChange={e => setDate(e.target.value)} /></label>
-        <label>Hiển thị <select value={filter} onChange={e => setFilter(e.target.value)}><option value="upcoming">Ca sắp tới</option>{!manager && <option value="pending">Chờ nhận</option>}<option value="all">Tất cả</option></select></label>
+      <div className="shifts-toolbar">
+        <div className="shifts-filters">
+          <label>
+            Ngày <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+          </label>
+          <label>
+            Ca hiển thị
+            <select value={filter} onChange={e => setFilter(e.target.value)}>
+              <option value="upcoming">Ca sắp tới</option>
+              {!manager && <option value="pending">Chờ nhận</option>}
+              <option value="all">Tất cả</option>
+            </select>
+          </label>
+        </div>
         <button className="button button-secondary" disabled={busy || loading} onClick={async () => { setLoading(true); setError(''); try { await load(); setSelected(null); } catch (e) { setError(e.message); } finally { setLoading(false); } }}>Tải lại</button>
       </div>
       {error && <p className="workflow-error" role="alert">{error}</p>}

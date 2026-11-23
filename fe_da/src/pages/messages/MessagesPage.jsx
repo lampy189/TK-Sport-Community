@@ -1,3 +1,4 @@
+import { refereeNotificationActions } from "../../components/refereeNotificationActions";
 import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from 'react';
 import { request } from '../../api';
@@ -54,6 +55,10 @@ export default function MessagesPage({ preview = false, embedded = false, onOpen
       </button>
       {selected?.id === item.id && <div className="inbox-body">
         {item.description && item.description !== item.title && <p className="messages-description">{item.description}</p>}
+          {role === 'referee' && refereeNotificationActions[item.referenceType] &&
+            <button onClick={() => onOpen?.(refereeNotificationActions[item.referenceType])}>
+              {refereeNotificationActions[item.referenceType]}
+            </button>}
           {item.referenceType === 'session_invitation' && <button onClick={() => onOpen?.('Lời mời buổi chơi')}>Mở lời mời buổi chơi</button>}
           {item.referenceType === 'access_request' && <button onClick={() => onOpen?.(role === 'owner' ? 'Bổ nhiệm quản lý' : role === 'manager' ? 'Phê duyệt nhân sự' : 'Tài khoản & truy cập')}>Mở yêu cầu quyền tài khoản</button>}
           {['friend_request', 'friend_accepted', 'chat_message'].includes(item.referenceType) && role === 'player' && <button onClick={() => onOpen?.('Cộng đồng')}>Mở cộng đồng và tin nhắn</button>}

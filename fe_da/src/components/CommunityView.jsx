@@ -266,17 +266,7 @@ export function CommunityView({ user }) {
   return (
     <div className="comm-container">
       {/* Editorial Header */}
-      <header className="comm-light-hero">
-        <div>
-          <span className="comm-eyebrow">CẦU LÔNG &amp; PICKLEBALL DIRECTORY</span>
-          <h1>
-            Cộng đồng Người chơi<span>.</span>
-          </h1>
-          <p>
-            Tra cứu trình độ Band Cầu lông &amp; Pickleball của các thành viên trong câu lạc bộ, kết nối bạn tập và hẹn lịch ra sân.
-          </p>
-        </div>
-
+      <header className="comm-light-hero comm-tabs-only">
         <div className="comm-segmented-tabs" role="tablist">
           <button
             type="button"

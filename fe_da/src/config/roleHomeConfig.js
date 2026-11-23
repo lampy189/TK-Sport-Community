@@ -10,7 +10,6 @@ export const roleHomeConfig = {
     modules: [
       "Lịch social",
       "Cửa hàng",
-      "Thanh toán",
       "Vé của tôi",
       "Cộng đồng",
     ],

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { paymentClient } from './paymentClient';
 import { Camera, Upload, ScanLine, Ticket, UserRound, MapPin, CalendarDays, CircleCheck, ArrowLeft, ArrowRight, LoaderCircle, AlertCircle } from 'lucide-react';
 import SectionLayout from '../../components/layout/SectionLayout';
+import AssignedSessionsTimetable from './AssignedSessionsTimetable';
 import './payment.css';
 import './checkin.css';
 import { LateEntryManagement } from '../late-entry/LateEntrySales';
@@ -24,6 +25,7 @@ export default function CheckInPage({ canManageLateEntries = false }) {
   const [loadingRoster, setLoadingRoster] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [loadingSessions, setLoadingSessions] = useState(true);
+  const [weekDate, setWeekDate] = useState(null);
   const video = useRef(null);
   const controls = useRef(null);
   const generation = useRef(0);
@@ -206,6 +208,8 @@ export default function CheckInPage({ canManageLateEntries = false }) {
             <ArrowLeft size={18} aria-hidden="true" />Chọn buổi khác
           </button>
         </div> : loadingSessions ? <p>Đang tải danh sách buổi được phân công…</p>
+          : !canManageLateEntries ? <AssignedSessionsTimetable sessions={sessions} weekDate={weekDate}
+              onWeekDateChange={setWeekDate} onSelect={selectSession} busy={busy} />
           : sessions.length === 0 ? <p>Hiện chưa có buổi nào được giao cho bạn.</p>
           : <div className="session-list">
             {sessions.map(session => (

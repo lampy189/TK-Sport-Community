@@ -40,6 +40,19 @@ public sealed class SkillReviewRepository(Sep490Context db, TimeProvider clock) 
     }
 
     private IQueryable<RatingAppeal> VisibleAppeals(long actor, string role) => db.RatingAppeals.Where(r => role == "manager" || (role == "player" && r.SubmittedBy == actor) || (role == "referee" && r.Assessment != null && r.Assessment.Session!.SessionReferees.Any(s => s.RefereeId == actor)));
+    public Task NotifyAssignedRefereesAsync(long sessionId, long? assessorId, long referenceId, string referenceType, string title, CancellationToken ct) =>
+        db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT dbo.notifications(user_id,channel,title,reference_type,reference_id,status)
+            SELECT DISTINCT u.id,'web',{title},{referenceType},{referenceId},'unread'
+            FROM dbo.session_referees sr
+            JOIN dbo.sessions s ON s.id=sr.session_id
+            JOIN dbo.courts c ON c.id=s.court_id
+            JOIN dbo.users u ON u.id=sr.referee_id AND u.venue_id=c.venue_id
+            JOIN dbo.roles r ON r.id=u.role_id
+            WHERE sr.session_id={sessionId} AND (u.id={assessorId} OR {assessorId} IS NULL)
+              AND r.code='Referee' AND u.deleted_at IS NULL AND LOWER(u.status)='active';
+            """, ct);
+
     public void AddAuditLogs(AuditLog value) => db.AuditLogs.Add(value);
     public Task<List<string?>> EventsAuditLogsListAsync(string type, long id, bool internalNotes, CancellationToken ct) => db.AuditLogs.Where(l => l.EntityType == type && l.EntityId == id && (internalNotes || l.Action != "referee_review")).OrderBy(l => l.Id).Select(l => l.NewValue).ToListAsync(ct);
     public Task<Player?> RequestExceptionPlayersAsync(long actor, CancellationToken ct) => db.Players.SingleOrDefaultAsync(p => p.UserId == actor && p.User.Status == "active" && p.User.DeletedAt == null, ct);

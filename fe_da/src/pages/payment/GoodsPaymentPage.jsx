@@ -55,7 +55,7 @@ export default function GoodsPaymentPage({ initialOrderId }) {
   }
   const cart = order?.status?.toLowerCase() === "cart";
   const paid = order?.paymentState === "Paid";
-  return <SectionLayout title="Thanh toán hàng hóa" description="Nhận Cart từ bán hàng, thu tiền và xuất hóa đơn.">
+  return <SectionLayout title="Xử lý đơn hàng" description="Xem đơn người chơi và đơn tại quầy, xác nhận thanh toán và bàn giao.">
     <div className="workflow">
       {error && <p className="workflow-error" role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
@@ -64,9 +64,9 @@ export default function GoodsPaymentPage({ initialOrderId }) {
         if (order) setOrder(await workflowRequest(`${root}/${order.id}`));
       })}>Làm mới danh sách</button></div>
       <label>Đơn hàng hóa<select disabled={busy} value={order?.id ?? ""} onChange={e => select(e.target.value)}>
-        <option value="">Chọn đơn đã lập tại quầy</option>{orders.map(o => <option key={o.id} value={o.id}>{o.orderCode} · {money(o.totalAmount)} · {stateLabel[o.status] || o.status}</option>)}
+        <option value="">Chọn đơn hàng</option>{orders.map(o => <option key={o.id} value={o.id}>{o.orderCode}{o.customerName ? ` · ${o.customerName}` : ""} · {money(o.totalAmount)} · {stateLabel[o.status] || o.status}</option>)}
       </select></label>
-      {!orders.length && <p>Chưa có đơn hàng hóa. Lập Cart trong luồng bán hàng trước khi thu tiền.</p>}
+      {!orders.length && <p>Cơ sở này chưa có đơn hàng.</p>}
       {order && <>
         <h3>{order.orderCode} · {order.customerName || "Khách tại quầy"}</h3>
         <p>{stateLabel[order.status] || order.status} · {stateLabel[order.paymentState] || order.paymentState || "Chưa thanh toán"}</p>
