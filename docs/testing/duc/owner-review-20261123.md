@@ -57,3 +57,7 @@ For SQL-backed backend tests, use the documented opt-in variables with an isolat
 Local evidence and raw results are in `docs/testing/duc/round1/owner-20261123/` (Git-ignored because real lab screenshots may contain personal information). `baseline/` contains module captures, `integration/` contains workflow captures/results, and `mock-ui/` contains synthetic mobile captures. No Drive upload was performed in this review.
 
 The refund transfers were simulated. Google sign-in, live bank transfers, SMTP/push delivery and production deployment were not acceptance-tested. Restart the existing backend after changing User Secrets so it loads the new database selection; audit servers were separate localhost processes and are stopped after verification.
+
+## Typography and spacing follow-up
+
+Owner workspaces now use 16px content text, 15px labels, 24–26px page headings, 8/12/16px spacing and controls at least 44px high. Cards and collapsed proposal sections have less empty space; table identifiers stay on one line. The stylesheet is scoped to Owner. Six Owner browser regression tests and the frontend production build pass; mobile screenshots were visually reviewed.

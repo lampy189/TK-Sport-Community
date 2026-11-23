@@ -5,6 +5,7 @@ import HeroLayout from "../components/layout/HeroLayout";
 import MainContainer from "../components/layout/MainContainer";
 import Footer from "../components/layout/Footer";
 import "../styles/home.css";
+import "../styles/owner-operations.css";
 
 // Each page composes SectionLayout instances inside children.
 export default function HomeLayout({

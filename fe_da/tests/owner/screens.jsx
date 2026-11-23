@@ -3,5 +3,6 @@ import { PolicyPage, BusinessReportPage } from '../../src/pages/operations/Busin
 import OperationsPage from '../../src/pages/operations/OperationsPage';
 import AccessPage from '../../src/pages/operations/AccessPage';
 import '../../src/index.css';
+import '../../src/styles/owner-operations.css';
 const screen=new URLSearchParams(location.search).get('screen');
-createRoot(document.getElementById('root')).render(<main style={{maxWidth:1100,margin:'20px auto',padding:16}}><p>TEST FIXTURES — no real transactions</p>{screen==='operations'?<OperationsPage role="owner"/>:screen==='access'?<AccessPage role="owner" user={{id:1}}/>:screen==='report'?<BusinessReportPage/>:<PolicyPage role="owner" user={{id:1}}/>}</main>);
+createRoot(document.getElementById('root')).render(<div className="home-layout" data-role="owner"><main style={{maxWidth:1100,margin:'20px auto',padding:16}}><p>TEST FIXTURES — no real transactions</p>{screen==='operations'?<OperationsPage role="owner"/>:screen==='access'?<AccessPage role="owner" user={{id:1}}/>:screen==='report'?<BusinessReportPage/>:<PolicyPage role="owner" user={{id:1}}/>}</main></div>);
