@@ -28,6 +28,9 @@ export default function OperationsPage({ role = 'owner', initialTab = 'venues' }
   const [revision, setRevision] = useState(0);
   const [drafts, setDrafts] = useState({});
   const owner = role === 'owner';
+  const [query, setQuery] = useState('');
+  const matches = item => `${item.name || ''} ${item.email || ''} ${item.actor || ''} ${item.action || ''}`.toLocaleLowerCase('vi').includes(query.trim().toLocaleLowerCase('vi'));
+  const visible = (data?.[tab] || []).filter(matches);
   useEffect(() => {
     let active = true;
     workflowRequest('/api/operations/setup').then(value => { if (active) setData(value); }).catch(e => { if (active) setError(e.message); });
@@ -56,9 +59,10 @@ export default function OperationsPage({ role = 'owner', initialTab = 'venues' }
     } catch (e) { setError(e.message); } finally { setBusy(false); }
   }
   return <section className="ops-page"><h1>Cơ sở, sân và nhân sự</h1>
-    <div className="ops-actions">{[['venues', 'Cơ sở'], ['courts', 'Sân'], ...(owner ? [['people', 'Nhân sự'], ['history', 'Lịch sử']] : [])].map(([id, label]) => <button key={id} aria-pressed={tab === id} disabled={busy} onClick={() => { setTab(id); setForm(null); }}>{label}</button>)}{(role !== 'manager' || error) && <button disabled={busy} onClick={() => setRevision(value => value + 1)}>Tải lại</button>}</div>
+    <div className="ops-actions">{[['venues', 'Cơ sở'], ['courts', 'Sân'], ...(owner ? [['people', 'Nhân sự'], ['history', 'Lịch sử']] : [])].map(([id, label]) => <button key={id} aria-pressed={tab === id} disabled={busy} onClick={() => { setTab(id); setForm(null); setQuery(''); }}>{label}</button>)}{(role !== 'manager' || error) && <button disabled={busy} onClick={() => setRevision(value => value + 1)}>Tải lại</button>}</div>
     {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
     {!data ? !error && <p role="status">Đang tải dữ liệu…</p> : <>
+      <label>Tìm trong danh sách<input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Tên, email hoặc người thực hiện"/></label>
       {['venues', 'courts'].includes(tab) && <>
         {(owner || tab === 'courts') && !form && <button onClick={() => edit()}>Thêm {tab === 'venues' ? 'cơ sở' : 'sân'}</button>}
         {form && <form className="ops-form" onSubmit={save}><h2>{editing ? 'Sửa' : 'Thêm'} {tab === 'venues' ? 'cơ sở' : 'sân'}</h2>
@@ -70,21 +74,21 @@ export default function OperationsPage({ role = 'owner', initialTab = 'venues' }
           <label className="ops-check"><input type="checkbox" checked={Boolean(form.active)} onChange={e => setForm({ ...form, active: e.target.checked })} />Đang hoạt động</label>
           <div className="ops-actions"><button type="submit" disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu'}</button><button type="button" disabled={busy} onClick={() => setForm(null)}>Hủy</button></div>
         </form>}
-        <div className="ops-grid">{<PaginatedList items={data[tab]}>{item => <article className="ops-card" key={item.id}><h2>{item.name}</h2>
+        <div className="ops-grid">{<PaginatedList key={`${tab}-${query}`} items={visible}>{item => <article className="ops-card" key={item.id}><h2>{item.name}</h2>
           <p>{tab === 'venues' ? item.address || 'Chưa có địa chỉ' : `${data.venues.find(v => v.id === item.venueId)?.name || ''} · ${data.sports.find(s => s.id === item.sportId)?.name || ''}`}</p>
           <p>{item.active ? 'Đang hoạt động' : 'Ngừng hoạt động'}{tab === 'courts' && ` · ${item.futureSessions} lịch chưa kết thúc`}</p>
           {(owner || tab === 'courts') && <button disabled={busy} onClick={() => edit(item)}>Sửa</button>}
-        </article>}</PaginatedList>}</div>{!data[tab].length && <p>Chưa có {tab === 'venues' ? 'cơ sở' : 'sân'}.</p>}
+        </article>}</PaginatedList>}</div>{!visible.length && <p>Không có {tab === 'venues' ? 'cơ sở' : 'sân'} phù hợp.</p>}
       </>}
-      {tab === 'people' && <><p>Chuyển hoặc gỡ phân công chỉ hoàn tất khi lịch chưa kết thúc đã có người thay thế phù hợp.</p><div className="ops-table"><table><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>Cơ sở mới</th><th>Người thay thế tại cơ sở cũ</th><th /></tr></thead><tbody>{<PaginatedList items={data.people} columns={5}>{person => {
+      {tab === 'people' && <><p>Chuyển hoặc gỡ phân công chỉ hoàn tất khi lịch chưa kết thúc đã có người thay thế phù hợp.</p><div className="ops-table"><table><thead><tr><th>Nhân sự</th><th>Vai trò</th><th>Cơ sở mới</th><th>Người thay thế tại cơ sở cũ</th><th /></tr></thead><tbody>{<PaginatedList key={query} items={visible} columns={5}>{person => {
         const draft = drafts[person.id] || { venueId: person.venueId || '', replacementUserId: '' };
         const update = change => setDrafts(value => ({ ...value, [person.id]: { ...draft, ...change } }));
         return <tr key={person.id}><td>{person.name}<small>{person.email}</small><small>{person.status}</small></td><td>{person.role}</td>
           <td><select aria-label={`Cơ sở của ${person.name}`} disabled={busy} value={draft.venueId} onChange={e => update({ venueId: e.target.value })}><option value="">Gỡ phân công</option>{data.venues.filter(v => v.active || v.id === person.venueId).map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</select></td>
           <td><select aria-label={`Người thay thế ${person.name}`} disabled={busy} value={draft.replacementUserId} onChange={e => update({ replacementUserId: e.target.value })}><option value="">Chọn khi có lịch tương lai</option>{data.people.filter(p => p.id !== person.id && p.role === person.role && p.venueId === person.venueId && p.status?.toLowerCase() === 'active').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></td>
           <td><button disabled={busy || !drafts[person.id]} onClick={() => assign(person)}>Lưu phân công</button></td></tr>;
-      }}</PaginatedList>}</tbody></table></div>{!data.people.length && <p>Chưa có nhân sự.</p>}</>}
-      {tab === 'history' && <>{!data.history.length && <p>Chưa có thay đổi.</p>}{<PaginatedList items={data.history}>{item => <details className="ops-card" key={item.id}><summary>#{item.id} · {item.actor} · {historyLabels[item.action] || 'Cập nhật phân công'}</summary>{historyDetail(item, data)}</details>}</PaginatedList>}</>}
+      }}</PaginatedList>}</tbody></table></div>{!visible.length && <p>Không có nhân sự phù hợp.</p>}</>}
+      {tab === 'history' && <>{!visible.length && <p>Không có thay đổi phù hợp.</p>}{<PaginatedList key={query} items={visible}>{item => <details className="ops-card" key={item.id}><summary>#{item.id} · {item.actor} · {historyLabels[item.action] || 'Cập nhật phân công'}</summary>{historyDetail(item, data)}</details>}</PaginatedList>}</>}
     </>}
   </section>;
 }

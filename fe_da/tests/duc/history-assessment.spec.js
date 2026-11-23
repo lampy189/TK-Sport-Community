@@ -8,10 +8,10 @@ for(const width of [1440,390,320]) test(`assessment large controls at ${width}px
   await page.setViewportSize({width,height:900});
   await page.route('**/api/**',route=>{
     const path=new URL(route.request().url()).pathname;
-    return route.fulfill({json:path.endsWith('/csrf')?{token:'fixture'}:path.endsWith('/sessions')?[{id:1,name:'Cầu lông',court:'Sân kiểm thử',sessionDate:'2026-11-16',startTime:'18:00'}]:path.endsWith('/attendees')?[{playerId:1,name:'Người chơi kiểm thử',profileId:1}]:form});
+    return route.fulfill({json:path.endsWith('/csrf')?{token:'fixture'}:path.endsWith('/appeals')?[]:path.endsWith('/sessions')?[{id:1,name:'Cầu lông',court:'Sân kiểm thử',sessionDate:'2026-11-16',startTime:'18:00'}]:path.endsWith('/attendees')?[{playerId:1,name:'Người chơi kiểm thử',profileId:1}]:form});
   });
   await page.goto('/tests/duc/?screen=assessment');
-  await page.getByLabel('Buổi được phân công').selectOption('1');
+  await page.getByLabel('Slot đang diễn ra được phân công').selectOption('1');
   await page.getByRole('button',{name:/Người chơi kiểm thử.*Chưa chấm/}).click();
   const slider=page.getByRole('slider').first();
   await expect(slider).toBeVisible();

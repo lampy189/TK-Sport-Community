@@ -29,13 +29,13 @@ async function fixture(page,{fail=false,empty=false,refundStatus='requested',pay
  });
  return posts;
 }
-async function screen(page,name){await page.goto('/tests/duc/?screen='+name);}
+async function screen(page,name){await page.goto('/tests/duc/?screen='+name+'&role=owner');}
 async function shot(page,name){await mkdir(evidence,{recursive:true});await page.screenshot({path:evidence+'/'+name+'.png',fullPage:true});}
 test('exception: empty or whitespace reason blocks both direct decisions',async({page})=>{
  await fixture(page);await screen(page,'exception');
  await expect(page.getByRole('button',{name:'Chấp nhận',exact:true})).toBeDisabled();
  await expect(page.getByRole('button',{name:'Từ chối',exact:true})).toBeDisabled();
- await expect(page.locator('select')).toHaveCount(0);
+ await expect(page.locator('form').filter({has:page.getByLabel('Lý do / nhận xét')}).locator('select')).toHaveCount(0);
  await page.getByLabel('Lý do / nhận xét').fill('   ');
  await expect(page.getByRole('button',{name:'Chấp nhận',exact:true})).toBeDisabled();
  await page.getByLabel('Lý do / nhận xét').fill('Đã xem lịch sử, phù hợp tham gia.');

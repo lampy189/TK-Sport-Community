@@ -11,6 +11,7 @@ public partial class Sep490Context
 {
     private readonly IDataAccessContext? dataScope;
     private long? PersonnelVenue => CenterAccess.PersonnelVenue(dataScope);
+    private bool SkillReviewer => dataScope != null && (dataScope.Role == "Manager" || dataScope.Role == "manager" || dataScope.Role == "Referee" || dataScope.Role == "referee");
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
@@ -53,10 +54,10 @@ public partial class Sep490Context
         model.Entity<StockMovement>().HasQueryFilter(x => PersonnelVenue == null || EF.Property<long?>(x.StockItem, "VenueId") == PersonnelVenue);
         model.Entity<StockCount>().HasQueryFilter(x => PersonnelVenue == null || EF.Property<long?>(x.StockItem, "VenueId") == PersonnelVenue);
         model.Entity<ReconciliationItem>().HasQueryFilter(x => PersonnelVenue == null || EF.Property<long?>(x.Reconciliation, "VenueId") == PersonnelVenue);
-        model.Entity<Player>().HasQueryFilter(x => PersonnelVenue == null || x.Tickets.Any(t => t.Session.Court.VenueId == PersonnelVenue));
-        model.Entity<PlayerSportProfile>().HasQueryFilter(x => PersonnelVenue == null || x.Player.Tickets.Any(t => t.Session.Court.VenueId == PersonnelVenue));
-        model.Entity<PlayerRatingHistory>().HasQueryFilter(x => PersonnelVenue == null || x.PlayerSportProfile.Player.Tickets.Any(t => t.Session.Court.VenueId == PersonnelVenue));
-        model.Entity<User>().HasQueryFilter(x => PersonnelVenue == null || EF.Property<long?>(x, "VenueId") == PersonnelVenue || x.Player != null && x.Player.Tickets.Any(t => t.Session.Court.VenueId == PersonnelVenue));
+        model.Entity<Player>().HasQueryFilter(x => PersonnelVenue == null || x.Tickets.Any(t => t.Session.Court.VenueId == PersonnelVenue) || SkillReviewer && x.SessionExceptions.Any(e => e.Session.Court.VenueId == PersonnelVenue));
+        model.Entity<PlayerSportProfile>().HasQueryFilter(x => PersonnelVenue == null || (x.Player.Tickets.Any(t => t.Session.Court.VenueId == PersonnelVenue) || SkillReviewer && x.Player.SessionExceptions.Any(e => e.Session.Court.VenueId == PersonnelVenue)));
+        model.Entity<PlayerRatingHistory>().HasQueryFilter(x => PersonnelVenue == null || (x.PlayerSportProfile.Player.Tickets.Any(t => t.Session.Court.VenueId == PersonnelVenue) || SkillReviewer && x.PlayerSportProfile.Player.SessionExceptions.Any(e => e.Session.Court.VenueId == PersonnelVenue)));
+        model.Entity<User>().HasQueryFilter(x => PersonnelVenue == null || EF.Property<long?>(x, "VenueId") == PersonnelVenue || x.Player != null && (x.Player.Tickets.Any(t => t.Session.Court.VenueId == PersonnelVenue) || SkillReviewer && x.Player.SessionExceptions.Any(e => e.Session.Court.VenueId == PersonnelVenue)));
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)

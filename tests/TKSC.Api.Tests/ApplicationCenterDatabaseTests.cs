@@ -34,7 +34,7 @@ public sealed class ApplicationCenterDatabaseTests
     {
         await using var all = Db();
         Assert.Equal(0, await all.Database.SqlQueryRaw<int>("SELECT CONVERT(int,is_enabled) AS Value FROM sys.security_policies WHERE name='SportCenterIsolation'").SingleAsync());
-        var venues = await all.Courts.Select(c => c.VenueId).Distinct().OrderBy(x => x).ToArrayAsync();
+        var venues = await all.Sessions.Select(s => s.Court.VenueId).Distinct().OrderBy(x => x).ToArrayAsync();
         Assert.True(venues.Length >= 2);
         foreach (var venue in venues)
         {
@@ -73,9 +73,9 @@ public sealed class ApplicationCenterDatabaseTests
         await using var all = Db();
         var staff = await all.Users.Where(u => u.Role.Code == "Staff" && u.Status == "Active" && u.DeletedAt == null && EF.Property<long?>(u, "VenueId") != null)
             .Select(u => new { u.Email, Venue = EF.Property<long?>(u, "VenueId") }).ToListAsync();
-        await using var app = new SqlApp();
         foreach (var actor in staff.GroupBy(s => s.Venue).Select(g => g.First()))
         {
+            await using var app = new SqlApp();
             using var client = app.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost"), HandleCookies = true, AllowAutoRedirect = false });
             (await Post(client, "/api/auth/dev-login", new { email = actor.Email, portal = "staff", venueId = actor.Venue })).EnsureSuccessStatusCode();
             for (var i = 0; i < 2; i++)
@@ -166,8 +166,9 @@ public sealed class ApplicationCenterDatabaseTests
         Assert.NotEmpty(products);
         Assert.DoesNotContain(products, p => p.Id == foreignProduct.Id);
         var supply = new SqlSessionSupplyStore(Connection, scope);
-        await Assert.ThrowsAsync<PaymentException>(() => supply.GetDetailsAsync(foreignSession, default));
-        await Assert.ThrowsAsync<PaymentException>(() => supply.IssueAsync(foreignSession, new IssueSupplyRequest(foreignProduct.Id, 1, 1), 1, default));
+        Assert.Null(await supply.GetDetailsAsync(foreignSession, default));
+        var deniedSupply = await supply.IssueAsync(foreignSession, new IssueSupplyRequest(foreignProduct.Id, 1, 1), 1, default);
+        Assert.False(deniedSupply.Success);Assert.Equal("SESSION_NOT_FOUND",deniedSupply.ErrorCode);
         var sessions = new SqlSessionStore(Connection, scope);
         Assert.Null(await sessions.GetSessionByIdAsync(foreignSession, null, default));
         await using var connection = new SqlConnection(Connection);

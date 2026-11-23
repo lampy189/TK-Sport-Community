@@ -15,7 +15,8 @@ public class RecoveryWorkflowDatabaseTests
     [DatabaseFact]
     public async Task RefundAndIssueWorkflowAreScopedIndependentIdempotentAndRollback()
     {
-        await using var db = new Sep490Context(new DbContextOptionsBuilder<Sep490Context>().UseSqlServer(Environment.GetEnvironmentVariable("TKSC_TEST_SQL_CONNECTION")).Options);
+        var scope=new MutableTestDataScope();
+        await using var db = new Sep490Context(new DbContextOptionsBuilder<Sep490Context>().UseSqlServer(Environment.GetEnvironmentVariable("TKSC_TEST_SQL_CONNECTION")).Options,scope);
         await db.Database.OpenConnectionAsync();
         await db.Database.ExecuteSqlRawAsync("EXEC sys.sp_set_session_context @key=N'tksc_role',@value=N'service';");
         await using var tx = await db.Database.BeginTransactionAsync();
@@ -197,6 +198,7 @@ public class RecoveryWorkflowDatabaseTests
             Assert.Equal(1, await db.StockMovements.CountAsync(m => m.ReferenceType == "OperationalException" && m.ReferenceId == proposal.Id));
             await workflow.Close(manager.Id, proposal.Id, "Verified stock balance and immutable movement");
             await db.Database.ExecuteSqlInterpolatedAsync($"EXEC sys.sp_set_session_context @key=N'tksc_role',@value=N'Staff'; EXEC sys.sp_set_session_context @key=N'tksc_venue',@value={other.Id};");
+            scope.Role="Staff";scope.VenueId=other.Id;
             Assert.Null(await repo.Resource("refunds", refund.Id));
         }
         finally

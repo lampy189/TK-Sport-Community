@@ -1,0 +1,12 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { accessDecisionActions, accessTargets } from '../../src/pages/operations/ownerAccessModel.js';
+const pending={status:'pending',requestedBy:12,targetUserId:13};
+test('independent Owner can approve or reject pending requests',()=>assert.deepEqual(accessDecisionActions(pending,1,'owner','Manager'),['approve','reject']));
+test('requester and recipient cannot approve their own request, including string IDs',()=>{for(const id of ['12',13])assert.deepEqual(accessDecisionActions(pending,id,'owner','Manager'),[]);});
+test('Manager can decide only Staff and Referee appointments',()=>{for(const role of ['Manager','SystemAdmin'])assert.deepEqual(accessDecisionActions(pending,1,'manager',role),[]);assert.deepEqual(accessDecisionActions(pending,1,'manager','Staff'),['approve','reject']);});
+test('approved requests allow withdrawal; completed requests have no decision actions',()=>{assert.deepEqual(accessDecisionActions({...pending,status:'approved'},1,'owner','Manager'),['withdraw']);for(const status of ['executed','rejected','verified'])assert.deepEqual(accessDecisionActions({...pending,status},1,'owner','Manager'),[]);});
+const users=[{id:1,name:'Owner',email:'owner@example.invalid',role:'Owner'},{id:2,name:'Duc Test',email:'duc@example.invalid',role:'Player'},{id:3,name:'Manager',email:'manager@example.invalid',role:'Manager'}];
+test('account options exclude protected Owner accounts',()=>assert.deepEqual(accessTargets(users).map(x=>x.id),[2,3]));
+test('account search matches name and email without case or whitespace sensitivity',()=>{assert.deepEqual(accessTargets(users,'  DUC  ').map(x=>x.id),[2]);assert.deepEqual(accessTargets(users,'MANAGER@').map(x=>x.id),[3]);});
+test('no account matches yields an empty list',()=>assert.deepEqual(accessTargets(users,'missing'),[]));

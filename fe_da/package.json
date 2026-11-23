@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:duc": "node --test tests/duc/*.test.js",
-    "test:duc:ui": "playwright test --config tests/duc/playwright.config.js"
+    "test:duc:ui": "playwright test --config tests/duc/playwright.config.js",
+    "test:owner": "node --test tests/owner/*.test.js",
+    "test:owner:ui": "playwright test --config tests/owner/playwright.config.js"
   },
   "dependencies": {
     "@zxing/browser": "^0.2.1",

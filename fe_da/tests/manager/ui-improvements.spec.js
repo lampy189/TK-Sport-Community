@@ -6,9 +6,12 @@ async function start(page, active, response) {
 }
 test('policy table paginates without changing source total',async({page})=>{
  await start(page,'Chính sách & giá',p=>p.endsWith('/options')?{venues:[{id:1,name:'Vĩnh Phúc'}],products:[],sessions:[]}:Array.from({length:23},(_,i)=>({id:i+1,code:'POL-'+(i+1),name:'Chính sách '+(i+1),status:'submitted',kind:'policy'})));
- await expect(page.locator('tbody tr:not(.tksc-pagination-row)')).toHaveCount(10);
+ await expect(page.locator('.business-screen-rows tr')).toHaveCount(10);
  await page.getByRole('button',{name:'Trang 3',exact:true}).click();
- await expect(page.locator('tbody tr:not(.tksc-pagination-row)')).toHaveCount(3);
+ await expect(page.locator('.business-screen-rows tr')).toHaveCount(3);
+ await page.emulateMedia({media:'print'});
+ await expect(page.locator('.business-print-rows tr')).toHaveCount(23);
+ await expect(page.locator('.business-screen-rows')).toBeHidden();
 });
 test('personnel filters match Vietnamese names without accents',async({page})=>{
  await start(page,'Phê duyệt nhân sự',()=>({users:[],venues:[],requests:[{id:1,target:'Nguyễn An',requester:'Lâm',status:'pending',payload:'{}'},{id:2,target:'Trần Bình',requester:'Lâm',status:'executed',payload:'{}'}]}));

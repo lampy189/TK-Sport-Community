@@ -3,7 +3,7 @@ import { useState } from 'react';
 import './pagination.css';
 
 // Keep paging local to each list; totals and business operations retain the full dataset.
-export default function PaginatedList({ items = [], children, columns, listItem = false, label = 'Phân trang danh sách' }) {
+export default function PaginatedList({ items = [], children, renderPage, columns, listItem = false, label = 'Phân trang danh sách' }) {
   const manager = useManagerUI();
   const identity = JSON.stringify(items.map((item, index) => item.id ?? item.key ?? item.playerId ?? item.friendPlayerId ?? item.item?.id ?? item.date ?? index));
   const [state, setState] = useState({ identity, page: 1, size: 10 });
@@ -25,5 +25,5 @@ export default function PaginatedList({ items = [], children, columns, listItem 
       <button type="button" aria-label="Trang sau" disabled={page === pages} onClick={() => change(page + 1)}>Sau</button>
     </div>
   </nav>;
-  return <>{items.slice(start, start + state.size).map((item, index) => children(item, start + index))}{controls && (columns ? <tr className="tksc-pagination-row"><td colSpan={columns}>{controls}</td></tr> : listItem ? <li className="tksc-pagination-list-item">{controls}</li> : controls)}</>;
+  return <>{renderPage ? renderPage(items.slice(start, start + state.size)) : items.slice(start, start + state.size).map((item, index) => children(item, start + index))}{controls && (columns ? <tr className="tksc-pagination-row"><td colSpan={columns}>{controls}</td></tr> : listItem ? <li className="tksc-pagination-list-item">{controls}</li> : controls)}</>;
 }

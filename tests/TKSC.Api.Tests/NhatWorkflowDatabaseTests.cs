@@ -48,6 +48,7 @@ public sealed class NhatWorkflowDatabaseTests
             PlayerB=await Sql("INSERT dbo.players(user_id) VALUES(@u); SELECT CONVERT(bigint,SCOPE_IDENTITY());",("@u",B));
             await Sql("INSERT dbo.friendships(requester_id,addressee_id,status) VALUES(@me,@a,'Accepted'),(@me,@b,'Accepted'); SELECT 1;",("@me",InviterPlayer),("@a",PlayerA),("@b",PlayerB));
         }
+        public Task<long> EligibleProfiles()=>Sql("INSERT dbo.player_sport_profiles(player_id,sport_id,current_score,current_band,rating_status) VALUES(@a,@sport,50,'B3','Provisional'),(@b,@sport,50,'B3','Provisional'); SELECT 1;",("@a",PlayerA),("@b",PlayerB),("@sport",Sport));
         public Task<long> Session(int capacity=8,string? band=null)=>Sql("INSERT dbo.sessions(sport_id,court_id,time_slot_id,session_date,band,capacity,price_vnd,status,created_by) VALUES(@sport,@court,@slot,DATEADD(day,40,CONVERT(date,SYSDATETIMEOFFSET())),@band,@capacity,100000,'Open',@owner); SELECT CONVERT(bigint,SCOPE_IDENTITY());",("@sport",Sport),("@court",Court),("@slot",Slot),("@band",band),("@capacity",capacity),("@owner",Owner));
         public InvitationRepository Invitations()=>new(Config,new Scope("Player",Venue));
         public SqlSessionStore Sessions()=>new(Connection,new Scope("Player",Venue));
@@ -57,7 +58,7 @@ public sealed class NhatWorkflowDatabaseTests
     [WorkflowDatabaseFact]
     public async Task InvitationDoesNotHoldUntilConsentAndUsesTheChosenPayerIdempotently()
     {
-        var f=new Fixture(); await f.Init(); var session=await f.Session();
+        var f=new Fixture(); await f.Init();await f.EligibleProfiles(); var session=await f.Session();
         var repo=f.Invitations();
         var invitation=Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerA,"inviter"),default));
         Assert.Equal(0,await f.Sql("SELECT COUNT(*) FROM dbo.tickets WHERE session_id=@s",("@s",session)));
@@ -79,7 +80,7 @@ public sealed class NhatWorkflowDatabaseTests
     [WorkflowDatabaseFact]
     public async Task ConcurrentAcceptsNeverOverbookTheLastPlace()
     {
-        var f=new Fixture(); await f.Init();var session=await f.Session(1);
+        var f=new Fixture(); await f.Init();await f.EligibleProfiles();var session=await f.Session(1);
         var repo=f.Invitations();
         var a=Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerA),default));
         var b=Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerB),default));

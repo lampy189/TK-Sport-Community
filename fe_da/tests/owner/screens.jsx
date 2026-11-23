@@ -1,0 +1,7 @@
+import { createRoot } from 'react-dom/client';
+import { PolicyPage, BusinessReportPage } from '../../src/pages/operations/BusinessConsole';
+import OperationsPage from '../../src/pages/operations/OperationsPage';
+import AccessPage from '../../src/pages/operations/AccessPage';
+import '../../src/index.css';
+const screen=new URLSearchParams(location.search).get('screen');
+createRoot(document.getElementById('root')).render(<main style={{maxWidth:1100,margin:'20px auto',padding:16}}><p>TEST FIXTURES — no real transactions</p>{screen==='operations'?<OperationsPage role="owner"/>:screen==='access'?<AccessPage role="owner" user={{id:1}}/>:screen==='report'?<BusinessReportPage/>:<PolicyPage role="owner" user={{id:1}}/>}</main>);

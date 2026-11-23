@@ -12,7 +12,8 @@ public sealed class SkillExceptionVisibilityDatabaseTests
  public async Task NoTicketPlayerIsVisibleOnlyForReviewInTheRequestVenue()
  {
   var connection=Environment.GetEnvironmentVariable("TKSC_TEST_SQL_CONNECTION")!;
-  await using var db=new Sep490Context(new DbContextOptionsBuilder<Sep490Context>().UseSqlServer(connection).Options);
+  var scope=new MutableTestDataScope();
+  await using var db=new Sep490Context(new DbContextOptionsBuilder<Sep490Context>().UseSqlServer(connection).Options,scope);
   await db.Database.OpenConnectionAsync();
   await db.Database.ExecuteSqlRawAsync("EXEC sys.sp_set_session_context @key=N'tksc_role',@value=N'service';");
   await using var tx=await db.Database.BeginTransactionAsync();
@@ -47,6 +48,7 @@ public sealed class SkillExceptionVisibilityDatabaseTests
    db.ChangeTracker.Clear();
    async Task Context(string role,long center)
    {
+    scope.Role=role;scope.VenueId=center;
     await db.Database.ExecuteSqlInterpolatedAsync($"EXEC sys.sp_set_session_context @key=N'tksc_role',@value={role}");
     await db.Database.ExecuteSqlInterpolatedAsync($"EXEC sys.sp_set_session_context @key=N'tksc_venue',@value={center}");
    }
