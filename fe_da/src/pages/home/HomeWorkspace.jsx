@@ -51,7 +51,8 @@ export default function HomeWorkspace({
   if (!preview && role === 'manager' && active === 'Vé giờ lẻ') return <LateEntryManagement role={role}/>;
   if (!preview && ["owner", "manager", "staff"].includes(role) && ["Kinh doanh", "Thống kê doanh số"].includes(active)) return <RevenuePage role={role} />;
   if (!preview && ["staff","manager","owner"].includes(role) && active === "Ngoại lệ vận hành") return <OperationalExceptions role={role}/>;
-  if (!preview && ['owner', 'manager'].includes(role) && ['Cơ sở & sân', 'Phân quyền Sport Center'].includes(active)) return <OperationsPage key={active} role={role} initialTab={active === 'Phân quyền Sport Center' ? 'people' : 'venues'} />;
+  if (!preview && ((role === 'owner' && active === 'Cơ sở, sân và nhân sự') || (role === 'manager' && active === 'Cơ sở & sân')))
+    return <OperationsPage role={role} />;
   if (!preview && role === 'manager' && active === 'Quản lý buổi chơi') return <SessionManagementPage />;
   if (!preview && ['owner', 'manager', 'system-admin'].includes(role) && ['Bổ nhiệm quản lý', 'Phê duyệt nhân sự', 'Tài khoản & truy cập', 'Bàn giao hỗ trợ'].includes(active)) return <AccessPage role={role} user={user} />;
   if (!preview && role === 'player' && ['Thông báo', 'Tin nhắn', 'Lời mời buổi chơi'].includes(active)) {

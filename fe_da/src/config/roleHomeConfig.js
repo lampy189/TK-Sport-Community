@@ -102,8 +102,7 @@ export const roleHomeConfig = {
     modules: [
       "Kinh doanh",
       "Báo cáo tổng hợp",
-      "Cơ sở & sân",
-      "Phân quyền Sport Center",
+      "Cơ sở, sân và nhân sự",
       "Đổi & hoàn vé",
       "Ngoại lệ vận hành",
       "Sự cố",

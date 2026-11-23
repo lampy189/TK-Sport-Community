@@ -36,8 +36,8 @@ export default function PaymentRecoveryPage({role='staff',initialPaymentId=null}
       <strong>{row.kind==='goods'?'Hàng hóa':'Vé'} · {row.reference}</strong><span>{money(row.amountVnd)} · {labels[row.status]||row.status}</span>
     </button>}</PaginatedList>}
    </div>
-   <div aria-live="polite">{current?<>
-    <h3>{current.reference}</h3>{role!=='manager'&&<IssueWorkflowControls key={current.id} kind="reviews" id={current.id} role={role}/>}<p>Đơn #{current.orderId} · {labels[current.status]||current.status}</p>
+   <div className="recovery-detail" aria-live="polite">{current?<>
+    <h3>{current.reference}</h3>{role==='staff'&&<IssueWorkflowControls key={current.id} kind="reviews" id={current.id} role={role}/>}<p>Đơn #{current.orderId} · {labels[current.status]||current.status}</p>
     <p>Số tiền cần thu: <strong>{money(current.amountVnd)}</strong></p>
     <label>Giao dịch ngân hàng<select value={bank} onChange={e=>setBank(e.target.value)} disabled={busy}>
      <option value="">Chọn chứng từ để duyệt</option>{current.transactions.map(t=><option key={t.id} value={t.id}>{t.reference} · {money(t.amountVnd)} · {recoveryLabels[t.status]||t.status}</option>)}
@@ -52,7 +52,7 @@ export default function PaymentRecoveryPage({role='staff',initialPaymentId=null}
      <button className="button button-secondary" disabled={!canAct} onClick={()=>run('note')}>Lưu ghi chú</button>
     </div>
     <p>Khoản thiếu/thừa hoặc chưa rõ kết quả cần tiếp tục đối soát. Mở phần Phân công & xử lý ngoại lệ nếu cần chuyển người phụ trách.</p>
-    {role==='manager'&&<details className="manager-disclosure" key={'flow-'+current.id}><summary>Phân công & xử lý ngoại lệ</summary><IssueWorkflowControls kind="reviews" id={current.id} role={role}/></details>}
+    {role!=='staff'&&<details className="manager-disclosure" key={'flow-'+current.id}><summary>Phân công & xử lý ngoại lệ</summary><IssueWorkflowControls kind="reviews" id={current.id} role={role}/></details>}
     <details className="manager-disclosure" open={role!=='manager'} key={'history-'+current.id}><summary>Lịch sử và nguyên nhân ({current.history.length})</summary>{!current.history.length&&<p>Chưa có lịch sử xử lý. Dùng kiểm tra lại payOS để xác minh.</p>}
     {<PaginatedList items={current.history}>{(h,i)=>{const detail=historyDetails(h);return <article className="recovery-history" key={i}>
      <strong>{detail.title}</strong><p>Người xử lý: {h.actorId??'Hệ thống'}{detail.at&&<> · {new Date(detail.at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})}</>}</p>

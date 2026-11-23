@@ -13,6 +13,7 @@ import PlayerHome from "./PlayerHome";
 import PlayerChatbot from "../../components/PlayerChatbot";
 
 function restoreWorkspace(role, active) {
+  if (role === "owner" && ["Cơ sở & sân", "Phân quyền Sport Center"].includes(active)) return "Cơ sở, sân và nhân sự";
   if (role === "manager" && ["Bán hàng", "Xử lý đơn hàng"].includes(active)) return "overview";
   if (role === "player" && active === "Thanh toán") return "Vé của tôi";
   return active;
@@ -34,7 +35,9 @@ export default function HomePage({
     role === "staff" &&
     (new URLSearchParams(window.location.search).get("view") === "goods-orders" ||
       new URLSearchParams(window.location.search).has("goodsOrderId")) ? "Xử lý đơn hàng" :
-    role === "player" && new URLSearchParams(window.location.search).get("view") === "goods" ? "Cửa hàng" :
+    role === "player" &&
+    (new URLSearchParams(window.location.search).get("view") === "goods" ||
+      new URLSearchParams(window.location.search).has("goodsOrderId")) ? "Cửa hàng" :
     role === "player" &&
     (new URLSearchParams(window.location.search).has("orderId") || new URLSearchParams(window.location.search).get("view") === "tickets")
       ? "Vé của tôi"
@@ -247,7 +250,7 @@ export default function HomePage({
     >
       {!preview && (role === "owner" || (hasAssignedCenter && active === "overview")) && <SportCenterBadge compact={role === 'manager'} />}
       {active === "overview" ? (
-        <>{!preview && !["referee", "staff"].includes(role) && <OperationsOverview role={role} />}<HomeOverview config={config} preview={preview} onOpen={open} role={role} /></>
+        <>{!preview && !["referee", "staff", "owner"].includes(role) && <OperationsOverview role={role} />}<HomeOverview config={config} preview={preview} onOpen={open} role={role} /></>
       ) : (
         <div className="home-workspace">
           <div className="home-breadcrumb">
