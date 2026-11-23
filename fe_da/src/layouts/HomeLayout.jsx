@@ -1,3 +1,4 @@
+import { ManagerUIContext } from '../components/ui/managerUiState';
 import Header from "../components/layout/Header";
 import Navbar from "../components/layout/Navbar";
 import HeroLayout from "../components/layout/HeroLayout";
@@ -20,7 +21,7 @@ export default function HomeLayout({
   children,
 }) {
   return (
-    <div id="home" className="home-layout" data-role={role}>
+    <ManagerUIContext.Provider value={role === "manager"}><div id="home" className="home-layout" data-role={role}>
       <a className="skip-link" href="#main-content">
         Bỏ qua điều hướng
       </a>
@@ -31,6 +32,6 @@ export default function HomeLayout({
         {children}
       </MainContainer>
       <Footer />
-    </div>
+    </div></ManagerUIContext.Provider>
   );
 }

@@ -1,3 +1,4 @@
+import { ManagerList } from '../../components/ui/ManagerUI';
 import { useEffect, useState } from "react";
 import { CircleCheck, RefreshCw, TriangleAlert } from "lucide-react";
 import SectionLayout from "../../components/layout/SectionLayout";
@@ -10,7 +11,7 @@ const monthStart = (day) => `${day.slice(0, 8)}01`;
 
 // Supply and stock figures of the center for a period, plus the stock check:
 // on hand = sum of all movements, reserved = lines of orders still holding stock.
-export default function SupplyReportView() {
+export default function SupplyReportView({ role }) {
   const [to, setTo] = useState(vnToday);
   const [from, setFrom] = useState(() => monthStart(vnToday()));
   const [state, setState] = useState({ loading: true, report: null, recon: [], error: "" });
@@ -32,7 +33,7 @@ export default function SupplyReportView() {
     <SectionLayout
       title="Báo cáo vật tư & đối soát tồn"
       description="Số nhập, bán, cấp cho buổi chơi, thu hồi, điều chỉnh trong kỳ và kiểm tra tồn kho khớp với lịch sử phiếu."
-      action={
+      action={(role !== 'manager' || state.error) &&
         <button className="button button-secondary" onClick={() => (setState((s) => ({ ...s, loading: true })), setReloadKey((k) => k + 1))}>
           <RefreshCw size={15} aria-hidden="true" /> Tải lại
         </button>
@@ -84,7 +85,7 @@ export default function SupplyReportView() {
                 </tr>
               </thead>
               <tbody>
-                {state.report.lines.map((l) => {
+                {<ManagerList items={state.report.lines} columns={10}>{l => {
                   const recon = state.recon.find((r) => r.productId === l.productId);
                   const bad = recon && (!recon.onHandMatches || !recon.reservedMatches);
                   return (
@@ -120,7 +121,7 @@ export default function SupplyReportView() {
                       </td>
                     </tr>
                   );
-                })}
+                }}</ManagerList>}
               </tbody>
             </table>
           </div>

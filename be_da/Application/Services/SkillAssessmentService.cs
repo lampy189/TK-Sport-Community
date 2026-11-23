@@ -13,8 +13,8 @@ public sealed class SkillAssessmentService(ISkillAssessmentRepository repository
 {
     public async Task<object> SessionsAsync(long actorId, CancellationToken ct)
     {
-        var today = DateOnly.FromDateTime(clock.GetUtcNow().ToOffset(TimeSpan.FromHours(7)).DateTime);
-        return await repository.SessionsSessionsListAsync(actorId, ct, today);
+        var now = clock.GetUtcNow();
+        return await repository.SessionsSessionsListAsync(actorId, ct, now);
     }
 
     public async Task<object> PlayerContextAsync(long sessionId, long playerId, long actorId, CancellationToken ct)
@@ -81,6 +81,7 @@ public sealed class SkillAssessmentService(ISkillAssessmentRepository repository
         var existing = await repository.OpenAsync(sessionId, actorId, ct, profile);
         if (existing != null)
             return await ViewAsync(existing, ct);
+        EnsureOngoing(session);
         var rubric = await ActiveRubricAsync(session.SportId, ct);
         var assessment = new Assessment
         {
@@ -188,10 +189,17 @@ public sealed class SkillAssessmentService(ISkillAssessmentRepository repository
         await repository.SaveAsync(ct);
         return await ViewAsync(a, ct);
     }, ct);
+    private void EnsureOngoing(Session session)
+    {
+        if (!AssessmentSessionRules.Ongoing(clock.GetUtcNow()).Compile()(session))
+            throw Error(409, "Chỉ chấm điểm trong slot đang diễn ra. Điểm đã công bố cần gửi yêu cầu xem xét lại.");
+    }
+
     private async Task EditableAsync(Assessment a, long revision, CancellationToken ct)
     {
         if (a.Status != "draft")
             throw Error(409, "Không được sửa phiếu đã công bố.");
+        EnsureOngoing(await AssignedSessionAsync(a.SessionId!.Value, a.AssessorId, ct));
         if (await RevisionAsync(a.Id, ct) != revision)
             throw Error(409, "Phiếu đã thay đổi. Tải lại để tránh ghi đè.");
     }

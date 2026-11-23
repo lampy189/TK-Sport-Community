@@ -1,5 +1,5 @@
 import SportCenterBadge from "../revenue/SportCenterBadge";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import HomeLayout from "../../layouts/HomeLayout";
 import { roleHomeConfig } from "../../config/roleHomeConfig";
@@ -57,6 +57,9 @@ export default function HomePage({
     window.addEventListener("popstate", restore);
     return () => window.removeEventListener("popstate", restore);
   }, [role, active, sessionId, browseSport]);
+  useLayoutEffect(() => {
+    if (role === 'manager') window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [role, active]);
   function remember(next, nextSession = sessionId, url = window.location.href) {
     if (next === active && nextSession === sessionId && String(url) === window.location.href) return;
     window.history.pushState({ tkscHome: { role, active: next, sessionId: nextSession, browseSport } }, "", url);
@@ -236,7 +239,7 @@ export default function HomePage({
           : null
       }
     >
-      {!preview && (role === "owner" || (hasAssignedCenter && active === "overview")) && <SportCenterBadge />}
+      {!preview && (role === "owner" || (hasAssignedCenter && active === "overview")) && <SportCenterBadge compact={role === 'manager'} />}
       {active === "overview" ? (
         <>{!preview && !["referee", "staff"].includes(role) && <OperationsOverview role={role} />}<HomeOverview config={config} preview={preview} onOpen={open} role={role} /></>
       ) : (

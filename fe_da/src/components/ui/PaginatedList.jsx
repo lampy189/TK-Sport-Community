@@ -1,9 +1,11 @@
+import { useManagerUI } from './managerUiState';
 import { useState } from 'react';
 import './pagination.css';
 
 // Keep paging local to each list; totals and business operations retain the full dataset.
 export default function PaginatedList({ items = [], children, columns, hideShortPager = false, listItem = false, label = 'Phân trang danh sách', pageSize }) {
   const lockedSize = Number.isFinite(pageSize) && pageSize > 0 ? pageSize : null;
+  const manager = useManagerUI();
   const identity = JSON.stringify(items.map((item, index) => item.id ?? item.key ?? item.playerId ?? item.friendPlayerId ?? item.item?.id ?? item.date ?? index));
   const [state, setState] = useState({ identity, page: 1, size: lockedSize || 10 });
   const size = lockedSize || state.size;
@@ -13,7 +15,7 @@ export default function PaginatedList({ items = [], children, columns, hideShort
   const start = (page - 1) * size;
   const change = (next, nextSize = size) => setState({ identity, page: next, size: lockedSize || nextSize });
   const numbers = [...new Set([1, page - 1, page, page + 1, pages])].filter(value => value >= 1 && value <= pages).sort((a, b) => a - b);
-  const controls = items.length > (lockedSize ?? (hideShortPager ? 10 : 0)) && <nav className="tksc-pagination" aria-label={label}>
+  const controls = items.length > (lockedSize ?? (hideShortPager ? 10 : 0)) && (!manager || pages > 1 || (!lockedSize && size > 10)) && <nav className="tksc-pagination" aria-label={label}>
     <span className="tksc-pagination-summary" aria-live="polite">{start + 1}–{Math.min(start + size, items.length)} / {items.length} mục</span>
     {!lockedSize && <label>Số mục / trang<select value={size} onChange={event => change(1, Number(event.target.value))}>{[10, 20, 50].map(option => <option key={option} value={option}>{option}</option>)}</select></label>}
     <div className="tksc-pagination-pages">

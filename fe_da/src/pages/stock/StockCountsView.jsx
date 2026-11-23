@@ -1,3 +1,4 @@
+import { ManagerList } from '../../components/ui/ManagerUI';
 import { useEffect, useState } from "react";
 import { Check, ClipboardCheck, RefreshCw, X } from "lucide-react";
 import SectionLayout from "../../components/layout/SectionLayout";
@@ -59,7 +60,7 @@ export default function StockCountsView({ role = "staff" }) {
           ? "Xem số đếm thực tế, lý do và bằng chứng của nhân viên. Chỉ khi duyệt, tồn kho mới được điều chỉnh, đúng một lần."
           : "Ghi số đếm thực tế từ nút Kiểm kê ở danh mục. Chênh lệch được gửi Quản lý duyệt; tồn kho không đổi khi chưa duyệt."
       }
-      action={
+      action={(role !== 'manager' || state.error) &&
         <button className="button button-secondary" onClick={reload} disabled={state.loading}>
           <RefreshCw size={15} aria-hidden="true" /> Tải lại
         </button>
@@ -112,7 +113,7 @@ export default function StockCountsView({ role = "staff" }) {
               </tr>
             </thead>
             <tbody>
-              {state.items.map((c) => (
+              {<ManagerList items={state.items} columns={canDecide ? 7 : 6}>{c => (
                 <tr key={c.id}>
                   <td data-label="Mặt hàng">
                     <strong>{c.name}</strong>
@@ -162,7 +163,7 @@ export default function StockCountsView({ role = "staff" }) {
                     </td>
                   )}
                 </tr>
-              ))}
+              )}</ManagerList>}
             </tbody>
           </table>
         </div>

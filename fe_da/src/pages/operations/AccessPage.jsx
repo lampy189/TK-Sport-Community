@@ -1,3 +1,4 @@
+import { matchesText } from '../../components/ui/managerUiState';
 import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from 'react';
 import { workflowRequest } from '../workflowClient';
@@ -5,6 +6,7 @@ import './operations.css';
 const parse = text => { try { return JSON.parse(text); } catch { return {}; } };
 const statuses = { pending: 'Chờ phê duyệt', approved: 'Đã duyệt, chờ triển khai', rejected: 'Đã từ chối', provisioned: 'Chờ người nhận kiểm tra', verified: 'Đã kiểm tra, chờ thu hồi quyền cũ', executed: 'Hoàn tất' };
 export default function AccessPage({ role, user }) {
+  const [query,setQuery] = useState(''), [statusFilter,setStatusFilter] = useState('');
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -27,21 +29,22 @@ export default function AccessPage({ role, user }) {
     e.preventDefault();
     void run('', { ...form, targetUserId: Number(form.targetUserId), venueId: form.role === 'SystemAdmin' ? null : Number(form.venueId), outgoingUserId: form.action === 'handover' ? Number(form.outgoingUserId) : null });
   }
+  const requests = (data?.requests || []).filter(row=>role!=='manager'||(matchesText(`${row.target} ${row.requester} ${row.id}`,query)&&(!statusFilter||row.status===statusFilter)));
   return <section className="ops-page"><h1>Bổ nhiệm và quyền truy cập</h1>
     <p>Phê duyệt độc lập trước khi cấp hoặc thu hồi quyền. Người nhận bàn giao dùng tài khoản riêng.</p>
     {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
-    <button disabled={busy} onClick={() => setRevision(value => value + 1)}>Tải lại</button>
+    {(role !== 'manager' || error) && <button disabled={busy} onClick={() => setRevision(value => value + 1)}>Tải lại</button>}
     {!data ? !error && <p role="status">Đang tải yêu cầu…</p> : <>
       <form className="ops-form" onSubmit={submit}><h2>Đề xuất</h2><p>Tài khoản nhận quyền cần đăng nhập Google trước để có tài khoản riêng trong hệ thống.</p>
         <label>Tài khoản<select aria-label="Tài khoản" disabled={busy} required value={form.targetUserId} onChange={e => setForm({ ...form, targetUserId: e.target.value })}><option value="">Chọn tài khoản</option>{data.users.map(u => <option key={u.id} value={u.id}>{u.name} · {u.email} · {u.role}</option>)}</select></label>
-        <label>Vai trò<select aria-label="Vai trò" disabled={busy} value={form.role} onChange={e => setForm({ ...form, role: e.target.value, action: 'grant' })}>{(role === 'manager' ? ['Staff', 'Referee'] : ['Manager', 'Staff', 'Referee', 'SystemAdmin']).map(value => <option key={value}>{value}</option>)}</select></label>
+        <label>Vai trò<select aria-label="Vai trò" disabled={busy} value={form.role} onChange={e => setForm({ ...form, role: e.target.value, action: 'grant' })}>{(role === 'manager' ? ['Staff', 'Referee'] : ['Manager', 'Staff', 'Referee', 'SystemAdmin']).map(value => <option key={value} value={value}>{role==='manager'?({Staff:'Nhân viên',Referee:'Trọng tài'})[value]||value:value}</option>)}</select></label>
         {form.role !== 'SystemAdmin' && <label>Cơ sở<select aria-label="Cơ sở" disabled={busy} required value={form.venueId} onChange={e => setForm({ ...form, venueId: e.target.value })}><option value="">Chọn cơ sở</option>{data.venues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</select></label>}
         <label>Hình thức<select aria-label="Hình thức" disabled={busy} value={form.action} onChange={e => setForm({ ...form, action: e.target.value })}><option value="grant">Cấp quyền / bổ nhiệm</option><option value="revoke">Thu hồi truy cập</option>{form.role === 'SystemAdmin' && <option value="handover">Bàn giao quản trị</option>}</select></label>
         {form.action === 'handover' && <label>Tài khoản bàn giao<select aria-label="Tài khoản bàn giao" disabled={busy} required value={form.outgoingUserId} onChange={e => setForm({ ...form, outgoingUserId: e.target.value })}><option value="">Chọn quản trị viên hiện tại</option>{data.users.filter(u => u.role === 'SystemAdmin' && u.id !== Number(form.targetUserId)).map(u => <option key={u.id} value={u.id}>{u.name} · {u.email}</option>)}</select></label>}
         <label>Lý do<textarea required maxLength={2000} value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} /></label><button type="submit" disabled={busy}>{busy ? 'Đang lưu…' : 'Gửi đề xuất'}</button>
       </form>
-      <h2>Yêu cầu</h2>{!data.requests.length && <p>Chưa có yêu cầu.</p>}
-      <div className="ops-grid">{<PaginatedList items={data.requests}>{item => {
+      <h2>Yêu cầu</h2>{role==='manager'&&<div className="manager-filters"><label>Tìm người / mã yêu cầu<input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Tên người hoặc mã…"/></label><label>Trạng thái yêu cầu<select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="">Tất cả trạng thái</option>{Object.entries(statuses).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label></div>}{!requests.length && <p>Không có yêu cầu phù hợp.</p>}
+      <div className="ops-grid">{<PaginatedList items={requests}>{item => {
         const payload = parse(item.payload); const request = payload.Request || {};
         const canDecide = ['owner', 'manager'].includes(role) && ['pending', 'approved'].includes(item.status) && item.requestedBy !== id && item.targetUserId !== id;
         return <article className="ops-card" key={item.id}><h2>#{item.id} · {item.target}</h2><p>{request.Role} · {({ grant: 'Cấp quyền', revoke: 'Thu hồi', handover: 'Bàn giao' })[request.Action]}</p><strong>{statuses[item.status] || item.status}</strong><p>Người đề xuất: {item.requester}</p><p>{request.Reason}</p><p>{payload.At && new Date(payload.At).toLocaleString('vi-VN')}</p>

@@ -83,7 +83,7 @@ export default function ShiftsPage({ role, user }) {
             </select>
           </label>
         </div>}
-        <button className="button button-secondary" disabled={busy || loading} onClick={async () => { setLoading(true); setError(''); try { await load(); setSelected(null); } catch (e) { setError(e.message); } finally { setLoading(false); } }}>Tải lại</button>
+        {(!manager || error) && <button className="button button-secondary" disabled={busy || loading} onClick={async () => { setLoading(true); setError(''); try { await load(); setSelected(null); } catch (e) { setError(e.message); } finally { setLoading(false); } }}>Tải lại</button>}
       </div>
       {error && <p className="workflow-error" role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}

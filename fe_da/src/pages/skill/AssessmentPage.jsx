@@ -1,3 +1,4 @@
+import SkillReviews from "./SkillReviews";
 import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useRef, useState } from "react";
 import { CalendarDays, ClipboardPenLine, UserRound } from "lucide-react";
@@ -88,15 +89,18 @@ export default function AssessmentPage({ dirtyRef } = {}) {
 
   useEffect(() => {
     let active = true;
-    workflowRequest("/api/v1/skill/sessions")
+    const refresh = () => workflowRequest("/api/v1/skill/sessions")
       .then((data) => {
         if (active) setSessions(data);
       })
       .catch((e) => {
         if (active) setError(e.message);
       });
+    refresh();
+    const timer = window.setInterval(refresh, 30000);
     return () => {
       active = false;
+      window.clearInterval(timer);
     };
   }, []);
 
@@ -979,6 +983,7 @@ export default function AssessmentPage({ dirtyRef } = {}) {
           </>
         )}
       </div>
+      <SkillReviews role="referee" kind="appeals" openOnly />
     </SectionLayout>
   );
 }

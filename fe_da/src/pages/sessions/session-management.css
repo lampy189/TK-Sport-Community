@@ -67,3 +67,9 @@
   color: inherit;
 }
 .shift-detail::backdrop { background: rgb(16 44 33 / 35%); }
+.manager-sessions .manager-session-fields label { align-content: start; }
+.manager-sessions .manager-session-fields input, .manager-sessions .manager-session-fields select { min-height: 44px; box-sizing: border-box; }
+.manager-sessions .manager-session-people label { display: inline-flex; align-items: center; }
+.manager-sessions .manager-session-people input { width: 16px; height: 16px; margin: 0; }
+.manager-sessions .manager-session-controls { align-items: center; }
+.manager-sessions .manager-session-row-top { align-items: start; flex-wrap: wrap; }

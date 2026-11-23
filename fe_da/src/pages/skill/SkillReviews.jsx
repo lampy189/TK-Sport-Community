@@ -1,3 +1,4 @@
+import { matchesText, displayDate } from '../../components/ui/managerUiState';
 import PaginatedList from '../../components/ui/PaginatedList';
 import { useEffect, useState } from "react";
 import { workflowRequest } from "../workflowClient";
@@ -109,11 +110,12 @@ function Decision({ row, kind, role, reload }) {
   </ReasonForm>;
 }
 
-export default function SkillReviews({ role, kind = "appeals", sportId }) {
-  return <ReviewList key={`${role}-${kind}-${sportId}`} role={role} kind={kind} sportId={sportId} />;
+export default function SkillReviews({ role, kind = "appeals", sportId, openOnly = false }) {
+  return <ReviewList key={`${role}-${kind}-${sportId}`} role={role} kind={kind} sportId={sportId} openOnly={openOnly} />;
 }
 
-function ReviewList({ role, kind, sportId }) {
+function ReviewList({ role, kind, sportId, openOnly }) {
+  const [query,setQuery] = useState(''), [statusFilter,setStatusFilter] = useState('');
   const [rows, setRows] = useState([]);
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState("");
@@ -128,11 +130,13 @@ function ReviewList({ role, kind, sportId }) {
       .catch(err => { if (active) setError(err.message); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [role, kind, sportId]);
+  const displayed = rows.filter(row => (!openOnly || ['Pending','UnderReview'].includes(row.status)) && (role!=='manager' || (matchesText(row.player,query)&&(!statusFilter||row.status===statusFilter))));
   return <section className="workflow-page skill-reviews">
-    <h2>{kind === "exceptions" ? "Ngoại lệ trình độ" : "Khiếu nại đánh giá"}</h2>
+    <h2>{kind === "exceptions" ? "Ngoại lệ trình độ" : openOnly ? "Yêu cầu xem xét lại điểm" : "Khiếu nại đánh giá"}</h2>
     {role === "referee" && kind === "exceptions" && <p>Danh sách yêu cầu của các buổi bạn được phân công làm Trọng tài.</p>}
+    {role==='manager'&&<div className="manager-filters"><label>Tìm người chơi<input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Tên người chơi…"/></label><label>Trạng thái xử lý<select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="">Tất cả trạng thái</option>{[...new Set(rows.map(r=>r.status))].map(s=><option key={s} value={s}>{labels[s]||s}</option>)}</select></label></div>}
     {loading ? <p role="status">Đang tải…</p> : error ? <p role="alert">{error}</p> : <>
-      <button className="button button-secondary" onClick={() => reload().catch(err => setError(err.message))}>Tải lại danh sách</button>
+      {(role !== 'manager' || error) && <button className="button button-secondary" onClick={() => reload().catch(err => setError(err.message))}>Tải lại danh sách</button>}
       {role === "player" && kind === "appeals" && (results.length ? <>
         <label>Kết quả muốn khiếu nại<select value={selected} onChange={e => setSelected(e.target.value)}><option value="">Chọn kết quả đã công bố</option>
           {results.map(r => <option key={r.id} value={r.assessmentId}>Kết quả #{r.id} — {r.score} điểm / {r.band}</option>)}</select></label>
@@ -140,10 +144,10 @@ function ReviewList({ role, kind, sportId }) {
           await workflowRequest(`${base}/assessments/${selected}/appeals`, "POST", { reason }); await reload(); setSelected("");
         }} />}
       </> : <p>Chưa có kết quả Trọng tài đã công bố cho môn này để khiếu nại.</p>)}
-      {!rows.length && <p>{role === "referee" && kind === "exceptions" ? "Chưa có yêu cầu trong các buổi bạn được phân công. Nếu Player đã gửi đơn, hãy nhờ Quản lý kiểm tra phân công Trọng tài của buổi đó." : "Chưa có yêu cầu."}</p>}
-      {<PaginatedList items={rows}>{row => <article className="detail-card" key={row.id}>
+      {!displayed.length && <p>{role === "referee" && kind === "exceptions" ? "Chưa có yêu cầu trong các buổi bạn được phân công. Nếu Player đã gửi đơn, hãy nhờ Quản lý kiểm tra phân công Trọng tài của buổi đó." : "Chưa có yêu cầu."}</p>}
+      {<PaginatedList items={displayed}>{row => <article className="detail-card" key={row.id}>
         <h3>#{row.id} · {row.player} · {row.sport}</h3><p><strong>{labels[row.status] || row.status}</strong></p>
-        {kind === "exceptions" ? <p>Buổi #{row.sessionId} · {row.sessionDate} · Band yêu cầu: {row.sessionBand} · Band hiện tại: {row.currentBand}</p>
+        {kind === "exceptions" ? <p>Buổi #{row.sessionId} · {role==='manager'?displayDate(row.sessionDate):row.sessionDate} · Trình độ yêu cầu: {row.sessionBand} · Trình độ hiện tại: {row.currentBand}</p>
           : <p>Kết quả bị khiếu nại: {row.disputedScore} / {row.disputedBand} · Hiện tại: {row.currentScore} / {row.currentBand}</p>}
         {row.reason && <p>{row.reason}</p>}
         {row.events?.map((event, i) => <p key={i}><time>{new Date(event.at).toLocaleString("vi-VN")}</time> · {labels[event.status] || event.status}: {event.reason}</p>)}

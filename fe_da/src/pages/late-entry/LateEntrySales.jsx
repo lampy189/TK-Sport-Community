@@ -92,14 +92,14 @@ function AutomaticOffer({ offer }) {
 
   </article>;
 }
-export function LateEntryManagement() {
+export function LateEntryManagement({ role }) {
   const { data, error, loading, reload } = useOffers(`${root}/manage`);
   return <section className="le-section">
     <div className="le-heading"><div>
 
       <h2>Vé giờ lẻ tự động</h2>
 
-    </div><button className="button button-secondary" onClick={reload}><RefreshCw size={17}/>Tải lại</button></div>
+    </div>{(role !== 'manager' || error) && <button className="button button-secondary" onClick={reload}><RefreshCw size={17}/>Tải lại</button>}</div>
     {error && <p role="alert" className="payment-error">{error}</p>}
     {loading && <p>Đang tải buổi chơi…</p>}
     {!loading && !error && !data.length && <p>Chưa có vé giờ lẻ đang mở bán.</p>}
