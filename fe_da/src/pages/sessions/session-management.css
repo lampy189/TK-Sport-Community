@@ -20,3 +20,9 @@
 .manager-session-controls { padding-top: .8rem; border-top: 1px solid #dce5df; }
 @media (max-width: 820px) { .manager-session-layout { grid-template-columns: 1fr; } .manager-session-form { padding: 1rem 0 0; border-left: 0; border-top: 1px solid #dce5df; } }
 @media (max-width: 560px) { .manager-session-fields { grid-template-columns: 1fr; } }
+.manager-sessions .manager-session-fields label { align-content: start; }
+.manager-sessions .manager-session-fields input, .manager-sessions .manager-session-fields select { min-height: 44px; box-sizing: border-box; }
+.manager-sessions .manager-session-people label { display: inline-flex; align-items: center; }
+.manager-sessions .manager-session-people input { width: 16px; height: 16px; margin: 0; }
+.manager-sessions .manager-session-controls { align-items: center; }
+.manager-sessions .manager-session-row-top { align-items: start; flex-wrap: wrap; }

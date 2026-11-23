@@ -56,7 +56,7 @@ export default function OperationsPage({ role = 'owner', initialTab = 'venues' }
     } catch (e) { setError(e.message); } finally { setBusy(false); }
   }
   return <section className="ops-page"><h1>Cơ sở, sân và nhân sự</h1>
-    <div className="ops-actions">{[['venues', 'Cơ sở'], ['courts', 'Sân'], ...(owner ? [['people', 'Nhân sự'], ['history', 'Lịch sử']] : [])].map(([id, label]) => <button key={id} aria-pressed={tab === id} disabled={busy} onClick={() => { setTab(id); setForm(null); }}>{label}</button>)}<button disabled={busy} onClick={() => setRevision(value => value + 1)}>Tải lại</button></div>
+    <div className="ops-actions">{[['venues', 'Cơ sở'], ['courts', 'Sân'], ...(owner ? [['people', 'Nhân sự'], ['history', 'Lịch sử']] : [])].map(([id, label]) => <button key={id} aria-pressed={tab === id} disabled={busy} onClick={() => { setTab(id); setForm(null); }}>{label}</button>)}{(role !== 'manager' || error) && <button disabled={busy} onClick={() => setRevision(value => value + 1)}>Tải lại</button>}</div>
     {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
     {!data ? !error && <p role="status">Đang tải dữ liệu…</p> : <>
       {['venues', 'courts'].includes(tab) && <>

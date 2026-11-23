@@ -50,8 +50,8 @@ export default function HomeWorkspace({
   if (preview && import.meta.env.DEV && import.meta.env.VITE_PAYMENT_MODE === 'demo'
     && role === 'player' && ['Thanh toán', 'Vé của tôi'].includes(active))
     return <PaymentPage key={active} initialView={active === 'Vé của tôi' ? 'tickets' : 'payment'} />;
-  if (!preview && ['staff','manager'].includes(role) && active === 'Vé giờ lẻ') return <LateEntryManagement/>;
-  if (!preview && ["owner", "manager", "staff"].includes(role) && ["Kinh doanh", "Thống kê doanh số"].includes(active)) return <RevenuePage />;
+  if (!preview && ['staff','manager'].includes(role) && active === 'Vé giờ lẻ') return <LateEntryManagement role={role}/>;
+  if (!preview && ["owner", "manager", "staff"].includes(role) && ["Kinh doanh", "Thống kê doanh số"].includes(active)) return <RevenuePage role={role} />;
   if (!preview && ["staff","manager","owner"].includes(role) && active === "Ngoại lệ vận hành") return <OperationalExceptions role={role}/>;
   if (!preview && ['owner', 'manager'].includes(role) && ['Cơ sở & sân', 'Phân quyền Sport Center'].includes(active)) return <OperationsPage key={active} role={role} initialTab={active === 'Phân quyền Sport Center' ? 'people' : 'venues'} />;
   if (!preview && role === 'manager' && active === 'Quản lý buổi chơi') return <SessionManagementPage />;
@@ -68,7 +68,7 @@ export default function HomeWorkspace({
         <GoodsPaymentPage key={createdGoodsOrder?.orderId??"initial"} initialOrderId={createdGoodsOrder?.orderId} />
       </>
     );
-  if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage canManageLateEntries={role === 'manager'} />;
+  if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage managerOnly={role === 'manager'} />;
   if (!preview && role === "referee" && active === "Vật tư buổi chơi") return <RefereeSuppliesView />;
   if (!preview && ["player", "guest"].includes(role)) {
     if (active === "Lịch social")

@@ -1,0 +1,2 @@
+import { defineConfig } from '@playwright/test';
+export default defineConfig({testDir:'.',testMatch:'*.spec.js',workers:1,reporter:'list',outputDir:'../../test-results/manager',webServer:{command:'npm run dev -- --host 127.0.0.1 --port 5188',url:'http://127.0.0.1:5188',reuseExistingServer:true},use:{baseURL:'http://127.0.0.1:5188',channel:'chrome',headless:true,viewport:{width:1366,height:768}}});

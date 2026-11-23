@@ -10,10 +10,12 @@ const root='/api/ticket-recovery';
 const money=n=>`${Number(n).toLocaleString('vi-VN')} ₫`;
 const labels={pending:'Chưa xác nhận',failed:'Thất bại / đã đóng',review_required:'Cần đối soát',paid:'Đã thu tiền · có khoản cần kiểm tra'};
 export default function PaymentRecoveryPage({role='staff',initialPaymentId=null}){
+ const [statusFilter,setStatusFilter]=useState('all'),[kindFilter,setKindFilter]=useState('all');
  const [rows,setRows]=useState([]),[selected,setSelected]=useState(initialPaymentId),[evidence,setEvidence]=useState(''),[bank,setBank]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[loading,setLoading]=useState(true);
  useEffect(()=>{let live=true;workflowRequest(root).then(data=>{if(live)setRows(data);}).catch(e=>{if(live)setError(e.message);}).finally(()=>{if(live)setLoading(false);});return()=>{live=false;};},[]);
- const current=rows.find(r=>r.id===selected);
+ const displayed=rows.filter(row=>role!=='manager'||((statusFilter==='all'||row.status===statusFilter)&&(kindFilter==='all'||(kindFilter==='goods'?row.kind==='goods':row.kind!=='goods'))));
+ const current=displayed.find(r=>r.id===selected);
  async function proposeReturn(){if(busy)return;setBusy(true);setError('');try{await incidents.request({kind:'reviews',subjectId:selected,category:'return_unallocated',bankTransactionId:Number(bank),reason:evidence.trim()});setNotice('Đã gửi đề nghị hoàn toàn bộ khoản thu chưa phân bổ. Theo dõi tại Ngoại lệ vận hành; không chuyển lại trước khi duyệt.');}catch(e){setError(e.message);}finally{setBusy(false);}}
  async function run(action){
   if(busy)return;setBusy(true);setError('');setNotice('');
@@ -25,36 +27,38 @@ export default function PaymentRecoveryPage({role='staff',initialPaymentId=null}
  }
  const canAct=!busy&&evidence.trim().length>=10&&evidence.trim().length<=1000;
  return <section className="workflow payment-recovery" aria-label="Xử lý lại giao dịch">
-  <div className="workflow-actions"><h2>Đối soát vé & hàng hóa</h2><button className="button button-secondary" disabled={busy} onClick={()=>run()}>Tải lại</button></div>
+  <div className="workflow-actions">{role!=='manager'&&<h2>Đối soát vé & hàng hóa</h2>}{role!=='manager'&&<button className="button button-secondary" disabled={busy} onClick={()=>run()}>Tải lại</button>}</div>
+  {role==='manager'&&<div className="manager-filters"><label>Loại thanh toán<select value={kindFilter} onChange={e=>{setKindFilter(e.target.value);setSelected(null);}}><option value="all">Tất cả</option><option value="goods">Hàng hóa</option><option value="social">Vé</option></select></label><label>Trạng thái thanh toán<select value={statusFilter} onChange={e=>{setStatusFilter(e.target.value);setSelected(null);}}><option value="all">Tất cả</option>{Object.entries(labels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label></div>}
   {error&&<p role="alert" className="workflow-error">{error}</p>}{notice&&<p role="status">{notice}</p>}
   {loading?<p role="status">Đang tải giao dịch…</p>:<div className="recovery-grid">
-   <div className="recovery-list" aria-label="Giao dịch cần kiểm tra">{!rows.length&&<p>Không có giao dịch cần kiểm tra.</p>}
-    {<PaginatedList items={rows}>{row=><button key={row.id} disabled={busy} aria-pressed={selected===row.id} onClick={()=>{setSelected(row.id);setEvidence('');setBank('');setNotice('');}}>
+   <div className="recovery-list" aria-label="Giao dịch cần kiểm tra">{!displayed.length&&<p>Không có giao dịch cần kiểm tra.</p>}
+    {<PaginatedList items={displayed}>{row=><button key={row.id} disabled={busy} aria-pressed={selected===row.id} onClick={()=>{setSelected(row.id);setEvidence('');setBank('');setNotice('');}}>
       <strong>{row.kind==='goods'?'Hàng hóa':'Vé'} · {row.reference}</strong><span>{money(row.amountVnd)} · {labels[row.status]||row.status}</span>
     </button>}</PaginatedList>}
    </div>
    <div aria-live="polite">{current?<>
-    <h3>{current.reference}</h3><IssueWorkflowControls key={current.id} kind="reviews" id={current.id} role={role}/><p>Đơn #{current.orderId} · {labels[current.status]||current.status}</p>
+    <h3>{current.reference}</h3>{role!=='manager'&&<IssueWorkflowControls key={current.id} kind="reviews" id={current.id} role={role}/>}<p>Đơn #{current.orderId} · {labels[current.status]||current.status}</p>
     <p>Số tiền cần thu: <strong>{money(current.amountVnd)}</strong></p>
     <label>Giao dịch ngân hàng<select value={bank} onChange={e=>setBank(e.target.value)} disabled={busy}>
      <option value="">Chọn chứng từ để duyệt</option>{current.transactions.map(t=><option key={t.id} value={t.id}>{t.reference} · {money(t.amountVnd)} · {recoveryLabels[t.status]||t.status}</option>)}
     </select></label>
     {!current.transactions.length&&<p>Chưa có chứng từ ngân hàng được xác minh.</p>}
     <label>Nội dung / bằng chứng<textarea rows={4} minLength={10} maxLength={1000} value={evidence} onChange={e=>setEvidence(e.target.value)} disabled={busy} placeholder="Ghi căn cứ xử lý, mã đối soát hoặc đường dẫn bằng chứng (10–1000 ký tự)"/></label>
-    <div className="workflow-actions">
+    <div className="workflow-actions recovery-transaction-actions">
      <button className="button button-primary" disabled={!canAct} onClick={()=>run('recheck')}>Kiểm tra lại payOS</button>
      <button className="button button-secondary" disabled={!canAct||!bank||current.status!=='review_required'} onClick={()=>run('approve')}>Duyệt khoản đủ tiền</button>
      <button className="button button-secondary" disabled={!canAct||current.status==='paid'||current.transactions.length>0} onClick={()=>run('close-unpaid')}>Đóng khi chưa thu tiền</button>
      {role!=='owner'&&current.kind!=='goods'&&<button className="button button-secondary" disabled={!canAct||!bank} onClick={proposeReturn}>Đề nghị hoàn toàn bộ khoản chưa phân bổ</button>}
      <button className="button button-secondary" disabled={!canAct} onClick={()=>run('note')}>Lưu ghi chú</button>
     </div>
-    <p>Khoản thiếu/thừa hoặc chưa rõ kết quả cần tiếp tục đối soát. Tiếp tục theo dõi trong Sự cố và gửi ngoại lệ nếu vượt quyền.</p>
-    <h4>Lịch sử và nguyên nhân</h4>{!current.history.length&&<p>Chưa có lịch sử xử lý. Dùng kiểm tra lại payOS để xác minh.</p>}
+    <p>Khoản thiếu/thừa hoặc chưa rõ kết quả cần tiếp tục đối soát. Mở phần Phân công & xử lý ngoại lệ nếu cần chuyển người phụ trách.</p>
+    {role==='manager'&&<details className="manager-disclosure" key={'flow-'+current.id}><summary>Phân công & xử lý ngoại lệ</summary><IssueWorkflowControls kind="reviews" id={current.id} role={role}/></details>}
+    <details className="manager-disclosure" open={role!=='manager'} key={'history-'+current.id}><summary>Lịch sử và nguyên nhân ({current.history.length})</summary>{!current.history.length&&<p>Chưa có lịch sử xử lý. Dùng kiểm tra lại payOS để xác minh.</p>}
     {<PaginatedList items={current.history}>{(h,i)=>{const detail=historyDetails(h);return <article className="recovery-history" key={i}>
      <strong>{detail.title}</strong><p>Người xử lý: {h.actorId??'Hệ thống'}{detail.at&&<> · {new Date(detail.at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})}</>}</p>
      {detail.evidence&&<p>{detail.evidence}</p>}{detail.reason&&<p>{detail.reason}</p>}{detail.status&&<p>{detail.status}</p>}
      {detail.reference&&<p>Mã ngân hàng: {detail.reference}</p>}{detail.received!=null&&<p>Thực nhận: {money(detail.received)} · Cần thu: {money(detail.expected)}</p>}
-    </article>;}}</PaginatedList>}
+    </article>;}}</PaginatedList>}</details>
    </>:<p>Chọn một giao dịch để xem nguyên nhân và xử lý.</p>}</div>
   </div>}
  </section>;
