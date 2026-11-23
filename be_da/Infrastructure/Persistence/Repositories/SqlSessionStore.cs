@@ -390,6 +390,11 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                         return new(true, null, "Tiếp tục thanh toán chỗ đang giữ.", null, previous.GetInt64(0), previous.GetString(1), previous.GetInt64(2), previous.GetString(3), previous.GetInt32(4), previous.GetFieldValue<DateTimeOffset>(5));
                 }
 
+                if (await WorkflowSql.Scalar(connection, transaction,
+                    "SELECT COUNT(*) FROM dbo.late_entry_offers WHERE session_id=@session AND is_open=0",
+                    cancellationToken, ("@session", sessionId)) != 0)
+                    return new(false, "LATE_ENTRY_PAUSED", "Quản lý đã tạm dừng bán vé giờ lẻ cho buổi này.");
+
                 var quote = TKSC.Domain.Payments.LateEntryRules.Quote(TKSC.Domain.Payments.LateEntryRules.End(sessionDate, TimeOnly.FromTimeSpan(startTime)), endsAt, sessionStatus, now, priceVnd);
                 if (quote is null)
                     return new(false, "LATE_ENTRY_CLOSED", "Buổi không còn đủ điều kiện bán vé giờ lẻ.");
@@ -400,7 +405,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 // with the first hold, under the session lock, for the ticket's FK/history.
                 await using (var offerCmd = new SqlCommand("""
                     IF EXISTS(SELECT 1 FROM dbo.late_entry_offers WHERE session_id=@session)
-                      UPDATE dbo.late_entry_offers SET max_tickets=@capacity,price_vnd=@price,is_open=1,
+                      UPDATE dbo.late_entry_offers SET max_tickets=@capacity,price_vnd=@price,
                         revision=@revision,updated_by=@actor,updated_at=@now WHERE session_id=@session;
                     ELSE INSERT dbo.late_entry_offers(session_id,max_tickets,price_vnd,is_open,revision,updated_by,updated_at)
                       VALUES(@session,@capacity,@price,1,@revision,@actor,@now);

@@ -24,12 +24,30 @@ public sealed class LateEntryApiTests
     [InlineData(null,HttpStatusCode.Unauthorized)]
     [InlineData("Player",HttpStatusCode.Forbidden)]
     [InlineData("Referee",HttpStatusCode.Forbidden)]
+    [InlineData("Staff",HttpStatusCode.Forbidden)]
     public async Task OnlyAssignedOperationalRolesCanManageOffers(string? role,HttpStatusCode expected)
     {
         await using var app=new App();using var c=app.CreateClient();
         if(role!=null)c.DefaultRequestHeaders.Add("X-Test-Role",role);
         Assert.Equal(expected,(await c.GetAsync("/api/late-entry/manage")).StatusCode);
         Assert.Null(app.Store.Venue);
+        Assert.Equal(expected,(await c.PutAsJsonAsync("/api/late-entry/1/paused", true)).StatusCode);
+        Assert.Null(app.Store.Paused);
+    }
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ManagerCanChangeSaleForAssignedVenue(bool paused)
+    {
+        await using var app = new App();
+        using var client = app.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Role", "Manager");
+        var csrf = await client.GetFromJsonAsync<JsonElement>("/api/auth/csrf");
+        client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", csrf.GetProperty("token").GetString());
+        var response = await client.PutAsJsonAsync("/api/late-entry/1/paused?venueId=999", paused);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(7, app.Store.Venue);
+        Assert.Equal(paused, app.Store.Paused);
     }
     [Fact]
     public async Task ManagerScopeComesFromAuthenticatedAssignmentNotCallerVenueParameter()
@@ -82,6 +100,13 @@ public sealed class LateEntryApiTests
     private sealed class FakeStore:ILateEntryStore
     {
         public long? Venue;
+        public bool? Paused;
+        public Task SetPaused(long? venue, long session, long actor, bool paused, CancellationToken ct)
+        {
+            Venue = venue;
+            Paused = paused;
+            return Task.CompletedTask;
+        }
         public Task<IReadOnlyList<LateEntryOffer>> List(long? venue,long? session,bool manage,CancellationToken ct){Venue=venue;return Task.FromResult<IReadOnlyList<LateEntryOffer>>([]);}
     }
     private sealed class HoldStore:ISessionStore

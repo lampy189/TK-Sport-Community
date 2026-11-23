@@ -55,3 +55,15 @@
   .shifts-toolbar > button { order: -1; }
   .shifts-filters { flex-basis: 100%; }
 }
+
+.shift-detail {
+  box-sizing: border-box;
+  inset: 0;
+  margin: auto;
+  width: min(28rem, 90vw);
+  padding: 1.5rem;
+  border: 1px solid #d8e3dc;
+  border-radius: 16px;
+  color: inherit;
+}
+.shift-detail::backdrop { background: rgb(16 44 33 / 35%); }

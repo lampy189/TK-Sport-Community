@@ -28,7 +28,7 @@ function shortDate(date) {
   return `${day}/${month}`;
 }
 
-export default function AssignedSessionsTimetable({ sessions, weekDate, onWeekDateChange, onSelect, busy, label = "Lịch điểm danh theo tuần", action = "Mở điểm danh" }) {
+export default function AssignedSessionsTimetable({ sessions, weekDate, onWeekDateChange, onSelect, busy, label = "Lịch điểm danh theo tuần", action = "Mở điểm danh", currentWeekLabel = "Tuần này" }) {
   const today = dateInVietnam.format(new Date());
   const currentWeek = mondayOf(today);
   const start = mondayOf(weekDate || today);
@@ -70,7 +70,7 @@ export default function AssignedSessionsTimetable({ sessions, weekDate, onWeekDa
         </button>
         <button type="button" className={start === currentWeek ? 'timetable-nav-btn is-current' : 'timetable-nav-btn'}
           onClick={() => onWeekDateChange(today)}>
-          <CalendarDays size={15} aria-hidden="true" /> Tuần này
+          <CalendarDays size={15} aria-hidden="true" /> {currentWeekLabel}
         </button>
         <button type="button" className="timetable-nav-btn" onClick={() => onWeekDateChange(addDays(start, 7))}>
           Tuần sau <ChevronRight size={15} aria-hidden="true" />
@@ -103,6 +103,7 @@ export default function AssignedSessionsTimetable({ sessions, weekDate, onWeekDa
                 <strong className="timetable-event-title">{sport}</strong>
                 <span className="timetable-event-meta">{session.courtName}</span>
                 {session.conditionCode && <small>{status}</small>}
+                {session.assignmentLabel && <small>{session.assignmentLabel}</small>}
               </button>;
             })}</div>;
             return <td key={date} className={date === today ? 'timetable-cell is-today-col' : 'timetable-cell'}>

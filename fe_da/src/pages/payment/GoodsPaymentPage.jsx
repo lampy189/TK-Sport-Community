@@ -63,7 +63,7 @@ export default function GoodsPaymentPage({ initialOrderId }) {
   const paid = order?.paymentState === "Paid";
   const waiting = orders.filter(waitingForDelivery);
   const otherOrders = orders.filter(item => !waitingForDelivery(item));
-  return <SectionLayout title="Xử lý đơn hàng" description="Xem đơn người chơi và đơn tại quầy, xác nhận thanh toán và bàn giao.">
+  return <SectionLayout className="goods-orders-page" title="Xử lý đơn hàng" description="Xem đơn người chơi và đơn tại quầy, xác nhận thanh toán và bàn giao.">
     <div className="workflow">
       {error && <p className="workflow-error" role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}

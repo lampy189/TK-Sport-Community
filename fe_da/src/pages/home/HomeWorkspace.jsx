@@ -48,7 +48,7 @@ export default function HomeWorkspace({
   if (preview && import.meta.env.DEV && import.meta.env.VITE_PAYMENT_MODE === 'demo'
     && role === 'player' && ['Thanh toán', 'Vé của tôi'].includes(active))
     return <PaymentPage key={new URLSearchParams(window.location.search).get('orderId') || 'tickets'} initialView={new URLSearchParams(window.location.search).has('orderId') || active === 'Thanh toán' ? 'payment' : 'tickets'} />;
-  if (!preview && ['staff','manager'].includes(role) && active === 'Vé giờ lẻ') return <LateEntryManagement/>;
+  if (!preview && role === 'manager' && active === 'Vé giờ lẻ') return <LateEntryManagement/>;
   if (!preview && ["owner", "manager", "staff"].includes(role) && ["Kinh doanh", "Thống kê doanh số"].includes(active)) return <RevenuePage />;
   if (!preview && ["staff","manager","owner"].includes(role) && active === "Ngoại lệ vận hành") return <OperationalExceptions role={role}/>;
   if (!preview && ['owner', 'manager'].includes(role) && ['Cơ sở & sân', 'Phân quyền Sport Center'].includes(active)) return <OperationsPage key={active} role={role} initialTab={active === 'Phân quyền Sport Center' ? 'people' : 'venues'} />;
