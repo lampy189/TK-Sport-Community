@@ -66,7 +66,21 @@ public sealed class GoodsPaymentRepository(Sep490Context db, TimeProvider clock)
         EXEC @result = sys.sp_getapplock @Resource={resource}, @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000;
         IF @result < 0 THROW 51000, 'Goods payment is busy.', 1;
         """, ct);
-    public Task<List<GoodsOrderListItem>> ListOrdersListAsync(CancellationToken ct) => db.Orders.AsNoTracking().OrderByDescending(o => o.Id).Take(100).Select(o => new GoodsOrderListItem { Id = o.Id, OrderCode = o.OrderCode, CustomerName = o.CustomerName, TotalAmount = o.TotalAmount, Status = o.Status, PaymentState = o.PaymentState }).ToListAsync(ct);
+    public Task<List<GoodsOrderListItem>> ListOrdersListAsync(CancellationToken ct)
+    {
+        var orders = db.Orders.AsNoTracking();
+        var recentIds = orders.OrderByDescending(o => o.Id).Take(100).Select(o => o.Id);
+        return orders
+            .Where(o => recentIds.Contains(o.Id) || (o.PaymentState == "Paid"
+                && (o.Status == "Paid" || o.Status == "Invoiced")
+                && (o.HandoverState == null || o.HandoverState == "Pending")))
+            .OrderByDescending(o => o.Id)
+            .Select(o => new GoodsOrderListItem
+            {
+                Id = o.Id, OrderCode = o.OrderCode, CustomerName = o.CustomerName, TotalAmount = o.TotalAmount,
+                Status = o.Status, PaymentState = o.PaymentState, HandoverState = o.HandoverState
+            }).ToListAsync(ct);
+    }
     public Task<Order?> LoadOrdersAsync(long id, CancellationToken ct) => db.Orders.Include(o => o.OrderItems).ThenInclude(i => i.Product).Include(o => o.Payments).SingleOrDefaultAsync(o => o.Id == id, ct);
     public async Task<int> SaveAsync(CancellationToken ct)
     {

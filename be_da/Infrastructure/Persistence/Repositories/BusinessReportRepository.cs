@@ -18,12 +18,12 @@ public sealed class BusinessReportRepository(IConfiguration configuration, IData
         await SportCenterConnection.OpenAsync(c,ct,scope);
         // All sections observe one consistent ledger/stock state, including concurrent postings.
         await using var tx=(SqlTransaction)await c.BeginTransactionAsync(IsolationLevel.Serializable,ct);
-        await using var cmd=new SqlCommand("""
+        await using var cmd=new SqlCommand(RevenueRepository.ReportingEntriesSql + "\n" + """
             SELECT v.id,v.name,
               COALESCE(SUM(CASE WHEN e.entry_type='social_receipt' THEN e.amount_vnd ELSE 0 END),0),
               COALESCE(SUM(CASE WHEN e.entry_type='goods_receipt' THEN e.amount_vnd ELSE 0 END),0),
               COALESCE(SUM(CASE WHEN e.entry_type='refund' THEN e.amount_vnd ELSE 0 END),0)
-            FROM dbo.venues v LEFT JOIN dbo.revenue_entries e ON e.venue_id=v.id AND e.recognized_at>=@start AND e.recognized_at<@end
+            FROM dbo.venues v LEFT JOIN reporting_entries e ON e.venue_id=v.id AND e.recognized_at>=@start AND e.recognized_at<@end
             WHERE @venue IS NULL OR v.id=@venue GROUP BY v.id,v.name ORDER BY v.id;
             SELECT p.venue_id,p.id,p.name,
               CONVERT(bigint,si.quantity_on_hand)-COALESCE(SUM(CASE WHEN m.created_at>=@start THEN CONVERT(bigint,m.quantity) ELSE 0 END),0),

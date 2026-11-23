@@ -1,7 +1,6 @@
 import OperationalExceptions from '../payment/OperationalExceptions';
 import { PolicyPage, BusinessReportPage, ApprovalHub } from '../operations/BusinessConsole';
 import TechnicalPage from '../operations/TechnicalPage';
-import { useState } from 'react';
 import RevenuePage from "../revenue/RevenuePage";
 import OperationsPage from '../operations/OperationsPage';
 import AccessPage from '../operations/AccessPage';
@@ -41,7 +40,6 @@ export default function HomeWorkspace({
   onBrowseSport,
   assessmentDirty,
 }) {
-  const [createdGoodsOrder,setCreatedGoodsOrder]=useState(null);
   if (!preview && ((role === 'manager' && ['Chia ca', 'Phân công nhân sự'].includes(active)) || (['referee', 'staff'].includes(role) && ['Ca của tôi', 'Phân công'].includes(active)))) return <ShiftsPage role={role} user={user} />;
   if (!preview && role === 'system-admin' && ['Cấu hình kỹ thuật','Sự cố'].includes(active)) return <TechnicalPage key={active} incidentsOnly={active === 'Sự cố'} />;
   if (!preview && ['owner','manager'].includes(role) && active === 'Chính sách & giá') return <PolicyPage role={role} user={user} />;
@@ -71,15 +69,14 @@ export default function HomeWorkspace({
   if (!preview && ["referee", "manager"].includes(role) && active === "Ngoại lệ trình độ") return <SkillReviews role={role} kind="exceptions" />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Khiếu nại đánh giá") return <SkillReviews role={role} />;
   if (!preview && role === "referee" && active === "Đánh giá kỹ năng") return <AssessmentPage dirtyRef={assessmentDirty} />;
-  if (!preview && ["staff", "manager"].includes(role) && active === "Bán hàng")
-    return (
-      <>
-        <StorePage role="staff" user={user} onCreated={setCreatedGoodsOrder} />
-        <div id="goods-payment">
-          <GoodsPaymentPage key={createdGoodsOrder?.orderId??"initial"} initialOrderId={createdGoodsOrder?.orderId} />
-        </div>
-      </>
-    );
+  if (!preview && ["staff", "manager"].includes(role)) {
+    if (active === "Bán hàng")
+      return <StorePage role="staff" onOpenOrders={orderId => onOpen("Xử lý đơn hàng", orderId)} />;
+    if (active === "Xử lý đơn hàng") {
+      const orderId = new URLSearchParams(window.location.search).get("goodsOrderId");
+      return <GoodsPaymentPage key={orderId ?? "list"} initialOrderId={orderId} />;
+    }
+  }
   if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage canManageLateEntries={role === 'manager'} />;
   if (!preview && role === "referee" && active === "Vật tư buổi chơi") return <RefereeSuppliesView />;
   if (!preview && ["player", "guest"].includes(role)) {

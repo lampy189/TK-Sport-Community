@@ -53,7 +53,7 @@ export default function RevenuePage() {
       <label>Đến ngày<input type="date" value={range.to} onChange={e => setRange({ ...range, to: e.target.value })} /></label>
       <button className="button button-secondary" onClick={() => setRetry(n => n + 1)}>Tải lại</button>
     </div>
-    <details className="revenue-demo-note"><summary>Cách tính doanh số</summary><p>Ngày hạch toán theo giờ Việt Nam (UTC+7). Thu ròng = tiền đã thu − tiền đã hoàn, chưa trừ chi phí. Không tính các khoản đang chờ thanh toán hoặc hoàn tiền.</p></details>
+    <details className="revenue-demo-note"><summary>Cách tính doanh số</summary><p>Doanh số hàng hóa được tính theo ngày giao đơn, theo giờ Việt Nam (UTC+7). Thu ròng bằng thu buổi chơi và doanh số hàng hóa trừ các khoản đã hoàn.</p></details>
     {error && <p role="alert">{error}</p>}
     {!error && !data && <p role="status">Đang tải doanh số…</p>}
     {data && <>

@@ -25,7 +25,9 @@ export default function HomePage({
     ["owner", "manager", "staff"].includes(role) && new URLSearchParams(window.location.search).get("view") === "revenue" ? (role === "owner" ? "Kinh doanh" : "Thống kê doanh số") :
     role === 'player' && new URLSearchParams(window.location.search).get('view') === 'invitations' ? 'Lời mời buổi chơi' :
     role !== "guest" && ["messages", "notifications"].includes(new URLSearchParams(window.location.search).get("view")) ? "Thông báo" :
-    role === "staff" && new URLSearchParams(window.location.search).has("goodsOrderId") ? "Bán hàng" :
+    ["staff", "manager"].includes(role) &&
+    (new URLSearchParams(window.location.search).get("view") === "goods-orders" ||
+      new URLSearchParams(window.location.search).has("goodsOrderId")) ? "Xử lý đơn hàng" :
     role === "player" && new URLSearchParams(window.location.search).get("view") === "goods" ? "Cửa hàng" :
     role === "player" &&
     (new URLSearchParams(window.location.search).has("orderId") || new URLSearchParams(window.location.search).get("view") === "tickets")
@@ -35,6 +37,7 @@ export default function HomePage({
   const [sessionId, setSessionId] = useState(() => window.history.state?.tkscHome?.role === role ? window.history.state.tkscHome.sessionId : null);
   const [browseSport, setBrowseSport] = useState(() => window.history.state?.tkscHome?.role === role ? window.history.state.tkscHome.browseSport : "ALL");
   const assessmentDirty = useRef(false);
+  const workspaceLabel = role === "staff" && ["Thanh toán", "Đổi & hoàn vé"].includes(active) ? "Sự cố" : active;
   const navigation = [
     { id: "overview", label: "Trang chủ" },
     ...config.modules.map((label) => ({ id: label, label })),
@@ -64,7 +67,7 @@ export default function HomePage({
     );
   }
 
-  function open(rawLabel) {
+  function open(rawLabel, goodsOrderId) {
     const label = rawLabel === "Tin nhắn" ? "Thông báo" : rawLabel;
     if (
       label !== "overview" &&
@@ -87,6 +90,10 @@ export default function HomePage({
       if (label === "Thông báo" || label === "Tin nhắn") url.searchParams.set("view", "messages");
       if (label === 'Lời mời buổi chơi') url.searchParams.set('view', 'invitations');
       if (label === 'Vé của tôi') url.searchParams.set('view', 'tickets');
+      if (label === "Xử lý đơn hàng") {
+        url.searchParams.set("view", "goods-orders");
+        if (goodsOrderId) url.searchParams.set("goodsOrderId", goodsOrderId);
+      }
       if (["Kinh doanh", "Thống kê doanh số"].includes(label)) url.searchParams.set("view", "revenue");
       remember(label, sessionId, url);
     }
@@ -210,7 +217,7 @@ export default function HomePage({
       onLogin={onLogin}
       onHome={() => open("overview")}
       navigation={navigation}
-      activeId={active === "Chi tiết buổi chơi" ? "Lịch social" : active === "Lời mời buổi chơi" ? "Thông báo" : active}
+      activeId={active === "Chi tiết buổi chơi" ? "Lịch social" : active === "Lời mời buổi chơi" ? "Thông báo" : workspaceLabel}
       onNavigate={open}
       hero={
         active === "overview"
@@ -231,13 +238,13 @@ export default function HomePage({
     >
       {!preview && (role === "owner" || (hasAssignedCenter && active === "overview")) && <SportCenterBadge />}
       {active === "overview" ? (
-        <>{!preview && role !== "referee" && <OperationsOverview role={role} />}<HomeOverview config={config} preview={preview} onOpen={open} role={role} /></>
+        <>{!preview && !["referee", "staff"].includes(role) && <OperationsOverview role={role} />}<HomeOverview config={config} preview={preview} onOpen={open} role={role} /></>
       ) : (
         <div className="home-workspace">
           <div className="home-breadcrumb">
             <button onClick={() => open("overview")}>Trang chủ</button>
             <span>/</span>
-            <span>{active}</span>
+            <span>{workspaceLabel}</span>
             {!preview && hasAssignedCenter && <SportCenterBadge inline />}
             {!preview && role === "system-admin" && <span className="home-breadcrumb-center">Toàn hệ thống</span>}
           </div>

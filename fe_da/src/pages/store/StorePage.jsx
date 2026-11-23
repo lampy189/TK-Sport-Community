@@ -7,11 +7,10 @@ import './store.css';
 
 const money = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
 
-export default function StorePage({ role = 'staff', onCreated }) {
+export default function StorePage({ role = 'staff', onOpenOrders }) {
   const [products, setProducts] = useState([]);
   const [quantities, setQuantities] = useState({});
   const [error, setError] = useState('');
-  const [order, setOrder] = useState(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [barcode, setBarcode] = useState('');
@@ -91,7 +90,6 @@ export default function StorePage({ role = 'staff', onCreated }) {
       }
       queueMicrotask(() => {
         setError('');
-        setOrder(null);
         idempotencyKey.current = crypto.randomUUID();
       });
       if (next <= 0) {
@@ -112,7 +110,7 @@ export default function StorePage({ role = 'staff', onCreated }) {
     event.preventDefault();
     const code = barcode.trim();
     if (!code || busy) return;
-    setBusy(true); setError(''); setOrder(null);
+    setBusy(true); setError('');
     try {
       const match = await storeClient.lookupBarcode(code);
       if (!match.isActive) throw new Error('Mặt hàng đã ngừng bán.');
@@ -142,14 +140,14 @@ export default function StorePage({ role = 'staff', onCreated }) {
     setError('');
     try {
       const result = await storeClient.createCart(items, idempotencyKey.current);
-      setOrder(result);
-      onCreated?.(result);
       setQuantities({});
       idempotencyKey.current = crypto.randomUUID();
       if (role === 'player') {
         setHighlightId(String(result.orderId));
         setOrdersVersion((version) => version + 1);
         openPanel('orders');
+      } else {
+        onOpenOrders?.(result.orderId);
       }
     } catch (e) {
       setError(e.message);
@@ -170,7 +168,7 @@ export default function StorePage({ role = 'staff', onCreated }) {
             <h2>{title}</h2>
             <p>Chọn món, kiểm tra giỏ và tạo đơn tại quầy.</p>
           </div>
-          <a className="button button-secondary" href="#goods-payment">Xử lý đơn hàng</a>
+          <button type="button" className="button button-secondary" onClick={() => onOpenOrders?.()}>Xử lý đơn hàng</button>
         </div>
       )}
 
@@ -292,19 +290,9 @@ export default function StorePage({ role = 'staff', onCreated }) {
                   </div>
                   <p className="store-hold" aria-live="polite">{itemCount ? `${itemCount} món` : 'Chưa chọn món'}</p>
                   {narrow && drawerOpen && error && <p className="store-error" role="alert">{error}</p>}
-                  {order && !player && (
-                    <p className="store-hold" role="status">
-                      Đã tạo {order.orderCode}. {order.expiresAt ? `Giữ tồn đến ${new Date(order.expiresAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}.` : ''}
-                    </p>
-                  )}
                   <button type="button" className="button button-primary" disabled={busy || selectedItems.length === 0} onClick={submitOrder}>
                     {busy ? 'Đang tạo đơn…' : player ? 'Đặt hàng' : 'Tạo đơn'}
                   </button>
-                  {order && !player && (
-                    <button type="button" className="button button-secondary" onClick={() => document.getElementById('goods-payment')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-                      Thu tiền đơn này
-                    </button>
-                  )}
                 </div>
               </>
             )}

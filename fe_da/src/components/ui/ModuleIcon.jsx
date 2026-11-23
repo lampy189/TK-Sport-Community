@@ -33,6 +33,7 @@ const icons = {
   "Vật tư buổi chơi": Package,
   "Cửa hàng": ShoppingBag,
   "Bán hàng": ShoppingBag,
+  "Xử lý đơn hàng": ClipboardList,
   "Kho & vật tư": Package,
   "Đối soát ca": ClipboardCheck,
   "Quản lý buổi chơi": CalendarDays,
