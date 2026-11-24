@@ -1,31 +1,160 @@
-.player-inbox, .messages-page { width: 100%; color: #183d31; }
-.player-inbox > h1 { margin: 0 0 16px; font-size: clamp(26px, 3vw, 34px); line-height: 1.2; }
-.messages-sections { display: flex; gap: 8px; width: fit-content; margin-bottom: 18px; padding: 5px; border: 1px solid var(--color-border); border-radius: 14px; background: #ecefe8; }
-.messages-sections button { border: 0; border-radius: 10px; background: transparent; padding: 9px 16px; font: inherit; cursor: pointer; color: #506259; }
-.messages-sections button[aria-pressed=true] { background: #fff; color: #174b38; font-weight: 700; box-shadow: var(--shadow-sm); }
-.inbox-entry, .invite-row { background: white; border: 1px solid #dbe5de; border-radius: 12px; margin-bottom: 10px; overflow-wrap: anywhere; }
-.inbox-entry-toggle { width: 100%; text-align: left; display: flex; align-items: center; gap: 12px; padding: 17px 18px; border: 0; border-radius: inherit; background: transparent; font: inherit; color: inherit; cursor: pointer; }
-.inbox-entry-toggle strong { flex: 1; }
-.inbox-entry-toggle small, .invite-row p { color: #52675b; }
-.inbox-entry-toggle[aria-expanded=true] .inbox-chevron { transform: rotate(180deg); }
-.inbox-body { padding: 0 18px 16px; }
-.messages-description, .messages-page .support-message p { white-space: pre-wrap; }
-.notification-inbox-link { display: block; margin-top: 16px; color: #18593f; font-weight: 600; }
-.invite-filters, .invite-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.invite-filters { margin-bottom: 12px; }
-.invite-filters button, .invite-actions button, .inbox-body > button { font: inherit; font-size: 14px; border: 1px solid #cbd9d0; color: #194e36; border-radius: 7px; background: white; padding: 7px 12px; cursor: pointer; }
-.invite-filters button[aria-pressed=true] { background: #e8f2ec; border-color: #aecab8; font-weight: 600; }
-.invite-filters button:last-child { margin-left: auto; }
-.invite-row { padding: 18px 20px; }
-.invite-row header { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
-.invite-row h2 { margin: 0; font-size: 19px; }
-.invite-row header small { border-radius: 6px; padding: 3px 8px; background: #f1f4ef; color: #425743; }
-.invite-row p { margin: 4px 0; font-size: 14px; }
-.invite-row > strong { display: block; margin-top: 8px; }
-.invite-actions { margin-top: 14px; }
-.invite-actions .invite-primary { background: #18553d; color: white; border-color: #18553d; }
-.invite-actions button:disabled { opacity: .55; cursor: wait; }
+.player-inbox,
+.messages-page {
+  width: 100%;
+  color: #183d31;
+}
+.player-inbox > h1 {
+  margin: 0 0 16px;
+  font-size: clamp(26px, 3vw, 34px);
+  line-height: 1.2;
+}
+.messages-sections {
+  display: flex;
+  gap: 8px;
+  width: fit-content;
+  margin-bottom: 18px;
+  padding: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: #ecefe8;
+}
+.messages-sections button {
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  padding: 9px 16px;
+  font: inherit;
+  cursor: pointer;
+  color: #506259;
+}
+.messages-sections button[aria-pressed="true"] {
+  background: #fff;
+  color: #174b38;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+.inbox-entry,
+.invite-row {
+  background: white;
+  border: 1px solid #dbe5de;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow-wrap: anywhere;
+}
+.inbox-entry-toggle {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 17px 18px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.inbox-entry-toggle strong {
+  flex: 1;
+}
+.inbox-entry-toggle small,
+.invite-row p {
+  color: #52675b;
+}
+.inbox-entry-toggle[aria-expanded="true"] .inbox-chevron {
+  transform: rotate(180deg);
+}
+.inbox-body {
+  padding: 0 18px 16px;
+}
+.messages-description,
+.messages-page .support-message p {
+  white-space: pre-wrap;
+}
+.notification-inbox-link {
+  display: block;
+  margin-top: 16px;
+  color: #18593f;
+  font-weight: 600;
+}
+.invite-filters,
+.invite-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.invite-filters {
+  margin-bottom: 12px;
+}
+.invite-filters button,
+.invite-actions button,
+.inbox-body > button {
+  font: inherit;
+  font-size: 14px;
+  border: 1px solid #cbd9d0;
+  color: #194e36;
+  border-radius: 7px;
+  background: white;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+.invite-filters button[aria-pressed="true"] {
+  background: #e8f2ec;
+  border-color: #aecab8;
+  font-weight: 600;
+}
+.invite-filters button:last-child {
+  margin-left: auto;
+}
+.invite-row {
+  padding: 18px 20px;
+}
+.invite-row header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.invite-row h2 {
+  margin: 0;
+  font-size: 19px;
+}
+.invite-row header small {
+  border-radius: 6px;
+  padding: 3px 8px;
+  background: #f1f4ef;
+  color: #425743;
+}
+.invite-row p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+.invite-row > strong {
+  display: block;
+  margin-top: 8px;
+}
+.invite-actions {
+  margin-top: 14px;
+}
+.invite-actions .invite-primary {
+  background: #18553d;
+  color: white;
+  border-color: #18553d;
+}
+.invite-actions button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
 @media (max-width: 480px) {
-  .invite-row { padding: 14px; }
-  .inbox-entry-toggle { gap: 8px; padding: 14px; }
+  .invite-row {
+    padding: 14px;
+  }
+  .inbox-entry-toggle {
+    gap: 8px;
+    padding: 14px;
+  }
 }
