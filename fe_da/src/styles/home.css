@@ -512,6 +512,10 @@
   color: var(--color-muted);
   margin-bottom: 16px;
 }
+.home-breadcrumb-center {
+  margin-inline-start: auto;
+  font-size: 13px;
+}
 .home-breadcrumb button {
   color: var(--color-primary);
 }
@@ -848,3 +852,111 @@
 
 /* Account for the browser scrollbar on narrow screens. */
 body:has(.home-layout) { min-width: min(320px, 100%); }
+
+/* Manager workspace: keep long navigation independent of page height. */
+.home-layout[data-role="manager"] .manager-center-label {
+  margin: 0 0 8px;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.home-layout[data-role="manager"] .manager-center-label strong {
+  font-weight: 600;
+}
+.home-layout[data-role="manager"] .home-breadcrumb {
+  gap: 10px;
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.home-layout[data-role="manager"] .home-breadcrumb button {
+  padding: 0;
+  font: inherit;
+}
+.home-layout[data-role="manager"] .home-breadcrumb > span:last-child {
+  color: var(--color-text, #173629);
+  font-weight: 500;
+}
+.home-layout[data-role="manager"] { overflow-anchor: none; }
+.home-layout[data-role="manager"] .nav-community { display: none; }
+.home-layout[data-role="manager"] .workflow-actions { align-items: center; }
+.home-layout[data-role="manager"] .button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 42px; margin: 0; line-height: 1.35; }
+.home-layout[data-role="manager"] .button svg { flex-shrink: 0; }
+.home-layout[data-role="manager"] :is(.ops-actions, .workflow-actions, .stock-toolbar, .revenue-demo-filters) {
+  align-items: flex-end;
+  gap: 12px;
+}
+.home-layout[data-role="manager"] :is(.ops-actions, .workflow-actions, .stock-toolbar, .revenue-demo-filters) > label {
+  flex: 1 1 180px;
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.home-layout[data-role="manager"] :is(.ops-page, .workflow, .stock-page, .payment-workspace, .revenue-demo-filters) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select) {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  height: 44px;
+  padding: 10px 12px;
+  font: inherit;
+}
+.home-layout[data-role="manager"] :is(.ops-actions, .workflow-actions, .stock-toolbar, .revenue-demo-filters) > button,
+.home-layout[data-role="manager"] .ops-form > button {
+  min-height: 44px;
+  margin: 0;
+  align-self: end;
+}
+.home-layout[data-role="manager"] .ops-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.home-layout[data-role="manager"] .ops-form > label {
+  margin: 0;
+  min-width: 0;
+}
+.home-layout[data-role="manager"] .ops-form > :is(h2, p, .ops-actions, button),
+.home-layout[data-role="manager"] .ops-form > label:has(textarea) {
+  grid-column: 1 / -1;
+}
+.home-layout[data-role="manager"] .ops-form > button { justify-self: start; }
+.home-layout[data-role="manager"] :is(.ops-form, .aftercare-form, .workflow) textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+@media (max-width: 640px) {
+  .home-layout[data-role="manager"] .ops-form { grid-template-columns: minmax(0, 1fr); }
+  .home-layout[data-role="manager"] :is(.ops-actions, .workflow-actions, .stock-toolbar, .revenue-demo-filters) > label { flex-basis: 100%; }
+}
+.home-layout[data-role="manager"] .manager-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end; }
+.home-layout[data-role="manager"] .manager-filter { display: grid; gap: .45rem; margin-bottom: 1rem; max-width: 360px; }
+.home-layout[data-role="manager"] .manager-filter select { width: 100%; min-height: 42px; padding: .6rem; border: 1px solid var(--color-border); border-radius: 8px; background: white; font: inherit; }
+@media (min-width: 901px) {
+  .home-layout[data-role="manager"] .nav-inner { top: 0; max-height: 100dvh; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+  .home-layout[data-role="manager"] .nav-link { flex-shrink: 0; }
+}
+
+/* Consistent Manager filters and progressive transaction details. */
+.home-layout[data-role="manager"] .manager-filters { margin-bottom: 20px; padding: 16px; border: 1px solid #dce5df; border-radius: 12px; background: #f8faf7; }
+.home-layout[data-role="manager"] .manager-filters label { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin: 0; font-size: 14px; font-weight: 600; }
+.home-layout[data-role="manager"] .manager-filters :is(input, select) { width: 100%; min-width: 0; height: 44px; box-sizing: border-box; padding: 10px 12px; border: 1px solid #b4c6ba; border-radius: 8px; background: white; color: #173629; font: inherit; }
+.home-layout[data-role="manager"] .manager-filters button { align-self: end; }
+.home-layout[data-role="manager"] .manager-session-filters { grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; }
+.home-layout[data-role="manager"] .manager-disclosure { margin-top: 16px; padding: 14px 16px; border: 1px solid #dce5df; border-radius: 10px; background: #f8faf7; }
+.home-layout[data-role="manager"] .manager-disclosure summary { cursor: pointer; color: #194e36; font-weight: 600; }
+.home-layout[data-role="manager"] .manager-disclosure[open] summary { margin-bottom: 16px; }
+.home-layout[data-role="manager"] .payment-recovery h3 { margin-top: 0; }
+.home-layout[data-role="manager"] .session-list > .tksc-pagination { grid-column: 1 / -1; }
+.home-layout[data-role="manager"] .tksc-pagination { grid-column: 1 / -1; }
+@media (max-width: 1100px) { .home-layout[data-role="manager"] .manager-session-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .home-layout[data-role="manager"] .manager-filters { grid-template-columns: minmax(0, 1fr); padding: 12px; } }
+
+.home-layout[data-role="manager"] .payment-recovery > .workflow-actions:empty { display: none; }
+.home-layout[data-role="manager"] .recovery-transaction-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; margin-top: 16px; }
+.home-layout[data-role="manager"] .recovery-transaction-actions > button { width: 100%; height: 100%; min-height: 44px; align-self: stretch; }
+@media (max-width: 600px) { .home-layout[data-role="manager"] .recovery-transaction-actions { grid-template-columns: minmax(0, 1fr); gap: 8px; } }

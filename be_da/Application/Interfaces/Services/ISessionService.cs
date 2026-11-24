@@ -11,5 +11,4 @@ public interface ISessionService
     Task<SessionDetails?> GetSessionByIdAsync(long id, long? currentUserId, CancellationToken cancellationToken);
     Task<RegisterSessionResult> RegisterSessionAsync(long userId, long sessionId, CancellationToken cancellationToken);
     Task<RegisterSessionResult> RegisterLateEntryAsync(long userId, long sessionId, long expectedRevision, CancellationToken cancellationToken);
-    Task<RegisterSessionResult> AcceptSponsoredInvitationAsync(long userId, long sessionId, long invitationId, CancellationToken cancellationToken) => throw new NotSupportedException();
 }

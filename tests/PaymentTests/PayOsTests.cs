@@ -26,7 +26,7 @@ public class PayOsTests
     public void MissingDeadlineRequiresReview() =>
         Assert.Equal("review_required", PaymentRules.Decide(120000, 120000, true, null, Now, true));
 
-    private static PayOsGateway Gateway()
+    private static PayOsGateway Gateway(long codeNamespace = 0)
     {
         var config = new ConfigurationBuilder().AddInMemoryCollection(
         new Dictionary<string, string?> {
@@ -34,7 +34,8 @@ public class PayOsTests
             ["Payments:PayOS:ApiKey"] = "test-api-key",
             ["Payments:PayOS:ChecksumKey"] = "test-secret",
             ["Payments:PayOS:ReturnUrl"] = "https://example.test/",
-            ["Payments:PayOS:CancelUrl"] = "https://example.test/"
+            ["Payments:PayOS:CancelUrl"] = "https://example.test/",
+            ["Payments:PayOS:OrderCodeNamespace"] = codeNamespace.ToString(System.Globalization.CultureInfo.InvariantCulture)
         }).Build();
         return new(config, new PayOsClientFactory(config));
     }
@@ -67,21 +68,28 @@ public class PayOsTests
         Assert.True(ex.InvalidSignature);
     }
 
-    [Fact]
-    public async Task VerifiesSignedWebhookAndDoesNotTrustUnsignedEnvelope()
+    [Theory]
+    [InlineData(0, 12)]
+    [InlineData(3247, 3_247_000_000_012)]
+    public async Task VerifiesSignedWebhookAndDoesNotTrustUnsignedEnvelope(long codeNamespace, long gatewayCode)
     {
+        var gateway = Gateway(codeNamespace);
+        Assert.Equal(gatewayCode, gateway.BuildRequest(12, 42, 120000, Now.AddMinutes(15)).OrderCode);
         var data = new PayOS.Models.Webhooks.WebhookData {
-            OrderCode = 12, Amount = 120000, Reference = "BANK1", PaymentLinkId = "link12", Code = "00"
+            OrderCode = gatewayCode, Amount = 120000, Reference = "BANK1", PaymentLinkId = "link12", Code = "00"
         };
         var sdk = new PayOS.PayOSClient("test-client", "test-api-key", "test-secret");
         var webhook = new PayOS.Models.Webhooks.Webhook {
             Code = "not-authoritative", Success = false, Data = data,
             Signature = sdk.Crypto.CreateSignatureFromObject(data, "test-secret")!
         };
-        var verified = await Gateway().VerifyAsync(System.Text.Json.JsonSerializer.Serialize(webhook));
+        var signedPayload = System.Text.Json.JsonSerializer.Serialize(webhook);
+        var verified = await gateway.VerifyAsync(signedPayload);
         Assert.True(verified.Success);
+        Assert.Equal(12, verified.OrderCode);
         Assert.Equal(120000, verified.Amount);
+        await Assert.ThrowsAsync<GatewayException>(() => Gateway(999).VerifyAsync(signedPayload));
         data.Amount = 1;
-        await Assert.ThrowsAsync<GatewayException>(() => Gateway().VerifyAsync(System.Text.Json.JsonSerializer.Serialize(webhook)));
+        await Assert.ThrowsAsync<GatewayException>(() => gateway.VerifyAsync(System.Text.Json.JsonSerializer.Serialize(webhook)));
     }
 }

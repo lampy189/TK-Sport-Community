@@ -153,6 +153,11 @@
   gap: 24px;
 }
 
+.player-workspace .comm-container {
+  width: 100%;
+  padding-top: 0;
+}
+
 @media (max-width: 900px) {
   .comm-container {
     width: min(1560px, calc(100% - 32px));
@@ -160,6 +165,10 @@
 }
 
 /* Editorial Hero Header (matches sp-hero in SkillProfileView) */
+.comm-light-hero.comm-tabs-only {
+  padding: 12px 14px;
+}
+
 .comm-light-hero {
   background: #ffffff;
   border: 1px solid var(--tk-border);
@@ -720,6 +729,28 @@
 .comm-chat-friend-list {
   flex: 1;
   overflow-y: auto;
+}
+
+
+.comm-compact-pager .tksc-pagination {
+  justify-content: center;
+  margin-top: 0;
+  padding: 8px;
+}
+
+.comm-compact-pager .tksc-pagination-summary {
+  display: none;
+}
+
+.comm-compact-pager .tksc-pagination-pages {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.comm-compact-pager .tksc-pagination-pages button {
+  min-width: 30px;
+  min-height: 32px;
+  padding: 4px 7px;
 }
 
 .comm-chat-friend-item {

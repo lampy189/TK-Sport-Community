@@ -20,8 +20,16 @@ public sealed class LateEntryController(ILateEntryService store, ISessionService
         return Ok(await store.List(selected ?? venueId, sessionId, false, ct));
     }
 
-    [Authorize(Roles = "Staff,Manager"), HttpGet("manage")]
+    [Authorize(Roles = "Manager"), HttpGet("manage")]
     public async Task<IActionResult> Manage(CancellationToken ct) => Ok(await store.List(Venue(), null, true, ct));
+    [Authorize(Roles = "Manager"), HttpPut("{id:long}/paused")]
+    public async Task<IActionResult> SetPaused(long id, [FromBody] bool paused, CancellationToken ct)
+    {
+        await ValidateCsrf();
+        await store.SetPaused(Venue(), id, Actor(), paused, ct);
+        return NoContent();
+    }
+
     [Authorize(Roles = "Player"), HttpPost("{id:long}/holds")]
     public async Task<IActionResult> Hold(long id, HoldLateEntryRequest input, CancellationToken ct)
     {

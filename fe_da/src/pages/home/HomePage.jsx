@@ -1,5 +1,5 @@
 import SportCenterBadge from "../revenue/SportCenterBadge";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import HomeLayout from "../../layouts/HomeLayout";
 import { roleHomeConfig } from "../../config/roleHomeConfig";
@@ -12,6 +12,13 @@ import PlayerLayout from "../../components/layout/PlayerLayout";
 import PlayerHome from "./PlayerHome";
 import PlayerChatbot from "../../components/PlayerChatbot";
 
+function restoreWorkspace(role, active) {
+  if (role === "owner" && ["Cơ sở & sân", "Phân quyền Sport Center"].includes(active)) return "Cơ sở, sân và nhân sự";
+  if (role === "manager" && ["Bán hàng", "Xử lý đơn hàng"].includes(active)) return "overview";
+  if (role === "player" && active === "Thanh toán") return "Vé của tôi";
+  return active;
+}
+
 export default function HomePage({
   role = "guest",
   user,
@@ -20,19 +27,26 @@ export default function HomePage({
   preview = false,
 }) {
   const config = roleHomeConfig[role] || roleHomeConfig.guest;
+  const hasAssignedCenter = ["manager", "staff", "referee"].includes(role);
   const [active, setActive] = useState(() =>
     ["owner", "manager", "staff"].includes(role) && new URLSearchParams(window.location.search).get("view") === "revenue" ? (role === "owner" ? "Kinh doanh" : "Thống kê doanh số") :
     role === 'player' && new URLSearchParams(window.location.search).get('view') === 'invitations' ? 'Lời mời buổi chơi' :
     role !== "guest" && ["messages", "notifications"].includes(new URLSearchParams(window.location.search).get("view")) ? "Thông báo" :
-    role === "staff" && new URLSearchParams(window.location.search).has("goodsOrderId") ? "Bán hàng" :
-    role === "player" && new URLSearchParams(window.location.search).get("view") === "goods" ? "Cửa hàng" :
+    role === "staff" &&
+    (new URLSearchParams(window.location.search).get("view") === "goods-orders" ||
+      new URLSearchParams(window.location.search).has("goodsOrderId")) ? "Xử lý đơn hàng" :
     role === "player" &&
-    new URLSearchParams(window.location.search).has("orderId")
-      ? "Thanh toán"
-      : role === "player" && new URLSearchParams(window.location.search).get("view") === "tickets" ? "Vé của tôi" : window.history.state?.tkscHome?.role === role ? window.history.state.tkscHome.active : "overview",
+    (new URLSearchParams(window.location.search).get("view") === "goods" ||
+      new URLSearchParams(window.location.search).has("goodsOrderId")) ? "Cửa hàng" :
+    role === "player" &&
+    (new URLSearchParams(window.location.search).has("orderId") || new URLSearchParams(window.location.search).get("view") === "tickets")
+      ? "Vé của tôi"
+      : window.history.state?.tkscHome?.role === role ? restoreWorkspace(role, window.history.state.tkscHome.active) : "overview",
   );
   const [sessionId, setSessionId] = useState(() => window.history.state?.tkscHome?.role === role ? window.history.state.tkscHome.sessionId : null);
   const [browseSport, setBrowseSport] = useState(() => window.history.state?.tkscHome?.role === role ? window.history.state.tkscHome.browseSport : "ALL");
+  const assessmentDirty = useRef(false);
+  const workspaceLabel = role === "staff" && ["Thanh toán", "Đổi & hoàn vé"].includes(active) ? "Sự cố" : active;
   const navigation = [
     { id: "overview", label: "Trang chủ" },
     ...config.modules.map((label) => ({ id: label, label })),
@@ -45,18 +59,27 @@ export default function HomePage({
     function restore(event) {
       const saved = event.state?.tkscHome;
       if (saved?.role !== role) return;
-      setActive(saved.active);
+      setActive(restoreWorkspace(role, saved.active));
       setSessionId(saved.sessionId);
       setBrowseSport(saved.browseSport || "ALL");
     }
     window.addEventListener("popstate", restore);
     return () => window.removeEventListener("popstate", restore);
   }, [role, active, sessionId, browseSport]);
+  useLayoutEffect(() => {
+    if (role === 'manager') window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [role, active]);
   function remember(next, nextSession = sessionId, url = window.location.href) {
     if (next === active && nextSession === sessionId && String(url) === window.location.href) return;
     window.history.pushState({ tkscHome: { role, active: next, sessionId: nextSession, browseSport } }, "", url);
   }
-  function open(rawLabel) {
+  function confirmAssessmentExit() {
+    return !assessmentDirty.current || window.confirm(
+      "Phiếu chấm có thay đổi chưa lưu. Bạn có muốn rời màn và bỏ các thay đổi này không?",
+    );
+  }
+
+  function open(rawLabel, goodsOrderId) {
     const label = rawLabel === "Tin nhắn" ? "Thông báo" : rawLabel;
     if (
       label !== "overview" &&
@@ -64,9 +87,11 @@ export default function HomePage({
       label !== "Thông báo" &&
       label !== "Hồ sơ cá nhân" &&
       label !== "Hồ sơ kỹ năng" &&
+      !(role === "player" && label === "Lời mời buổi chơi") &&
       !config.modules.includes(label)
     )
       return;
+    if (label !== active && !confirmAssessmentExit()) return;
     if (preview || label === "Thanh toán") remember(label);
     setActive(label);
     if (!preview && label !== "Thanh toán") {
@@ -77,6 +102,10 @@ export default function HomePage({
       if (label === "Thông báo" || label === "Tin nhắn") url.searchParams.set("view", "messages");
       if (label === 'Lời mời buổi chơi') url.searchParams.set('view', 'invitations');
       if (label === 'Vé của tôi') url.searchParams.set('view', 'tickets');
+      if (label === "Xử lý đơn hàng") {
+        url.searchParams.set("view", "goods-orders");
+        if (goodsOrderId) url.searchParams.set("goodsOrderId", goodsOrderId);
+      }
       if (["Kinh doanh", "Thống kê doanh số"].includes(label)) url.searchParams.set("view", "revenue");
       remember(label, sessionId, url);
     }
@@ -86,8 +115,9 @@ export default function HomePage({
     const url = new URL(window.location.href);
     if (id) url.searchParams.set("orderId", id);
     url.searchParams.delete('view');
-    remember('Thanh toán', sessionId, url);
-    setActive("Thanh toán");
+    url.searchParams.set("view", "tickets");
+    remember("Vé của tôi", sessionId, url);
+    setActive("Vé của tôi");
     window.scrollTo({ top: 0, behavior: "instant" });
   }
   function selectSession(id) {
@@ -157,7 +187,7 @@ export default function HomePage({
     return (
       <PlayerLayout
         navigation={navigation}
-        activeId={active === "Chi tiết buổi chơi" ? "Lịch social" : active}
+        activeId={active === "Chi tiết buổi chơi" ? "Lịch social" : active === "Lời mời buổi chơi" ? "Thông báo" : active === "Thanh toán" ? "Vé của tôi" : active}
         onNavigate={open}
         onLogout={onLogout}
         accountName={user?.fullName}
@@ -171,11 +201,6 @@ export default function HomePage({
           />
         ) : (
           <div className="player-container player-workspace">
-            <div className="home-breadcrumb">
-              <button onClick={() => open("overview")}>Trang chủ</button>
-              <span>/</span>
-              <span>{active}</span>
-            </div>
             <HomeWorkspace
               role={role}
               active={active}
@@ -200,11 +225,11 @@ export default function HomePage({
       role={role}
       roleLabel={config.label}
       accountName={user?.fullName}
-      onLogout={onLogout}
+      onLogout={onLogout && (() => { if (confirmAssessmentExit()) onLogout(); })}
       onLogin={onLogin}
       onHome={() => open("overview")}
       navigation={navigation}
-      activeId={active === "Chi tiết buổi chơi" ? "Lịch social" : active}
+      activeId={active === "Chi tiết buổi chơi" ? "Lịch social" : active === "Lời mời buổi chơi" ? "Thông báo" : workspaceLabel}
       onNavigate={open}
       hero={
         active === "overview"
@@ -223,15 +248,17 @@ export default function HomePage({
           : null
       }
     >
-      {!preview && ["owner", "manager", "staff", "referee"].includes(role) && <SportCenterBadge />}
+      {!preview && (role === "owner" || (hasAssignedCenter && active === "overview")) && <SportCenterBadge compact={role === 'manager'} />}
       {active === "overview" ? (
-        <>{!preview && <OperationsOverview role={role} />}<HomeOverview config={config} preview={preview} onOpen={open} role={role} /></>
+        <>{!preview && !["referee", "staff", "owner"].includes(role) && <OperationsOverview role={role} />}<HomeOverview config={config} preview={preview} onOpen={open} role={role} /></>
       ) : (
         <div className="home-workspace">
           <div className="home-breadcrumb">
             <button onClick={() => open("overview")}>Trang chủ</button>
             <span>/</span>
-            <span>{active}</span>
+            <span>{workspaceLabel}</span>
+            {!preview && hasAssignedCenter && <SportCenterBadge inline />}
+            {!preview && role === "system-admin" && <span className="home-breadcrumb-center">Toàn hệ thống</span>}
           </div>
           <HomeWorkspace
             role={role}
@@ -243,6 +270,7 @@ export default function HomePage({
             onLogin={onLogin}
             onPayment={payment}
             onSelectSession={selectSession}
+            assessmentDirty={assessmentDirty}
           />
         </div>
       )}

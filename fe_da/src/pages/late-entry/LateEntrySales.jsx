@@ -58,29 +58,48 @@ export function LateEntryPurchase({ sessionId, user, onLogin, onPayment }) {
   return <section className="le-purchase"><span className="le-badge">BUỔI ĐANG DIỄN RA · SUẤT THAM GIA MUỘN</span><h2>Vé giờ lẻ</h2><OfferFacts offer={offer}/><p>Vé hết hiệu lực lúc <strong>{time(offer.endsAt)}</strong>.</p><div className="le-actions"><Price offer={offer}/><button className="button button-primary" disabled={busy || !!error} onClick={hold}>{busy ? 'Đang kiểm tra chỗ…' : user ? 'Giữ chỗ & thanh toán' : 'Đăng nhập để mua vé'}<ArrowRight size={17}/></button></div>{(error || feedback) && <p role="alert" className="payment-error">{feedback || error}</p>}</section>;
 }
 function AutomaticOffer({ offer }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  async function changeSale() {
+    setBusy(true);
+    setError('');
+    try {
+      await workflowRequest(`${root}/${offer.sessionId}/paused`, 'PUT', !offer.isPaused);
+      changed();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
   return <article className="le-card">
-    <span className="le-badge">{offer.isOpen ? 'TỰ ĐỘNG ĐANG RAO' : 'HẾT CHỖ'} · {offer.sportName}</span>
+    <span className="le-badge">{offer.isPaused ? 'TẠM DỪNG BÁN' : offer.isOpen ? 'TỰ ĐỘNG ĐANG RAO' : 'HẾT CHỖ'} · {offer.sportName}</span>
     <h3>{offer.courtName} · đến {time(offer.endsAt)}</h3>
     <p className="le-location">{offer.venueName} · {offer.band || 'Theo điều kiện buổi'}</p>
     <div className="le-capacity">
       <span><strong>{offer.playing}</strong>Đang chơi</span>
       <span><strong>{offer.confirmed}</strong>Đã mua, chưa đến</span>
       <span><strong>{offer.holds}</strong>Đang giữ chỗ</span>
-      <span><strong>{offer.available}</strong>Có thể bán</span>
+      <span><strong>{offer.remaining}</strong>Có thể bán</span>
     </div>
-    <div className="le-actions"><Price offer={offer}/></div>
+    <div className="le-actions"><Price offer={offer}/>
+      <button className="button button-secondary" disabled={busy} onClick={changeSale}>
+        {offer.isPaused ? 'Mở bán lại' : 'Tạm dừng bán'}
+      </button>
+    </div>
+    {error && <p role="alert" className="payment-error">{error}</p>}
     <p className="le-hint">Giá giảm theo từng phút đã trôi, tối đa giảm 50%. Vé hết lúc {time(offer.endsAt)}.</p>
 
   </article>;
 }
-export function LateEntryManagement() {
+export function LateEntryManagement({ role }) {
   const { data, error, loading, reload } = useOffers(`${root}/manage`);
   return <section className="le-section">
     <div className="le-heading"><div>
 
       <h2>Vé giờ lẻ tự động</h2>
 
-    </div><button className="button button-secondary" onClick={reload}><RefreshCw size={17}/>Tải lại</button></div>
+    </div>{(role !== 'manager' || error) && <button className="button button-secondary" onClick={reload}><RefreshCw size={17}/>Tải lại</button>}</div>
     {error && <p role="alert" className="payment-error">{error}</p>}
     {loading && <p>Đang tải buổi chơi…</p>}
     {!loading && !error && !data.length && <p>Chưa có vé giờ lẻ đang mở bán.</p>}

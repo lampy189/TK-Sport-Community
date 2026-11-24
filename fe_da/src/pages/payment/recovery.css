@@ -1,2 +1,47 @@
 .recovery-grid{display:grid;grid-template-columns:minmax(240px,1fr) minmax(320px,2fr);gap:24px;align-items:start}.recovery-list{display:grid;gap:8px;max-height:70vh;overflow:auto}.recovery-list button{display:grid;gap:8px;text-align:left;padding:14px;border:1px solid #d3dce6;border-radius:8px;background:white;color:#17314a;overflow-wrap:anywhere;cursor:pointer}.recovery-list button[aria-pressed=true]{border:2px solid #087b76;background:#edf9f6}.payment-recovery label{display:grid;gap:8px;margin:16px 0}.payment-recovery textarea,.payment-recovery select{width:100%;padding:10px;box-sizing:border-box}.recovery-history{border-top:1px solid #d3dce6;padding:12px 0}.recovery-history pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;color:#455469}.payment-recovery .workflow-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}@media(max-width:760px){.recovery-grid{grid-template-columns:1fr}.recovery-list{max-height:280px}}
 @media print{body:has(.goods-invoice) *{visibility:hidden}body:has(.goods-invoice) .goods-invoice,body:has(.goods-invoice) .goods-invoice *{visibility:visible}.goods-invoice{position:absolute;top:0;left:0;width:100%;background:white;color:black;padding:16px;box-sizing:border-box}.goods-invoice button{display:none!important}.goods-invoice table{width:100%;border-collapse:collapse}.goods-invoice th,.goods-invoice td{padding:8px;border-bottom:1px solid #ccc}}
+.home-layout[data-role="owner"] .payment-recovery {
+  max-width: none;
+}
+
+.home-layout[data-role="owner"] .payment-recovery > .workflow-actions {
+  justify-content: space-between;
+}
+
+.home-layout[data-role="owner"] .recovery-grid {
+  grid-template-columns: minmax(0, clamp(13rem, 30%, 21rem)) minmax(0, 1fr);
+}
+
+.home-layout[data-role="owner"] .recovery-detail {
+  display: grid;
+  gap: 12px;
+  padding-inline-start: 24px;
+  border-inline-start: 1px solid #dce5df;
+  overflow-wrap: anywhere;
+}
+
+.home-layout[data-role="owner"] .recovery-detail :is(h3, p, label) {
+  margin: 0;
+}
+
+.home-layout[data-role="owner"] .recovery-detail details {
+  padding-block: 10px;
+  border-top: 1px solid #dce5df;
+}
+
+.home-layout[data-role="owner"] .recovery-detail summary {
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .home-layout[data-role="owner"] .recovery-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-layout[data-role="owner"] .recovery-detail {
+    padding-inline-start: 0;
+    padding-block-start: 16px;
+    border-inline-start: 0;
+    border-block-start: 1px solid #dce5df;
+  }
+}

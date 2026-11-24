@@ -1,10 +1,14 @@
+import { ManagerList } from '../../components/ui/ManagerUI';
+import { displayDate, sportLabel } from '../../components/ui/managerUiState';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { paymentClient } from './paymentClient';
 import { Camera, Upload, ScanLine, Ticket, UserRound, MapPin, CalendarDays, CircleCheck, ArrowLeft, ArrowRight, LoaderCircle, AlertCircle } from 'lucide-react';
 import SectionLayout from '../../components/layout/SectionLayout';
+import AssignedSessionsTimetable from './AssignedSessionsTimetable';
+import { LateEntryManagement } from '../late-entry/LateEntrySales';
 import './payment.css';
 import './checkin.css';
-import { LateEntryManagement } from '../late-entry/LateEntrySales';
+import { canCheckIn, hasEnded } from '../sessions/sessionTime';
 
 function SessionConditionBadge({ code }) {
   if (code === 'ready') return <span className="payment-badge confirmed">Sẵn sàng</span>;
@@ -12,7 +16,9 @@ function SessionConditionBadge({ code }) {
   return <span className="payment-badge pending">Chưa phù hợp</span>;
 }
 
-export default function CheckInPage({ canManageLateEntries = false }) {
+export default function CheckInPage({ managerOnly = false }) {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => { if (!managerOnly) return; const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, [managerOnly]);
   const [code, setCode] = useState('');
   const [ticket, setTicket] = useState(null);
   const [error, setError] = useState('');
@@ -24,6 +30,7 @@ export default function CheckInPage({ canManageLateEntries = false }) {
   const [loadingRoster, setLoadingRoster] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [loadingSessions, setLoadingSessions] = useState(true);
+  const [weekDate, setWeekDate] = useState(null);
   const video = useRef(null);
   const controls = useRef(null);
   const generation = useRef(0);
@@ -63,6 +70,10 @@ export default function CheckInPage({ canManageLateEntries = false }) {
 
   async function selectSession(sessionId) {
     if (busyRef.current) return;
+    if (managerOnly && sessionId && !canCheckIn(sessions.find(session => session.sessionId === sessionId))) {
+      setError('Buổi chưa bắt đầu hoặc đã kết thúc, không thể mở điểm danh.');
+      return;
+    }
     stop();
     setSelectedSessionId(sessionId);
     setRoster([]);
@@ -79,7 +90,7 @@ export default function CheckInPage({ canManageLateEntries = false }) {
   }
 
   function requireSelectedSession() {
-    if (!selectedSession) {
+    if (!selectedSession || (managerOnly && !canCheckIn(selectedSession))) {
       setError('Chọn một buổi được phân công trước khi điểm danh người chơi.');
       return false;
     }
@@ -164,7 +175,7 @@ export default function CheckInPage({ canManageLateEntries = false }) {
   }
 
   async function confirm() {
-    if (busyRef.current || !ticket || !verified) return;
+    if (!requireSelectedSession() || busyRef.current || !ticket || !verified) return;
     busyRef.current = true;
     setBusy(true);
     setError('');
@@ -180,12 +191,22 @@ export default function CheckInPage({ canManageLateEntries = false }) {
       setBusy(false);
     }
   }
+  const displayedSessions = managerOnly ? sessions.filter(session => !hasEnded(session, now)) : sessions;
+  const sessionOpen = selectedSession && (!managerOnly || canCheckIn(selectedSession, now));
+  useEffect(() => {
+    if (managerOnly && !sessionOpen) {
+      generation.current += 1;
+      controls.current?.stop();
+      controls.current = null;
+    }
+  }, [managerOnly, sessionOpen]);
   const step = ticket?.checkedIn ? 3 : ticket ? 2 : 1;
   const date = ticket?.sessionDate?.split('-').reverse().join('/');
   return (
     <SectionLayout className="checkin-workspace" title="Điểm danh vào sân"
       description="Kiểm tra vé và đối chiếu người chơi trước khi xác nhận vào sân.">
-      {canManageLateEntries && <LateEntryManagement/>}
+      {managerOnly && <LateEntryManagement role="manager" />}
+
       <ol className="checkin-steps" aria-label="Quy trình điểm danh">
         {['Kiểm tra vé', 'Đối chiếu người chơi', 'Xác nhận vào sân'].map((label, index) => (
           <li key={label} className={step >= index + 1 ? 'is-active' : ''} aria-current={step === index + 1 ? 'step' : undefined}>
@@ -200,41 +221,43 @@ export default function CheckInPage({ canManageLateEntries = false }) {
         </div>
         {selectedSession ? <div className="selected-session-summary">
           <strong>{selectedSession.sportName} · {selectedSession.courtName}</strong>
-          <p>{selectedSession.sessionDate} · {selectedSession.startTime} – {selectedSession.endTime}</p>
-          <p>{selectedSession.conditionMessage}</p>
+          <p>{managerOnly ? displayDate(selectedSession.sessionDate) : selectedSession.sessionDate} · {selectedSession.startTime} – {selectedSession.endTime}</p>
+          <p>{managerOnly && !sessionOpen ? 'Buổi hiện không thể điểm danh. Hãy chọn buổi khác.' : selectedSession.conditionMessage}</p>
           <button type="button" className="button button-secondary" disabled={busy} onClick={() => selectSession(null)}>
             <ArrowLeft size={18} aria-hidden="true" />Chọn buổi khác
           </button>
         </div> : loadingSessions ? <p>Đang tải danh sách buổi được phân công…</p>
-          : sessions.length === 0 ? <p>Hiện chưa có buổi nào được giao cho bạn.</p>
+          : !managerOnly ? <AssignedSessionsTimetable sessions={sessions} weekDate={weekDate}
+              onWeekDateChange={setWeekDate} onSelect={selectSession} busy={busy} />
+          : displayedSessions.length === 0 ? <p>Hiện chưa có buổi nào được giao cho bạn.</p>
           : <div className="session-list">
-            {sessions.map(session => (
+            {<ManagerList items={displayedSessions}>{session => (
               <button key={session.sessionId} type="button"
                 className={`session-option ${selectedSessionId === session.sessionId ? 'selected' : ''}`}
                 aria-pressed={selectedSessionId === session.sessionId}
-                disabled={busy}
+                disabled={busy || (managerOnly && !canCheckIn(session, now))}
                 onClick={() => selectSession(session.sessionId)}>
-                <div className="session-option-header"><strong>{session.sportName}</strong><SessionConditionBadge code={session.conditionCode} /></div>
+                <div className="session-option-header"><strong>{managerOnly ? sportLabel(session.sportName) : session.sportName}</strong><SessionConditionBadge code={managerOnly ? (canCheckIn(session, now) ? 'ready' : 'not_ready') : session.conditionCode} /></div>
                 <span>{session.courtName} · {session.venueName}</span>
-                <small>{session.sessionDate} · {session.startTime} – {session.endTime}</small>
+                <small>{managerOnly ? displayDate(session.sessionDate) : session.sessionDate} · {session.startTime} – {session.endTime}</small>
                 <small>{session.conditionMessage}</small>
-                <strong>Mở điểm danh →</strong>
+                <strong>{managerOnly && !canCheckIn(session, now) ? 'Chưa thể điểm danh' : 'Mở điểm danh →'}</strong>
               </button>
-            ))}
+            )}</ManagerList>}
           </div>}
       </section>
-      {selectedSession && <section className="checkin-panel checkin-roster" aria-labelledby="checkin-roster-title" aria-busy={loadingRoster}>
+      {sessionOpen && <section className="checkin-panel checkin-roster" aria-labelledby="checkin-roster-title" aria-busy={loadingRoster}>
         <div className="checkin-panel-heading"><span className="checkin-icon"><UserRound size={22} aria-hidden="true" /></span>
           <div><h3 id="checkin-roster-title">Người chơi của buổi</h3><p>Chỉ gồm vé đã thanh toán còn hiệu lực.</p></div>
         </div>
         {loadingRoster ? <p role="status">Đang tải danh sách người chơi…</p> : roster.length === 0 ? <p>Chưa có vé hợp lệ trong buổi này.</p> : <div className="checkin-roster-list">
-          {roster.map(player => <div className="checkin-roster-row" key={player.ticketId}>
+          {<ManagerList items={roster}>{player => <div className="checkin-roster-row" key={player.ticketId}>
             <div><strong>{player.fullName}</strong><span>{player.currentBand || 'Chưa có trình độ'}{player.isProvisional ? ' · Chưa xác nhận' : ''}</span></div>
             <span className={`checkin-roster-status ${player.checkedIn ? 'is-checked' : ''}`}>{player.checkedIn ? 'Đã điểm danh' : 'Chưa điểm danh'}</span>
-          </div>)}
+          </div>}</ManagerList>}
         </div>}
       </section>}
-      {selectedSession && <div className="checkin-grid">
+      {sessionOpen && <div className="checkin-grid">
         <section className="checkin-panel" aria-labelledby="checkin-scan-title">
           <div className="checkin-panel-heading"><span className="checkin-icon"><ScanLine size={22} aria-hidden="true" /></span>
             <div><h3 id="checkin-scan-title">Quét vé người chơi</h3><p>Sử dụng mã QR hoặc mã vé đã được cấp.</p></div>

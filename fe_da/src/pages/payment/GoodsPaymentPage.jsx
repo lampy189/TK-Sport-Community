@@ -9,6 +9,9 @@ import GoodsHandoverPanel from "../stock/GoodsHandoverPanel";
 const root = "/api/v1/commerce/goods-orders";
 const money = n => `${Number(n).toLocaleString("vi-VN")} ₫`;
 const stateLabel = { Cart: "Giỏ hàng", PendingPayment: "Chờ chuyển khoản", Paid: "Đã thanh toán", Invoiced: "Đã xuất hóa đơn", Completed: "Hoàn tất",NeedsReview: "Cần đối soát", Pending: "Chờ thanh toán", Unpaid: "Chưa thanh toán", Cancelled:"Đã hủy",Expired:"Hết hạn",Failed:"Thất bại" };
+const waitingForDelivery = order => order?.paymentState === "Paid"
+  && ["Paid", "Invoiced"].includes(order.status)
+  && (order.handoverState == null || order.handoverState === "Pending");
 
 export default function GoodsPaymentPage({ initialOrderId }) {
   const [orders, setOrders] = useState([]);
@@ -48,14 +51,19 @@ export default function GoodsPaymentPage({ initialOrderId }) {
       const updated = await workflowRequest(`${root}/${order.id}/${action}`, "POST", body);
       setOrder(updated);
       setOrders(list => list.map(o => o.id === updated.id ? updated : o));
-      setMessage(updated.paymentState === "Paid" ? "Đã xác nhận đủ tiền cho đơn hàng hóa." :
+      setMessage(action === "deliver" ? "Đã giao đơn và cập nhật tồn kho, doanh số." :
+        action === "receive" ? "Đã xác nhận khách nhận hàng." :
+        action === "invoice" ? "Đã xuất hóa đơn." :
+        updated.paymentState === "Paid" ? "Đã xác nhận đủ tiền cho đơn hàng hóa." :
         updated.paymentState === "NeedsReview" ? "Giao dịch cần đối soát. Đơn chưa được xác nhận thanh toán." :
         action === "confirm-transfer" ? "Chưa có giao dịch đủ điều kiện. Hãy kiểm tra lại sau khi khách chuyển khoản." : "Đã tạo hướng dẫn chuyển khoản.");
     });
   }
   const cart = order?.status?.toLowerCase() === "cart";
   const paid = order?.paymentState === "Paid";
-  return <SectionLayout title="Thanh toán hàng hóa" description="Nhận Cart từ bán hàng, thu tiền và xuất hóa đơn.">
+  const waiting = orders.filter(waitingForDelivery);
+  const otherOrders = orders.filter(item => !waitingForDelivery(item));
+  return <SectionLayout className="goods-orders-page" title="Xử lý đơn hàng" description="Xem đơn người chơi và đơn tại quầy, xác nhận thanh toán và bàn giao.">
     <div className="workflow">
       {error && <p className="workflow-error" role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
@@ -63,10 +71,23 @@ export default function GoodsPaymentPage({ initialOrderId }) {
         setOrders(await workflowRequest(root));
         if (order) setOrder(await workflowRequest(`${root}/${order.id}`));
       })}>Làm mới danh sách</button></div>
-      <label>Đơn hàng hóa<select disabled={busy} value={order?.id ?? ""} onChange={e => select(e.target.value)}>
-        <option value="">Chọn đơn đã lập tại quầy</option>{orders.map(o => <option key={o.id} value={o.id}>{o.orderCode} · {money(o.totalAmount)} · {stateLabel[o.status] || o.status}</option>)}
+      <section aria-labelledby="goods-waiting-heading">
+        <h3 id="goods-waiting-heading">Chờ giao ({waiting.length})</h3>
+        {waiting.length === 0 ? <p>Chưa có đơn đã thanh toán chờ giao.</p> : <div className="workflow-table">
+          <table>
+            <thead><tr><th>Đơn hàng</th><th>Khách hàng</th><th>Đã thanh toán</th><th>Thao tác</th></tr></thead>
+            <tbody>{waiting.map(item => <tr key={item.id}>
+              <td>{item.orderCode}</td><td>{item.customerName || "Khách tại quầy"}</td><td>{money(item.totalAmount)}</td>
+              <td><button type="button" className="button button-secondary" disabled={busy}
+                aria-label={`Xem đơn ${item.orderCode}`} onClick={() => select(item.id)}>{order?.id === item.id ? "Đang xem" : "Xem đơn"}</button></td>
+            </tr>)}</tbody>
+          </table>
+        </div>}
+      </section>
+      <label>Đơn khác<select disabled={busy} value={waitingForDelivery(order) ? "" : order?.id ?? ""} onChange={e => select(e.target.value)}>
+        <option value="">Chọn đơn hàng</option>{otherOrders.map(o => <option key={o.id} value={o.id}>{o.orderCode}{o.customerName ? ` · ${o.customerName}` : ""} · {money(o.totalAmount)} · {stateLabel[o.status] || o.status}</option>)}
       </select></label>
-      {!orders.length && <p>Chưa có đơn hàng hóa. Lập Cart trong luồng bán hàng trước khi thu tiền.</p>}
+      {!orders.length && <p>Cơ sở này chưa có đơn hàng.</p>}
       {order && <>
         <h3>{order.orderCode} · {order.customerName || "Khách tại quầy"}</h3>
         <p>{stateLabel[order.status] || order.status} · {stateLabel[order.paymentState] || order.paymentState || "Chưa thanh toán"}</p>
@@ -96,7 +117,8 @@ export default function GoodsPaymentPage({ initialOrderId }) {
           {order.paymentState === "Pending" && !order.checkoutUrl && <button className="button button-secondary" disabled={busy} onClick={() => mutate("payment-instructions")}>Lấy lại hướng dẫn chuyển khoản</button>}
           <button className="button button-primary" disabled={busy || order.paymentState === "NeedsReview"} onClick={() => mutate("confirm-transfer")}>Kiểm tra chuyển khoản</button>
         </div>}
-        {paid && !order.invoice && <button className="button button-primary" disabled={busy} onClick={() => mutate("invoice")}>Xuất hóa đơn</button>}
+        <GoodsHandoverPanel order={order} canDeliver={waitingForDelivery(order)} busy={busy} onAction={mutate} />
+        {paid && !order.invoice && <button className="button button-secondary" disabled={busy} onClick={() => mutate("invoice")}>Xuất hóa đơn</button>}
         {order.invoice && <article className="goods-invoice" aria-label="Hóa đơn bán hàng">
           <h3>Hóa đơn {order.invoice.code}</h3>
           <p>Đơn: {order.invoice.orderCode} · Mã thanh toán: {order.invoice.paymentReference}</p>
@@ -114,10 +136,6 @@ export default function GoodsPaymentPage({ initialOrderId }) {
             window.setTimeout(() => URL.revokeObjectURL(url), 1000);
           }}>Tải hóa đơn</button>
         </article>}
-        <GoodsHandoverPanel order={order} onUpdated={updated => {
-          setOrder(updated);
-          setOrders(list => list.map(o => o.id === updated.id ? updated : o));
-        }} />
       </>}
     </div>
   </SectionLayout>;

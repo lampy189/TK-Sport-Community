@@ -196,6 +196,42 @@ public sealed class PlayerGoodsPaymentTests
         Assert.Equal(0,repo.Consumed);
     }
     [Fact]
+    public async Task StaffCanDeliverPaidOnlineOrderWithoutIssuingInvoiceSeparately()
+    {
+        var (service, repo, gateway) = Setup();
+        await service.CheckoutForBuyerAsync(3, 7, default);
+        gateway.Remote = new(4, 50000, "PAID", "link", [new(4, 50000, "PAID-ONLINE", "link", "VND", true, "{}")]);
+        var paid = await service.RefreshForBuyerAsync(3, 7, default);
+        Assert.Equal("Paid", paid.PaymentState);
+        Assert.Null(paid.Invoice);
+
+        var delivered = await service.DeliverAsync(3, 22, default);
+        await service.DeliverAsync(3, 22, default);
+        await service.ReceiveAsBuyerAsync(3, 7, default);
+
+        Assert.Equal("Delivered", delivered.HandoverState);
+        Assert.NotNull(delivered.Invoice);
+        Assert.Equal(1, repo.Consumed);
+        Assert.Single(repo.Audits, a => a.Action == "goods_invoice_issued");
+        Assert.Single(repo.Audits, a => a.Action == "goods_delivered");
+    }
+
+    [Fact]
+    public async Task DeliveryCanInvoiceLegacyPaidCashOrderWithCommittedStock()
+    {
+        var (service, repo, _) = Setup();
+        await service.CashAsync(3, 22, 50000, default);
+        repo.Audits.RemoveAll(a => a.Action == "goods_paid_lines");
+
+        await Assert.ThrowsAsync<PaymentException>(() => service.InvoiceAsync(3, 22, default));
+        var delivered = await service.DeliverAsync(3, 22, default);
+
+        Assert.Equal("Delivered", delivered.HandoverState);
+        Assert.NotNull(delivered.Invoice);
+        Assert.Equal(1, repo.Consumed);
+    }
+
+    [Fact]
     public async Task CancelReleasesOnlyOnceAndLateTransferRequiresReview()
     {
         var (service,repo,gateway)=Setup();

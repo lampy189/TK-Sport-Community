@@ -1,3 +1,4 @@
+import { ManagerList } from '../../components/ui/ManagerUI';
 import { useEffect, useState } from 'react';
 import { workflowRequest } from '../workflowClient';
 import './operations.css';
@@ -7,7 +8,7 @@ const money = n => Number(n ?? 0).toLocaleString('vi-VN') + ' ₫';
 const time = value => value ? new Date(value).toLocaleString('vi-VN') : '—';
 const status = value => ({ submitted: 'Chờ duyệt', approved: 'Đã duyệt', rejected: 'Từ chối', pending: 'Chờ duyệt', provisioned: 'Chờ kiểm tra', verified: 'Chờ bàn giao', executed: 'Hoàn tất' })[value] || value;
 export function DataTable({ title, rows = [], columns }) {
-  return <section className="business-section"><h2>{title}</h2>{!rows.length ? <p>Chưa có dữ liệu.</p> : <div className="business-table"><table><thead><tr>{columns.map(([key, label]) => <th key={key}>{label}</th>)}</tr></thead><tbody>{rows.map((row, i) => <tr key={row.id ?? i}>{columns.map(([key, , format]) => <td key={key}>{format ? format(row[key], row) : String(row[key] ?? '—')}</td>)}</tr>)}</tbody></table></div>}</section>;
+  return <section className="business-section"><h2>{title}</h2>{!rows.length ? <p>Chưa có dữ liệu.</p> : <div className="business-table"><table><thead><tr>{columns.map(([key, label]) => <th key={key}>{label}</th>)}</tr></thead><tbody>{<ManagerList items={rows} columns={columns.length}>{(row, i) => <tr key={row.id ?? i}>{columns.map(([key, , format]) => <td key={key}>{format ? format(row[key], row) : String(row[key] ?? '—')}</td>)}</tr>}</ManagerList>}</tbody></table></div>}</section>;
 }
 
 export function PolicyPage({ role, user }) {
@@ -37,7 +38,7 @@ export function PolicyPage({ role, user }) {
     if (effectiveFrom <= new Date() || effectiveTo && effectiveTo <= effectiveFrom) { setError('Chọn thời gian hiệu lực trong tương lai và ngày kết thúc hợp lệ.'); return; }
     void run('', { ...form, venueId: Number(selectedVenue), targetId: form.kind === 'policy' ? null : Number(form.targetId), priceVnd: form.kind === 'policy' ? null : Number(form.priceVnd), effectiveFrom: effectiveFrom.toISOString(), effectiveTo: effectiveTo?.toISOString() ?? null }, () => setForm(fresh()));
   }
-  return <section className="ops-page"><h1>Chính sách & giá</h1><div className="ops-actions"><label>Cơ sở<select value={venue} onChange={e => { setVenue(e.target.value); setForm(fresh()); }}>{role === 'owner' && <option value="">Tất cả cơ sở</option>}{options?.venues?.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</select></label><button disabled={busy || loading} onClick={() => setRevision(r => r + 1)}>Tải lại</button></div>
+  return <section className="ops-page"><h1>Chính sách & giá</h1><div className="ops-actions"><label>Cơ sở<select value={venue} onChange={e => { setVenue(e.target.value); setForm(fresh()); }}>{role === 'owner' && <option value="">Tất cả cơ sở</option>}{options?.venues?.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</select></label>{(role !== 'manager' || error) && <button disabled={busy || loading} onClick={() => setRevision(r => r + 1)}>Tải lại</button>}</div>
     {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}{loading && <p role="status">Đang tải…</p>}
     {options && <details className="business-section"><summary>Đề xuất phiên bản mới</summary><form className="ops-form" onSubmit={submit}><p>Cơ sở: {options.venues.find(v => String(v.id) === selectedVenue)?.name || 'Chọn cơ sở ở bộ lọc phía trên'}</p>
       <label>Loại<select value={form.kind} onChange={e => setForm({ ...form, kind: e.target.value, targetId: '', priceVnd: '' })}><option value="policy">Chính sách</option><option value="product">Giá hàng hóa</option><option value="session">Giá buổi chơi</option></select></label>

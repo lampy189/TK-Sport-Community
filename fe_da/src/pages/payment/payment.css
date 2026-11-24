@@ -48,27 +48,9 @@
 }
 .payment-tabs {
   display: flex;
-  gap: 5px;
-  padding: 5px;
+  gap: 8px;
   margin: 16px 0;
   width: fit-content;
-  border: 1px solid var(--color-border);
-  background: #ecefe8;
-  border-radius: 14px;
-}
-.payment-tabs .button {
-  font-size: 15px;
-  padding: 9px 20px;
-  min-height: 40px;
-  color: var(--color-muted);
-}
-.payment-tabs .button[aria-current="page"] {
-  background: #fff;
-  color: var(--color-primary);
-  box-shadow: var(--shadow-sm);
-}
-.payment-tabs .button:hover {
-  color: var(--color-primary);
 }
 .payment-card {
   padding: 20px;
@@ -428,7 +410,9 @@
 .ticket-toolbar { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
 .payment-workspace .ticket-toolbar input { flex:1; min-width:220px; width:auto; padding:12px 16px; border:1px solid var(--color-border); border-radius:12px; }
 .ticket-filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px; }
+.payment-tabs .button,
 .ticket-filters .button { border:1px solid var(--color-border); }
+.payment-tabs [aria-current="page"],
 .ticket-filters [aria-pressed="true"] { background:var(--color-primary); color:white; }
 .ticket-expanded,.ticket-confirm { margin-top:20px; padding:20px; background:#f7f9f4; border-radius:12px; font-size:14px; line-height:1.7; }
 .ticket-expanded svg { display:block; margin:0 auto 16px; background:white; padding:8px; box-sizing:content-box; }
@@ -463,6 +447,24 @@
 .ticket-issue { margin:16px 0; padding:18px; border:1px solid #e6bc78; border-radius:12px; background:#fff8e9; font-size:14px; line-height:1.7; }
 .aftercare-form { display:grid; gap:14px; margin-top:18px; }
 .aftercare-form label { display:grid; gap:7px; }
+.issue-workflow-history {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.issue-workflow-history li {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #dce5df;
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  overflow-wrap: anywhere;
+}
+.issue-workflow-history small { color: var(--muted, #53645b); }
+.issue-workflow-history p { margin: 0; }
 .payment-workspace .aftercare-form input,.payment-workspace .aftercare-form select { width:100%; padding:11px; border:1px solid #ccd8ce; border-radius:8px; background:white; color:#244233; }
 .aftercare-form .checkin-verify { display:flex; }
 .payment-workspace .aftercare-form input[type=checkbox] { width:20px; }

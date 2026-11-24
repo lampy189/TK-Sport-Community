@@ -132,6 +132,11 @@ public sealed class StoreRepository(Sep490Context context, IConfiguration config
                 await context.Database.ExecuteSqlInterpolatedAsync($"UPDATE dbo.orders SET venue_id={venueId} WHERE id={order.Id}", ct);
 
             await GoodsStockHolds.Reserve(context, order, expiresAt, false, ct);
+            if (order.BuyerId is long buyerId)
+                await context.Database.ExecuteSqlInterpolatedAsync($"""
+                    INSERT dbo.notifications(user_id,channel,title,reference_type,reference_id,status)
+                    VALUES({buyerId},'web',N'Đã giữ đơn hàng. Thanh toán trong 15 phút để giữ món.','goods_order_held',{order.Id},'unread')
+                    """, ct);
             context.AuditLogs.Add(new AuditLog { ActorId=actorId, EntityType="GoodsOrder", EntityId=order.Id, Action="goods_hold", NewValue=JsonSerializer.Serialize(new { ExpiresAt=expiresAt }) });
             var reservation = JsonSerializer.Serialize(new { expiresAt, lines = orderItems.Select(line => new { productId = line.ProductId, quantity = line.Quantity }) });
             context.AuditLogs.Add(new AuditLog { ActorId = actorId, Action = "goods_stock_reserved", EntityType = "GoodsOrder", EntityId = order.Id, NewValue = reservation });

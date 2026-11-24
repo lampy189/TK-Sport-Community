@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { workflowRequest } from '../workflowClient';
 
-export default function SportCenterBadge() {
+export default function SportCenterBadge({ inline = false, compact = false }) {
   const [text, setText] = useState('');
   useEffect(() => {
     let active = true;
@@ -11,5 +11,7 @@ export default function SportCenterBadge() {
     return () => { active = false; };
   }, []);
   if (!text) return null;
-  return <p style={{ margin: '16px 32px 0', fontSize: 13, color: '#53645b' }}><strong>Sport Center: </strong>{text}</p>;
+  if (inline) return <span className="home-breadcrumb-center"><strong>Cơ sở </strong>{text}</span>;
+
+  return <p className={compact ? 'manager-center-label' : undefined} style={compact ? undefined : { margin: '16px 32px 0', fontSize: 13, color: '#53645b' }}><strong>{compact ? 'Cơ sở: ' : 'Sport Center: '}</strong>{text}</p>;
 }

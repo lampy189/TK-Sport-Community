@@ -11,6 +11,7 @@ public interface ISkillReviewRepository
 {
     Task<T> Write<T>(Func<Task<T>> action, CancellationToken ct);
     void AddAuditLogs(AuditLog value);
+    Task NotifyAssignedRefereesAsync(long sessionId, long? assessorId, long referenceId, string referenceType, string title, CancellationToken ct);
     Task<List<string?>> EventsAuditLogsListAsync(string type, long id, bool internalNotes, CancellationToken ct);
     Task<Player?> RequestExceptionPlayersAsync(long actor, CancellationToken ct);
     Task<Session?> RequestExceptionSessionsAsync(long sessionId, CancellationToken ct);

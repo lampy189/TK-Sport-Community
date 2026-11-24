@@ -51,6 +51,7 @@ public sealed class SkillReviewService(ISkillReviewRepository repository, TimePr
         repository.AddSessionExceptions(row);
         await repository.SaveAsync(ct);
         Record("SessionException", row.Id, actor, "exception_requested", "Pending", reason);
+        await repository.NotifyAssignedRefereesAsync(sessionId, null, row.Id, "referee_skill_exception", "Có yêu cầu ngoại lệ trình độ cho buổi bạn phụ trách", ct);
         return new
         {
             row.Id
@@ -106,6 +107,8 @@ public sealed class SkillReviewService(ISkillReviewRepository repository, TimePr
         repository.AddRatingAppeals(row);
         await repository.SaveAsync(ct);
         var published = await repository.RequestAppealPlayerRatingHistoriesAsync(ct, a) ?? throw Error(409, "Kết quả chưa có lịch sử công bố.");
+        if (a.SessionId is long sessionId)
+            await repository.NotifyAssignedRefereesAsync(sessionId, a.AssessorId, row.Id, "referee_rating_appeal", "Có khiếu nại về phiếu đánh giá bạn đã chấm", ct);
         repository.AddAuditLogs(new AuditLog { EntityType = "RatingAppeal", EntityId = row.Id, ActorId = actor, Action = "appeal_requested", NewValue = JsonSerializer.Serialize(new ReviewEvent("Pending", reason, clock.GetUtcNow(), actor, published.NewScore, published.NewBand)) });
         return new
         {

@@ -6,6 +6,24 @@ using be_da.Application.Interfaces.Repositories;
 namespace be_da.Infrastructure.Persistence.Repositories;
 public sealed class RevenueRepository(IConfiguration configuration, be_da.Application.Interfaces.External.IDataAccessContext? dataScope = null) : IRevenueRepository
 {
+    // Receipts remain available for reconciliation. Goods sales use the date of physical handover.
+    internal const string ReportingEntriesSql = """
+        WITH reporting_entries AS (
+            SELECT e.venue_id,e.entry_type,e.amount_vnd,
+              CASE WHEN e.entry_type <> 'goods_receipt' THEN e.recognized_at
+                   WHEN delivery.handed_over_at IS NOT NULL THEN delivery.handed_over_at
+                   WHEN o.handover_state IN ('Delivered','Received') THEN e.recognized_at
+              END recognized_at
+            FROM dbo.revenue_entries e
+            LEFT JOIN dbo.payments p ON p.id=e.payment_id AND e.entry_type='goods_receipt'
+            LEFT JOIN dbo.orders o ON o.id=p.goods_order_id
+            OUTER APPLY (
+                SELECT MIN(m.created_at) handed_over_at FROM dbo.stock_movements m
+                WHERE m.reference_type='GoodsOrder' AND m.reference_id=o.id AND m.movement_type='SaleOut'
+            ) delivery
+        )
+        """;
+
     public async Task<RevenueSnapshot?> ReadAsync(DateOnly from, DateOnly to, long? venueId, CancellationToken ct)
     {
         await using var connection = new SqlConnection(configuration.GetConnectionString("Sep490"));
@@ -21,12 +39,12 @@ public sealed class RevenueRepository(IConfiguration configuration, be_da.Applic
                 return null;
         }
 
-        await using var command = new SqlCommand("""
+        await using var command = new SqlCommand(ReportingEntriesSql + "\n" + """
             SELECT CONVERT(date,SWITCHOFFSET(recognized_at,'+07:00')) day,
             SUM(CASE WHEN entry_type='social_receipt' THEN amount_vnd ELSE CONVERT(bigint,0) END),
             SUM(CASE WHEN entry_type='goods_receipt' THEN amount_vnd ELSE CONVERT(bigint,0) END),
             SUM(CASE WHEN entry_type='refund' THEN amount_vnd ELSE CONVERT(bigint,0) END)
-            FROM dbo.revenue_entries WHERE recognized_at>=@start AND recognized_at<@end
+            FROM reporting_entries WHERE recognized_at>=@start AND recognized_at<@end
             AND (@venue IS NULL OR venue_id=@venue)
             GROUP BY CONVERT(date,SWITCHOFFSET(recognized_at,'+07:00'));
             SELECT COUNT_BIG(*) FROM dbo.payments p WHERE LOWER(p.status)='paid'

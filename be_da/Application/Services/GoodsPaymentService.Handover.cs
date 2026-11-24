@@ -5,7 +5,7 @@ using TKSC.Domain.Entities;
 
 namespace TKSC.Application.Services;
 // UC-31 (team breakdown; RP3 UC-38): Delivery -> Receive order -> Update Stock, the last three cells of SWL 3.
-// The sale is deducted once, from the invoiced lines, when the receipt is confirmed.
+// Staff delivery consumes reserved stock once, using the invoiced lines.
 public sealed partial class GoodsPaymentService
 {
     public const string Delivered = "Delivered";
@@ -16,10 +16,12 @@ public sealed partial class GoodsPaymentService
         var order = await LoadAsync(id, ct);
         if (order.HandoverState is Delivered or Received)
             return await ViewAsync(order, ct);
-        if (GoodsHandoverRules.ValidateDeliver(order.Status, order.PaymentState, await InvoiceRecordAsync(id, ct) != null)is { } error)
+        var invoice = await InvoiceRecordAsync(id, ct);
+        if (invoice is null && order.Status == "Paid" && order.PaymentState == "Paid")
+            invoice = await IssueInvoiceAsync(order, actorId, ct, delivering: true);
+        if (GoodsHandoverRules.ValidateDeliver(order.Status, order.PaymentState, invoice != null) is { } error)
             throw Error(409, error);
-        var invoice = await InvoiceRecordAsync(id, ct) ?? throw Error(409,"Thiếu hóa đơn.");
-        if (!Lines(order).SequenceEqual(invoice.Lines)) throw Error(409,"Dòng hàng khác hóa đơn.");
+        if (!Lines(order).SequenceEqual(invoice!.Lines)) throw Error(409,"Dòng hàng khác hóa đơn.");
         await repository.ConsumeHoldAsync(order, actorId, ct);
         order.HandoverState = Delivered;
         Audit(id, actorId, "goods_delivered", new { at = clock.GetUtcNow() });
@@ -63,7 +65,7 @@ public sealed partial class GoodsPaymentService
         if (!Lines(order).SequenceEqual(invoice.Lines))
             throw Error(409, "Dòng hàng khác với hóa đơn. Cần đối soát trước khi trừ kho.");
         // Delivery already atomically converted the reservation to SaleOut.
-        // Legacy Delivered orders without a movement require reconciliation; never deduct blindly.
+        // Legacy deliveries can still consume a committed hold at receipt.
         if (!await repository.ConfirmReceiptStockMovementsExistsAsync(ct, id))
             await repository.ConsumeHoldAsync(order, actorId, ct);
 

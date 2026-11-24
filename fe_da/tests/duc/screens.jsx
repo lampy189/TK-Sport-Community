@@ -15,5 +15,5 @@ createRoot(document.getElementById('root')).render(<main style={{maxWidth:1100,m
   {screen === 'assessment' ? <AssessmentPage/> : screen === 'goods-history' ? <MyGoodsOrders/> : screen === 'ticket-history' ? <TicketList tickets={window.__tickets || []} now={Date.now()}/> : screen === 'operations' ? <OperationalExceptions role="manager"/> : screen === 'recovery' ? <PaymentRecoveryPage role="manager"/> : screen === 'exception' ? <SkillReviews role="manager" kind="exceptions"/> :
     screen === 'appeal' ? <SkillReviews role="manager" kind="appeals"/> :
     screen === 'player' ? <TicketSupport ticketId={41} initialOpen/> :
-    <TicketOperations role="manager" initialTab={screen === 'venue' ? 'sessions' : 'issues'}/>}
+    <TicketOperations role="manager" initialTab={screen === 'venue' ? 'sessions' : screen === 'changes' ? 'changes' : 'issues'}/>}
 </main>);
