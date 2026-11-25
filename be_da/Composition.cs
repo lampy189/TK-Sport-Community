@@ -30,6 +30,8 @@ public static class Composition
         services.AddScoped<ISessionSupplyService, be_da.Application.Services.SessionSupplyService>();
         services.AddScoped<ISkillProfileService, be_da.Application.Services.SkillProfileService>();
         services.AddScoped<IStockService, be_da.Application.Services.StockService>();
+        services.AddScoped<be_da.Application.Interfaces.Repositories.IProductImageStore, be_da.Infrastructure.Persistence.Repositories.SqlProductImageStore>();
+        services.AddScoped<be_da.Application.Interfaces.Services.IProductImageService, be_da.Application.Services.ProductImageService>();
         services.AddScoped<IStockCountService, be_da.Application.Services.StockCountService>();
         services.AddScoped<INotificationService, TKSC.Application.Services.NotificationService>();
         services.AddScoped<TKSC.Application.Interfaces.Repositories.INotificationRepository, TKSC.Infrastructure.Persistence.Repositories.NotificationRepository>();

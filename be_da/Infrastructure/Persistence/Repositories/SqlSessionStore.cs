@@ -287,22 +287,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 if(zalo.ExpiresAt<=DateTimeOffset.UtcNow)
                     return new(false,"QUOTE_EXPIRED","Báo giá đã hết hạn. Vui lòng chọn lại vé.");
             }
-            // Find player ID for user
-            long playerId;
-            await using (var playerCmd = new SqlCommand("SELECT p.id FROM dbo.players p WITH (UPDLOCK,HOLDLOCK) JOIN dbo.users u ON u.id=p.user_id WHERE p.user_id=@userId AND LOWER(u.status)='active' AND u.deleted_at IS NULL;", connection, transaction))
-            {
-                playerCmd.Parameters.Add("@userId", SqlDbType.BigInt).Value = userId;
-                var res = await playerCmd.ExecuteScalarAsync(cancellationToken);
-                if (res == null)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    return new RegisterSessionResult(false, "SKILL_INELIGIBLE", "Người chơi chưa làm khảo sát kỹ năng.", "chưa làm survey");
-                }
-
-                playerId = Convert.ToInt64(res);
-            }
-
-            // Lock and inspect session
+            // Serialize contenders on the session before taking any player locks.
             const string sessionLockSql = """
                 SELECT s.id, s.sport_id, s.band, s.capacity, dbo.OwnerEffectivePrice('session',s.id,s.price_vnd,@quoteAt), s.status, s.session_date, ts.start_time, ts.end_time, dbo.OwnerPriceVersion('session',s.id,@quoteAt),c.id,c.venue_id
                 FROM dbo.sessions s WITH (UPDLOCK, HOLDLOCK)
@@ -347,6 +332,21 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                     || zalo.Quote.SessionDate!=sessionDate || zalo.Quote.StartTime!=startTime || zalo.Quote.EndTime!=endTime
                     || zalo.Quote.Band!=sessionBand || zalo.Quote.CourtId!=reader.GetInt64(10) || zalo.Quote.VenueId!=reader.GetInt64(11)))
                     return new(false,"QUOTE_CHANGED","Giá hoặc lịch vừa thay đổi. Vui lòng chọn lại vé để xác nhận thông tin mới.");
+            }
+
+            // Find player ID for user
+            long playerId;
+            await using (var playerCmd = new SqlCommand("SELECT p.id FROM dbo.players p WITH (UPDLOCK,HOLDLOCK) JOIN dbo.users u ON u.id=p.user_id WHERE p.user_id=@userId AND LOWER(u.status)='active' AND u.deleted_at IS NULL;", connection, transaction))
+            {
+                playerCmd.Parameters.Add("@userId", SqlDbType.BigInt).Value = userId;
+                var res = await playerCmd.ExecuteScalarAsync(cancellationToken);
+                if (res == null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return new RegisterSessionResult(false, "SKILL_INELIGIBLE", "Người chơi chưa làm khảo sát kỹ năng.", "chưa làm survey");
+                }
+
+                playerId = Convert.ToInt64(res);
             }
 
             // Consent and the hold share a transaction; only the invitee can accept.

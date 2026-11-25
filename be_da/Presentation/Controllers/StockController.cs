@@ -36,6 +36,7 @@ public sealed class StockController(IStockService stockStore, IAntiforgery antif
     }
 
     [HttpPost("products")]
+    [Authorize(Roles = "Manager")]
     [ProducesResponseType(typeof(StockProduct), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -43,15 +44,16 @@ public sealed class StockController(IStockService stockStore, IAntiforgery antif
     {
         if (!await HasValidCsrf())
             return BadRequest(new { code = "invalid_csrf_token" });
-        if (!TryGetUserId(out var staffUserId))
+        if (!TryGetUserId(out var managerUserId))
             return Unauthorized();
-        var result = await stockStore.CreateProductAsync(request, staffUserId, cancellationToken);
+        var result = await stockStore.CreateProductAsync(request, managerUserId, cancellationToken);
         if (!result.Success)
             return ToError(result);
         return CreatedAtAction(nameof(GetProduct), new { id = result.Product!.Id }, result.Product);
     }
 
     [HttpPut("products/{id:long:min(1)}")]
+    [Authorize(Roles = "Manager")]
     [ProducesResponseType(typeof(StockProduct), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

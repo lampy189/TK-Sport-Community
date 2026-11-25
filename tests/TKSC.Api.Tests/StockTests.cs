@@ -19,6 +19,7 @@ namespace TKSC.Api.Tests;
 public sealed class StockTests
 {
     private static readonly Account Staff = new(20, "staff@example.test", "Staff One", "Staff", "Active", "sub-20", false, VenueId: 1);
+    private static readonly Account Manager = new(21, "manager@example.test", "Manager One", "Manager", "Active", "sub-21", false, VenueId: 1);
     private static readonly Account Player = new(30, "player@example.test", "Player One", "Player", "Active", "sub-30", false);
 
     [Fact]
@@ -34,11 +35,11 @@ public sealed class StockTests
     }
 
     [Fact]
-    public async Task CreateProduct_PostsOpeningBalanceForStaff()
+    public async Task CreateProduct_PostsOpeningBalanceForManager()
     {
         await using var app = new StockApp();
         using var client = app.Client();
-        await DevLogin(client, Staff.Email);
+        await DevLogin(client, Manager.Email);
 
         var response = await Send(client, HttpMethod.Post, "/api/stock/products",
             new { sku = " cau-as30 ", name = "Cầu lông AS30", category = "Equipment", unitPriceVnd = 25000, reorderLevel = 5, initialQuantity = 12 });
@@ -48,7 +49,7 @@ public sealed class StockTests
         Assert.Equal("CAU-AS30", product.GetProperty("sku").GetString());
         Assert.Equal(12, product.GetProperty("quantityOnHand").GetInt32());
         Assert.False(product.GetProperty("isLowStock").GetBoolean());
-        Assert.Equal(Staff.Id, app.StockStore.LastOperator);
+        Assert.Equal(Manager.Id, app.StockStore.LastOperator);
     }
 
     [Theory]
@@ -60,12 +61,32 @@ public sealed class StockTests
     {
         await using var app = new StockApp();
         using var client = app.Client();
-        await DevLogin(client, Staff.Email);
+        await DevLogin(client, Manager.Email);
 
         var response = await Send(client, HttpMethod.Post, "/api/stock/products",
             new { sku, name, category, unitPriceVnd = price, reorderLevel = 0, initialQuantity = 0 });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Empty(app.StockStore.Products);
+    }
+
+    [Fact]
+    public async Task Staff_CannotChangeCatalogueOrProductPhoto()
+    {
+        await using var app = new StockApp();
+        using var client = app.Client();
+        await DevLogin(client, Staff.Email);
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await Send(client, HttpMethod.Post, "/api/stock/products",
+            new { sku = "WATER", name = "Water", unitPriceVnd = 10000, reorderLevel = 5, initialQuantity = 0 })).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await Send(client, HttpMethod.Put, "/api/stock/products/1",
+            new { name = "Water", unitPriceVnd = 10000, reorderLevel = 5, isActive = true })).StatusCode);
+
+        using var upload = new MultipartFormDataContent();
+        using var file = new ByteArrayContent(new byte[] { 1, 2, 3 });
+        upload.Add(file, "file", "photo.png");
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.PutAsync("/api/products/1/image", upload)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.DeleteAsync("/api/products/1/image")).StatusCode);
         Assert.Empty(app.StockStore.Products);
     }
 
@@ -125,7 +146,7 @@ public sealed class StockTests
 
         public StockApp()
         {
-            foreach (var account in new[] { Staff, Player })
+            foreach (var account in new[] { Staff, Manager, Player })
             {
                 AccountStore.Accounts[account.Email] = account;
                 AccountStore.AccountsById[account.Id] = account;

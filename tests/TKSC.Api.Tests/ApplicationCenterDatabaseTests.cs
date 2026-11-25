@@ -82,7 +82,7 @@ public sealed class ApplicationCenterDatabaseTests
             {
                 var me = await client.GetFromJsonAsync<JsonElement>("/api/auth/me");
                 Assert.Equal(actor.Venue!.Value.ToString(), me.GetProperty("selectedVenueId").GetString());
-                var response = await client.GetAsync("/api/stock/products");
+                var response = await client.GetAsync("/api/stock/products?includeInactive=false");
                 response.EnsureSuccessStatusCode();
                 var catalog = await response.Content.ReadFromJsonAsync<List<StockProduct>>();
                 var expected = await all.Products.Where(p => EF.Property<long?>(p, "VenueId") == actor.Venue && p.IsActive == true).Select(p => p.Id).ToListAsync();
@@ -166,8 +166,10 @@ public sealed class ApplicationCenterDatabaseTests
         Assert.NotEmpty(products);
         Assert.DoesNotContain(products, p => p.Id == foreignProduct.Id);
         var supply = new SqlSessionSupplyStore(Connection, scope);
-        await Assert.ThrowsAsync<PaymentException>(() => supply.GetDetailsAsync(foreignSession, default));
-        await Assert.ThrowsAsync<PaymentException>(() => supply.IssueAsync(foreignSession, new IssueSupplyRequest(foreignProduct.Id, 1, 1), 1, default));
+        Assert.Null(await supply.GetDetailsAsync(foreignSession, default));
+        var issue = await supply.IssueAsync(foreignSession, new IssueSupplyRequest(foreignProduct.Id, 1, 1), 1, default);
+        Assert.False(issue.Success);
+        Assert.Equal("SESSION_NOT_FOUND", issue.ErrorCode);
         var sessions = new SqlSessionStore(Connection, scope);
         Assert.Null(await sessions.GetSessionByIdAsync(foreignSession, null, default));
         await using var connection = new SqlConnection(Connection);

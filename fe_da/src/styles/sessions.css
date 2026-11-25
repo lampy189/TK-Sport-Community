@@ -311,6 +311,96 @@
   font-size: 14.5px;
   min-height: 46px;
 }
+.session-list {
+  display: grid;
+  gap: 12px;
+}
+.session-card.session-list-row {
+  display: grid;
+  grid-template-columns: clamp(135px, 19vw, 208px) minmax(0, 1fr) minmax(175px, auto);
+  align-items: center;
+  gap: clamp(14px, 2vw, 26px);
+  padding: 14px;
+}
+.session-list-row:hover {
+  transform: none;
+}
+.session-photo {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #eaf0e8;
+}
+.session-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.session-photo .session-photo-courts {
+  object-position: center 72%;
+}
+.session-photo-detail {
+  aspect-ratio: 16 / 7;
+  margin-bottom: 22px;
+}
+.session-list-row h3 {
+  margin: 0 0 8px;
+}
+.session-list-row .session-meta {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+}
+.session-list-row .session-match {
+  margin-top: 8px;
+}
+.session-row-booking {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  padding-left: 16px;
+  border-left: 1px solid var(--color-border);
+}
+.session-row-booking .session-price {
+  margin: 0;
+  font-size: 21px;
+}
+@media (max-width: 740px) {
+  .session-card.session-list-row {
+    grid-template-columns: clamp(88px, 24vw, 150px) minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    padding: 12px;
+  }
+  .session-list-row h3 {
+    font-size: 17px;
+  }
+  .session-row-booking {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    padding: 10px 0 0;
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
+  }
+  .session-row-booking .session-price {
+    grid-row: 2;
+    font-size: 17px;
+  }
+  .session-row-booking .button {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    gap: 4px;
+    padding-inline: 8px;
+  }
+  .session-photo-detail {
+    aspect-ratio: 16 / 9;
+  }
+}
 .session-skeleton {
   height: 320px;
   padding: 28px;

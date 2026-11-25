@@ -6,6 +6,9 @@ public sealed class InvitationService(IInvitationRepository repository, ISession
 {
     public async Task<OperationResult> ListAsync(long userId, CancellationToken ct) => OperationResult.Success(await repository.ListAsync(userId, ct));
     public async Task<OperationResult> CandidatesAsync(long userId, long sessionId, CancellationToken ct) => OperationResult.Success(await repository.CandidatesAsync(userId, sessionId, ct));
+    public async Task<OperationResult> EligibleSessionIdsAsync(long userId, long friendPlayerId, CancellationToken ct) =>
+        OperationResult.Success(await repository.EligibleSessionIdsAsync(userId, friendPlayerId, ct));
+
     public Task<OperationResult> SendAsync(long userId, long sessionId, InviteSessionRequest request, CancellationToken ct) =>
         request.FriendPlayerId <= 0 || request.PaymentChoice != "separate"
             ? Task.FromResult(OperationResult.Invalid(new { code = "invalid_invitation", message = "Lời mời hiện chỉ hỗ trợ người nhận tự thanh toán." }))

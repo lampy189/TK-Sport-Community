@@ -15,7 +15,12 @@ public sealed class OwnerPolicyRepository(IConfiguration configuration, IDataAcc
             throw new TKSC.Domain.Exceptions.PaymentException(403, "Không có quyền xem dữ liệu chính sách.");
         return new {
             venues = await WorkflowSql.Rows(c, null, "SELECT id,name FROM dbo.venues WHERE is_active=1 AND (@owner=1 OR id=@venue) ORDER BY name", ct, ("@owner", Owner), ("@venue", scope.VenueId)),
-            products = await WorkflowSql.Rows(c, null, "SELECT id,name,venue_id AS venueId FROM dbo.products WHERE is_active=1 AND (@owner=1 OR venue_id=@venue) ORDER BY name", ct, ("@owner", Owner), ("@venue", scope.VenueId)),
+            products = await WorkflowSql.Rows(c, null, """
+                SELECT id, name, venue_id AS venueId
+                FROM dbo.products
+                WHERE (is_active=1 OR requires_price_approval=1) AND (@owner=1 OR venue_id=@venue)
+                ORDER BY name
+                """, ct, ("@owner", Owner), ("@venue", scope.VenueId)),
             sessions = await WorkflowSql.Rows(c, null, "SELECT s.id,CONCAT(CONVERT(varchar(10),s.session_date,103),' ',CONVERT(varchar(5),ts.start_time,108),' - ',cr.name) AS name,cr.venue_id AS venueId FROM dbo.sessions s JOIN dbo.courts cr ON cr.id=s.court_id JOIN dbo.time_slots ts ON ts.id=s.time_slot_id WHERE s.session_date>=CONVERT(date,SWITCHOFFSET(SYSDATETIMEOFFSET(),'+07:00')) AND LOWER(s.status) IN ('draft','open','published','closed') AND (@owner=1 OR cr.venue_id=@venue) ORDER BY s.session_date,ts.start_time", ct, ("@owner", Owner), ("@venue", scope.VenueId))
         };
     }

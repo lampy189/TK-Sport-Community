@@ -34,6 +34,8 @@ Thumbs.db
 .env.*
 !.env.example
 **/appsettings.Local.json
+/be_da/appsettings.Development.json
+/be_da/firebase-admin.Development.json
 .claude/launch.json
 
 # Browser test artifacts

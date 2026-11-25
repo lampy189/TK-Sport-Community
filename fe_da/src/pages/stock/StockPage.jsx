@@ -21,6 +21,8 @@ import BulkReceiptView from "./BulkReceiptView";
 import StockCountsView, { CountDialog } from "./StockCountsView";
 import SupplyReportView from "./SupplyReportView";
 import Dialog from "./StockDialog";
+import ProductPhoto from "../../components/ui/ProductPhoto";
+import ProductPhotoEditor from "./ProductPhotoEditor";
 import "./stock.css";
 
 const money = (value) =>
@@ -64,7 +66,7 @@ export default function StockPage({ role = "staff" }) {
           </button>
         ))}
       </div>
-      {tab === "catalog" && <StockCatalog canCount={role === "staff"} />}
+      {tab === "catalog" && <StockCatalog canManage={role === "manager"} canCount={role === "staff"} />}
       {tab === "receipts" && <BulkReceiptView />}
       {tab === "supplies" && <SessionSuppliesView readOnly={role !== "staff"} />}
       {tab === "counts" && <StockCountsView role={role} />}
@@ -73,8 +75,8 @@ export default function StockPage({ role = "staff" }) {
   );
 }
 
-// UC-26 / UC-27 (team breakdown; RP3 SCR-22): Staff catalogue, receipts/issues and movement history.
-function StockCatalog({ canCount = true }) {
+// RP3 SCR-22: Manager maintains the catalogue; Staff records inventory movements.
+function StockCatalog({ canManage, canCount }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -82,8 +84,12 @@ function StockCatalog({ canCount = true }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [onlyLow, setOnlyLow] = useState(false);
-  const [showInactive] = useState(false);
   const [dialog, setDialog] = useState(null);
+  const [photoRevisions, setPhotoRevisions] = useState({});
+
+  function photoChanged(id) {
+    setPhotoRevisions(revisions => ({ ...revisions, [id]: (revisions[id] ?? 0) + 1 }));
+  }
 
   const [reloadKey, setReloadKey] = useState(0);
   useEffect(() => {
@@ -106,15 +112,15 @@ function StockCatalog({ canCount = true }) {
     const term = search.trim().toLowerCase();
     return products.filter(
       (p) =>
-        (showInactive || p.isActive) &&
+        (canManage || p.isActive) &&
         (!category || p.category === category) &&
-        (!onlyLow || p.isLowStock) &&
+        (!onlyLow || (p.isActive && p.isLowStock)) &&
         (!term ||
           p.sku.toLowerCase().includes(term) ||
           p.name.toLowerCase().includes(term) ||
           (p.units ?? []).some((u) => u.barcode?.toLowerCase().includes(term))),
     );
-  }, [products, search, category, onlyLow, showInactive]);
+  }, [products, search, category, onlyLow, canManage]);
   const active = products.filter((p) => p.isActive);
   const lowCount = active.filter((p) => p.isLowStock).length;
 
@@ -128,7 +134,7 @@ function StockCatalog({ canCount = true }) {
     setNotice(message);
   }
 
-  const addButton = (
+  const addButton = canManage && (
     <button
       className="button button-primary"
       onClick={() => setDialog({ kind: "product" })}
@@ -244,8 +250,10 @@ function StockCatalog({ canCount = true }) {
               {<PaginatedList items={visible} columns={6}>{(p) => (
                 <tr key={p.id} className={p.isActive ? "" : "is-inactive"}>
                   <td data-label="Mặt hàng">
-                    <strong>{p.name}</strong>
-                    <span className="stock-sku">{p.sku}</span>
+                    <div className="product-with-photo">
+                      <ProductPhoto sku={p.sku} productId={p.id} revision={photoRevisions[p.id]} />
+                      <div><strong>{p.name}</strong><span className="stock-sku">{p.sku}</span></div>
+                    </div>
                   </td>
                   <td data-label="Nhóm">
                     {categoryLabels[p.category] || p.category || "—"}
@@ -318,14 +326,16 @@ function StockCatalog({ canCount = true }) {
                         <ClipboardCheck size={16} />
                       </button>
                     )}
-                    <button
-                      className="stock-icon-button"
-                      aria-label={`Sửa ${p.name}`}
-                      title="Sửa thông tin"
-                      onClick={() => setDialog({ kind: "product", product: p })}
-                    >
-                      <Pencil size={16} />
-                    </button>
+                    {canManage && (
+                      <button
+                        className="stock-icon-button"
+                        aria-label={`Sửa ${p.name}`}
+                        title="Sửa thông tin"
+                        onClick={() => setDialog({ kind: "product", product: p })}
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    )}
                     <button
                       className="stock-icon-button"
                       aria-label={`Lịch sử nhập xuất ${p.name}`}
@@ -342,9 +352,11 @@ function StockCatalog({ canCount = true }) {
         </div>
       )}
 
-      {dialog?.kind === "product" && (
+      {canManage && dialog?.kind === "product" && (
         <ProductDialog
           product={dialog.product}
+          photoRevision={photoRevisions[dialog.product?.id]}
+          onPhotoChanged={photoChanged}
           onClose={() => setDialog(null)}
           onSaved={(product) =>
             saved(
@@ -390,7 +402,7 @@ function StockCatalog({ canCount = true }) {
   );
 }
 
-function ProductDialog({ product, onClose, onSaved }) {
+function ProductDialog({ product, photoRevision, onPhotoChanged, onClose, onSaved }) {
   const editing = Boolean(product);
   const [form, setForm] = useState(() => ({
     sku: product?.sku ?? "",
@@ -463,6 +475,7 @@ function ProductDialog({ product, onClose, onSaved }) {
       title={editing ? "Sửa thông tin mặt hàng" : "Thêm mặt hàng"}
       onClose={onClose}
     >
+      {editing && <ProductPhotoEditor product={product} revision={photoRevision} onChanged={onPhotoChanged} />}
       <form className="stock-form" onSubmit={submit}>
         <label>
           Mã hàng (SKU)

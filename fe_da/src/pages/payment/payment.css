@@ -419,6 +419,7 @@
 .ticket-expanded .ticket-code { text-align:center; }
 .ticket-confirm { background:#fff5ee; border:1px solid #f2d6c3; }
 .payment-workspace .ticket-cancel { color:#a33424; border:1px solid #e8b9b0; background:#fff; }
+.ticket-cancel-reason { margin: 8px 0 12px; color: var(--color-muted); font-size: 14px; }
 .ticket-refund { font-size:14px; color:#496c39; margin-top:16px; }
 .checkout-item-meta { display:block; margin-top:6px; color:var(--color-muted); }
 .ticket-main,.ticket-side { min-width:0; }

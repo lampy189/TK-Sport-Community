@@ -1,4 +1,5 @@
 import PaginatedList from '../../components/ui/PaginatedList';
+import ProductPhoto from '../../components/ui/ProductPhoto';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScanLine, ShoppingBag, Trash2, X } from 'lucide-react';
 import { storeClient } from './storeClient';
@@ -66,6 +67,7 @@ export default function StorePage({ role = 'staff', onOpenOrders }) {
       .filter((product) => (quantities[product.productId] ?? 0) > 0)
       .map((product) => ({
         productId: product.productId,
+        sku: product.sku,
         name: product.name,
         quantity: quantities[product.productId],
         price: product.unitPriceVnd,
@@ -206,6 +208,7 @@ export default function StorePage({ role = 'staff', onOpenOrders }) {
                   const full = qty >= product.quantityOnHand && product.quantityOnHand > 0;
                   return (
                     <article className={`store-card${qty ? ' is-in-cart' : ''}`} key={product.productId}>
+                      <ProductPhoto sku={product.sku} productId={product.productId} large />
                       <div className="store-card-header">
                         <h4>{product.name}</h4>
                         <div className="store-price">{money(product.unitPriceVnd)}</div>
@@ -263,9 +266,12 @@ export default function StorePage({ role = 'staff', onOpenOrders }) {
                     <ul className="store-cart-items">
                       {selectedItems.map((item) => (
                         <li className="store-cart-item" key={item.productId}>
-                          <div className="store-cart-meta">
-                            <strong>{item.name}</strong>
-                            <span>{money(item.price)}</span>
+                          <div className="product-with-photo">
+                            <ProductPhoto sku={item.sku} productId={item.productId} />
+                            <div className="store-cart-meta">
+                              <strong>{item.name}</strong>
+                              <span>{money(item.price)}</span>
+                            </div>
                           </div>
                           <div className="store-line-actions">
                             <div className="store-stepper">

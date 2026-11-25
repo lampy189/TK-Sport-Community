@@ -15,7 +15,12 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
     public async Task<object> ListAsync(CancellationToken ct) => await repository.ListOrdersListAsync(ct);
     public async Task<GoodsOrderView> ReadAsync(long id, CancellationToken ct) => await ViewAsync(await LoadAsync(id, ct), ct);
     private async Task<Order> LoadAsync(long id, CancellationToken ct) => await repository.LoadOrdersAsync(id, ct) ?? throw Error(404, "Không tìm thấy đơn hàng hóa.");
-    private static IReadOnlyList<GoodsLine> Lines(Order o) => o.OrderItems.OrderBy(i => i.Id).Select(i => new GoodsLine(i.ProductId, i.Product.Name, i.Quantity, i.UnitPriceVnd, i.SubtotalVnd)).ToList();
+    private static IReadOnlyList<GoodsLine> Lines(Order order, bool includeSku = false) =>
+        order.OrderItems.OrderBy(item => item.Id).Select(item =>
+            new GoodsLine(item.ProductId, item.Product.Name, item.Quantity, item.UnitPriceVnd, item.SubtotalVnd)
+            {
+                Sku = includeSku ? item.Product.Sku : null
+            }).ToList();
     public static void ValidateCart(Order o)
     {
         if (o.OrderItems.Count == 0 || o.TotalAmount <= 0 || o.OrderItems.Any(i => i.Quantity <= 0 || i.UnitPriceVnd < 0 || (long)i.Quantity * i.UnitPriceVnd != i.SubtotalVnd) || o.OrderItems.Sum(i => (long)i.SubtotalVnd) != o.TotalAmount)
@@ -235,7 +240,7 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
         var payment = order.Payments.OrderByDescending(p => p.Id).FirstOrDefault();
         var json = await AuditValueAsync(order.Id, "goods_checkout", ct) ?? await AuditValueAsync(order.Id, "goods_hold", ct);
         var expiry = json == null ? (DateTimeOffset? )null : JsonDocument.Parse(json).RootElement.GetProperty("ExpiresAt").GetDateTimeOffset();
-        return new(order.Id, order.OrderCode, order.CustomerName, order.TotalAmount, order.Status, order.PaymentState, order.HandoverState, Lines(order), payment?.Method, payment?.ReferenceCode, order.PaymentState == "Pending" && payment?.Status == "pending" && expiry > clock.GetUtcNow() ? payment.CheckoutUrl : null, expiry, await InvoiceRecordAsync(order.Id, ct), CanCancel(order)) { History = await repository.HistoryAsync(order.Id, ct) };
+        return new(order.Id, order.OrderCode, order.CustomerName, order.TotalAmount, order.Status, order.PaymentState, order.HandoverState, Lines(order, includeSku: true), payment?.Method, payment?.ReferenceCode, order.PaymentState == "Pending" && payment?.Status == "pending" && expiry > clock.GetUtcNow() ? payment.CheckoutUrl : null, expiry, await InvoiceRecordAsync(order.Id, ct), CanCancel(order)) { History = await repository.HistoryAsync(order.Id, ct) };
     }
 
     private async Task<GoodsInvoice?> InvoiceRecordAsync(long id, CancellationToken ct)

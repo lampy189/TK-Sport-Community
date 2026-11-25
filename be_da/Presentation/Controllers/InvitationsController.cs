@@ -15,6 +15,10 @@ public sealed class InvitationsController(IInvitationService service, IAntiforge
     public async Task<IActionResult> List(CancellationToken ct) => (await service.ListAsync(UserId, ct)).ToResponse();
     [HttpGet("sessions/{sessionId:long}/candidates")]
     public async Task<IActionResult> Candidates(long sessionId, CancellationToken ct) => (await service.CandidatesAsync(UserId, sessionId, ct)).ToResponse();
+    [HttpGet("friends/{friendPlayerId:long}/eligible-sessions")]
+    public async Task<IActionResult> EligibleSessions(long friendPlayerId, CancellationToken ct) =>
+        (await service.EligibleSessionIdsAsync(UserId, friendPlayerId, ct)).ToResponse();
+
     [HttpPost("sessions/{sessionId:long}")]
     public async Task<IActionResult> Send(long sessionId, InviteSessionRequest request, CancellationToken ct)
     {

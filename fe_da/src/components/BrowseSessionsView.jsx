@@ -1,8 +1,9 @@
 import { DEFAULT_TIME_SLOTS } from "../config/sessionTimeSlots";
 import PaginatedList from './ui/PaginatedList';
 import { useState, useEffect, useMemo } from "react";
-import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, LayoutGrid, MapPin, Users, Sparkles, ArrowRight, SlidersHorizontal, Ticket, Zap } from "lucide-react";
+import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, List, MapPin, Users, Sparkles, ArrowRight, SlidersHorizontal, Ticket, Zap } from "lucide-react";
 import StatePanel from "./ui/StatePanel";
+import SessionCourtPhoto from "./SessionCourtPhoto";
 import "../styles/sessions.css";
 import { api } from "../api";
 import { LateEntryOffers } from '../pages/late-entry/LateEntrySales';
@@ -405,7 +406,7 @@ export function BrowseSessionsView({
         </div>
         <div className="view-mode-toggle" role="group" aria-label="Chế độ hiển thị lịch đấu">
           <button type="button" className={viewMode === "list" ? "view-mode-btn is-active" : "view-mode-btn"} aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")}>
-            <LayoutGrid size={15} />
+            <List size={15} />
             <span>Danh sách</span>
           </button>
           <button type="button" className={viewMode === "timetable" ? "view-mode-btn is-active" : "view-mode-btn"} aria-pressed={viewMode === "timetable"} onClick={() => setViewMode("timetable")}>
@@ -576,71 +577,34 @@ export function BrowseSessionsView({
         setFilterEligibleOnly(false);
       }}>
               Xóa bộ lọc
-            </button>} /> : <div className="session-grid">
-          {<PaginatedList items={openListSessions}>{s => {
-          const isEligible = s.isEligibleSuggestion;
-          const availableSlots = s.availableSlots ?? s.capacity - s.occupiedPlaces;
-          const isFull = availableSlots <= 0;
-          const durationMins = getDurationMinutes(s);
-          const bandLabel = s.band === "B1" ? "Mới chơi / B1" : s.band === "B2" ? "Trung bình / B2" : s.band === "B3" ? "Khá / B3" : s.band || "Tự do";
-          return <article className="session-card" key={s.id}>
-                <div className="session-card-top">
-                  <div className="session-card-badges">
-                    <span className="sport-label">
-                      <ActivityMark />
-                      {s.sportName === "Badminton" ? "Cầu lông" : "Pickleball"}
-                    </span>
-                    {<span className="session-duration-badge">
-                        Lịch Social · {durationMins} phút
-                      </span>}
-                  </div>
-                  <span className={isFull ? "session-status is-full" : "session-status"}>
-                    {isFull ? "Đã hết chỗ" : `Còn ${availableSlots}/${s.capacity} chỗ`}
-                  </span>
+            </button>} /> : <div className="session-list">
+          <PaginatedList items={openListSessions}>{s => {
+            const availableSlots = s.availableSlots ?? s.capacity - s.occupiedPlaces;
+            const bandLabel = s.band === "B1" ? "Mới chơi / B1" : s.band === "B2" ? "Trung bình / B2" : s.band === "B3" ? "Khá / B3" : s.band || "Tự do";
+            return (
+              <article className="session-card session-list-row" key={s.id}>
+                <SessionCourtPhoto session={s} />
+                <div className="session-row-main">
+                  <h3>{getSessionTitle(s)}</h3>
+                  <ul className="session-meta">
+                    <li><MapPin size={16} aria-hidden="true" /> <span>{s.courtName}{s.venueName ? ` · ${s.venueName}` : ""}</span></li>
+                    <li><Clock size={16} aria-hidden="true" /> <span><strong>{s.timeLabel || `${s.startTime} - ${s.endTime}`}</strong> · {formatSessionDate(s.sessionDate)}</span></li>
+                    <li><Users size={16} aria-hidden="true" /> <span>{bandLabel}</span></li>
+                  </ul>
+                  {s.isEligibleSuggestion === true && <span className="session-match">
+                    <Sparkles size={14} aria-hidden="true" /> Phù hợp trình độ của bạn
+                  </span>}
                 </div>
-                <h3>{getSessionTitle(s)}</h3>
-                {isEligible === true && <span className="session-match">
-                      <Sparkles size={14} /> Phù hợp trình độ của bạn
-                    </span>}
-                <ul className="session-meta">
-                  <li>
-                    <MapPin size={16} />
-                    <span>
-                      Sân thi đấu: <strong>{s.courtName}</strong>
-                    </span>
-                  </li>
-                  <li>
-                    <CalendarDays size={16} />
-                    <span>Ngày: {formatSessionDate(s.sessionDate)}</span>
-                  </li>
-                  <li>
-                    <Clock size={16} />
-                    <span>
-                      {s.timeLabel || `${s.startTime} - ${s.endTime}`}{" "}
-                      <strong>
-                        ({`${durationMins} phút`})
-                      </strong>
-                    </span>
-                  </li>
-                  <li>
-                    <Users size={16} />
-                    <span>
-                      Trình độ: <strong>{bandLabel}</strong>
-                    </span>
-                  </li>
-                </ul>
-                <div className="session-card-bottom">
-                  <div className="session-price">
-                    {formatPrice(s.priceVnd)}
-                    <span>{"/ người"}</span>
-                  </div>
-                  <button className={`button ${"button-accent"}`} onClick={() => onSelectSession(s.id)}>
-                    {"Xem buổi chơi"}{" "}
-                    <ArrowRight size={16} />
+                <div className="session-row-booking">
+                  <span className="session-status">Còn {availableSlots}/{s.capacity} chỗ</span>
+                  <div className="session-price">{formatPrice(s.priceVnd)} <span>/ người</span></div>
+                  <button type="button" className="button button-accent" onClick={() => onSelectSession(s.id)}>
+                    Xem buổi chơi <ArrowRight size={16} aria-hidden="true" />
                   </button>
                 </div>
-              </article>;
-        }}</PaginatedList>}
+              </article>
+            );
+          }}</PaginatedList>
         </div>}
       </>}
       <aside className="tickets-callout">
@@ -656,7 +620,4 @@ export function BrowseSessionsView({
         </button>
       </aside>
     </div>;
-}
-function ActivityMark() {
-  return <span className="sport-dot" aria-hidden="true" />;
 }

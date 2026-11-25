@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Users, UserPlus, ShieldCheck, Sparkles, CheckCircle2, Clock } from "lucide-react";
 import StatePanel from "./ui/StatePanel";
+import SessionCourtPhoto from "./SessionCourtPhoto";
 import { PublicPlayerProfileModal } from "./PublicPlayerProfileModal";
 import { InviteFriendsToSessionModal } from "./SessionInviteCard";
 import "../styles/sessions.css";
@@ -249,6 +250,7 @@ export function SessionDetailView({
       <LateEntryPurchase sessionId={sessionId} user={user} onLogin={onOpenLogin} onPayment={onPayment} />
       <div className="session-detail-grid">
         <section className="detail-card">
+          <SessionCourtPhoto session={summary} detail />
           <div className="detail-section-title">
             <h2>
               {"Thông tin buổi chơi"}
