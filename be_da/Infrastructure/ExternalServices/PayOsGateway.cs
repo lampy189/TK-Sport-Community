@@ -75,7 +75,7 @@ public sealed class PayOsGateway(IConfiguration config, IPayOsClientFactory fact
             try
             {
                 var link = await client.PaymentRequests.CreateAsync(BuildRequest(paymentId, orderId, amount, expiresAt, goods));
-                return new(ToPaymentId(link.OrderCode), link.Amount, link.PaymentLinkId, link.CheckoutUrl, Status(link.Status));
+                return new(ToPaymentId(link.OrderCode), link.Amount, link.PaymentLinkId, link.CheckoutUrl, Status(link.Status)) { QrCode = link.QrCode };
             }
             catch (ApiException)
             {

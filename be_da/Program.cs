@@ -39,6 +39,25 @@ if (trustedProxies.Length > 0)
         foreach (var address in trustedProxies) options.KnownProxies.Add(System.Net.IPAddress.Parse(address));
     });
 builder.Services.AddControllers();
+builder.Services.AddOptions<be_da.Application.DTOs.ZaloOptions>().Bind(builder.Configuration.GetSection("Zalo"))
+    .Validate(o => !o.Enabled || (!string.IsNullOrWhiteSpace(o.AppId) && !string.IsNullOrWhiteSpace(o.OaId)
+        && !string.IsNullOrWhiteSpace(o.OaSecretKey) && (!string.IsNullOrWhiteSpace(o.AccessToken) || !string.IsNullOrWhiteSpace(o.RefreshToken))),
+        "Zalo enabled requires AppId, OaId, OaSecretKey and an access/refresh token.")
+    .Validate(o=>!o.Enabled || string.IsNullOrWhiteSpace(o.RefreshToken)
+        || (!string.IsNullOrWhiteSpace(o.AppSecret) && Path.IsPathFullyQualified(o.TokenFile)
+            && !Path.GetFullPath(o.TokenFile).StartsWith(Path.Combine(builder.Environment.ContentRootPath,"wwwroot"),StringComparison.OrdinalIgnoreCase)),
+        "Zalo refresh requires AppSecret and an absolute private TokenFile path outside wwwroot.").ValidateOnStart();
+builder.Services.AddDataProtection();
+builder.Services.AddSingleton<be_da.Infrastructure.ExternalServices.ZaloTokenProvider>();
+builder.Services.AddScoped<be_da.Infrastructure.ExternalServices.ZaloWebhookVerifier>();
+builder.Services.AddScoped<be_da.Infrastructure.Persistence.Repositories.SqlZaloStore>();
+builder.Services.AddScoped<be_da.Application.DTOs.IZaloBookingProcessor,be_da.Infrastructure.Services.ZaloBookingService>();
+builder.Services.AddScoped<be_da.Application.DTOs.IZaloWebhookService,be_da.Infrastructure.Services.ZaloWebhookService>();
+builder.Services.AddHttpClient<be_da.Application.DTOs.IZaloIntentInterpreter,be_da.Infrastructure.ExternalServices.OpenAiZaloIntentInterpreter>(c=>c.Timeout=TimeSpan.FromSeconds(45));
+builder.Services.AddHttpClient<be_da.Infrastructure.ExternalServices.ZaloOaClient>(c=>c.Timeout=TimeSpan.FromSeconds(20))
+    .RedactLoggedHeaders(new[]{"access_token","Authorization"});
+builder.Services.AddHttpClient("zalo-token",c=>c.Timeout=TimeSpan.FromSeconds(20)).RedactLoggedHeaders(new[]{"secret_key"});
+builder.Services.AddHostedService<be_da.Presentation.BackgroundServices.ZaloBookingWorker>();
 builder.Services.AddScoped<be_da.Application.Interfaces.Repositories.IOwnerPolicyRepository, be_da.Infrastructure.Persistence.Repositories.OwnerPolicyRepository>();
 builder.Services.AddScoped<be_da.Application.Interfaces.Services.IOwnerPolicyService, be_da.Application.Services.OwnerPolicyService>();
 builder.Services.AddScoped<be_da.Application.Interfaces.Services.IBusinessReportService, be_da.Application.Services.BusinessReportService>();
