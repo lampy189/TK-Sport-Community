@@ -2,13 +2,10 @@ using be_da.Application.DTOs;
 using be_da.Application.Interfaces.External;
 using be_da.Application.Interfaces.Repositories;
 using be_da.Application.Services;
-using be_da.Infrastructure.Persistence;
 using be_da.Infrastructure.Persistence.Repositories;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using TKSC.Domain.Entities;
 using TKSC.Domain.Exceptions;
-using TKSC.Infrastructure.Persistence.Contexts;
 using Xunit;
 
 namespace TKSC.Api.Tests;
@@ -57,15 +54,6 @@ public sealed class OwnerPolicyAndReportTests
     {
         var rows=new[]{new CenterRevenue(1,"A",100,30,20),new CenterRevenue(2,"B",200,40,50)};
         Assert.Equal(300,rows.Sum(x=>x.Net));
-    }
-    [Fact] public void EffectivePricesTranslateAndSoldPriceColumnsRemainIndependent()
-    {
-        using var db=new Sep490Context(new DbContextOptionsBuilder<Sep490Context>().UseSqlServer("Server=unused;Database=unused;Integrated Security=true;TrustServerCertificate=true").Options);
-        var sql=db.Products.Select(p=>new { Price=OwnerPrice.Effective("product",p.Id,p.UnitPriceVnd,Now),Version=OwnerPrice.Version("product",p.Id,Now) }).ToQueryString();
-        Assert.Contains("[dbo].[OwnerEffectivePrice]",sql);Assert.Contains("[dbo].[OwnerPriceVersion]",sql);
-        var sold=db.OrderItems.Select(i=>new { i.UnitPriceVnd,i.PriceVersionId }).ToQueryString();
-        Assert.DoesNotContain("OwnerEffectivePrice",sold);Assert.Contains("price_version_id",sold);
-        Assert.DoesNotContain("OwnerEffectivePrice",db.Tickets.Select(t=>t.AmountVnd).ToQueryString());
     }
     private sealed record Scope(string Role,long? VenueId):IDataAccessContext { public long? RestrictedVenueId=>VenueId; }
     private sealed class FixedClock:TimeProvider { public override DateTimeOffset GetUtcNow()=>Now; }

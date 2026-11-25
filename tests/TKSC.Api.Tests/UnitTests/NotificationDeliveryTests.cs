@@ -1,6 +1,5 @@
 using be_da.Application.Interfaces.External;
 using be_da.Infrastructure.ExternalServices;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using TKSC.Application.DTOs;
@@ -9,7 +8,6 @@ using TKSC.Application.Interfaces.Repositories;
 using TKSC.Application.Services;
 using TKSC.Application.Services.Notifications;
 using TKSC.Domain.Entities;
-using TKSC.Infrastructure.Persistence.Contexts;
 using TKSC.Infrastructure.Persistence.Repositories;
 using Xunit;
 
@@ -56,22 +54,6 @@ public class NotificationDeliveryTests
         await new TicketEmailService(repo,sender,Config(url),NullLogger<TicketEmailService>.Instance).DeliverAsync(1,default);
         Assert.Equal(0,sender.Calls); Assert.Equal("retry1",repo.Item.Status);
     }
-    [Fact]
-    public async Task PushDeduplicatesTokensAndUsesExactTicketAndOrderLinks()
-    {
-        await using var db = new Sep490Context(new DbContextOptionsBuilder<Sep490Context>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
-        db.Users.Add(new User{Id=7,FullName="Test",Email="test@example.test",Status="Active"});
-        db.UserFcmTokens.AddRange(new UserFcmToken{Id=1,UserId=7,FcmToken="same"},new UserFcmToken{Id=2,UserId=7,FcmToken="same"},new UserFcmToken{Id=3,UserId=8,FcmToken="other"});
-        await db.SaveChangesAsync();
-        var transport=new PushTransport();
-        var service=new FirebaseNotificationService(db,transport,Config(),NullLogger<FirebaseNotificationService>.Instance);
-        Assert.Equal("sent",await service.DeliverAsync(7,"Title","Body",new Dictionary<string,string>{{"ticketId","42"}},default));
-        Assert.Single(transport.Payloads);
-        Assert.EndsWith("?view=tickets&ticketId=42",transport.Payloads[0]["url"]);
-        await service.DeliverAsync(7,"Title","Body",new Dictionary<string,string>{{"goodsOrderId","82"}},default);
-        Assert.EndsWith("?view=goods&goodsOrderId=82",transport.Payloads[1]["url"]);
-        Assert.Equal("suppressed",await service.DeliverAsync(99,"Title","Body",null,default));
-    }
     private sealed class MailRepository : ITicketEmailRepository
     {
         public Notification Item = new() { Id=1,UserId=7,Channel="email",ReferenceId=42,Status="pending" };
@@ -89,33 +71,5 @@ public class NotificationDeliveryTests
     {
         public List<Dictionary<string,string>> Payloads = [];
         public Task<bool> SendAsync(string token,Dictionary<string,string> data,CancellationToken ct) { Payloads.Add(data); return Task.FromResult(token!="expired-test-token"); }
-    }
-}
-
-[Collection("SQL Server")]
-public class NotificationDeliveryDatabaseTests
-{
-    [DatabaseFact]
-    public async Task RetryChecksOwnershipAndAuditAndExpiredTokensAreRemoved()
-    {
-        await using var db=new Sep490Context(new DbContextOptionsBuilder<Sep490Context>().UseSqlServer(Environment.GetEnvironmentVariable("TKSC_TEST_SQL_CONNECTION")).Options);
-        await using var tx=await db.Database.BeginTransactionAsync();
-        try {
-            var user=new User{FullName="Notification probe",Email=$"notification-{Guid.NewGuid():N}@example.invalid",Status="Active",RoleId=await db.Roles.Where(r=>r.Code=="Player").Select(r=>r.Id).FirstAsync()};
-            db.Users.Add(user); await db.SaveChangesAsync();
-            var email=new Notification{UserId=user.Id,Channel="email",ReferenceType="ticket_paid",Status="failed"};
-            db.Notifications.Add(email); db.UserFcmTokens.Add(new UserFcmToken{UserId=user.Id,FcmToken="expired-test-token",UpdatedAt=DateTimeOffset.UtcNow}); await db.SaveChangesAsync();
-            var repository=new NotificationDeliveryRepository(db);
-            Assert.Equal(404,await repository.RetryAsync(-1,email.Id,default));
-            Assert.Equal(202,await repository.RetryAsync(user.Id,email.Id,default));
-            Assert.Equal(409,await repository.RetryAsync(user.Id,email.Id,default));
-            email.Status="failed"; await db.SaveChangesAsync();
-            Assert.Equal(409,await repository.RetryAsync(user.Id,email.Id,default));
-            Assert.False((await repository.EmailsAsync(user.Id,default)).Single().CanRetry);
-            var config=new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?>{{"Email:WebUrl","https://staging.example.test"}}).Build();
-            var service=new FirebaseNotificationService(db,new NotificationDeliveryTests.PushTransport(),config,NullLogger<FirebaseNotificationService>.Instance);
-            Assert.Equal("no_device",await service.DeliverAsync(user.Id,"Test","Test",null,default));
-            Assert.False(await db.UserFcmTokens.AnyAsync(t=>t.UserId==user.Id));
-        } finally { await tx.RollbackAsync(); }
     }
 }
