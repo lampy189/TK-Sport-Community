@@ -744,3 +744,46 @@
 .stock-table-wrap {
   position: relative;
 }
+.my-order-products {
+  display: grid;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.stock-photo-editor {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.stock-photo-editor .product-photo {
+  width: 86px;
+}
+
+.stock-photo-controls {
+  display: grid;
+  flex: 1 1 220px;
+  min-width: 0;
+  gap: 6px;
+}
+
+.stock-photo-controls label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.stock-photo-controls input {
+  width: 100%;
+}
+
+.stock-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

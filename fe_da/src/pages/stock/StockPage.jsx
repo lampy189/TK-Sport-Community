@@ -21,6 +21,8 @@ import BulkReceiptView from "./BulkReceiptView";
 import StockCountsView, { CountDialog } from "./StockCountsView";
 import SupplyReportView from "./SupplyReportView";
 import Dialog from "./StockDialog";
+import ProductPhoto from "../../components/ui/ProductPhoto";
+import ProductPhotoEditor from "./ProductPhotoEditor";
 import "./stock.css";
 
 const money = (value) =>
@@ -84,6 +86,11 @@ function StockCatalog({ canCount = true }) {
   const [onlyLow, setOnlyLow] = useState(false);
   const [showInactive] = useState(false);
   const [dialog, setDialog] = useState(null);
+  const [photoRevisions, setPhotoRevisions] = useState({});
+
+  function photoChanged(id) {
+    setPhotoRevisions(revisions => ({ ...revisions, [id]: (revisions[id] ?? 0) + 1 }));
+  }
 
   const [reloadKey, setReloadKey] = useState(0);
   useEffect(() => {
@@ -244,8 +251,10 @@ function StockCatalog({ canCount = true }) {
               {<PaginatedList items={visible} columns={6}>{(p) => (
                 <tr key={p.id} className={p.isActive ? "" : "is-inactive"}>
                   <td data-label="Mặt hàng">
-                    <strong>{p.name}</strong>
-                    <span className="stock-sku">{p.sku}</span>
+                    <div className="product-with-photo">
+                      <ProductPhoto sku={p.sku} productId={p.id} revision={photoRevisions[p.id]} />
+                      <div><strong>{p.name}</strong><span className="stock-sku">{p.sku}</span></div>
+                    </div>
                   </td>
                   <td data-label="Nhóm">
                     {categoryLabels[p.category] || p.category || "—"}
@@ -345,6 +354,8 @@ function StockCatalog({ canCount = true }) {
       {dialog?.kind === "product" && (
         <ProductDialog
           product={dialog.product}
+          photoRevision={photoRevisions[dialog.product?.id]}
+          onPhotoChanged={photoChanged}
           onClose={() => setDialog(null)}
           onSaved={(product) =>
             saved(
@@ -390,7 +401,7 @@ function StockCatalog({ canCount = true }) {
   );
 }
 
-function ProductDialog({ product, onClose, onSaved }) {
+function ProductDialog({ product, photoRevision, onPhotoChanged, onClose, onSaved }) {
   const editing = Boolean(product);
   const [form, setForm] = useState(() => ({
     sku: product?.sku ?? "",
@@ -463,6 +474,7 @@ function ProductDialog({ product, onClose, onSaved }) {
       title={editing ? "Sửa thông tin mặt hàng" : "Thêm mặt hàng"}
       onClose={onClose}
     >
+      {editing && <ProductPhotoEditor product={product} revision={photoRevision} onChanged={onPhotoChanged} />}
       <form className="stock-form" onSubmit={submit}>
         <label>
           Mã hàng (SKU)

@@ -5,6 +5,7 @@ import { workflowRequest } from "../workflowClient";
 import "../workflow.css";
 import "./recovery.css";
 import GoodsHandoverPanel from "../stock/GoodsHandoverPanel";
+import ProductPhoto from "../../components/ui/ProductPhoto";
 
 const root = "/api/v1/commerce/goods-orders";
 const money = n => `${Number(n).toLocaleString("vi-VN")} ₫`;
@@ -92,7 +93,14 @@ export default function GoodsPaymentPage({ initialOrderId }) {
         <h3>{order.orderCode} · {order.customerName || "Khách tại quầy"}</h3>
         <p>{stateLabel[order.status] || order.status} · {stateLabel[order.paymentState] || order.paymentState || "Chưa thanh toán"}</p>
         <div className="workflow-table"><table><thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead><tbody>
-          {order.lines.map((line, i) => <tr key={i}><td>{line.name}</td><td>{line.quantity}</td><td>{money(line.unitPriceVnd)}</td><td>{money(line.subtotalVnd)}</td></tr>)}
+          {order.lines.map(line => (
+            <tr key={line.productId}>
+              <td><div className="product-with-photo"><ProductPhoto sku={line.sku} productId={line.productId} />{line.name}</div></td>
+              <td>{line.quantity}</td>
+              <td>{money(line.unitPriceVnd)}</td>
+              <td>{money(line.subtotalVnd)}</td>
+            </tr>
+          ))}
         </tbody></table></div><strong>Tổng thanh toán: {money(order.totalAmount)}</strong>
         {order.expiresAt && !paid && <p>Hạn giữ hàng: {new Date(order.expiresAt).toLocaleString('vi-VN')}</p>}
         {!paid && order.paymentState!=='NeedsReview' && order.status!=='Cancelled' && <button className="button button-secondary" disabled={busy} onClick={()=>mutate('cancel')}>Hủy đơn / trả hàng giữ về kho</button>}

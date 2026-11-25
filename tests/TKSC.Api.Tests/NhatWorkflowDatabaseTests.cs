@@ -141,6 +141,84 @@ public sealed class NhatWorkflowDatabaseTests
         Assert.Equal(1,await f.Sql("SELECT COUNT(*) FROM dbo.tickets WHERE session_id=@s",("@s",session)));
     }
     [WorkflowDatabaseFact]
+    public async Task LastSeatCreatesOnlyOnePayableOrderAndReturnsToSaleAfterExpiry()
+    {
+        var f = new Fixture();
+        await f.Init();
+        await f.SetInvitationSkillProfiles();
+        var session = await f.Session(capacity: 1);
+        var players = new[] { f.A, f.B };
+        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var attempts = players.Select(async user =>
+        {
+            await start.Task;
+            return (User: user, Result: await f.Sessions().RegisterSessionAsync(user, session, default));
+        }).ToArray();
+
+        start.SetResult();
+        var results = await Task.WhenAll(attempts);
+        var winner = Assert.Single(results, item => item.Result.Success);
+        var loser = Assert.Single(results, item => !item.Result.Success);
+        Assert.Equal("SESSION_FULL", loser.Result.ErrorCode);
+        Assert.Null(loser.Result.OrderId);
+        Assert.Null(loser.Result.TicketId);
+        Assert.Equal(1, await f.Sql("SELECT COUNT(*) FROM dbo.social_booking_orders WHERE payer_id IN (@a,@b)",
+            ("@a", f.A), ("@b", f.B)));
+        Assert.Equal(winner.User, await f.Sql("SELECT payer_id FROM dbo.social_booking_orders WHERE id=@id",
+            ("@id", winner.Result.OrderId)));
+        Assert.Equal(1, await f.Sql("SELECT COUNT(*) FROM dbo.tickets WHERE session_id=@session", ("@session", session)));
+
+        await f.Sql("UPDATE dbo.social_booking_orders SET expires_at=DATEADD(second,-1,SYSDATETIMEOFFSET()) WHERE id=@id; SELECT 1;",
+            ("@id", winner.Result.OrderId));
+        var retry = await f.Sessions().RegisterSessionAsync(loser.User, session, default);
+        Assert.True(retry.Success, retry.Message);
+        Assert.NotEqual(winner.Result.OrderId, retry.OrderId);
+    }
+
+    private sealed class PaidTestGateway : TKSC.Application.Interfaces.External.IPaymentGateway
+    {
+        private TKSC.Application.DTOs.VerifiedBankEvent payment = null!;
+        public void ValidateConfiguration() { }
+        public Task<TKSC.Application.DTOs.GatewayCheckout> CreateAsync(long paymentId, long orderId, int amount, DateTimeOffset expiresAt)
+        {
+            var link = $"test-{paymentId}";
+            payment = new(paymentId, amount, link, link, "VND", true, "{}");
+            return Task.FromResult(new TKSC.Application.DTOs.GatewayCheckout(paymentId, amount, link, $"https://example.invalid/{link}", "PENDING"));
+        }
+        public Task<TKSC.Application.DTOs.GatewayStatus> GetAsync(long paymentId) =>
+            Task.FromResult(new TKSC.Application.DTOs.GatewayStatus(paymentId, payment.Amount, "PAID", payment.LinkId));
+        public Task<TKSC.Application.DTOs.VerifiedBankEvent> VerifyAsync(string payload) => Task.FromResult(payment);
+    }
+
+    [WorkflowDatabaseFact]
+    public async Task FirstHoldCanPayWhileAnotherPlayerAttemptsTheLastSeat()
+    {
+        var f = new Fixture();
+        await f.Init();
+        await f.SetInvitationSkillProfiles();
+        var session = await f.Session(capacity: 1);
+        var first = await f.Sessions().RegisterSessionAsync(f.A, session, default);
+        Assert.True(first.Success, first.Message);
+        var options = new DbContextOptionsBuilder<TKSC.Infrastructure.Persistence.Contexts.Sep490Context>()
+            .UseSqlServer(f.Connection).Options;
+        await using var db = new TKSC.Infrastructure.Persistence.Contexts.Sep490Context(options);
+        var service = new TKSC.Application.Services.PaymentService(
+            new TKSC.Infrastructure.Persistence.Repositories.PaymentRepository(db), new PaidTestGateway(), TimeProvider.System);
+        await service.ProcessAsync(first.OrderId!.Value, f.A);
+
+        var confirming = service.HandleWebhookAsync("test");
+        var second = f.Sessions().RegisterSessionAsync(f.B, session, default);
+        await Task.WhenAll(confirming, second);
+        Assert.Equal("SESSION_FULL", (await second).ErrorCode);
+        Assert.Null((await second).OrderId);
+        Assert.Equal(1, await f.Sql("""
+            SELECT COUNT(*) FROM dbo.tickets t JOIN dbo.social_booking_orders o ON o.id=t.order_id
+            WHERE t.session_id=@session AND t.player_id=@player AND LOWER(t.status)='confirmed' AND LOWER(o.status)='paid'
+            """, ("@session",session), ("@player",f.PlayerA)));
+        Assert.Equal(0, await f.Sql("SELECT COUNT(*) FROM dbo.social_booking_orders WHERE payer_id=@loser", ("@loser", f.B)));
+    }
+
+    [WorkflowDatabaseFact]
     public async Task ConcurrentAcceptsNeverOverbookTheLastPlace()
     {
         var f=new Fixture(); await f.Init();await f.SetInvitationSkillProfiles();var session=await f.Session(1);

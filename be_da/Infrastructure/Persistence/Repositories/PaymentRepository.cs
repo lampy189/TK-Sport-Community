@@ -99,58 +99,69 @@ public sealed class PaymentRepository(Sep490Context db) : IPaymentRepository
     public Task<long?> FindOrderForPaymentAsync(long paymentId) => db.Payments.AsNoTracking().Where(p => p.Id == paymentId && p.Method == "payos").Select(p => p.OrderId).SingleOrDefaultAsync();
     public async Task<T> InTransactionAsync<T>(long? orderId, string? eventKey, Func<SocialBookingOrder?, Task<T>> action)
     {
-        // Avoid stale tracked entities between the two phases of a gateway request.
-        db.ChangeTracker.Clear();
-        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
-        if (eventKey is not null)
+        while (true)
         {
-            // Same bank reference must be processed once even if delivered against different orders.
-            await db.Database.ExecuteSqlInterpolatedAsync($@"
-                DECLARE @result int;
-                EXEC @result = sp_getapplock @Resource={eventKey}, @LockMode='Exclusive',
-                    @LockOwner='Transaction', @LockTimeout=10000;
-                IF @result < 0 THROW 51000, 'Cannot acquire payment event lock', 1;");
-        }
+            // Avoid stale tracked entities between the two phases of a gateway request.
+            db.ChangeTracker.Clear();
+            // Discover the sessions without keeping ticket locks while waiting for a booking.
+            var sessionIds = orderId.HasValue
+                ? await db.Tickets.AsNoTracking().Where(t => t.OrderId == orderId.Value)
+                    .Select(t => t.SessionId).Distinct().OrderBy(id => id).ToListAsync()
+                : [];
+            await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            if (eventKey is not null)
+            {
+                // Same bank reference must be processed once even if delivered against different orders.
+                await db.Database.ExecuteSqlInterpolatedAsync($@"
+                    DECLARE @result int;
+                    EXEC @result = sp_getapplock @Resource={eventKey}, @LockMode='Exclusive',
+                        @LockOwner='Transaction', @LockTimeout=10000;
+                    IF @result < 0 THROW 51000, 'Cannot acquire payment event lock', 1;");
+            }
 
-        SocialBookingOrder? order = null;
-        if (orderId is not null)
-        {
-            order = await db.SocialBookingOrders.FromSqlInterpolated($"SELECT * FROM social_booking_orders WITH (UPDLOCK, HOLDLOCK) WHERE id = {orderId.Value}").SingleOrDefaultAsync();
+            // Registration also locks the session before checking tickets and orders.
+            // Tracking the sessions here lets EF populate Ticket.Session when tickets load.
+            foreach (var sessionId in sessionIds)
+                await db.Sessions.FromSqlInterpolated($"SELECT * FROM sessions WITH (UPDLOCK,HOLDLOCK) WHERE id={sessionId}").SingleAsync();
+
+            SocialBookingOrder? order = null;
+            if (orderId is not null)
+            {
+                order = await db.SocialBookingOrders.FromSqlInterpolated($"SELECT * FROM social_booking_orders WITH (UPDLOCK, HOLDLOCK) WHERE id = {orderId.Value}").SingleOrDefaultAsync();
+                if (order is not null)
+                {
+                    await db.Entry(order).Collection(o => o.Payments).LoadAsync();
+                    await db.Entry(order).Collection(o => o.Tickets).LoadAsync();
+                    // A transfer may have moved a ticket since discovery. Release the locks
+                    // and acquire the new set in order before invoking the payment action.
+                    if (order.Tickets.Any(t => !sessionIds.Contains(t.SessionId)))
+                        continue;
+
+                    foreach (var ticket in order.Tickets.Where(t => TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode)))
+                        await be_da.Infrastructure.Persistence.Repositories.LateEntrySql.ValidatePayment((SqlConnection)db.Database.GetDbConnection(), (SqlTransaction)transaction.GetDbTransaction(), ticket, DateTimeOffset.UtcNow);
+                }
+            }
+
+            var previousOrder = order?.Status ?? "";
+            var previousTickets = order?.Tickets.ToDictionary(t => t.Id, t => t.Status) ?? new Dictionary<long, string>();
+            var result = await action(order);
             if (order is not null)
             {
-                await db.Entry(order).Collection(o => o.Payments).LoadAsync();
-                await db.Entry(order).Collection(o => o.Tickets).LoadAsync();
-                foreach (var sessionId in order.Tickets.Select(t => t.SessionId).Distinct().OrderBy(id => id))
+                foreach (var ticket in order.Tickets)
                 {
-                    var session = await db.Sessions.FromSqlInterpolated($"SELECT * FROM sessions WITH (UPDLOCK,HOLDLOCK) WHERE id={sessionId}").SingleAsync();
-                    foreach (var ticket in order.Tickets.Where(t => t.SessionId == sessionId))
-                        ticket.Session = session;
+                    var kind = TicketNotifications.Event(previousTickets.GetValueOrDefault(ticket.Id, ""), ticket.Status, previousOrder, order.Status);
+                    if (kind is null)
+                        continue;
+                    var holderId = await db.Players.Where(p => p.Id == ticket.PlayerId).Select(p => p.UserId).SingleAsync();
+                    db.Notifications.AddRange(TicketNotifications.Create(kind, ticket.Id, order.PayerId, holderId));
                 }
 
-                foreach (var ticket in order.Tickets.Where(t => TKSC.Domain.Payments.LateEntryRules.IsLate(t.TicketCode)))
-                    await be_da.Infrastructure.Persistence.Repositories.LateEntrySql.ValidatePayment((SqlConnection)db.Database.GetDbConnection(), (SqlTransaction)transaction.GetDbTransaction(), ticket, DateTimeOffset.UtcNow);
-            }
-        }
-
-        var previousOrder = order?.Status ?? "";
-        var previousTickets = order?.Tickets.ToDictionary(t => t.Id, t => t.Status) ?? new Dictionary<long, string>();
-        var result = await action(order);
-        if (order is not null)
-        {
-            foreach (var ticket in order.Tickets)
-            {
-                var kind = TicketNotifications.Event(previousTickets.GetValueOrDefault(ticket.Id, ""), ticket.Status, previousOrder, order.Status);
-                if (kind is null)
-                    continue;
-                var holderId = await db.Players.Where(p => p.Id == ticket.PlayerId).Select(p => p.UserId).SingleAsync();
-                db.Notifications.AddRange(TicketNotifications.Create(kind, ticket.Id, order.PayerId, holderId));
+                await db.SaveChangesAsync();
             }
 
-            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return result;
         }
-
-        await transaction.CommitAsync();
-        return result;
     }
 
     public Task<bool> EventExistsAsync(string externalId) => db.BankTransactions.AnyAsync(e => e.ExternalId == externalId);

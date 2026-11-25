@@ -270,22 +270,8 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         try
         {
-            // Find player ID for user
-            long playerId;
-            await using (var playerCmd = new SqlCommand("SELECT p.id FROM dbo.players p WITH (UPDLOCK,HOLDLOCK) JOIN dbo.users u ON u.id=p.user_id WHERE p.user_id=@userId AND LOWER(u.status)='active' AND u.deleted_at IS NULL;", connection, transaction))
-            {
-                playerCmd.Parameters.Add("@userId", SqlDbType.BigInt).Value = userId;
-                var res = await playerCmd.ExecuteScalarAsync(cancellationToken);
-                if (res == null)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    return new RegisterSessionResult(false, "SKILL_INELIGIBLE", "Người chơi chưa làm khảo sát kỹ năng.", "chưa làm survey");
-                }
-
-                playerId = Convert.ToInt64(res);
-            }
-
-            // Lock and inspect session
+            // Serialize contenders on the session before taking any player locks.
+            // The next registration sees the committed hold before it checks capacity.
             const string sessionLockSql = """
                 SELECT s.id, s.sport_id, s.band, s.capacity, dbo.OwnerEffectivePrice('session',s.id,s.price_vnd,@quoteAt), s.status, s.session_date, ts.start_time, ts.end_time, dbo.OwnerPriceVersion('session',s.id,@quoteAt)
                 FROM dbo.sessions s WITH (UPDLOCK, HOLDLOCK)
@@ -326,6 +312,21 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 startTime = reader.GetTimeSpan(7);
                 endTime = reader.GetTimeSpan(8);
                 priceVersionId=reader.IsDBNull(9)?null:reader.GetInt64(9);
+            }
+
+            // Find player ID for user
+            long playerId;
+            await using (var playerCmd = new SqlCommand("SELECT p.id FROM dbo.players p WITH (UPDLOCK,HOLDLOCK) JOIN dbo.users u ON u.id=p.user_id WHERE p.user_id=@userId AND LOWER(u.status)='active' AND u.deleted_at IS NULL;", connection, transaction))
+            {
+                playerCmd.Parameters.Add("@userId", SqlDbType.BigInt).Value = userId;
+                var res = await playerCmd.ExecuteScalarAsync(cancellationToken);
+                if (res == null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return new RegisterSessionResult(false, "SKILL_INELIGIBLE", "Người chơi chưa làm khảo sát kỹ năng.", "chưa làm survey");
+                }
+
+                playerId = Convert.ToInt64(res);
             }
 
             // Consent and the hold share a transaction; only the invitee can accept.

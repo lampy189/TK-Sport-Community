@@ -78,6 +78,41 @@ public sealed class InvitationRepository(IConfiguration configuration, IDataAcce
         }
         return result;
     }
+    public async Task<IReadOnlyList<long>> EligibleSessionIdsAsync(long userId, long friendPlayerId, CancellationToken ct)
+    {
+        await using var connection = await Open(ct);
+        await WorkflowSql.RequireInvitations(connection, null, ct);
+
+        const string sql = $"""
+            SELECT s.id
+            {WorkflowSql.InvitationSessionJoins}
+            WHERE s.session_date >= CONVERT(date, SWITCHOFFSET(SYSDATETIMEOFFSET(), '+07:00'))
+              AND (@venue IS NULL OR cr.venue_id=@venue)
+              AND EXISTS (
+                  SELECT 1 FROM dbo.players me JOIN dbo.users inviter ON inviter.id=me.user_id
+                  JOIN dbo.friendships f ON (
+                      (f.requester_id=me.id AND f.addressee_id=@player)
+                      OR (f.addressee_id=me.id AND f.requester_id=@player)
+                  )
+                  WHERE inviter.id=@user AND inviter.deleted_at IS NULL AND LOWER(inviter.status)='active'
+                    AND me.id<>@player AND LOWER(f.status)='accepted'
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM dbo.invitations i WHERE i.session_id=s.id AND i.invitee_id=@player
+                    AND (LOWER(i.status)='accepted' OR (LOWER(i.status)='pending'
+                         AND i.expires_at>SYSDATETIMEOFFSET() AND i.payer_user_id=p.user_id))
+              )
+              AND ({WorkflowSql.InvitationEligibility}) IS NULL;
+            """;
+        await using var command = WorkflowSql.Command(connection, null, sql,
+            ("@user", userId), ("@player", friendPlayerId), ("@venue", scope.RestrictedVenueId));
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var sessionIds = new List<long>();
+        while (await reader.ReadAsync(ct))
+            sessionIds.Add(reader.GetInt64(0));
+        return sessionIds;
+    }
+
     public async Task<OperationResult> SendAsync(long userId, long sessionId, InviteSessionRequest request, CancellationToken ct)
     {
         await using var c = await Open(ct);

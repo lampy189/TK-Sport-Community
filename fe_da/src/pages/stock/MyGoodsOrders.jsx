@@ -1,4 +1,5 @@
 import PaginatedList from '../../components/ui/PaginatedList';
+import ProductPhoto from '../../components/ui/ProductPhoto';
 import { useEffect, useRef, useState } from "react";
 import { PackageCheck } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -133,7 +134,14 @@ export default function MyGoodsOrders({ embedded = false, refreshKey = 0, highli
                   <strong>{order.orderCode}</strong>
                   <span className={state.className}>{state.label}</span>
                 </div>
-                <p>{order.lines.map((l) => `${l.quantity} × ${l.name}`).join(", ")}</p>
+                <div className="my-order-products">
+                  {order.lines.map(line => (
+                    <div className="product-with-photo" key={line.productId}>
+                      <ProductPhoto sku={line.sku} productId={line.productId} />
+                      <span>{line.quantity} × {line.name}</span>
+                    </div>
+                  ))}
+                </div>
                 {open && (detail.checkoutUrl || detail.invoice) && <section aria-label="Chứng từ thanh toán">
                   {detail.invoice && <div><h4>Hóa đơn {detail.invoice.code}</h4><p>{new Date(detail.invoice.issuedAt).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})} · {money(detail.invoice.totalAmount)}</p></div>}
                   {detail.checkoutUrl && <div className="store-pay-box">

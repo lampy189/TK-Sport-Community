@@ -1,16 +1,20 @@
-using System.Linq.Expressions;
 using TKSC.Domain.Entities;
 
 namespace TKSC.Domain.Assessments;
 
 public static class AssessmentSessionRules
 {
-    public static Expression<Func<Session, bool>> Ongoing(DateTimeOffset now)
+    private static readonly TimeSpan VenueOffset = TimeSpan.FromHours(7);
+    private static readonly TimeSpan CompletionWindow = TimeSpan.FromDays(3);
+
+    public static DateTimeOffset Deadline(DateOnly date, TimeOnly endTime) =>
+        new DateTimeOffset(date.ToDateTime(endTime), VenueOffset).Add(CompletionWindow);
+
+    public static bool CanAssess(Session session, DateTimeOffset now)
     {
-        var local = now.ToOffset(TimeSpan.FromHours(7)).DateTime;
-        var today = DateOnly.FromDateTime(local);
-        var time = TimeOnly.FromDateTime(local);
-        return s => s.Status != "cancelled" && s.Status != "suspended" && s.Status != "completed"
-            && s.SessionDate == today && s.TimeSlot.StartTime <= time && time < s.TimeSlot.EndTime;
+        var startsAt = new DateTimeOffset(session.SessionDate.ToDateTime(session.TimeSlot.StartTime), VenueOffset);
+        return !string.Equals(session.Status, "cancelled", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(session.Status, "suspended", StringComparison.OrdinalIgnoreCase)
+            && startsAt <= now && now <= Deadline(session.SessionDate, session.TimeSlot.EndTime);
     }
 }
