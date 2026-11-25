@@ -7,8 +7,27 @@ namespace be_da.Infrastructure.ExternalServices;
 
 /// <summary>Transport only. Call from a durable outbox after recipient/booking authorization.
 /// A timeout has an unknown delivery outcome; callers must not blindly resend.</summary>
-public sealed class ZaloOaClient(HttpClient http, IOptions<ZaloOptions> options)
+public sealed class ZaloOaClient(HttpClient http, IOptions<ZaloOptions> options, ZaloTokenProvider? tokens = null)
 {
+    private Task<string> TokenAsync(CancellationToken ct) => tokens?.GetAsync(ct) ?? Task.FromResult(options.Value.AccessToken);
+    public async Task<string> UploadQrAsync(string qrCode,CancellationToken ct)
+    {
+        if(!options.Value.Enabled || !qrCode.StartsWith("000201",StringComparison.Ordinal) || qrCode.Length>3000)
+            throw new ArgumentException("Thiếu payload QR chuyển khoản hợp lệ.");
+        using var data=QRCoder.QRCodeGenerator.GenerateQrCode(qrCode,QRCoder.QRCodeGenerator.ECCLevel.M);
+        using var png=new QRCoder.PngByteQRCode(data);
+        var bytes=png.GetGraphic(8);
+        using var request=new HttpRequestMessage(HttpMethod.Post,"https://openapi.zalo.me/v2.0/oa/upload/image");
+        request.Headers.Add("access_token",await TokenAsync(ct));
+        var form=new MultipartFormDataContent();
+        var file=new ByteArrayContent(bytes);file.Headers.ContentType=new("image/png");
+        form.Add(file,"file","payment.png");request.Content=form;
+        using var response=await http.SendAsync(request,ct);
+        if(!response.IsSuccessStatusCode) throw new HttpRequestException("Không thể upload QR Zalo.",null,response.StatusCode);
+        using var body=JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+        if(body.RootElement.GetProperty("error").GetInt32()!=0) throw new InvalidOperationException("Zalo từ chối ảnh QR.");
+        return body.RootElement.GetProperty("data").GetProperty("attachment_id").GetString() ?? throw new InvalidOperationException("Thiếu mã ảnh Zalo.");
+    }
     public Task<string> SendTextAsync(string recipientId, string text, CancellationToken cancellationToken) =>
         SendAsync(recipientId, text, null, cancellationToken);
 
@@ -22,7 +41,7 @@ public sealed class ZaloOaClient(HttpClient http, IOptions<ZaloOptions> options)
     private async Task<string> SendAsync(string recipientId, string text, string? attachmentId, CancellationToken cancellationToken)
     {
         var config = options.Value;
-        if (!config.Enabled || string.IsNullOrWhiteSpace(config.AccessToken))
+        if (!config.Enabled || (tokens is null && string.IsNullOrWhiteSpace(config.AccessToken)))
             throw new InvalidOperationException("Chưa bật hoặc cấu hình kết nối Zalo OA.");
         if (string.IsNullOrWhiteSpace(recipientId) || recipientId.Length > 100)
             throw new ArgumentException("Thiếu người nhận Zalo.", nameof(recipientId));
@@ -34,7 +53,7 @@ public sealed class ZaloOaClient(HttpClient http, IOptions<ZaloOptions> options)
                 template_type = "media", elements = new[] { new { media_type = "image", attachment_id = attachmentId } }
             } };
         using var request = new HttpRequestMessage(HttpMethod.Post, "https://openapi.zalo.me/v3.0/oa/message/cs");
-        request.Headers.Add("access_token", config.AccessToken);
+        request.Headers.Add("access_token", await TokenAsync(cancellationToken));
         request.Content = JsonContent.Create(new { recipient = new { user_id = recipientId }, message });
         using var response = await http.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)

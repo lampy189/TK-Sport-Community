@@ -254,6 +254,8 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
     }
 
     public Task<RegisterSessionResult> RegisterSessionAsync(long userId, long sessionId, CancellationToken cancellationToken) => RegisterCoreAsync(userId, sessionId, null, cancellationToken);
+    public Task<RegisterSessionResult> RegisterZaloAsync(long userId, ZaloBookingConfirmation confirmation, CancellationToken ct)
+        => RegisterCoreAsync(userId, confirmation.Quote.Id, null, ct, zalo: confirmation);
     public Task<RegisterSessionResult> RegisterLateEntryAsync(long userId, long sessionId, long expectedRevision, CancellationToken cancellationToken) => RegisterCoreAsync(userId, sessionId, expectedRevision, cancellationToken);
     public Task<RegisterSessionResult> AcceptSponsoredInvitationAsync(long userId, long sessionId, long invitationId, CancellationToken cancellationToken) => RegisterCoreAsync(userId, sessionId, null, cancellationToken, invitationId, true);
     public async Task<RegisterSessionResult> AcceptInvitationAsync(long userId, long invitationId, CancellationToken ct)
@@ -264,7 +266,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
         var session = await WorkflowSql.Scalar(c,null,"SELECT i.session_id FROM dbo.invitations i JOIN dbo.players p ON p.id=i.invitee_id WHERE i.id=@id AND p.user_id=@user",ct,("@id",invitationId),("@user",userId));
         return session==0 ? new(false,"INVITATION_NOT_FOUND","Không tìm thấy lời mời.") : await RegisterCoreAsync(userId,session,null,ct,invitationId);
     }
-    private async Task<RegisterSessionResult> RegisterCoreAsync(long userId, long sessionId, long? lateRevision, CancellationToken cancellationToken, long? invitationId = null, bool legacySponsored = false)
+    private async Task<RegisterSessionResult> RegisterCoreAsync(long userId, long sessionId, long? lateRevision, CancellationToken cancellationToken, long? invitationId = null, bool legacySponsored = false, ZaloBookingConfirmation? zalo = null)
     {
         await using var connection = new SqlConnection(connectionString);
         await be_da.Infrastructure.Persistence.SportCenterConnection.OpenAsync(connection, cancellationToken, dataScope);
@@ -272,6 +274,21 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
         try
         {
             long payerId = userId;
+            if (zalo is not null)
+            {
+                await using var identity = new SqlCommand("SELECT COUNT(*) FROM dbo.zalo_customers WITH(UPDLOCK,HOLDLOCK) WHERE id=@customer AND user_id=@user", connection, transaction);
+                identity.Parameters.AddWithValue("@customer",zalo.CustomerId);
+                identity.Parameters.AddWithValue("@user",userId);
+                if (Convert.ToInt32(await identity.ExecuteScalarAsync(cancellationToken))!=1)
+                    return new(false,"ZALO_IDENTITY_INVALID","Không tìm thấy hồ sơ của người nhắn.");
+                await using var existing = new SqlCommand("SELECT order_id FROM dbo.zalo_booking_orders WITH(UPDLOCK,HOLDLOCK) WHERE customer_id=@customer AND confirmation_message_id=@message",connection,transaction);
+                existing.Parameters.AddWithValue("@customer",zalo.CustomerId);
+                existing.Parameters.AddWithValue("@message",zalo.MessageId);
+                if (await existing.ExecuteScalarAsync(cancellationToken) is long prior)
+                    return new(true,null,"Đơn đã được tạo.",OrderId:prior);
+                if(zalo.ExpiresAt<=DateTimeOffset.UtcNow)
+                    return new(false,"QUOTE_EXPIRED","Báo giá đã hết hạn. Vui lòng chọn lại vé.");
+            }
             // Find player ID for user
             long playerId;
             await using (var playerCmd = new SqlCommand("SELECT p.id FROM dbo.players p WITH (UPDLOCK,HOLDLOCK) JOIN dbo.users u ON u.id=p.user_id WHERE p.user_id=@userId AND LOWER(u.status)='active' AND u.deleted_at IS NULL;", connection, transaction))
@@ -289,7 +306,7 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
 
             // Lock and inspect session
             const string sessionLockSql = """
-                SELECT s.id, s.sport_id, s.band, s.capacity, dbo.OwnerEffectivePrice('session',s.id,s.price_vnd,@quoteAt), s.status, s.session_date, ts.start_time, ts.end_time, dbo.OwnerPriceVersion('session',s.id,@quoteAt)
+                SELECT s.id, s.sport_id, s.band, s.capacity, dbo.OwnerEffectivePrice('session',s.id,s.price_vnd,@quoteAt), s.status, s.session_date, ts.start_time, ts.end_time, dbo.OwnerPriceVersion('session',s.id,@quoteAt),c.id,c.venue_id
                 FROM dbo.sessions s WITH (UPDLOCK, HOLDLOCK)
                 JOIN dbo.time_slots ts ON ts.id = s.time_slot_id
                 JOIN dbo.courts c ON c.id=s.court_id JOIN dbo.venues v ON v.id=c.venue_id
@@ -328,6 +345,10 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                 startTime = reader.GetTimeSpan(7);
                 endTime = reader.GetTimeSpan(8);
                 priceVersionId=reader.IsDBNull(9)?null:reader.GetInt64(9);
+                if(zalo is not null && (zalo.Quote.PriceVnd!=priceVnd || zalo.Quote.SportId!=sportId
+                    || zalo.Quote.SessionDate!=sessionDate || zalo.Quote.StartTime!=startTime || zalo.Quote.EndTime!=endTime
+                    || zalo.Quote.Band!=sessionBand || zalo.Quote.CourtId!=reader.GetInt64(10) || zalo.Quote.VenueId!=reader.GetInt64(11)))
+                    return new(false,"QUOTE_CHANGED","Giá hoặc lịch vừa thay đổi. Vui lòng chọn lại vé để xác nhận thông tin mới.");
             }
 
             // Consent and the hold share a transaction; only the invitee can accept.
@@ -680,6 +701,15 @@ public sealed class SqlSessionStore(string connectionString, be_da.Application.I
                     IF @payer<>@recipient INSERT dbo.notifications(user_id,channel,title,reference_type,reference_id,status)
                     VALUES(@payer,'web',N'Bạn có vé của bạn bè đang chờ thanh toán','session_invitation',@id,'unread');
                     """,cancellationToken,("@id",invitationId.Value),("@order",orderId),("@ticket",ticketId),("@payer",payerId),("@recipient",userId));
+            }
+            if(zalo is not null)
+            {
+                await using var mapping = new SqlCommand("INSERT dbo.zalo_booking_orders(order_id,customer_id,confirmation_message_id,confirmed_quote_json) VALUES(@order,@customer,@message,@quote)",connection,transaction);
+                mapping.Parameters.AddWithValue("@order",orderId);
+                mapping.Parameters.AddWithValue("@customer",zalo.CustomerId);
+                mapping.Parameters.AddWithValue("@message",zalo.MessageId);
+                mapping.Parameters.AddWithValue("@quote",System.Text.Json.JsonSerializer.Serialize(zalo));
+                await mapping.ExecuteNonQueryAsync(cancellationToken);
             }
             await transaction.CommitAsync(cancellationToken);
             return new RegisterSessionResult(Success: true, ErrorCode: null, Message: "Giữ chỗ thành công. Vui lòng thanh toán trước khi hết hạn.", Reason: null, OrderId: orderId, OrderCode: orderCode, TicketId: ticketId, TicketCode: ticketCode, AmountVnd: priceVnd, ExpiresAt: expiresAt);

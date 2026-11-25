@@ -28,7 +28,10 @@ public record OrderSummary(long Id, string OrderCode, int TotalAmount, string St
 public record ReviewSummary(long Id, long? OrderId, string ReferenceCode, int AmountVnd, string Status, IReadOnlyList<ReviewReason> Reasons);
 public record ReviewReason(string? Action, string? NewValue);
 public record CheckoutResult(long Id, string ReferenceCode, string Status, string PaymentUrl);
-public record GatewayCheckout(long OrderCode, long Amount, string LinkId, string Url, string Status);
+public record GatewayCheckout(long OrderCode, long Amount, string LinkId, string Url, string Status)
+{
+    public string? QrCode { get; init; }
+}
 public record GatewayStatus(long OrderCode, long AmountPaid, string Status, string LinkId, IReadOnlyList<VerifiedBankEvent>? Transactions = null);
 public record VerifiedBankEvent(long OrderCode, long Amount, string Reference, string LinkId, string Currency, bool Success, string RawPayload);
 public record CheckInContext(long TicketId, long OrderId, DateOnly SessionDate, TimeOnly EndTime, string SessionStatus, bool Assigned, string HolderName, string SportName, string CourtName, TimeOnly StartTime, long SessionId = 0);

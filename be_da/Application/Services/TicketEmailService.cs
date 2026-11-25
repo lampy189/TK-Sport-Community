@@ -19,7 +19,8 @@ public sealed class TicketEmailService(ITicketEmailRepository repository, ITicke
             if (notification is null || notification.Channel != "email" || !IsPending(notification.Status))
                 return false;
             var user = await repository.UserAsync(notification.UserId, ct);
-            if (user.DeletedAt is not null || !string.Equals(user.Status, "Active", StringComparison.OrdinalIgnoreCase))
+            if (user.DeletedAt is not null || !string.Equals(user.Status, "Active", StringComparison.OrdinalIgnoreCase)
+                || user.Email.EndsWith("@zalo.invalid",StringComparison.OrdinalIgnoreCase))
                 notification.Status = "suppressed";
             else
             {

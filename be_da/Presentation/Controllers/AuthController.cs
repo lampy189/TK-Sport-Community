@@ -118,6 +118,8 @@ public sealed class AuthController(IConfiguration configuration, IAntiforgery an
             return BadRequest(new { code = "invalid_csrf_token" });
         if (string.IsNullOrWhiteSpace(request.Email))
             return BadRequest(new { code = "email_required" });
+        if (request.Email.Trim().EndsWith("@zalo.invalid",StringComparison.OrdinalIgnoreCase))
+            return Forbid();
         var account = await accountStore.FindByEmailAsync(request.Email.Trim(), cancellationToken);
         if (account == null)
             return NotFound(new { code = "user_not_found", message = $"No user found with email {request.Email}" });

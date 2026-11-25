@@ -126,6 +126,8 @@ public sealed class PaymentService(IPaymentRepository repository, IPaymentGatewa
             if (payment.GatewayPaymentLinkId != link.LinkId)
                 throw new GatewayException("Mã link thanh toán không khớp.");
             payment.CheckoutUrl = link.Url;
+            if (!string.IsNullOrWhiteSpace(link.QrCode))
+                repository.AddAudit(new AuditLog { Action="payos_qr",EntityType="Payment",EntityId=payment.Id,NewValue=link.QrCode });
             await repository.SaveAsync();
             // Cancellation is reconciled by RefreshAsync; never trust browser query parameters.
             if (link.Status is not "PENDING" and not "PROCESSING" || payment.Status != "pending" || !string.Equals(order.Status, "pending", StringComparison.OrdinalIgnoreCase) || order.ExpiresAt <= clock.GetUtcNow())

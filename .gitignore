@@ -37,6 +37,8 @@ Thumbs.db
 .claude/launch.json
 
 # Browser test artifacts
+**/zalo-tokens*
+**/.zalo-secrets/
 fe_da/test-results/
 
 # Local DucTM lab fixtures and generated evidence

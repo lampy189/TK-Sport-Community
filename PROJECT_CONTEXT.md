@@ -1,5 +1,16 @@
 # TK Sport Community — Project Context
 
+## Zalo OA session-ticket booking (25 Nov 2026)
+
+User narrowed scope to existing session tickets, with self-declared skill in Zalo and no website
+account-link step. Migration 021 was explicitly approved and applied to Acer localhost/Sep490
+after verified backup. Webhook inbox, conversation processing, atomic confirmed-quote registration,
+payOS QR outbox, settlement notifications and encrypted token refresh are implemented; disabled
+until OA credentials are supplied. Initial Zalo skill is tagged ZaloSelfDeclared and never overwrites
+an existing profile. Tests use isolated TKSC_ZaloTest_20261124_01 with simulated external services.
+Live AI check returned HTTP 429; OA live setup and real payment acceptance remain unverified.
+See docs/zalo-session-booking.md for configuration, failure behavior and validation evidence.
+
 ## Current Acer database and acceptance checks (16 Nov 2026)
 
 For UI-01/HIS-01/QA-01, the user explicitly confirmed localhost / Sep490 in D:\code_da\TK-Sport-Community as the current target, and requested reporting failures. Read-only checks confirm upgrade 019 columns/functions are absent; personal ticket/goods history queries fail on price_version_id / requires_price_approval. No schema change was applied or approved in this task. Use docs/ui-his-qa-20261116.md for implemented UI/history changes, test evidence and outstanding acceptance gates. Do not treat the historical shogu checkout/database name below as the current Acer environment.
