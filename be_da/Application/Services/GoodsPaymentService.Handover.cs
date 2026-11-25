@@ -53,7 +53,7 @@ public sealed partial class GoodsPaymentService
     private static bool HasPaidPayment(Order order) => order.Payments.Any(p => p.Status is "paid" or "review_required");
     private static bool CanCancel(Order order) => order.Status is not ("Cancelled" or "Completed") && order.PaymentState is not ("Paid" or "NeedsReview" or "Cancelled")
         && !HasPaidPayment(order) && order.HandoverState is not (Delivered or Received);
-    private static BuyerGoodsOrder ToBuyerView(Order order) => new(order.Id, order.OrderCode, order.TotalAmount, order.Status, order.PaymentState, order.HandoverState, Lines(order), CanCancel(order));
+    private static BuyerGoodsOrder ToBuyerView(Order order) => new(order.Id, order.OrderCode, order.TotalAmount, order.Status, order.PaymentState, order.HandoverState, Lines(order, includeSku: true), CanCancel(order));
     private async Task ConfirmReceiptAsync(Order order, long actorId, CancellationToken ct)
     {
         var id = order.Id;

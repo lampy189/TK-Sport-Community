@@ -21,9 +21,11 @@ namespace TKSC.Api.Tests.Stock;
 public sealed class StockApiValidationTests
 {
     private static readonly Account Staff = new(20, "staff@example.test", "Staff One", "Staff", "Active", "sub-20", false, VenueId: 1);
+    private static readonly Account Manager = new(21, "manager@example.test", "Manager One", "Manager", "Active", "sub-21", false, VenueId: 1);
     private static readonly Account Referee = new(40, "referee@example.test", "Referee One", "Referee", "Active", "sub-40", false, VenueId: 1);
     private static readonly Account Player = new(30, "player@example.test", "Player One", "Player", "Active", "sub-30", false);
     private const string StaffLoggedIn = "Staff signed in with a valid CSRF token";
+    private const string ManagerLoggedIn = "Manager signed in with a valid CSRF token";
     private static readonly object ValidProduct = new { sku = "CAU-1", name = "Shuttle", category = "Equipment", unitPriceVnd = 1000, reorderLevel = 1, initialQuantity = 0 };
 
     private static async Task<(ApiApp App, HttpClient Client)> SignedIn(Account account)
@@ -54,44 +56,44 @@ public sealed class StockApiValidationTests
         Assert.False(string.IsNullOrEmpty(json.GetProperty("message").GetString()));
     }
 
-    [UnitCase("UTC001", "POST /api/stock/products", "Normal", "all fields valid", "Return: 201 Created", StaffLoggedIn)]
+    [UnitCase("UTC001", "POST /api/stock/products", "Normal", "all fields valid", "Return: 201 Created", ManagerLoggedIn)]
     public async Task CreateProduct_Valid()
     {
-        var (app, client) = await SignedIn(Staff);
+        var (app, client) = await SignedIn(Manager);
         await using var _ = app;
         var response = await Send(client, HttpMethod.Post, "/api/stock/products", ValidProduct);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
-    [UnitCase("UTC002", "POST /api/stock/products", "Abnormal", "unitPriceVnd missing", "Return: 400 INVALID_REQUEST; store not called", StaffLoggedIn)]
+    [UnitCase("UTC002", "POST /api/stock/products", "Abnormal", "unitPriceVnd missing", "Return: 400 INVALID_REQUEST; store not called", ManagerLoggedIn)]
     public async Task CreateProduct_MissingPrice()
     {
-        var (app, client) = await SignedIn(Staff);
+        var (app, client) = await SignedIn(Manager);
         await using var _ = app;
         await AssertInvalid(await Send(client, HttpMethod.Post, "/api/stock/products", new { sku = "CAU-1", name = "Shuttle", reorderLevel = 1, initialQuantity = 0 }), "INVALID_REQUEST");
         Assert.Empty(app.Stock.Products);
     }
 
-    [UnitCase("UTC003", "POST /api/stock/products", "Abnormal", "unitPriceVnd=\"abc\" (wrong type)", "Return: 400 INVALID_REQUEST", StaffLoggedIn)]
+    [UnitCase("UTC003", "POST /api/stock/products", "Abnormal", "unitPriceVnd=\"abc\" (wrong type)", "Return: 400 INVALID_REQUEST", ManagerLoggedIn)]
     public async Task CreateProduct_WrongType()
     {
-        var (app, client) = await SignedIn(Staff);
+        var (app, client) = await SignedIn(Manager);
         await using var _ = app;
         await AssertInvalid(await Send(client, HttpMethod.Post, "/api/stock/products", new { sku = "CAU-1", name = "Shuttle", unitPriceVnd = "abc", reorderLevel = 1, initialQuantity = 0 }), "INVALID_REQUEST");
     }
 
-    [UnitCase("UTC004", "POST /api/stock/products", "Abnormal", "empty body", "Return: 400 INVALID_REQUEST", StaffLoggedIn)]
+    [UnitCase("UTC004", "POST /api/stock/products", "Abnormal", "empty body", "Return: 400 INVALID_REQUEST", ManagerLoggedIn)]
     public async Task CreateProduct_EmptyBody()
     {
-        var (app, client) = await SignedIn(Staff);
+        var (app, client) = await SignedIn(Manager);
         await using var _ = app;
         await AssertInvalid(await Send(client, HttpMethod.Post, "/api/stock/products", raw: ""), "INVALID_REQUEST");
     }
 
-    [UnitCase("UTC005", "POST /api/stock/products", "Abnormal", "valid body, no CSRF header", "Return: 400 invalid_csrf_token", "Staff signed in")]
+    [UnitCase("UTC005", "POST /api/stock/products", "Abnormal", "valid body, no CSRF header", "Return: 400 invalid_csrf_token", "Manager signed in")]
     public async Task CreateProduct_NoCsrf()
     {
-        var (app, client) = await SignedIn(Staff);
+        var (app, client) = await SignedIn(Manager);
         await using var _ = app;
         var response = await client.PostAsJsonAsync("/api/stock/products", ValidProduct);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -107,26 +109,26 @@ public sealed class StockApiValidationTests
         Assert.Equal(HttpStatusCode.Forbidden, (await Send(client, HttpMethod.Post, "/api/stock/products", ValidProduct)).StatusCode);
     }
 
-    [UnitCase("UTC007", "PUT /api/stock/products/{id}", "Abnormal", "isActive missing", "Return: 400 INVALID_REQUEST (never read as false)", StaffLoggedIn)]
+    [UnitCase("UTC007", "PUT /api/stock/products/{id}", "Abnormal", "isActive missing", "Return: 400 INVALID_REQUEST (never read as false)", ManagerLoggedIn)]
     public async Task UpdateProduct_MissingIsActive()
     {
-        var (app, client) = await SignedIn(Staff);
+        var (app, client) = await SignedIn(Manager);
         await using var _ = app;
         await AssertInvalid(await Send(client, HttpMethod.Put, "/api/stock/products/1", new { name = "Shuttle", unitPriceVnd = 1, reorderLevel = 1 }), "INVALID_REQUEST");
     }
 
-    [UnitCase("UTC008", "PUT /api/stock/products/{id}", "Boundary", "id=0", "Return: 404 (route rejects ids below 1)", StaffLoggedIn)]
+    [UnitCase("UTC008", "PUT /api/stock/products/{id}", "Boundary", "id=0", "Return: 404 (route rejects ids below 1)", ManagerLoggedIn)]
     public async Task UpdateProduct_ZeroId()
     {
-        var (app, client) = await SignedIn(Staff);
+        var (app, client) = await SignedIn(Manager);
         await using var _ = app;
         Assert.Equal(HttpStatusCode.NotFound, (await Send(client, HttpMethod.Put, "/api/stock/products/0", new { name = "Shuttle", unitPriceVnd = 1, reorderLevel = 1, isActive = true })).StatusCode);
     }
 
-    [UnitCase("UTC009", "PUT /api/stock/products/{id}", "Abnormal", "units has two base units", "Return: 400 VALIDATION_FAILED", StaffLoggedIn)]
+    [UnitCase("UTC009", "PUT /api/stock/products/{id}", "Abnormal", "units has two base units", "Return: 400 VALIDATION_FAILED", ManagerLoggedIn)]
     public async Task UpdateProduct_BadUnits()
     {
-        var (app, client) = await SignedIn(Staff);
+        var (app, client) = await SignedIn(Manager);
         await using var _ = app;
         await AssertInvalid(await Send(client, HttpMethod.Put, "/api/stock/products/1", new
         {
@@ -392,7 +394,7 @@ public sealed class StockApiValidationTests
 
         public ApiApp()
         {
-            foreach (var account in new[] { Staff, Referee, Player })
+            foreach (var account in new[] { Staff, Manager, Referee, Player })
             {
                 Accounts.Accounts[account.Email] = account;
                 Accounts.AccountsById[account.Id] = account;

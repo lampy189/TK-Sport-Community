@@ -306,30 +306,40 @@ export function PickSessionToInviteModal({ friendName, friendPlayerId, onSelectS
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState(null);
   const [error, setError] = useState('');
+  const [refresh, setRefresh] = useState(0);
+  const [now, setNow] = useState(Date.now);
+  const startsAt = session => Date.parse(`${session.sessionDate}T${session.startTime}+07:00`);
+  const available = sessions.filter(session => startsAt(session) > now);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let active = true;
-    api
-      .getSessions({})
-      .then((list) => {
+    setLoading(true);
+    const fromDate = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date());
+    Promise.all([api.getSessions({ fromDate }), invitationClient.eligibleSessions(friendPlayerId)])
+      .then(([list, eligibleSessions]) => {
         if (!active) return;
-        const arr = Array.isArray(list) ? list : [];
-        const openOnes = arr.filter((s) => {
-          const avail = s.availableSlots ?? s.capacity - s.occupiedPlaces;
-          return avail > 0;
-        });
-        setSessions(openOnes);
+        const eligibleIds = new Set(eligibleSessions);
+        setSessions(list.filter(session => eligibleIds.has(session.id) && session.availableSlots > 0));
       })
-      .catch(e => { if (active) setError(e.message || 'Không tải được lịch.'); })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+      .catch(e => {
+        if (!active) return;
+        setSessions([]);
+        setError(e.message || 'Không tải được lịch.');
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [friendPlayerId, refresh]);
 
   const handlePick = async (s) => {
+    if (startsAt(s) <= Date.now()) {
+      setNow(Date.now());
+      return;
+    }
     setSendingId(s.id);
     setError('');
     try {
@@ -339,6 +349,7 @@ export function PickSessionToInviteModal({ friendName, friendPlayerId, onSelectS
       onClose();
     } catch (e) {
       setError(e.message || 'Không gửi được lời mời.');
+      setRefresh(count => count + 1);
     } finally {
       setSendingId(null);
     }
@@ -367,21 +378,18 @@ export function PickSessionToInviteModal({ friendName, friendPlayerId, onSelectS
         </div>
 
         <div className="comm-modal-body">
+          {error && <p role="alert">{error}</p>}
           {loading ? (
-            <div role="status">Đang tải danh sách buổi chơi đang mở…</div>
-          ) : error ? <p role="alert">{error}</p> : null}
-          {!loading && error && sessions.length > 0 && <p>Chưa gửi lời mời. Kiểm tra điều kiện rồi thử lại.</p>}
-          {loading ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: '#4d5d53', fontSize: '13px' }}>
-              Đang tải danh sách buổi chơi đang mở...
+            <div role="status" style={{ padding: '24px', textAlign: 'center', color: '#4d5d53', fontSize: '13px' }}>
+              Đang tải buổi chơi có thể mời…
             </div>
-          ) : sessions.length === 0 ? (
+          ) : available.length === 0 ? (
             <div style={{ padding: '20px', textAlign: 'center', color: '#4d5d53', fontSize: '13.5px' }}>
-              Hiện chưa có buổi chơi nào đang mở.
+              Hiện chưa có buổi chơi sắp tới phù hợp để gửi lời mời.
             </div>
           ) : (
             <div className="comm-compact-pager" style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '340px', overflowY: 'auto' }}>
-              {<PaginatedList items={sessions} pageSize={5} label="Phân trang buổi chơi">{(s) => {
+              {<PaginatedList items={available} pageSize={5} label="Phân trang buổi chơi">{(s) => {
                 const isBadminton = s.sportName === 'Badminton';
                 const avail = s.availableSlots ?? s.capacity - s.occupiedPlaces;
                 const timeRange = s.timeLabel || `${(s.startTime || '').slice(0, 5)} - ${(s.endTime || '').slice(0, 5)}`;

@@ -7,6 +7,7 @@ public sealed record AssignedAssessmentSession
     public string? Court { get; init; } = default!;
     public global::System.TimeOnly StartTime { get; init; } = default!;
     public global::System.TimeOnly EndTime { get; init; } = default!;
+    public DateTimeOffset ScoringDeadline => TKSC.Domain.Assessments.AssessmentSessionRules.Deadline(SessionDate, EndTime);
 }
 
 public sealed record AssessmentPlayerProfile

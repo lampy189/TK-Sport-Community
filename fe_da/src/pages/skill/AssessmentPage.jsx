@@ -57,6 +57,12 @@ export default function AssessmentPage({ dirtyRef } = {}) {
   const [sessionId, setSessionId] = useState(null);
   const [weekDate, setWeekDate] = useState(null);
   const selectedSession = sessions.find(session => session.id === sessionId);
+  const now = Date.now();
+  const sessionHasStarted = selectedSession &&
+    Date.parse(`${selectedSession.sessionDate}T${selectedSession.startTime}+07:00`) <= now;
+  const deadline = selectedSession?.scoringDeadline;
+  const scoringExpired = Boolean(deadline && Date.parse(deadline) < now);
+  const canScore = sessionHasStarted && !scoringExpired;
   const [players, setPlayers] = useState([]);
   const [form, setForm] = useState(null);
   const [dirty, setDirty] = useState(false);
@@ -162,7 +168,7 @@ export default function AssessmentPage({ dirtyRef } = {}) {
     setMessage(
       review
         ? "Đã lưu phiếu. Rà soát điểm trước khi xác nhận."
-        : "Đã lưu nháp. Có thể tiếp tục quan sát ở buổi này."
+        : "Đã lưu nháp. Bạn có thể mở lại phiếu để tiếp tục chấm."
     );
   }
 
@@ -325,6 +331,9 @@ export default function AssessmentPage({ dirtyRef } = {}) {
                 {selectedSession.sessionDate.split("-").reverse().join("/")} · {selectedSession.startTime.slice(0, 5)}
                 {selectedSession.endTime && ` – ${selectedSession.endTime.slice(0, 5)}`}
               </p>
+              {deadline && <p>Hạn chấm điểm: {new Date(deadline).toLocaleString("vi-VN", {
+                timeZone: "Asia/Ho_Chi_Minh", dateStyle: "short", timeStyle: "short",
+              })}</p>}
             </div>
             <button type="button" className="button button-secondary" disabled={busy || dirty} onClick={() => selectSession(null)}>
               Chọn buổi khác
@@ -341,6 +350,8 @@ export default function AssessmentPage({ dirtyRef } = {}) {
             action="Chọn buổi đánh giá"
           />
         )}
+        {selectedSession && !sessionHasStarted && <p role="status">Có thể chấm điểm sau khi buổi chơi bắt đầu.</p>}
+        {scoringExpired && <p role="status">Đã hết hạn chấm điểm 72 giờ sau khi buổi chơi kết thúc.</p>}
         {sessionId && !busy && players.length === 0 && (
           <p>
             Chưa có người chơi đủ điều kiện: vé đã thanh toán và đã điểm danh.
@@ -378,7 +389,7 @@ export default function AssessmentPage({ dirtyRef } = {}) {
                       </button>
                       <button type="button" className="button button-primary"
                         aria-label={`${action} ${p.name}`} aria-pressed={selected}
-                        disabled={busy || dirty || !p.profileId} onClick={() => open(p.playerId)}>
+                        disabled={busy || dirty || !p.profileId || (!p.assessmentId && !canScore)} onClick={() => open(p.playerId)}>
                         <ClipboardPenLine size={16} aria-hidden="true" /> {action}
                       </button>
                     </div>
@@ -558,7 +569,7 @@ export default function AssessmentPage({ dirtyRef } = {}) {
             {stage === "score" && (
               <fieldset
                 className="assessment-criteria sp-questions-list"
-                disabled={busy || published}
+                disabled={busy || published || !canScore}
               >
                 <legend>Chấm điểm</legend>
                 {form.rubric.criteria.map((c, index) => {
@@ -857,7 +868,7 @@ export default function AssessmentPage({ dirtyRef } = {}) {
                       <input
                         type="checkbox"
                         checked={confirmed}
-                        disabled={busy || !ready || dirty}
+                        disabled={busy || !ready || dirty || !canScore}
                         onChange={(e) => setConfirmed(e.target.checked)}
                       />
                       Tôi đã kiểm tra người chơi và điểm từng tiêu chí; xác nhận công bố kết quả.
@@ -883,14 +894,14 @@ export default function AssessmentPage({ dirtyRef } = {}) {
                   <>
                     <button
                       className="button button-secondary"
-                      disabled={busy}
+                      disabled={busy || !canScore}
                       onClick={() => run(() => saveDraft())}
                     >
                       Lưu nháp
                     </button>
                     <button
                       className="button button-primary"
-                      disabled={busy || preview == null}
+                      disabled={busy || preview == null || !canScore}
                       onClick={() => run(() => saveDraft(true))}
                     >
                       Lưu và rà soát phiếu
@@ -913,6 +924,7 @@ export default function AssessmentPage({ dirtyRef } = {}) {
                       className="button button-primary"
                       disabled={
                         busy ||
+                        !canScore ||
                         !confirmed ||
                         !ready ||
                         dirty ||
@@ -968,7 +980,7 @@ export default function AssessmentPage({ dirtyRef } = {}) {
                 </button>
               </div>
             )}
-            {!published && preview == null && (
+            {!published && canScore && preview == null && (
               <p role="status">
                 Cần chấm đủ {form.rubric.criteria.length} tiêu chí để chuyển
                 sang rà soát. Có thể lưu nháp và tiếp tục quan sát.

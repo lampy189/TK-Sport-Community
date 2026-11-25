@@ -1,7 +1,7 @@
 import { request } from "../../api";
 
-async function call(path, options = {}) {
-  const response = await request(`/api/stock/${path}`, options);
+async function call(path, options = {}, root = "/api/stock") {
+  const response = await request(`${root}/${path}`, options);
   const text = await response.text();
   let data;
   try {
@@ -66,6 +66,12 @@ export const stockClient = {
   products: () => call("products"),
   create: (product) => send("products", "POST", product),
   update: (id, product) => send(`products/${id}`, "PUT", product),
+  savePhoto: (id, file) => {
+    const body = new FormData();
+    body.append("file", file);
+    return call(`${id}/image`, { method: "PUT", body }, "/api/products");
+  },
+  restorePhoto: (id) => call(`${id}/image`, { method: "DELETE" }, "/api/products"),
   move: (id, type, quantity, unitName) =>
     send(`products/${id}/movements`, "POST", { type, quantity, unitName: unitName || null }),
   batchReceipt: (body) => send("receipts/batch", "POST", body),

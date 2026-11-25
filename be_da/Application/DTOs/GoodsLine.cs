@@ -10,4 +10,8 @@ using TKSC.Application.Interfaces.External;
 using TKSC.Domain.Entities;
 
 namespace TKSC.Application.DTOs;
-public sealed record GoodsLine(long ProductId, string Name, short Quantity, int UnitPriceVnd, int SubtotalVnd);
+public sealed record GoodsLine(long ProductId, string Name, short Quantity, int UnitPriceVnd, int SubtotalVnd)
+{
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? Sku { get; init; }
+}

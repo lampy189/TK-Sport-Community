@@ -10,7 +10,7 @@ namespace TKSC.Application.Interfaces.Repositories;
 public interface ISkillAssessmentRepository
 {
     Task<T> MutateAsync<T>(Func<Task<T>> action, CancellationToken ct);
-    Task<List<AssignedAssessmentSession>> SessionsSessionsListAsync(long actorId, CancellationToken ct, DateTimeOffset now);
+    Task<List<AssignedAssessmentSession>> SessionsSessionsListAsync(long actorId, CancellationToken ct);
     Task<long> PlayerContextCourtsAsync(CancellationToken ct, Session session);
     Task<AssessmentPlayerProfile?> PlayerContextPlayerSportProfilesAsync(long playerId, CancellationToken ct, Session session);
     Task<List<AssessmentParticipation>> PlayerContextTicketsListAsync(long sessionId, long playerId, CancellationToken ct, Session session, long venueId);

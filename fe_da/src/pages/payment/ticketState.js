@@ -22,3 +22,25 @@ export function ticketState(ticket, now) {
   if (sessionTime(ticket, 'endTime') <= now) return 'completed';
   return ticket.valid ? 'confirmed' : 'processing';
 }
+
+const paidCancelWindow = 12 * 60 * 60 * 1000;
+const cancellationDeadline = new Intl.DateTimeFormat('vi-VN', {
+  timeZone: 'Asia/Ho_Chi_Minh', dateStyle: 'short', timeStyle: 'short',
+});
+
+export function ticketCancellation(ticket, now) {
+  const status = ticketState(ticket, now);
+  if (status !== 'pending' && status !== 'confirmed') return null;
+
+  const startsAt = sessionTime(ticket);
+  if (ticket.canManage === false) return { reason: 'Chỉ người thanh toán mới có thể hủy vé.' };
+  if (ticket.pendingChangeId) return { reason: 'Hãy rút yêu cầu đổi vé đang chờ trước khi hủy.' };
+  if (!Number.isFinite(startsAt)) return { reason: 'Chưa có giờ bắt đầu để xác định hạn hủy vé.' };
+  if (startsAt <= now) return { reason: 'Buổi chơi đã bắt đầu. Vé không thể hủy.' };
+
+  if (status === 'confirmed' && startsAt - now < paidCancelWindow) {
+    const deadline = cancellationDeadline.format(startsAt - paidCancelWindow);
+    return { reason: `Đã hết hạn hủy lúc ${deadline}. Vé đã thanh toán chỉ được hủy trước giờ chơi ít nhất 12 giờ.` };
+  }
+  return { reason: null };
+}
