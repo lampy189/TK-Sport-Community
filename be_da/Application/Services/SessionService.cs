@@ -13,5 +13,4 @@ public sealed class SessionService(ISessionStore repository) : ISessionService
     public Task<SessionDetails?> GetSessionByIdAsync(long id, long? currentUserId, CancellationToken cancellationToken) => repository.GetSessionByIdAsync(id, currentUserId, cancellationToken);
     public Task<RegisterSessionResult> RegisterSessionAsync(long userId, long sessionId, CancellationToken cancellationToken) => repository.RegisterSessionAsync(userId, sessionId, cancellationToken);
     public Task<RegisterSessionResult> RegisterLateEntryAsync(long userId, long sessionId, long expectedRevision, CancellationToken cancellationToken) => repository.RegisterLateEntryAsync(userId, sessionId, expectedRevision, cancellationToken);
-    public Task<RegisterSessionResult> AcceptSponsoredInvitationAsync(long userId, long sessionId, long invitationId, CancellationToken cancellationToken) => repository.AcceptSponsoredInvitationAsync(userId, sessionId, invitationId, cancellationToken);
 }

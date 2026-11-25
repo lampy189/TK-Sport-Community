@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import StatePanel from "../../components/ui/StatePanel";
 
+
 const money = (value) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
     value,
@@ -191,21 +192,16 @@ export default function PaymentPage({
 
   return (
     <div className="payment-workspace" aria-busy={busy}>
-      <div className="payment-heading">
-        <h1>
-          {staff
-            ? "Thanh toán cần kiểm tra"
-            : view === "tickets"
-              ? "Vé của tôi"
-              : "Thanh toán"}
-        </h1>
-        {demoMode && (
-          <span className="payment-badge">
-            <ShieldCheck size={15} />
-            Chế độ minh họa
-          </span>
-        )}
-      </div>
+      {staff ? (
+        <div className="payment-heading">
+          <h1>Thanh toán cần kiểm tra</h1>
+        </div>
+      ) : demoMode && (
+        <span className="payment-badge">
+          <ShieldCheck size={15} />
+          Chế độ minh họa
+        </span>
+      )}
       {error && (
         <p className="payment-error" role="alert">
           {error}

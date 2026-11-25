@@ -202,22 +202,34 @@ public sealed partial class GoodsPaymentService(IGoodsPaymentRepository reposito
     public Task<GoodsOrderView> InvoiceAsync(long id, long actorId, CancellationToken ct) => repository.TransactionAsync(async () =>
     {
         var order = await LoadAsync(id, ct);
-        var existing = await InvoiceRecordAsync(id, ct);
-        if (existing != null)
-            return await ViewAsync(order, ct);
+        if (await InvoiceRecordAsync(id, ct) == null)
+        {
+            await IssueInvoiceAsync(order, actorId, ct);
+            await repository.SaveAsync(ct);
+        }
+        return await ViewAsync(order, ct);
+    }, null, ct);
+
+    private async Task<GoodsInvoice> IssueInvoiceAsync(Order order, long actorId, CancellationToken ct, bool delivering = false)
+    {
+        var id = order.Id;
         var payment = order.Payments.SingleOrDefault(p => p.Status == "paid" && p.OrderId == null);
         if (order.PaymentState != "Paid" || order.Status != "Paid" || payment == null || payment.AmountVnd != order.TotalAmount)
             throw Error(409, "Chỉ xuất hóa đơn cho đơn đã xác nhận đủ tiền.");
         ValidateCart(order);
-        var paidLines = JsonSerializer.Deserialize<List<GoodsLine>>(await AuditValueAsync(id, "goods_paid_lines", ct) ?? throw Error(409, "Thiếu bản ghi hàng hóa đã thanh toán. Cần đối soát."))!;
-        if (!Lines(order).SequenceEqual(paidLines))
+        var lines = Lines(order);
+        var paidSnapshot = await AuditValueAsync(id, "goods_paid_lines", ct);
+        // Older cash orders predate paid-line snapshots. Delivery still requires
+        // the recorded paid amount and backfilled committed stock for every line.
+        if (paidSnapshot is null && !(delivering && payment.Method == "cash"))
+            throw Error(409, "Thiếu bản ghi hàng hóa đã thanh toán. Cần đối soát.");
+        if (paidSnapshot is not null && !lines.SequenceEqual(JsonSerializer.Deserialize<List<GoodsLine>>(paidSnapshot)!))
             throw Error(409, "Dòng hàng đã thay đổi sau khi thanh toán. Cần đối soát trước khi xuất hóa đơn.");
-        var invoice = new GoodsInvoice($"INV-G-{id:D10}", clock.GetUtcNow(), actorId, id, order.OrderCode, order.CustomerName, order.TotalAmount, payment.Method!, payment.ReferenceCode, paidLines);
+        var invoice = new GoodsInvoice($"INV-G-{id:D10}", clock.GetUtcNow(), actorId, id, order.OrderCode, order.CustomerName, order.TotalAmount, payment.Method!, payment.ReferenceCode, lines);
         Audit(id, actorId, "goods_invoice_issued", invoice);
         order.Status = "Invoiced";
-        await repository.SaveAsync(ct);
-        return await ViewAsync(order, ct);
-    }, null, ct);
+        return invoice;
+    }
     private async Task<GoodsOrderView> ViewAsync(Order order, CancellationToken ct)
     {
         var payment = order.Payments.OrderByDescending(p => p.Id).FirstOrDefault();

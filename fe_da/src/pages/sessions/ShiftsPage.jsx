@@ -1,5 +1,6 @@
 import PaginatedList from '../../components/ui/PaginatedList';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import AssignedSessionsTimetable from '../payment/AssignedSessionsTimetable';
 import SectionLayout from '../../components/layout/SectionLayout';
 import { workflowRequest } from '../workflowClient';
 import '../workflow.css';
@@ -8,6 +9,12 @@ import './session-management.css';
 export default function ShiftsPage({ role, user }) {
   const manager = role === 'manager';
   const [rows, setRows] = useState([]);
+  const [view, setView] = useState('week');
+  const [weekDate, setWeekDate] = useState('');
+  const [detailId, setDetailId] = useState(null);
+  const dialog = useRef(null);
+  const detail = rows.find(row => row.id === detailId);
+  const showWeek = role === 'staff' && view === 'week';
   const [people, setPeople] = useState([]);
   const [selected, setSelected] = useState(null);
   const [ids, setIds] = useState({ refereeIds: [], staffIds: [] });
@@ -51,20 +58,41 @@ export default function ShiftsPage({ role, user }) {
     setBusy(true); setError(''); setNotice('');
     try {
       await workflowRequest(manager ? `${root}/${row.id}/assignments` : `/api/shifts/${row.id}/accept`, manager ? 'PUT' : 'POST', manager ? ids : {});
-      await load(); setSelected(null); setNotice(manager ? 'Đã lưu phân công.' : 'Đã nhận ca.');
+      await load(); dialog.current?.close(); setSelected(null); setNotice(manager ? 'Đã lưu phân công.' : 'Đã nhận ca.');
     } catch (e) { setError(e.message); }
     finally { setBusy(false); }
   }
   return <SectionLayout title={manager ? 'Chia ca' : 'Ca của tôi'} description={manager ? 'Phân công theo buổi chơi và theo dõi nhận ca.' : 'Xem lịch được phân công và xác nhận nhận ca.'}>
     <div className="workflow manager-sessions" aria-busy={loading || busy}>
-      <div className="workflow-actions">
-        <label>Ngày <input type="date" value={date} onChange={e => setDate(e.target.value)} /></label>
-        <label>Hiển thị <select value={filter} onChange={e => setFilter(e.target.value)}><option value="upcoming">Ca sắp tới</option>{!manager && <option value="pending">Chờ nhận</option>}<option value="all">Tất cả</option></select></label>
+      <div className="shifts-toolbar">
+        {role === 'staff' && <div className="workflow-actions" role="group" aria-label="Kiểu xem ca">
+          {[['week', 'Thời khóa biểu'], ['list', 'Danh sách']].map(([key, label]) =>
+            <button key={key} type="button" aria-pressed={view === key} onClick={() => setView(key)}
+              className={view === key ? 'button button-primary' : 'button button-secondary'}>{label}</button>)}
+        </div>}
+        {!showWeek && <div className="shifts-filters">
+          <label>
+            Ngày <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+          </label>
+          <label>
+            Ca hiển thị
+            <select value={filter} onChange={e => setFilter(e.target.value)}>
+              <option value="upcoming">Ca sắp tới</option>
+              {!manager && <option value="pending">Chờ nhận</option>}
+              <option value="all">Tất cả</option>
+            </select>
+          </label>
+        </div>}
         {(!manager || error) && <button className="button button-secondary" disabled={busy || loading} onClick={async () => { setLoading(true); setError(''); try { await load(); setSelected(null); } catch (e) { setError(e.message); } finally { setLoading(false); } }}>Tải lại</button>}
       </div>
       {error && <p className="workflow-error" role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
-      {loading ? <p>Đang tải ca…</p> : visible.length === 0 ? <p>Không có ca phù hợp.</p> : <PaginatedList items={visible}>{row => <section key={row.id} className="manager-session-form">
+      {loading ? <p>Đang tải ca…</p> : showWeek ? <AssignedSessionsTimetable
+        sessions={rows.map(row => ({ ...row, sessionId: row.id, assignmentLabel: mine(row)?.accepted ? 'Đã nhận' : 'Chưa nhận' }))}
+        weekDate={weekDate} onWeekDateChange={setWeekDate} busy={busy} currentWeekLabel="Hôm nay"
+        label="Thời khóa biểu ca của tôi" action="Xem ca"
+        onSelect={id => { setDetailId(id); dialog.current.showModal(); }} />
+        : visible.length === 0 ? <p>Không có ca phù hợp.</p> : <PaginatedList items={visible}>{row => <section key={row.id} className="manager-session-form">
         <h3>{row.sportName} · {row.courtName}</h3>
         <p>{row.sessionDate.split('-').reverse().join('/')} · {row.startTime.slice(0, 5)}–{row.endTime.slice(0, 5)} (giờ Việt Nam)</p>
         {!available(row) && <p>Ca đã bắt đầu, đã kết thúc hoặc đã hủy.</p>}
@@ -80,6 +108,19 @@ export default function ShiftsPage({ role, user }) {
           </> : <button className="button button-secondary" disabled={busy || !available(row)} onClick={() => choose(row)}>Chia ca</button>}
         </> : <><p>{mine(row)?.accepted ? 'Đã nhận ca' : 'Chưa nhận ca'}</p><button className="button button-primary" disabled={busy || !available(row) || mine(row)?.accepted} onClick={() => act(row)}>{mine(row)?.accepted ? 'Đã nhận' : 'Nhận ca'}</button></>}
       </section>}</PaginatedList>}
+      {showWeek && <dialog ref={dialog} className="shift-detail" aria-labelledby="shift-detail-heading">
+        {detail && <>
+          <h3 id="shift-detail-heading">{detail.sportName} · {detail.courtName}</h3>
+          <p>{detail.sessionDate.split('-').reverse().join('/')} · {detail.startTime.slice(0, 5)}–{detail.endTime.slice(0, 5)} (giờ Việt Nam)</p>
+          <p>{mine(detail)?.accepted ? 'Đã nhận ca' : 'Chưa nhận ca'}</p>
+          {!available(detail) && <p>Ca đã bắt đầu, đã kết thúc hoặc đã hủy.</p>}
+          {error && <p role="alert" className="workflow-error">{error}</p>}
+          <div className="workflow-actions">
+            <button className="button button-primary" disabled={busy || !available(detail) || mine(detail)?.accepted} onClick={() => act(detail)}>Nhận ca</button>
+            <button className="button button-secondary" onClick={() => dialog.current.close()}>Đóng</button>
+          </div>
+        </>}
+      </dialog>}
     </div>
   </SectionLayout>;
 }

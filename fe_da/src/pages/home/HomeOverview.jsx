@@ -41,7 +41,7 @@ export default function HomeOverview({ config, preview, onOpen, role }) {
           </div>
         ))}
       </div>}
-      {role !== 'manager' && <div className="workspace-grid" id="workspace">
+      <div className="workspace-grid" id="workspace">
         <SectionLayout
           title={config.section}
           description="Chọn công việc bạn muốn thực hiện."
@@ -82,7 +82,7 @@ export default function HomeOverview({ config, preview, onOpen, role }) {
             </p>
           </div>
         </SectionLayout>
-      </div>}
+      </div>
       {preview && (
         <p className="demo-note">
           Bản mẫu giao diện · Số liệu chỉ để minh họa.

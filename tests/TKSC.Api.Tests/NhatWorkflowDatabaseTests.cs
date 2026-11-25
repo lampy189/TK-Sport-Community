@@ -1,8 +1,10 @@
 using System.Text.Json;
 using be_da.Application.DTOs;
+using be_da.Application.Services;
 using be_da.Application.Interfaces.External;
 using be_da.Infrastructure.Persistence.Repositories;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using TKSC.Domain.Exceptions;
 using Xunit;
@@ -48,20 +50,82 @@ public sealed class NhatWorkflowDatabaseTests
             PlayerB=await Sql("INSERT dbo.players(user_id) VALUES(@u); SELECT CONVERT(bigint,SCOPE_IDENTITY());",("@u",B));
             await Sql("INSERT dbo.friendships(requester_id,addressee_id,status) VALUES(@me,@a,'Accepted'),(@me,@b,'Accepted'); SELECT 1;",("@me",InviterPlayer),("@a",PlayerA),("@b",PlayerB));
         }
+        public Task<long> SetInvitationSkillProfiles() => Sql("""
+            INSERT dbo.player_sport_profiles(player_id,sport_id,current_score,current_band,rating_status)
+            VALUES(@a,@sport,30,'B2','Provisional'),(@b,@sport,30,'B2','Provisional');
+            SELECT 1;
+            """, ("@a",PlayerA), ("@b",PlayerB), ("@sport",Sport));
         public Task<long> Session(int capacity=8,string? band=null)=>Sql("INSERT dbo.sessions(sport_id,court_id,time_slot_id,session_date,band,capacity,price_vnd,status,created_by) VALUES(@sport,@court,@slot,DATEADD(day,40,CONVERT(date,SYSDATETIMEOFFSET())),@band,@capacity,100000,'Open',@owner); SELECT CONVERT(bigint,SCOPE_IDENTITY());",("@sport",Sport),("@court",Court),("@slot",Slot),("@band",band),("@capacity",capacity),("@owner",Owner));
         public InvitationRepository Invitations()=>new(Config,new Scope("Player",Venue));
         public SqlSessionStore Sessions()=>new(Connection,new Scope("Player",Venue));
         public OperationsRepository Operations(string role="Owner")=>new(Config,new Scope(role,Venue));
     }
+    [WorkflowDatabaseFact]
+    public async Task NewSkillRequestsNotifyTheRightRefereesOnce()
+    {
+        var fixture = new Fixture();
+        await fixture.Init();
+        await fixture.SetInvitationSkillProfiles();
+        var session = await fixture.Session(band: "B4");
+        var referee = await fixture.Sql("""
+            INSERT dbo.users(role_id,email,full_name,status,venue_id)
+            SELECT id,@email,'R04 test referee','Active',@venue FROM dbo.roles WHERE code='Referee';
+            SELECT CONVERT(bigint,SCOPE_IDENTITY());
+            """, ("@email",$"r04-{Guid.NewGuid():N}@example.invalid"), ("@venue",fixture.Venue));
+        var secondReferee = await fixture.Sql("""
+            INSERT dbo.users(role_id,email,full_name,status,venue_id)
+            SELECT id,@email,'R04 test referee two','Active',@venue FROM dbo.roles WHERE code='Referee';
+            SELECT CONVERT(bigint,SCOPE_IDENTITY());
+            """, ("@email",$"r04-{Guid.NewGuid():N}@example.invalid"), ("@venue",fixture.Venue));
+        await fixture.Sql("""
+            INSERT dbo.session_referees(session_id,referee_id,assigned_by) VALUES(@session,@first,@manager),(@session,@second,@manager);
+            SELECT 1;
+            """, ("@session",session), ("@first",referee), ("@second",secondReferee), ("@manager",fixture.Manager));
+        var assessment = await fixture.Sql("""
+            DECLARE @profile bigint=(SELECT id FROM dbo.player_sport_profiles WHERE player_id=@player AND sport_id=@sport);
+            DECLARE @rubric bigint=(SELECT id FROM dbo.rubrics WHERE sport_id=@sport AND is_active=1);
+            INSERT dbo.assessments(player_sport_profile_id,session_id,rubric_id,assessment_type,assessor_id,status,total_score,band_result)
+            VALUES(@profile,@session,@rubric,'on_court',@referee,'published',45,'B3');
+            DECLARE @assessment bigint=SCOPE_IDENTITY();
+            INSERT dbo.player_rating_history(player_sport_profile_id,new_score,new_band,changed_by,assessment_id)
+            VALUES(@profile,45,'B3',@referee,@assessment);
+            SELECT @assessment;
+            """, ("@player",fixture.PlayerA), ("@sport",fixture.Sport), ("@session",session), ("@referee",referee));
+        var options = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<TKSC.Infrastructure.Persistence.Contexts.Sep490Context>()
+            .UseSqlServer(fixture.Connection).Options;
+        await using var db = new TKSC.Infrastructure.Persistence.Contexts.Sep490Context(options);
+        var service = new TKSC.Application.Services.SkillReviewService(new TKSC.Infrastructure.Persistence.Repositories.SkillReviewRepository(db, TimeProvider.System), TimeProvider.System);
+        var reason = new TKSC.Application.DTOs.ReviewInput("Lý do kiểm thử thông báo cho trọng tài.");
+        var exception = await service.RequestException(session, fixture.A, reason, default);
+        await service.RequestException(session, fixture.A, reason, default);
+        var appeal = await service.RequestAppeal(assessment, fixture.A, reason, default);
+        await service.RequestAppeal(assessment, fixture.A, reason, default);
+        var exceptionId = JsonSerializer.SerializeToElement(exception).GetProperty("Id").GetInt64();
+        var appealId = JsonSerializer.SerializeToElement(appeal).GetProperty("Id").GetInt64();
+        Assert.Equal(2, await fixture.Sql("""
+            SELECT COUNT(*) FROM dbo.notifications WHERE reference_type='referee_skill_exception' AND reference_id=@id AND user_id IN (@first,@second) AND status='unread';
+            """, ("@id",exceptionId), ("@first",referee), ("@second",secondReferee)));
+        Assert.Equal(referee, await fixture.Sql("""
+            SELECT CASE WHEN COUNT(*)=1 THEN MIN(user_id) END FROM dbo.notifications
+            WHERE reference_type='referee_rating_appeal' AND reference_id=@id AND status='unread';
+            """, ("@id",appealId)));
+    }
+
     private static long Id(OperationResult result)=>JsonSerializer.SerializeToElement(result.Value).GetProperty("id").GetInt64();
     [WorkflowDatabaseFact]
-    public async Task InvitationDoesNotHoldUntilConsentAndUsesTheChosenPayerIdempotently()
+    public async Task InvitationDoesNotHoldUntilConsentAndUsesTheInviteeAsPayerIdempotently()
     {
         var f=new Fixture(); await f.Init(); var session=await f.Session();
         var repo=f.Invitations();
-        var invitation=Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerA,"inviter"),default));
+        await f.SetInvitationSkillProfiles();
+        var service = new InvitationService(repo, f.Sessions());
+        Assert.Equal(OperationOutcome.Invalid, (await service.SendAsync(f.Inviter, session, new(f.PlayerA, "inviter"), default)).Outcome);
+        var invitation=Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerA),default));
+        await f.Sql("UPDATE dbo.invitations SET payer_user_id=@payer WHERE id=@id; SELECT 1;", ("@payer",f.Inviter), ("@id",invitation));
+        Assert.Equal("INVITATION_PAYMENT_UNAVAILABLE", (await f.Sessions().AcceptInvitationAsync(f.A, invitation, default)).ErrorCode);
+        await f.Sql("UPDATE dbo.invitations SET payer_user_id=@payer WHERE id=@id; SELECT 1;", ("@payer",f.A), ("@id",invitation));
         Assert.Equal(0,await f.Sql("SELECT COUNT(*) FROM dbo.tickets WHERE session_id=@s",("@s",session)));
-        Assert.Equal(invitation,Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerA,"inviter"),default)));
+        Assert.Equal(invitation,Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerA),default)));
         Assert.Empty(await repo.ListAsync(f.Owner,default));
         Assert.False((await f.Sessions().AcceptInvitationAsync(f.B,invitation,default)).Success);
         var accepted=await f.Sessions().AcceptInvitationAsync(f.A,invitation,default);
@@ -69,7 +133,7 @@ public sealed class NhatWorkflowDatabaseTests
         var retry=await f.Sessions().AcceptInvitationAsync(f.A,invitation,default);
         Assert.Equal(accepted.TicketId,retry.TicketId);
         Assert.Equal(1,await f.Sql("SELECT COUNT(*) FROM dbo.tickets WHERE session_id=@s",("@s",session)));
-        Assert.Equal(f.Inviter,await f.Sql("SELECT payer_id FROM dbo.social_booking_orders WHERE id=@id",("@id",accepted.OrderId)));
+        Assert.Equal(f.A,await f.Sql("SELECT payer_id FROM dbo.social_booking_orders WHERE id=@id",("@id",accepted.OrderId)));
         Assert.Equal("accepted",Assert.Single(await repo.ListAsync(f.A,default)).Status);
         var second=Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerB,"separate"),default));
         Assert.Equal(OperationOutcome.Completed,(await repo.DeclineAsync(f.B,second,default)).Outcome);
@@ -79,7 +143,7 @@ public sealed class NhatWorkflowDatabaseTests
     [WorkflowDatabaseFact]
     public async Task ConcurrentAcceptsNeverOverbookTheLastPlace()
     {
-        var f=new Fixture(); await f.Init();var session=await f.Session(1);
+        var f=new Fixture(); await f.Init();await f.SetInvitationSkillProfiles();var session=await f.Session(1);
         var repo=f.Invitations();
         var a=Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerA),default));
         var b=Id(await repo.SendAsync(f.Inviter,session,new(f.PlayerB),default));

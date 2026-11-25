@@ -41,7 +41,10 @@ public sealed class InvitationRepository(IConfiguration configuration, IDataAcce
             FROM dbo.invitations i
             JOIN dbo.sessions s ON s.id=i.session_id JOIN dbo.courts cr ON cr.id=s.court_id JOIN dbo.venues v ON v.id=cr.venue_id
             JOIN dbo.time_slots ts ON ts.id=s.time_slot_id JOIN dbo.sports sp ON sp.id=s.sport_id LEFT JOIN dbo.social_booking_orders o ON o.id=i.order_id LEFT JOIN dbo.tickets t ON t.id=i.ticket_id
-            WHERE i.inviter_id=@player OR i.invitee_id=@player ORDER BY i.id DESC;
+            WHERE (i.inviter_id=@player OR i.invitee_id=@player)
+              AND (i.order_id IS NOT NULL OR i.payer_user_id IS NULL
+                   OR i.payer_user_id=(SELECT user_id FROM dbo.players WHERE id=i.invitee_id))
+            ORDER BY i.id DESC;
             """, ("@player", playerId));
         var rows = new List<SessionInvitation>();
         await using var r = await cmd.ExecuteReaderAsync(ct);
@@ -85,7 +88,7 @@ public sealed class InvitationRepository(IConfiguration configuration, IDataAcce
         var inviter=await WorkflowSql.Scalar(c,tx,"SELECT p.id FROM dbo.players p JOIN dbo.users u ON u.id=p.user_id WHERE u.id=@user AND u.deleted_at IS NULL AND LOWER(u.status)='active'",ct,("@user",userId));
         var friend=await WorkflowSql.Scalar(c,tx,"SELECT COUNT(*) FROM dbo.friendships WHERE LOWER(status)='accepted' AND ((requester_id=@me AND addressee_id=@friend) OR (addressee_id=@me AND requester_id=@friend))",ct,("@me",inviter),("@friend",request.FriendPlayerId));
         if(inviter==0 || friend==0 || inviter==request.FriendPlayerId) return OperationResult.Denied(new { message="Chỉ được mời bạn bè đã kết nối." });
-        var existing=await WorkflowSql.Rows(c,tx,"SELECT TOP(1) id,inviter_id FROM dbo.invitations WITH(UPDLOCK,HOLDLOCK) WHERE session_id=@session AND invitee_id=@friend AND (LOWER(status)='accepted' OR (LOWER(status)='pending' AND expires_at>SYSDATETIMEOFFSET())) ORDER BY id DESC",ct,("@session",sessionId),("@friend",request.FriendPlayerId));
+        var existing=await WorkflowSql.Rows(c,tx,"SELECT TOP(1) id,inviter_id FROM dbo.invitations WITH(UPDLOCK,HOLDLOCK) WHERE session_id=@session AND invitee_id=@friend AND (LOWER(status)='accepted' OR (LOWER(status)='pending' AND expires_at>SYSDATETIMEOFFSET() AND payer_user_id=(SELECT user_id FROM dbo.players WHERE id=@friend))) ORDER BY id DESC",ct,("@session",sessionId),("@friend",request.FriendPlayerId));
         if(existing.Count>0) return Convert.ToInt64(existing[0]["inviter_id"])==inviter ? OperationResult.Success(new { id=Convert.ToInt64(existing[0]["id"]),existing=true }) : OperationResult.Conflict(new { message="Người chơi đã có lời mời cho buổi này." });
         var reason=await WorkflowSql.Eligibility(c,tx,sessionId,request.FriendPlayerId,ct);
         if(reason is not null) return OperationResult.Invalid(new { message=reason });
@@ -93,11 +96,11 @@ public sealed class InvitationRepository(IConfiguration configuration, IDataAcce
             DECLARE @start datetimeoffset=(SELECT TODATETIMEOFFSET(DATEADD(second,DATEDIFF(second,CAST('00:00' AS time),ts.start_time),CAST(s.session_date AS datetime2)),'+07:00') FROM dbo.sessions s JOIN dbo.time_slots ts ON ts.id=s.time_slot_id WHERE s.id=@session);
             DECLARE @recipient bigint=(SELECT user_id FROM dbo.players WHERE id=@friend);
             INSERT dbo.invitations(inviter_id,invitee_id,session_id,status,payer_user_id,created_at,expires_at)
-            VALUES(@me,@friend,@session,'pending',CASE WHEN @pay=1 THEN @user ELSE @recipient END,SYSDATETIMEOFFSET(),CASE WHEN @start<DATEADD(hour,24,SYSDATETIMEOFFSET()) THEN @start ELSE DATEADD(hour,24,SYSDATETIMEOFFSET()) END);
+            VALUES(@me,@friend,@session,'pending',@recipient,SYSDATETIMEOFFSET(),CASE WHEN @start<DATEADD(hour,24,SYSDATETIMEOFFSET()) THEN @start ELSE DATEADD(hour,24,SYSDATETIMEOFFSET()) END);
             DECLARE @id bigint=SCOPE_IDENTITY();
             INSERT dbo.notifications(user_id,channel,title,reference_type,reference_id,status) VALUES(@recipient,'web',N'Bạn có lời mời tham gia buổi chơi','session_invitation',@id,'unread');
             SELECT @id;
-            """,ct,("@session",sessionId),("@me",inviter),("@friend",request.FriendPlayerId),("@user",userId),("@pay",request.PaymentChoice=="inviter"));
+            """,ct,("@session",sessionId),("@me",inviter),("@friend",request.FriendPlayerId));
         await tx.CommitAsync(ct);
         return OperationResult.Created(new { id });
     }

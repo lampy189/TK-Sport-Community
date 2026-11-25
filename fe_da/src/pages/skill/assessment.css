@@ -679,3 +679,79 @@
 .assessment-slider-score { font-size: 1.25rem; }
 .assessment-tick-btn:focus-visible, .assessment-range-input:focus-visible { outline: 3px solid #1b6f50; outline-offset: 2px; }
 .assessment-workspace .button { min-height: 44px; white-space: normal; }
+
+.assessment-session-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  border: 1px solid #dce8de;
+  border-radius: 12px;
+  background: #f5f8f4;
+}
+
+.assessment-session-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 10px;
+  color: var(--color-primary);
+  background: #e6efe6;
+}
+
+.assessment-session-summary > div { flex: 1; min-width: 0; }
+.assessment-session-summary h3,
+.assessment-roster-heading h3 { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
+.assessment-session-summary p { margin: 4px 0 0; font-size: 14px; color: var(--color-muted); }
+
+.assessment-roster-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.assessment-roster-heading > span { color: var(--color-muted); font-size: 13px; white-space: nowrap; }
+.assessment-roster-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.assessment-roster-list > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(110px, auto) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 10px 14px;
+}
+.assessment-roster-list > li + li { border-top: 1px solid var(--color-border); }
+.assessment-roster-list > li.is-selected { background: #f1f7f0; }
+.assessment-roster-player { min-width: 0; overflow-wrap: anywhere; }
+.assessment-roster-player strong,
+.assessment-roster-player small { display: block; }
+.assessment-roster-player small { color: var(--color-muted); margin-top: 3px; }
+.assessment-roster-status {
+  justify-self: start;
+  border-radius: 6px;
+  background: #f1f4f0;
+  color: #52645a;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.assessment-roster-status[data-has-form="true"] { background: #e6f1e7; color: #25563d; }
+.assessment-roster-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.assessment-roster-actions .button,
+.assessment-session-summary .button { min-height: 40px; padding: 8px 12px; font-size: 14px; }
+.assessment-form-banner h3[tabindex] { scroll-margin-top: 90px; }
+
+@media (max-width: 680px) {
+  .assessment-roster-list > li { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .assessment-roster-actions { grid-column: 1 / -1; }
+}

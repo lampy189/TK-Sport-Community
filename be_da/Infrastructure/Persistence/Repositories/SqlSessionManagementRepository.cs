@@ -201,7 +201,11 @@ public sealed partial class SqlSessionManagementRepository(IConfiguration config
             foreach (var id in before.staff.Except(staff))
                 await ExecuteAsync(connection, transaction, "DELETE dbo.session_staff WHERE session_id=@session AND staff_id=@user;", ct, ("@session", sessionId), ("@user", id));
             foreach (var id in referees.Except(before.referees))
-                await ExecuteAsync(connection, transaction, "INSERT dbo.session_referees(session_id,referee_id,assigned_by) VALUES(@session,@user,@actor);", ct, ("@session", sessionId), ("@user", id), ("@actor", actorId));
+                await ExecuteAsync(connection, transaction, """
+                    INSERT dbo.session_referees(session_id,referee_id,assigned_by) VALUES(@session,@user,@actor);
+                    INSERT dbo.notifications(user_id,channel,title,reference_type,reference_id,status)
+                    VALUES(@user,'web',N'Bạn được phân công ca trọng tài','referee_shift_assigned',@session,'unread');
+                    """, ct, ("@session", sessionId), ("@user", id), ("@actor", actorId));
             foreach (var id in staff.Except(before.staff))
                 await ExecuteAsync(connection, transaction, "INSERT dbo.session_staff(session_id,staff_id) VALUES(@session,@user);", ct, ("@session", sessionId), ("@user", id));
             await AuditAsync(connection, transaction, actorId, sessionId, "session_assignments_updated", before, new { referees, staff }, ct);

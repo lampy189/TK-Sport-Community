@@ -6,6 +6,7 @@ public sealed record AssignedAssessmentSession
     public string Name { get; init; } = default!;
     public string? Court { get; init; } = default!;
     public global::System.TimeOnly StartTime { get; init; } = default!;
+    public global::System.TimeOnly EndTime { get; init; } = default!;
 }
 
 public sealed record AssessmentPlayerProfile

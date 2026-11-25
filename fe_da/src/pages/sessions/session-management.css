@@ -20,6 +20,53 @@
 .manager-session-controls { padding-top: .8rem; border-top: 1px solid #dce5df; }
 @media (max-width: 820px) { .manager-session-layout { grid-template-columns: 1fr; } .manager-session-form { padding: 1rem 0 0; border-left: 0; border-top: 1px solid #dce5df; } }
 @media (max-width: 560px) { .manager-session-fields { grid-template-columns: 1fr; } }
+.shifts-toolbar,
+.shifts-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+.shifts-toolbar {
+  justify-content: space-between;
+}
+
+.shifts-toolbar > button {
+  margin-inline-start: auto;
+  align-self: flex-start;
+}
+
+.shifts-filters label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.shifts-filters input,
+.shifts-filters select {
+  width: auto;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .shifts-toolbar > button { order: -1; }
+  .shifts-filters { flex-basis: 100%; }
+}
+
+.shift-detail {
+  box-sizing: border-box;
+  inset: 0;
+  margin: auto;
+  width: min(28rem, 90vw);
+  padding: 1.5rem;
+  border: 1px solid #d8e3dc;
+  border-radius: 16px;
+  color: inherit;
+}
+.shift-detail::backdrop { background: rgb(16 44 33 / 35%); }
 .manager-sessions .manager-session-fields label { align-content: start; }
 .manager-sessions .manager-session-fields input, .manager-sessions .manager-session-fields select { min-height: 44px; box-sizing: border-box; }
 .manager-sessions .manager-session-people label { display: inline-flex; align-items: center; }

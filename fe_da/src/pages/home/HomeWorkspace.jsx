@@ -1,7 +1,6 @@
 import OperationalExceptions from '../payment/OperationalExceptions';
 import { PolicyPage, BusinessReportPage, ApprovalHub } from '../operations/BusinessConsole';
 import TechnicalPage from '../operations/TechnicalPage';
-import { useState } from 'react';
 import RevenuePage from "../revenue/RevenuePage";
 import OperationsPage from '../operations/OperationsPage';
 import AccessPage from '../operations/AccessPage';
@@ -21,7 +20,6 @@ import { CommunityView } from "../../components/CommunityView";
 import PaymentPage from "../payment/PaymentPage";
 import StockPage from "../stock/StockPage";
 import RefereeSuppliesView from "../stock/RefereeSuppliesView";
-import MyGoodsOrders from "../stock/MyGoodsOrders";
 import StorePage from "../store/StorePage";
 import SessionManagementPage from "../sessions/SessionManagementPage";
 import ShiftsPage from "../sessions/ShiftsPage";
@@ -40,8 +38,8 @@ export default function HomeWorkspace({
   onLogin,
   initialSport = "ALL",
   onBrowseSport,
+  assessmentDirty,
 }) {
-  const [createdGoodsOrder,setCreatedGoodsOrder]=useState(null);
   if (!preview && ((role === 'manager' && ['Chia ca', 'Phân công nhân sự'].includes(active)) || (['referee', 'staff'].includes(role) && ['Ca của tôi', 'Phân công'].includes(active)))) return <ShiftsPage role={role} user={user} />;
   if (!preview && role === 'system-admin' && ['Cấu hình kỹ thuật','Sự cố'].includes(active)) return <TechnicalPage key={active} incidentsOnly={active === 'Sự cố'} />;
   if (!preview && ['owner','manager'].includes(role) && active === 'Chính sách & giá') return <PolicyPage role={role} user={user} />;
@@ -49,25 +47,37 @@ export default function HomeWorkspace({
   if (!preview && role === 'owner' && active === 'Phê duyệt') return <ApprovalHub onOpen={onOpen} />;
   if (preview && import.meta.env.DEV && import.meta.env.VITE_PAYMENT_MODE === 'demo'
     && role === 'player' && ['Thanh toán', 'Vé của tôi'].includes(active))
-    return <PaymentPage key={active} initialView={active === 'Vé của tôi' ? 'tickets' : 'payment'} />;
-  if (!preview && ['staff','manager'].includes(role) && active === 'Vé giờ lẻ') return <LateEntryManagement role={role}/>;
+    return <PaymentPage key={new URLSearchParams(window.location.search).get('orderId') || 'tickets'} initialView={new URLSearchParams(window.location.search).has('orderId') || active === 'Thanh toán' ? 'payment' : 'tickets'} />;
+  if (!preview && role === 'manager' && active === 'Vé giờ lẻ') return <LateEntryManagement role={role}/>;
   if (!preview && ["owner", "manager", "staff"].includes(role) && ["Kinh doanh", "Thống kê doanh số"].includes(active)) return <RevenuePage role={role} />;
   if (!preview && ["staff","manager","owner"].includes(role) && active === "Ngoại lệ vận hành") return <OperationalExceptions role={role}/>;
-  if (!preview && ['owner', 'manager'].includes(role) && ['Cơ sở & sân', 'Phân quyền Sport Center'].includes(active)) return <OperationsPage key={active} role={role} initialTab={active === 'Phân quyền Sport Center' ? 'people' : 'venues'} />;
+  if (!preview && ((role === 'owner' && active === 'Cơ sở, sân và nhân sự') || (role === 'manager' && active === 'Cơ sở & sân')))
+    return <OperationsPage role={role} />;
   if (!preview && role === 'manager' && active === 'Quản lý buổi chơi') return <SessionManagementPage />;
   if (!preview && ['owner', 'manager', 'system-admin'].includes(role) && ['Bổ nhiệm quản lý', 'Phê duyệt nhân sự', 'Tài khoản & truy cập', 'Bàn giao hỗ trợ'].includes(active)) return <AccessPage role={role} user={user} />;
-  if (!preview && role === 'player' && active === 'Lời mời buổi chơi') return <InvitationsView user={user} onPayment={onPayment} onSelectSession={onSelectSession} />;
+  if (!preview && role === 'player' && ['Thông báo', 'Tin nhắn', 'Lời mời buổi chơi'].includes(active)) {
+    const invitations = active === 'Lời mời buổi chơi';
+    return <section className="player-inbox">
+      <nav aria-label="Mục thông báo" className="messages-sections">
+        <button aria-pressed={!invitations} onClick={() => onOpen('Thông báo')}>Tất cả</button>
+        <button aria-pressed={invitations} onClick={() => onOpen('Lời mời buổi chơi')}>Lời mời buổi chơi</button>
+      </nav>
+      {invitations ? <InvitationsView user={user} onPayment={onPayment} onSelectSession={onSelectSession} />
+        : <MessagesPage embedded onOpen={onOpen} role={role} />}
+    </section>;
+  }
   if ((active === "Thông báo" || active === "Tin nhắn") && role !== "guest") return <MessagesPage preview={preview} onOpen={onOpen} role={role} />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Ngoại lệ trình độ") return <SkillReviews role={role} kind="exceptions" />;
   if (!preview && ["referee", "manager"].includes(role) && active === "Khiếu nại đánh giá") return <SkillReviews role={role} />;
-  if (!preview && role === "referee" && active === "Đánh giá kỹ năng") return <AssessmentPage />;
-  if (!preview && ["staff", "manager"].includes(role) && active === "Bán hàng")
-    return (
-      <>
-        <StorePage role="staff" user={user} onCreated={setCreatedGoodsOrder} />
-        <GoodsPaymentPage key={createdGoodsOrder?.orderId??"initial"} initialOrderId={createdGoodsOrder?.orderId} />
-      </>
-    );
+  if (!preview && role === "referee" && active === "Đánh giá kỹ năng") return <AssessmentPage dirtyRef={assessmentDirty} />;
+  if (!preview && role === "staff") {
+    if (active === "Bán hàng")
+      return <StorePage role="staff" onOpenOrders={orderId => onOpen("Xử lý đơn hàng", orderId)} />;
+    if (active === "Xử lý đơn hàng") {
+      const orderId = new URLSearchParams(window.location.search).get("goodsOrderId");
+      return <GoodsPaymentPage key={orderId ?? "list"} initialOrderId={orderId} />;
+    }
+  }
   if (!preview && ["referee", "manager"].includes(role) && active === "Điểm danh") return <CheckInPage managerOnly={role === 'manager'} />;
   if (!preview && role === "referee" && active === "Vật tư buổi chơi") return <RefereeSuppliesView />;
   if (!preview && ["player", "guest"].includes(role)) {
@@ -116,12 +126,7 @@ export default function HomeWorkspace({
         />
       );
     if (role === "player" && active === "Cửa hàng")
-      return (
-        <>
-          <StorePage role="player" user={user} />
-          <MyGoodsOrders />
-        </>
-      );
+      return <StorePage role="player" user={user} />;
     if (role === "player" && active === "Hồ sơ kỹ năng")
       return (
         <SkillProfileView
@@ -142,8 +147,8 @@ export default function HomeWorkspace({
       return (
         <PaymentPage
           onBrowse={() => onOpen("Lịch social")}
-          key={active}
-          initialView={active === "Vé của tôi" ? "tickets" : "payment"}
+          key={new URLSearchParams(window.location.search).get("orderId") || "tickets"}
+          initialView={new URLSearchParams(window.location.search).has("orderId") || active === "Thanh toán" ? "payment" : "tickets"}
         />
       );
   }
