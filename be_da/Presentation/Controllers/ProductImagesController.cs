@@ -31,7 +31,7 @@ public sealed class ProductImagesController(IProductImageService images, IAntifo
     }
 
     [HttpPut]
-    [Authorize(Roles = "Staff,Manager")]
+    [Authorize(Roles = "Manager")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(MaxBytes + 64 * 1024)]
     public async Task<IActionResult> Upload(long id, IFormFile? file, CancellationToken ct)
@@ -47,7 +47,7 @@ public sealed class ProductImagesController(IProductImageService images, IAntifo
     }
 
     [HttpDelete]
-    [Authorize(Roles = "Staff,Manager")]
+    [Authorize(Roles = "Manager")]
     public async Task<IActionResult> RestoreDefault(long id, CancellationToken ct)
     {
         if (!await antiforgery.IsRequestValidAsync(HttpContext))
