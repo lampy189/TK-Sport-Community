@@ -1,5 +1,9 @@
 # Đăng ký vé hiện có qua Zalo OA
 
+Hướng dẫn triển khai domain/OA hiện tại và xử lý HTTP 503:
+[deploy/README-zalo.md](../deploy/README-zalo.md). Mẫu biến môi trường production
+`deploy/runtime.env.example` đã có App ID/OA ID và bật Zalo; điền secrets trên server trước khi dùng.
+
 ## Trạng thái bàn giao 25/11/2026
 
 Đã nối backend: nhận webhook có chữ ký → inbox SQL → hiểu tin nhắn bằng OpenAI → tìm vé →
