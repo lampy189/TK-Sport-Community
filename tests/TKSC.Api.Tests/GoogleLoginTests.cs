@@ -409,6 +409,7 @@ internal sealed class LoginApp : WebApplicationFactory<Program>
     public string EnvironmentName { get; init; } = "Testing";
     public FakeAccounts Store { get; } = new();
     public bool Verified { get; init; } = true;
+    public bool CentersEnabled { get; init; }
     public bool Configured { get; init; } = true;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -417,7 +418,7 @@ internal sealed class LoginApp : WebApplicationFactory<Program>
         builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Email:Enabled"] = "false",
-            ["SportCenters:Enabled"] = "false",
+            ["SportCenters:Enabled"] = CentersEnabled ? "true" : "false",
             ["Chatbot:ApiKey"] = null,
             ["Authentication:Google:ClientId"] = Configured ? "test-client" : null,
             ["Authentication:Google:ClientSecret"] = Configured ? "test-secret-not-real" : null,
@@ -428,6 +429,11 @@ internal sealed class LoginApp : WebApplicationFactory<Program>
         {
             services.RemoveAll<IAccountStore>();
             services.AddSingleton<IAccountStore>(Store);
+            if (CentersEnabled)
+            {
+                services.RemoveAll<ISessionStore>();
+                services.AddSingleton<ISessionStore>(new FakeSessionStore());
+            }
             services.PostConfigure<GoogleOptions>(GoogleDefaults.AuthenticationScheme,
                 options => options.Backchannel = new HttpClient(new GoogleStub(() => Verified)));
         });

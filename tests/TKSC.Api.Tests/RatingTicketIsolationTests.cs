@@ -149,13 +149,15 @@ public class TransactionlessRepository<T> : DispatchProxy where T : class
 {
     private T target = null!;
     private Sep490Context db = null!;
+    private Func<MethodInfo, object?[]?, Task?>? intercept;
 
-    public static T Create(T target, Sep490Context db)
+    public static T Create(T target, Sep490Context db, Func<MethodInfo, object?[]?, Task?>? intercept = null)
     {
         var proxy = Create<T, TransactionlessRepository<T>>();
         var wrapper = (TransactionlessRepository<T>)(object)proxy;
         wrapper.target = target;
         wrapper.db = db;
+        wrapper.intercept = intercept;
         return proxy;
     }
 
@@ -164,6 +166,8 @@ public class TransactionlessRepository<T> : DispatchProxy where T : class
         if (method!.Name is "MutateAsync" or "Write")
             return GetType().BaseType!.GetMethod(nameof(RunAsync), BindingFlags.Instance | BindingFlags.NonPublic)!
                 .MakeGenericMethod(method.GetGenericArguments()).Invoke(this, new[] { args![0], method.Name == "Write" });
+        if (intercept?.Invoke(method, args) is { } intercepted)
+            return intercepted;
         try { return method.Invoke(target, args); }
         catch (TargetInvocationException e) when (e.InnerException != null)
         {

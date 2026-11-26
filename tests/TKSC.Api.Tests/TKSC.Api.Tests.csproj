@@ -8,7 +8,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.32" />
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <EmbeddedResource Include="Fixtures/player-guide.json" />
+    <Compile Include="../UnitTests/**/*.cs" LinkBase="UnitTests" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.31" />
     <PackageReference Include="xunit" Version="2.9.3" />
