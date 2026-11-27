@@ -281,7 +281,7 @@ public sealed class PlayerGoodsPaymentTests
         Assert.Equal(HttpStatusCode.BadRequest,(await client.PostAsJsonAsync("/api/v1/commerce/payment-recovery/4/"+action,new {evidence="Đối soát ngân hàng hợp lệ",bankTransactionId=1})).StatusCode);
     }
 
-    private sealed class Gateway : IPaymentGateway
+    internal sealed class Gateway : IPaymentGateway
     {
         public int Calls; public List<long> CreatedIds = []; public Action? OnCreate;
         public GatewayStatus Remote = new(4, 0, "PENDING", "link");
@@ -292,7 +292,7 @@ public sealed class PlayerGoodsPaymentTests
         public Task<GatewayStatus> GetAsync(long paymentId) { Calls++; return Task.FromResult(Remote); }
         public Task<VerifiedBankEvent> VerifyAsync(string payload) => throw new NotSupportedException();
     }
-    private sealed class Repo : IGoodsPaymentRepository
+    internal sealed class Repo : IGoodsPaymentRepository
     {
         public Task<IReadOnlyList<TicketHistoryEntry>> HistoryAsync(long id,CancellationToken ct) => Task.FromResult<IReadOnlyList<TicketHistoryEntry>>([]);
         public Task<Payment?> RecoveryPaymentAsync(long id,CancellationToken ct) => Task.FromResult(Order.Payments.SingleOrDefault(p=>p.Id==id));
