@@ -20,15 +20,15 @@ namespace TKSC.Api.Tests.Stock;
 // Request validation of the stock module's APIs, through the real pipeline with in-memory stores.
 public sealed class StockApiValidationTests
 {
-    private static readonly Account Staff = new(20, "staff@example.test", "Staff One", "Staff", "Active", "sub-20", false, VenueId: 1);
-    private static readonly Account Manager = new(21, "manager@example.test", "Manager One", "Manager", "Active", "sub-21", false, VenueId: 1);
-    private static readonly Account Referee = new(40, "referee@example.test", "Referee One", "Referee", "Active", "sub-40", false, VenueId: 1);
-    private static readonly Account Player = new(30, "player@example.test", "Player One", "Player", "Active", "sub-30", false);
+    internal static readonly Account Staff = new(20, "staff@example.test", "Staff One", "Staff", "Active", "sub-20", false, VenueId: 1);
+    internal static readonly Account Manager = new(21, "manager@example.test", "Manager One", "Manager", "Active", "sub-21", false, VenueId: 1);
+    internal static readonly Account Referee = new(40, "referee@example.test", "Referee One", "Referee", "Active", "sub-40", false, VenueId: 1);
+    internal static readonly Account Player = new(30, "player@example.test", "Player One", "Player", "Active", "sub-30", false);
     private const string StaffLoggedIn = "Staff signed in with a valid CSRF token";
     private const string ManagerLoggedIn = "Manager signed in with a valid CSRF token";
-    private static readonly object ValidProduct = new { sku = "CAU-1", name = "Shuttle", category = "Equipment", unitPriceVnd = 1000, reorderLevel = 1, initialQuantity = 0 };
+    internal static readonly object ValidProduct = new { sku = "CAU-1", name = "Shuttle", category = "Equipment", unitPriceVnd = 1000, reorderLevel = 1, initialQuantity = 0 };
 
-    private static async Task<(ApiApp App, HttpClient Client)> SignedIn(Account account)
+    internal static async Task<(ApiApp App, HttpClient Client)> SignedIn(Account account)
     {
         var app = new ApiApp();
         var client = app.Client();
@@ -37,7 +37,7 @@ public sealed class StockApiValidationTests
         return (app, client);
     }
 
-    private static async Task<HttpResponseMessage> Send(HttpClient client, HttpMethod method, string path, object? body = null, string? raw = null)
+    internal static async Task<HttpResponseMessage> Send(HttpClient client, HttpMethod method, string path, object? body = null, string? raw = null)
     {
         var token = await client.GetFromJsonAsync<JsonElement>("/api/auth/csrf");
         using var request = new HttpRequestMessage(method, path);
@@ -386,7 +386,7 @@ public sealed class StockApiValidationTests
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsync("/api/v1/commerce/my-goods-orders/1/receive", null)).StatusCode);
     }
 
-    private sealed class ApiApp : WebApplicationFactory<Program>
+    internal sealed class ApiApp : WebApplicationFactory<Program>
     {
         public FakeSessionAccounts Accounts { get; } = new();
         public FakeStockStore Stock { get; } = new();
